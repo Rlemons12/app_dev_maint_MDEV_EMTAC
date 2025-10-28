@@ -59,15 +59,24 @@ coverage.xml
 nosetests.xml
 
 
-# --- Data folders: track structure, ignore content ---
+# ============================================================
+# DATA FOLDERS — track structure, ignore content
+# ============================================================
+# Ignore everything inside the data directory
+/data/**
 
-# Ignore everything under /data/
-data/**
+# Allow the folder itself
+!/data/
 
-# But keep the folder structure placeholders
-!data/
-!data/**/
-!data/**/.gitkeep
+# Allow all subdirectories
+!/data/**/
+
+# Allow .gitkeep placeholders to preserve structure
+!/data/**/.gitkeep
+
+# (Optional) Allow .gitignore files inside data folders
+!/data/**/.gitignore
+
 
 
 # --- DATABASES / BACKUPS ---
