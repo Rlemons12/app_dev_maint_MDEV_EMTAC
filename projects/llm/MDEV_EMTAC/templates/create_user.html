@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/redbanner.css')}}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url("static/background_images/blue-black-atmosphere-light-darkness-atmosphere-of-earth-904369-wallhere.com.jpg");
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .registration-container {
+          background: rgba(255, 255, 255, 0.8);
+          /* make it 600px wide but never wider than 90% of its parent */
+          width: 600px;
+          max-width: 90%;
+          /* more breathing room inside */
+          padding: 40px;
+          border-radius: 5px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          text-align: center;
+
+          /* optional: bump up the default font-size */
+          font-size: 1.1rem;
+          /* center it horizontally */
+          margin: 0 auto;
+        }
+
+    </style>
+    <title>User Registration</title>
+</head>
+<body>
+
+        <div class="banner">
+            THIS IS FOR REFERENCE ONLY. ALL INFORMATION SHOULD BE VERIFIED WITH CURRENT SOP'S
+            <a href="#" id="commentPopupLink">Leave a Comment</a>
+        </div>
+<!-- Popup Modal Structure -->
+<div id="commentPopup" style="display: none;">
+    <form id="commentForm">
+        <h2>Leave a Comment</h2>
+        <!-- Instructions for filling out the form -->
+        <p>Instructions: You can write your comment, paste an image, or upload a file.</p>
+
+        <!-- Comment box where users can paste an image or type text -->
+        <textarea name="comment" id="comment" placeholder="Write your comment here..." required></textarea><br>
+
+        <!-- Hidden field to store base64 image data -->
+        <input type="hidden" id="imageData" name="imageData">
+
+        <!-- Display an indicator or preview if an image was pasted -->
+        <div id="pastedImageFeedback" style="display: none; color: green;">
+            Image snippet successfully added!
+        </div>
+        <img id="pastedImagePreview" src="" alt="Pasted Image Preview" style="display:none; max-width: 100px; margin-top: 10px;" />
+
+        <!-- Option to upload a file -->
+        <label for="fileUpload">Or upload an image:</label><br>
+        <input type="file" id="fileUpload" name="screenshot" accept="image/*" /><br><br>
+
+        <button type="submit">Send</button>
+        <button type="button" id="closePopup">Close</button>
+    </form>
+</div>
+<div class="registration-container">
+        <h2>User Registration</h2>
+    <form action="/submit_user_creation" method="post">
+        <label for="employee_id">Employee ID:</label>
+        <input type="text" id="employee_id" name="employee_id" required><br>
+
+        <label for="first_name">First Name:</label>
+        <input type="text" id="first_name" name="first_name" required><br>
+
+        <label for="last_name">Last Name:</label>
+        <input type="text" id="last_name" name="last_name" required><br>
+
+        <label for="current_shift">Current Shift:</label>
+        <input type="text" id="current_shift" name="current_shift" required><br>
+
+        <label for="primary_area">Primary Area:</label>
+        <input type="text" id="primary_area" name="primary_area" required><br>
+
+        <label for="age">Age (Optional):</label>
+        <input type="number" id="age" name="age"><br>
+
+        <label for="education_level">Education Level (Optional):</label>
+        <input type="text" id="education_level" name="education_level"><br>
+
+        <label for="start_date">Start Date (Optional):</label>
+        <input type="date" id="start_date" name="start_date"><br>
+
+        <!-- Password field -->
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required><br>
+
+        <!-- New fields for user preferences -->
+        <label for="text_to_voice">Text-to-Voice Option:</label>
+        <select name="text_to_voice" id="text_to_voice">
+            <option value="default">Default</option>
+            <option value="option1">Option 1</option>
+            <option value="option2">Option 2</option>
+            <!-- Add more options as needed -->
+        </select><br>
+
+        <label for="voice_to_text">Voice-to-Text Option:</label>
+        <select name="voice_to_text" id="voice_to_text">
+            <option value="default">Default</option>
+            <option value="option1">Option 1</option>
+            <option value="option2">Option 2</option>
+            <!-- Add more options as needed -->
+        </select><br>
+
+        <button type="submit">Register</button>
+    </form>
+
+    <!-- Add a button to return to the login screen -->
+    <form action="/login" method="get">
+        <button type="submit">Back to Login</button>
+    </form>
+</div>
+<script src="{{ url_for('static', filename='js/comment_pop_up.js')}}"></script>
+</body>
+</html>

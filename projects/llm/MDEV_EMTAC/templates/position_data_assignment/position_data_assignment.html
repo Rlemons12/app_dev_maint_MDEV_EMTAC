@@ -1,0 +1,206 @@
+<!--templates/position_data_assignment.html -->
+
+{% extends "base.html" %}
+
+{% block extra_head %}
+    <!-- Include base and custom styles for this page -->
+    <!-- Load base CSS first (corrected path) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/module_template/base.css') }}">
+
+    <!-- Then load position-specific CSS to override base -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/position_data_assignment.css') }}">
+
+    <!-- Finally load component-specific CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/partials/position_data_assignment/position_data_assignment_tool_management.css') }}">
+
+    <!-- Toastr CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block title %}Position Data Assignment{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <!-- Main Content -->
+    <div class="content">
+        <h1>Position Data Assignment</h1>
+
+        <!-- Tab Navigation with Grid Layout -->
+        <div class="tab-container">
+            <div class="tab-grid">
+                <!-- First Row: 5 Tabs -->
+                <div class="tab-grid-row-1">
+                    <div class="tab-item active" data-tab="search-tab">Search Position</div>
+                    <div class="tab-item" data-tab="create-position-tab">Create New Position</div>
+                    <div class="tab-item" data-tab="add-dependencies-tab">Add Position Dependencies</div>
+                    <div class="tab-item" data-tab="update-tab">Update Position Data</div>
+                    <div class="tab-item" data-tab="documents-tab">Manage Documents</div>
+                </div>
+
+                <!-- Second Row: 4 Tabs -->
+                <div class="tab-grid-row-2">
+                    <div class="tab-item" data-tab="parts-tab">Manage Parts</div>
+                    <div class="tab-item" data-tab="images-tab">Manage Images</div>
+                    <div class="tab-item" data-tab="drawings-tab">Manage Drawings</div>
+                    <div class="tab-item" data-tab="tool-tab">Manage Tools</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content Sections -->
+
+        <!-- Search Position Tab -->
+        <div id="search-tab" class="tab-content active">
+            {% include 'position_data_assignment/pda_partials/pda_search_position_form.html' %}
+        </div>
+
+        <!-- Create New Position Tab -->
+        <div id="create-position-tab" class="tab-content">
+            {% include 'position_data_assignment/pda_partials/pda_create_position_form.html' %}
+        </div>
+
+        <!-- Add Position Dependencies Tab -->
+        <div id="add-dependencies-tab" class="tab-content">
+            {% include 'position_data_assignment/pda_partials/pda_add_dependencies_form.html' %}
+        </div>
+
+        <!-- Update Position Data Tab -->
+        <div id="update-tab" class="tab-content">
+            {% include 'position_data_assignment/pda_partials/pda_update_position_form.html' %}
+        </div>
+
+        <!-- Manage Documents Tab -->
+        <div id="documents-tab" class="tab-content">
+            {% include 'position_data_assignment/pda_partials/pda_manage_documents_form.html' %}
+        </div>
+
+        <!-- Manage Parts Tab -->
+        <div id="parts-tab" class="tab-content">
+            {% include 'position_data_assignment/pda_partials/pda_manage_parts_form.html' %}
+        </div>
+
+        <!-- Manage Images Tab -->
+        <div id="images-tab" class="tab-content">
+            {% include 'position_data_assignment/pda_partials/pda_manage_images_form.html' %}
+        </div>
+
+        <!-- Manage Drawings Tab -->
+        <div id="drawings-tab" class="tab-content">
+            {% include 'position_data_assignment/pda_partials/pda_manage_drawings_form.html' %}
+        </div>
+
+        <!-- Manage Tools Tab -->
+        <div id="tool-tab" class="tab-content">
+            {% include 'position_data_assignment/pda_partials/position_data_assignment_tool_management.html' %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Include Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<!-- Include jQuery from a CDN -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Toastr JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<!-- Include Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<!-- Your custom scripts -->
+<script src="{{ url_for('static', filename='js/position_data_assignment/position_data_assignment_data_add_dependencies.js') }}"></script>
+<script src="{{ url_for('static', filename='js/position_data_assignment/get_position_data_assignment_data.js') }}"></script>
+<script src="{{ url_for('static', filename='js/base_sidebar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/position_data_assignment/get_position_data_assignment_data_part.js') }}"></script>
+<script src="{{ url_for('static', filename='js/position_data_assignment/get_position_data_assignment_data_image.js') }}"></script>
+<script src="{{ url_for('static', filename='js/position_data_assignment/get_position_data_assignment_data_drawing.js') }}"></script>
+<script src="{{ url_for('static', filename='js/position_data_assignment/get_position_data_assignment_data_document.js') }}"></script>
+<script src="{{ url_for('static', filename='js/position_data_assignment/pda_partials_tool_management.js') }}"></script>
+<script src="{{ url_for('static', filename='js/position_data_assignment/pda_partial_create_position_form.js') }}"></script>
+<script src="{{ url_for('static', filename='js/position_data_assignment/debug_document_search.js') }}"></script>
+<!-- Tab Functionality Script -->
+<script>
+    // Tab functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const tabs = document.querySelectorAll('.tab-item');
+        const contents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Remove 'active' class from all tabs and contents
+                tabs.forEach(item => item.classList.remove('active'));
+                contents.forEach(content => content.classList.remove('active'));
+
+                // Add 'active' class to the clicked tab and corresponding content
+                this.classList.add('active');
+                const tabContent = document.getElementById(this.getAttribute('data-tab'));
+                tabContent.classList.add('active');
+            });
+        });
+    });
+</script>
+
+<!-- Script for handling AJAX calls -->
+<script>
+    var getEquipmentGroupsUrl = "{{ url_for('position_data_assignment_bp.get_equipment_groups') }}";
+    var getModelsUrl = "{{ url_for('position_data_assignment_bp.get_models') }}";
+    var getAssetNumbersUrl = "{{ url_for('position_data_assignment_bp.get_asset_numbers') }}";
+    var getLocationsUrl = "{{ url_for('position_data_assignment_bp.get_locations') }}";
+    var getSiteLocationsUrl = "{{ url_for('position_data_assignment_bp.get_site_locations') }}";
+    var getPositionsUrl = "{{ url_for('position_data_assignment_bp.get_positions') }}";
+    var removeImageFromPositionUrl = "{{ url_for('position_data_assignment_bp.remove_image_from_position') }}";
+
+    // Updated Routes for Subassembly, ComponentAssembly, and AssemblyView
+    var getSubassembliesUrl = "{{ url_for('position_data_assignment_bp.get_subassemblies') }}";
+    var getComponentAssembliesUrl = "{{ url_for('position_data_assignment_bp.get_component_assemblies') }}";
+    var getAssemblyViewsUrl = "{{ url_for('position_data_assignment_bp.get_assembly_views') }}";
+
+    $('#searchPositionBtn').click(function() {
+        $.ajax({
+            url: getPositionsUrl,
+            method: 'GET',
+            data: $('#searchPositionForm').serialize(),
+            success: function(data) {
+                console.log('Positions data:', data); // Check the data structure
+                // Here, render or debug the data to ensure it's being received correctly.
+            },
+            error: function(xhr, status, error) {
+                console.error("Error fetching positions:", error);
+                alert("An error occurred while fetching positions.");
+            }
+        });
+    });
+</script>
+<!-- Handle Flashed Messages with Toastr -->
+<script>
+    // Toastr Options
+    toastr.options = {
+        "closeButton": true,
+        "debug": false,
+        "newestOnTop": false,
+        "progressBar": true,
+        "positionClass": "toast-top-right",
+        "preventDuplicates": false,
+        "onclick": null,
+        "showDuration": "300",
+        "hideDuration": "1000",
+        "timeOut": "5000",
+        "extendedTimeOut": "1000",
+        "showEasing": "swing",
+        "hideEasing": "linear",
+        "showMethod": "fadeIn",
+        "hideMethod": "fadeOut"
+    };
+
+    // Display flashed messages using Toastr
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                toastr["{{ category }}"]("{{ message }}");
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</script>
+{% endblock %}

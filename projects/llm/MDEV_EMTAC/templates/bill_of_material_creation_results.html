@@ -1,0 +1,189 @@
+<!-- templates/bill_of_materials/bom_partials/bill_of_material_results_partial.html -->
+
+<!-- Load necessary styles -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bill_of_materials.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bill_of_materials/create_bill_of_material_results.css') }}">
+
+<!-- Wrapper div for proper sidebar alignment -->
+<div class="bom-results-wrapper">
+  <h1 class="results-title">Bill of Materials Results</h1>
+  
+  <a href="{{ url_for('bill_of_materials_bp.bill_of_materials') }}" class="back-to-search btn btn-primary">
+    Back to Search
+  </a>
+  
+  {% if debug_info %}
+  <div class="debug-info">
+    <p>Found {{ debug_info.result_count }} results ({{ debug_info.parts_count }} parts)</p>
+  </div>
+  {% endif %}
+
+  <div class="results-table-container">
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Part Number</th>
+          <th>Description</th>
+          <th>OEM Manufacturer</th>
+          <th>Model</th>
+          <th>Class Flag</th>
+          <th>UD6</th>
+          <th>Type</th>
+          <th>Notes</th>
+          <th>Documentation</th>
+          <th>Image</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in parts_and_images %}
+        <tr>
+          <td>{{ item.part.part_number }}</td>
+          <td>{{ item.part.name }}</td>
+          <td>{{ item.part.oem_mfg or 'N/A' }}</td>
+          <td>{{ item.part.model or 'N/A' }}</td>
+          <td>{{ item.part.class_flag or 'N/A' }}</td>
+          <td>{{ item.part.ud6 or 'N/A' }}</td>
+          <td>{{ item.part.type or 'N/A' }}</td>
+          <td>{{ item.part.notes or 'N/A' }}</td>
+          <td>{{ item.part.documentation or 'N/A' }}</td>
+          <td>
+            {% if item.image %}
+              <a href="{{ url_for('create_bill_of_material_bp.bom_serve_image_route', image_id=item.image.id) }}" target="_blank">
+                <img class="thumbnail" src="{{ url_for('create_bill_of_material_bp.bom_serve_image_route', image_id=item.image.id) }}" alt="{{ item.image.title }}">
+              </a>
+            {% else %}
+              <p>No image available</p>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    {% if prev_index is not none %}
+      <a href="{{ url_for('create_bill_of_material_bp.view_bill_of_material', index=prev_index, per_page=per_page) }}">Previous</a>
+    {% endif %}
+    <form id="per-page-form" method="GET" action="{{ url_for('create_bill_of_material_bp.view_bill_of_material') }}">
+      <label for="per_page">Items per page:</label>
+      <select id="per_page" name="per_page">
+        <option value="4" {% if per_page == 4 %}selected{% endif %}>4</option>
+        <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+        <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+        <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+      </select>
+      <input type="hidden" name="index" value="{{ index }}">
+    </form>
+    {% if next_index is not none %}
+      <a class="next" href="{{ url_for('create_bill_of_material_bp.view_bill_of_material', index=next_index, per_page=per_page) }}">Next</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Custom CSS to fix sidebar spacing issues -->
+<style>
+  /* Wrapper for results that aligns with sidebar */
+  .bom-results-wrapper {
+    margin-left: 10px !important; /* Reduce the left margin to close the gap */
+    padding: 20px;
+    background-color: rgba(0, 20, 60, 0.8);
+    border-radius: 8px;
+    color: white;
+    width: calc(100% - 30px) !important;
+    max-width: 1600px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Results table styling */
+  .results-title {
+    color: #39FF14;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #333;
+    text-align: center;
+  }
+  
+  /* Table container with scrolling */
+  .results-table-container {
+    overflow-x: auto;
+    margin: 20px 0;
+  }
+  
+  /* Table styling */
+  .results-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: white;
+  }
+  
+  .results-table th {
+    background-color: rgba(0, 0, 40, 0.9) !important;
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #444;
+  }
+  
+  .results-table td {
+    padding: 10px;
+    border: 1px solid #444;
+  }
+  
+  .results-table tbody tr:nth-child(odd) {
+    background-color: rgba(20, 20, 40, 0.9) !important;
+  }
+  
+  .results-table tbody tr:nth-child(even) {
+    background-color: rgba(3, 46, 102, 0.9) !important;
+  }
+  
+  /* Debug info styling */
+  .debug-info {
+    margin: 10px 0;
+    padding: 8px;
+    background-color: rgba(30, 30, 60, 0.7);
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  /* Back button styling */
+  .back-to-search {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: #007BFF;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    margin-bottom: 15px;
+  }
+  
+  .back-to-search:hover {
+    background-color: #0056b3;
+  }
+  
+  /* Pagination styling */
+  .pagination {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: rgba(0, 30, 60, 0.7);
+    border-radius: 4px;
+  }
+  
+  .pagination a {
+    color: #007BFF;
+    text-decoration: none;
+    margin-right: 10px;
+  }
+  
+  .pagination .next {
+    float: right;
+  }
+  
+  /* Image thumbnail */
+  .thumbnail {
+    max-width: 50px;
+    max-height: 50px;
+    border: 1px solid #444;
+    border-radius: 4px;
+  }
+</style>

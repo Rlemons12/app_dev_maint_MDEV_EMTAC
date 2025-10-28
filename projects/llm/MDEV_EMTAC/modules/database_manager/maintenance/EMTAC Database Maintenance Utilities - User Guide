@@ -1,0 +1,169 @@
+EMTAC Database Maintenance Utilities - User Guide
+Overview
+This guide explains how to use the database maintenance utilities for the EMTAC system. These utilities help maintain data integrity, associate related records, and identify potential duplicate data.
+Available Commands
+The maintenance utilities provide the following commands:
+
+associate-images - Associates parts with matching images based on part numbers
+associate-drawings-with-parts - Associates drawings with parts based on spare part numbers
+find-duplicates - Identifies potential duplicate parts in the database
+validate - Validates data integrity across the database
+
+How to Run the Commands
+Prerequisites
+
+Ensure your Python environment is activated (you should see "(emtac)" at the start of your command prompt)
+Run all commands from the project root directory: C:\Users\10169062\Desktop\AU_IndusMaintdb
+
+Running the Part-Image Association Command
+This command associates parts with images that have titles matching part numbers:
+C:\Users\10169062\Desktop\AuMaintdb\emtac\Scripts\python.exe C:\Users\10169062\Desktop\AU_IndusMaintdb\modules\database_manager\maintenance\db_maintenance.py associate-images
+Options:
+
+--batch-size NUMBER - Set number of parts to process in each batch (default: 1000)
+--export-report/--no-export-report - Enable/disable detailed report export (default: enabled)
+--report-dir DIRECTORY - Specify directory to save reports (default: current directory)
+
+Example with options:
+C:\Users\10169062\Desktop\AuMaintdb\emtac\Scripts\python.exe C:\Users\10169062\Desktop\AU_IndusMaintdb\modules\database_manager\maintenance\db_maintenance.py associate-images --report-dir "C:\Reports" --batch-size 500
+Running the Drawing-Part Association Command
+This command associates drawings with parts based on matching spare part numbers:
+C:\Users\10169062\Desktop\AuMaintdb\emtac\Scripts\python.exe C:\Users\10169062\Desktop\AU_IndusMaintdb\modules\database_manager\maintenance\db_maintenance.py associate-drawings-with-parts
+Options:
+
+--export-report/--no-export-report - Enable/disable detailed report export (default: enabled)
+--report-dir DIRECTORY - Specify directory to save reports (default: current directory)
+
+Example with options:
+C:\Users\10169062\Desktop\AuMaintdb\emtac\Scripts\python.exe C:\Users\10169062\Desktop\AU_IndusMaintdb\modules\database_manager\maintenance\db_maintenance.py associate-drawings-with-parts --report-dir "C:\Reports"
+Running the Find Duplicates Command
+This command identifies potential duplicate parts based on similarity:
+C:\Users\10169062\Desktop\AuMaintdb\emtac\Scripts\python.exe C:\Users\10169062\Desktop\AU_IndusMaintdb\modules\database_manager\maintenance\db_maintenance.py find-duplicates
+Options:
+
+--threshold NUMBER - Set similarity threshold between 0.0 and 1.0 (default: 0.9)
+--export/--no-export - Enable/disable CSV export of results (default: enabled)
+
+Example with options:
+C:\Users\10169062\Desktop\AuMaintdb\emtac\Scripts\python.exe C:\Users\10169062\Desktop\AU_IndusMaintdb\modules\database_manager\maintenance\db_maintenance.py find-duplicates --threshold 0.85 --no-export
+Understanding the Reports
+Part-Image Association Reports
+When you run the associate-images command with reporting enabled, three CSV files are generated:
+
+Summary Report (part_image_association_summary_[timestamp].csv)
+
+Contains overall statistics about the operation
+Fields: timestamp, total_parts_processed, parts_with_matches, parts_without_matches, total_associations, duration_seconds
+
+
+Details Report (part_image_association_details_[timestamp].csv)
+
+Lists every part-image association created
+Fields: part_id, part_number, part_name, image_id, image_title, image_file_path, association_id
+
+
+Unmatched Parts Report (unmatched_parts_[timestamp].csv)
+
+Lists all parts that had no matching images
+Fields: part_id, part_number, part_name
+
+
+
+Drawing-Part Association Reports
+When you run the associate-drawings-with-parts command with reporting enabled, four CSV files are generated:
+
+Summary Report (drawing_part_association_summary_[timestamp].csv)
+
+Contains overall statistics about the operation
+Fields: timestamp, total_drawings_processed, drawings_with_matches, drawings_without_matches, drawings_without_spare_part, total_associations, duration_seconds
+
+
+Details Report (drawing_part_association_details_[timestamp].csv)
+
+Lists every drawing-part association created
+Fields: drawing_id, drawing_number, drawing_name, spare_part_number, part_id, part_number, part_name, association_id
+
+
+Unmatched Drawings Report (unmatched_drawings_[timestamp].csv)
+
+Lists drawings that have spare part numbers but no matching parts
+Fields: drawing_id, drawing_number, drawing_name, spare_part_number
+
+
+Drawings Without Spare Part Number Report (drawings_without_spare_part_[timestamp].csv)
+
+Lists drawings that don't have spare part numbers assigned
+Fields: drawing_id, drawing_number, drawing_name
+
+
+
+Duplicate Parts Report
+When you run the find-duplicates command with export enabled, a CSV file is generated:
+Duplicate Parts Report (duplicate_parts_[timestamp].csv)
+
+Lists all potential duplicate part pairs with their similarity score
+Fields: source_id, target_id, similarity
+
+Interpreting the Console Output
+After running a command, you'll see a summary in the console. For example:
+Part-Image Association Summary:
+- Parts processed: 19914
+- Parts with matching images: 423
+- Parts with no matches: 19491
+- Total associations created: 512
+- Duration: 35.27 seconds
+
+Reports have been exported to:
+- Summary: C:\Reports\part_image_association_summary_20250513_045823.csv
+- Details: C:\Reports\part_image_association_details_20250513_045823.csv
+- Unmatched: C:\Reports\unmatched_parts_20250513_045823.csv
+Or for the drawing-part association:
+Drawing-Part Association Summary:
+- Drawings processed: 1245
+- Drawings with matching parts: 315
+- Drawings with no matches: 236
+- Drawings without spare part number: 694
+- Total associations created: 387
+- Duration: 28.12 seconds
+
+Reports have been exported to:
+- Summary: C:\Reports\drawing_part_association_summary_20250513_052146.csv
+- Details: C:\Reports\drawing_part_association_details_20250513_052146.csv
+- Unmatched: C:\Reports\unmatched_drawings_20250513_052146.csv
+- No_spare_part: C:\Reports\drawings_without_spare_part_20250513_052146.csv
+Creating Batch Files for Convenience
+To simplify running these commands, you can create batch files:
+
+Create a new text file with a .bat extension (e.g., associate_parts.bat or associate_drawings.bat)
+Add the following content:
+
+batch@echo off
+cd C:\Users\10169062\Desktop\AU_IndusMaintdb
+C:\Users\10169062\Desktop\AuMaintdb\emtac\Scripts\python.exe C:\Users\10169062\Desktop\AU_IndusMaintdb\modules\database_manager\maintenance\db_maintenance.py associate-images --report-dir "C:\Reports"
+pause
+For the drawing-part association:
+batch@echo off
+cd C:\Users\10169062\Desktop\AU_IndusMaintdb
+C:\Users\10169062\Desktop\AuMaintdb\emtac\Scripts\python.exe C:\Users\10169062\Desktop\AU_IndusMaintdb\modules\database_manager\maintenance\db_maintenance.py associate-drawings-with-parts --report-dir "C:\Reports"
+pause
+
+Save the file and double-click it to run the command
+
+Troubleshooting
+If you encounter errors:
+
+Ensure your Python environment is activated
+Run the commands from the project root directory
+Check the logs for detailed error messages
+Verify database connections are working
+Make sure you have write permissions for the report directory
+
+For importing errors like "ModuleNotFoundError: No module named 'modules'", add these lines to the top of your script:
+pythonimport sys
+import os
+# Add the project root directory to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
+For errors like "name 'info_id' is not defined" or "name 'and_' is not defined", add these imports:
+pythonfrom modules.configuration.log_config import debug_id, info_id, error_id, get_request_id
+from sqlalchemy import and_
+For technical assistance, please contact the development team.

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Image</title>
+</head>
+<body>
+    <form action="{{ url_for('image_bp.upload_image') }}" method="post" enctype="multipart/form-data">
+        <input type="file" name="image">
+        <input type="submit" value="Upload">
+    </form>
+	<script type="text/javascript">
+    window.addEventListener("beforeunload", function (event) {
+        navigator.sendBeacon('/logout_bp');
+    });
+</script>
+</body>
+</html>

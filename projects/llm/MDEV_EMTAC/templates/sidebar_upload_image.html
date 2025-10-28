@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Database Entry</title>
+    <!-- Add any required styles or links to stylesheets -->
+    <style>
+        /* Add CSS styles here */
+        body {
+            background-image: url("/background_images/abstractfractal.jpg");
+            background-size: cover;
+            background-repeat: no-repeat;
+            display: flex;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            color: white;
+            transition: width 0.3s;
+        }
+
+        .sidebar.collapsed {
+            width: 80px;
+        }
+
+        .sidebar h2, .sidebar a {
+            display: block;
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
+
+        .sidebar.collapsed h2, .sidebar.collapsed a {
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .sidebar .toggle-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #333;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .main-content {
+            width: calc(100% - 250px);
+            padding: 20px;
+            color: white;
+            transition: width 0.3s;
+        }
+
+        .main-content.expanded {
+            width: calc(100% - 80px);
+        }
+
+        .form-container {
+            display: none;
+        }
+
+        .form-container.active {
+            display: block;
+        }
+
+        .form-container h2 {
+            color: white;
+        }
+
+        .form-container input[type="file"], .form-container input[type="submit"] {
+            margin-top: 10px;
+            display: block;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .form-container input[type="file"]:hover, .form-container input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        .form-container select, .form-container input[type="text"], .form-container textarea {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+            <h2>Forms</h2>
+            <a href="#" data-form="image-upload">Upload Image</a>
+            <a href="#" data-form="document-upload">Upload Documents</a>
+            <a href="#" data-form="powerpoint-upload">Upload PowerPoint</a>
+            <a href="#" data-form="batch-upload">Batch Upload Documents</a>
+            <a href="#" data-form="search-powerpoint">Search Power Points</a>
+            <a href="#" data-form="search-images">Search Images</a>
+            <a href="#" data-form="search-documents">Search Documents</a>
+            <a href="/">Return to Main Page</a>
+        </div>
+
+        <div class="main-content">
+            <div id="image-upload" class="form-container">
+                <h2>Upload Image</h2>
+                <form action="/images/add_image" method="post" enctype="multipart/form-data">
+                    <input type="text" name="title" placeholder="Image Title"><br>
+                    <textarea name="description" placeholder="Image Description"></textarea><br>
+                    <select name="area" id="image_areaDropdown"></select><br>
+                    <select name="equipment_group" id="image_equipmentGroupDropdown"></select><br>
+                    <select name="model" id="image_modelDropdown"></select><br>
+                    <select name="asset_number" id="image_assetNumberDropdown"></select><br>
+                    <select name="location" id="image_locationDropdown"></select><br>
+                    <input type="file" name="image" accept="image/*" required><br>
+                    <input type="submit" value="Upload Image">
+                </form>
+            </div>
+
+            <div id="document-upload" class="form-container">
+                <h2>Upload Documents</h2>
+                <form action="/documents/add_document" method="post" enctype="multipart/form-data">
+                    <input type="text" name="title" placeholder="Document Title"><br>
+                    <select name="area" id="areaDropdown"></select><br>
+                    <select name="equipment_group" id="equipmentGroupDropdown"></select><br>
+                    <select name="model" id="modelDropdown"></select><br>
+                    <select name="asset_number" id="assetNumberDropdown"></select><br>
+                    <select name="location" id="locationDropdown"></select><br>
+                    <input type="file" name="files" multiple><br>
+                    <input type="submit" value="Process Folder">
+                </form>
+            </div>
+
+            <div id="powerpoint-upload" class="form-container">
+                <h2>Upload PowerPoint</h2>
+                <form action="/powerpoints/upload_powerpoint" method="post" enctype="multipart/form-data">
+                    <input type="text" name="title" placeholder="PowerPoint Title"><br>
+                    <select name="area" id="uploadpowerpoint_areaDropdown"></select><br>
+                    <select name="equipment_group" id="uploadpowerpoint_equipmentGroupDropdown"></select><br>
+                    <select name="model" id="uploadpowerpoint_modelDropdown"></select><br>
+                    <select name="asset_number" id="uploadpowerpoint_assetNumberDropdown"></select><br>
+                    <select name="location" id="uploadpowerpoint_locationDropdown"></select><br>
+                    <input type="text" name="description" placeholder="PowerPoint Description"><br>
+                    <input type="file" name="powerpoint" accept=".pptx" required><br>
+                    <input type="submit" value="Upload PowerPoint">
+                </form>
+            </div>
+
+            <div id="batch-upload" class="form-container">
+                <h2>Batch Upload Documents</h2>
+                <form action="/batch_processing" method="post" enctype="multipart/form-data">
+                    <input type="text" name="batchTitle" placeholder="Document Title"><br>
+                    <select name="batchArea" id="batchAreaDropdown"></select><br>
+                    <select name="batchEquipmentGroup" id="batchEquipmentGroupDropdown"></select><br>
+                    <select name="batchModel" id="batchModelDropdown"></select><br>
+                    <select name="batchAssetNumber" id="batchAssetNumberDropdown"></select><br>
+                    <select name="batchLocation" id="batchLocationDropdown"></select><br>
+                    <input type="text" name="batchFolderPath" placeholder="Absolute Folder Path"><br>
+                    <input type="file" name="files" multiple><br>
+                    <input type="submit" value="Process Folder">
+                </form>
+            </div>
+
+            <div id="search-powerpoint" class="form-container">
+                <h2>Search Power Points</h2>
+                <form action="/search_powerpoint" method="get">
+                    <input type="text" name="description" placeholder="Search by Description"><br>
+                    <input type="text" name="title" placeholder="Search by Title"><br>
+                    <select name="searchpowerpoint_area" id="searchpowerpoint_areaDropdown"></select><br>
+                    <select name="searchpowerpoint_equipment_group" id="searchpowerpoint_equipmentGroupDropdown"></select><br>
+                    <select name="searchpowerpoint_model" id="searchpowerpoint_modelDropdown"></select><br>
+                    <select name="searchpowerpoint_asset_number" id="searchpower_assetNumberDropdown"></select><br>
+                    <select name="searchpowerpoint_location" id="searchpowerpoint_locationDropdown"></select><br>
+                    <input type="submit" value="Search">
+                </form>
+            </div>
+
+            <div id="search-images" class="form-container">
+                <h2>Search Images</h2>
+                <form action="/search_images" method="get">
+                    <input type="text" name="description" placeholder="Search by Description"><br>
+                    <input type="text" name="title" placeholder="Search by Title"><br>
+                    <select name="searchimage_area" id="searchimage_areaDropdown"></select><br>
+                    <select name="searchimage_equipment_group" id="searchimage_equipmentGroupDropdown"></select><br>
+                    <select name="searchimage_model" id="searchimage_modelDropdown"></select><br>
+                    <select name="searchimage_asset_number" id="searchimage_assetNumberDropdown"></select><br>
+                    <select name="searchimage_location" id="searchimage_locationDropdown"></select><br>
+                    <input type="submit" value="Search">
+                </form>
+            </div>
+
+            <div id="search-documents" class="form-container">
+                <h2>Search Documents</h2>
+                <form action="/search_documents" method="get">
+                    <input type="text" name="title" placeholder="Title"><br>
+                    <select name="searchdocument_area" id="searchdocument_areaDropdown"></select><br>
+                    <select name="searchdocument_equipmentgroup" id="searchdocument_equipmentGroupDropdown"></select><br>
+                    <select name="searchdocument_model" id="searchdocument_modelDropdown"></select><br>
+                    <select name="searchdocument_asset_number" id="searchdocument_assetNumberDropdown"></select><br>
+                    <select name="searchdocument_location" id="searchdocument_locationDropdown"></select><br>
+                    <input type="submit" value="Search">
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include jQuery using a CDN -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <!-- Include Select2 library -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+    <!-- Include your custom JavaScript file -->
+    <script src="{{ url_for('static', filename='batch_upload.js') }}"></script>
+    <script src="{{ url_for('static', filename='upload_image.js') }}"></script>
+    <script src="{{ url_for('static', filename='image_upload.js') }}"></script>
+    <script src="{{ url_for('static', filename='upload_powerpoint.js') }}"></script>
+    <script src="{{ url_for('static', filename='document_search.js') }}"></script>
+    <script src="{{ url_for('static', filename='image_search.js') }}"></script>
+    <script src="{{ url_for('static', filename='powerpoint_search.js') }}"></script>
+
+    <script>
+        // Initialize Dropzone
+        Dropzone.autoDiscover = false;
+        var myDropzone = new Dropzone("#batchDropzone", {
+            url: "/your-upload-url", // Replace with your server endpoint
+            uploadMultiple: true,    // Allow multiple files to be uploaded
+            parallelUploads: 1,      // Process each file individually
+            autoProcessQueue: false, // Disable automatic processing
+            paramName: "batchFiles", // Name of the input field
+            maxFiles: null,          // Unlimited file uploads
+            acceptedFiles: null,     // Accept all file types
+            addRemoveLinks: true,    // Show remove links
+            dictDefaultMessage: "Drop files here or click to upload",
+            fallback: function() {
+                // Fallback for non-supported browsers
+                document.getElementById("batchFiles").style.display = "block";
+            }
+        });
+
+        // Process folder on form submission
+        document.querySelector('input[type="submit"]').addEventListener("click", function(e) {
+            e.preventDefault(); // Prevent default form submission
+            myDropzone.processQueue(); // Process the queue
+        });
+
+        // Populate dropdowns when the page loads
+        $(document).ready(function() {
+            populateDropdowns();
+        });
+
+        // JavaScript to handle form switching
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll('.form-container').forEach(form => {
+                    form.classList.remove('active');
+                });
+                const formId = this.getAttribute('data-form');
+                document.getElementById(formId).classList.add('active');
+            });
+        });
+
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('collapsed');
+            document.querySelector('.main-content').classList.toggle('expanded');
+        }
+
+        window.addEventListener("beforeunload", function (event) {
+            navigator.sendBeacon('/logout_bp');
+        });
+    </script>
+</body>
+</html>

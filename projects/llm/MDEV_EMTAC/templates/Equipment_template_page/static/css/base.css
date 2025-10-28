@@ -1,0 +1,286 @@
+/* Base styles */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f3f5f7;
+    color: #222;
+}
+
+/* MAIN CONTAINER - Entire Page */
+.main-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Full viewport height */
+}
+
+/* BANNER CONTAINER - Top Bar */
+.banner-container {
+    background: #2e7ebf;
+    color: white;
+    padding: 10px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 900;
+    display: flex;
+    justify-content: center; /* Center the title */
+    align-items: center;
+}
+
+.banner-container h1 {
+    font-size: 1.5rem;
+    margin: 0;
+    text-align: center; /* Ensure text is centered */
+}
+
+/* CONTENT AREA - Contains Sidebar and Content */
+.content-area {
+    display: flex;
+    flex: 1; /* Takes remaining viewport height */
+    position: relative;
+}
+
+/* SIDEBAR AREA - Container for sidebar and toggle */
+.sidebar-area {
+    position: relative;
+    z-index: 950;
+}
+
+/* SIDEBAR CONTAINER */
+.sidebar {
+    width: 250px;
+    background: #f7f8fa;
+    border-radius: 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    padding: 40px 20px 20px 20px; /* Extra top padding for the hamburger */
+    height: calc(100vh - 56px); /* Subtract banner height */
+    position: fixed;
+    top: 56px; /* Match banner height */
+    left: 0;
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+    z-index: 100;
+}
+
+/* Preserve the existing sidebar class name for compatibility */
+.sidebar.sticky {
+    position: fixed;
+    top: 56px; /* Match banner height */
+}
+
+/* Toggle button - repositioned to the sidebar area */
+.sidebar-toggle {
+    position: absolute;
+    top: 10px; /* Position it near the top of sidebar */
+    left: 12px;
+    z-index: 1001;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1.5rem;
+    padding: 4px 12px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+.sidebar-toggle:hover {
+    background: #e7f0fa;
+}
+
+/* SIDEBAR when retracted */
+.sidebar.retracted {
+    transform: translateX(-100%);
+}
+
+/* When sidebar is retracted, adjust the toggle button */
+.sidebar.retracted + .sidebar-toggle,
+.main-container.sidebar-retracted .sidebar-toggle {
+    left: 12px; /* Keep it visible when sidebar is retracted */
+}
+
+/* CONTENT CONTAINER */
+.content-container {
+    flex: 1;
+    padding: 20px;
+    margin-left: 250px; /* Same as sidebar width */
+    transition: margin-left 0.3s ease;
+    width: calc(100% - 250px);
+}
+
+/* CONTENT CONTAINER when sidebar is retracted */
+.main-container.sidebar-retracted .content-container {
+    margin-left: 0;
+    width: 100%;
+}
+
+/* Preserve existing sidebar inner content styles */
+.document-links {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.document-links a,
+.sidebar-link {
+    color: #1162ad;
+    text-decoration: none;
+    padding: 6px 0 6px 11px;
+    border-left: 3px solid #bfd5eb;
+    font-size: 1rem;
+    transition: background 0.1s;
+    border-radius: 3px 0 0 3px;
+    position: relative;
+}
+
+.sidebar-link.active {
+    background: #e7f0fa;
+    color: #154477;
+    font-weight: 600;
+    border-left: 3px solid #154477;
+}
+
+/* Equipment card and image styles (preserving existing styles) */
+.equipment-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    width: 100%;
+    max-width: 680px;
+    padding: 32px 38px 28px 38px;
+    display: flex;
+    flex-direction: column;
+    margin: 0 auto;
+}
+
+.equipment-image-container {
+    width: 370px;
+    height: 260px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 26px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.equipment-image-default,
+.equipment-image {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.equipment-image-default {
+    background: #c1c1c1;
+    border: 2px dashed #b0b0b0;
+    color: #aaa;
+    font-size: 2.1rem;
+    font-weight: 600;
+}
+
+.equipment-image {
+    box-shadow: 0 4px 18px rgba(36,64,110,0.13);
+    object-fit: contain;
+    background: #e0e0e0;
+    display: block;
+}
+
+/* Equipment header (title & icon) */
+.equipment-header {
+    border-bottom: 1px solid #e3e5e8;
+    margin-bottom: 22px;
+    padding-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.equipment-icon {
+    width: 48px;
+    height: 48px;
+    background: #d8ebfa;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #2e7ebf;
+}
+
+.equipment-title {
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+/* Info table */
+.info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 18px;
+}
+
+.info-table th, .info-table td {
+    text-align: left;
+    padding: 9px 7px;
+}
+
+.info-table th {
+    color: #5b7a9a;
+    font-weight: 600;
+    width: 170px;
+    background: #f6f8fb;
+}
+
+.info-table tr:nth-child(even) td {
+    background: #f9fafc;
+}
+
+/* Notes section */
+.equipment-notes {
+    margin-top: 20px;
+    background: #f8f8e7;
+    border-left: 4px solid #d5c752;
+    padding: 15px 18px;
+    border-radius: 8px;
+    color: #706800;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 220px;
+    }
+
+    .content-container {
+        margin-left: 220px;
+        width: calc(100% - 220px);
+    }
+
+    .equipment-card {
+        padding: 25px;
+    }
+}
+
+@media (max-width: 576px) {
+    .sidebar {
+        width: 200px;
+    }
+
+    .content-container {
+        margin-left: 200px;
+        width: calc(100% - 200px);
+    }
+
+    .equipment-image-container {
+        width: 100%;
+        height: 200px;
+    }
+
+    .equipment-card {
+        padding: 15px;
+    }
+}

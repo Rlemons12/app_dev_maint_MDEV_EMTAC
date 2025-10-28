@@ -1,0 +1,3 @@
+### Search Documents - Example Request
+GET http://127.0.0.1:5000/pda_search_documents?query=test HTTP/1.1
+Accept: application/json

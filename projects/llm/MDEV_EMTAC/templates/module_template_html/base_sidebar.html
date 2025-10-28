@@ -1,0 +1,117 @@
+<!-- module_template_html/base_template.html - Template for sidebar component -->
+<div class="sidebar" id="mainSidebar">
+    <!-- Header Section (unchanged) -->
+    <div class="sidebar-header">
+        <h1>EMTAC</h1>
+        <p class="user-level">User Level: {{ session['user_level'] }}</p>
+        <h2 class="welcome-message">Welcome {{ session['first_name'] }}! How can I assist you?</h2>
+    </div>
+
+    <!-- Main Navigation Links - ENDPOINTS FIRST -->
+    <div class="sidebar-nav">
+        <!-- ==================== -->
+        <!-- ENDPOINT LINKS FIRST -->
+        <!-- ==================== -->
+
+        <!-- Common endpoints for all users -->
+        <a href="/" class="nav-link highlight">Return to Main</a>
+        <a href="/upload_search_database" class="nav-link highlight">Search and Upload</a>
+        <a href="/bill_of_materials" class="nav-link highlight">Parts and BOMs</a>
+
+        <!-- LEVEL_I and above endpoints -->
+        {% if session['user_level'] == 'LEVEL_I' or session['user_level'] == 'LEVEL_II' or session['user_level'] == 'LEVEL_III' or session['user_level'] == 'ADMIN' %}
+            <a href="/pst_troubleshooting/" class="nav-link highlight">Search Troubleshooting</a>
+        {% endif %}
+
+        <!-- LEVEL_II and above endpoints -->
+        {% if session['user_level'] == 'LEVEL_II' or session['user_level'] == 'LEVEL_III' or session['user_level'] == 'ADMIN' %}
+            <a href="/tool/submit_tool_data" class="nav-link highlight">Tools: Entry and Search</a>
+        {% endif %}
+
+        <!-- Admin and Level III endpoints -->
+        {% if session['user_level'] == 'ADMIN' or session['user_level'] == 'LEVEL_III' %}
+            <a href="/position_data_assignment" class="nav-link highlight">Position Data Assignment</a>
+        {% endif %}
+
+        <!-- ================ -->
+        <!-- FORM LINKS NEXT -->
+        <!-- ================ -->
+
+        <!-- Search page specific forms - LEVEL_I and above -->
+        {% if current_page == 'search' %}
+            {% if session['user_level'] == 'LEVEL_I' or session['user_level'] == 'LEVEL_II' or session['user_level'] == 'LEVEL_III' or session['user_level'] == 'ADMIN' %}
+                <a href="#search-documents" onclick="showForm('search-documents')" class="nav-link">Search Documents</a>
+                <a href="#search-drawings" onclick="showForm('search-drawings')" class="nav-link">Search Drawings</a>
+                <a href="#search-images" onclick="showForm('search-images')" class="nav-link">Search Images</a>
+                <a href="#compare-images" onclick="showForm('compare-images')" class="nav-link">Compare Images</a>
+                <a href="#search-powerpoints" onclick="showForm('search-powerpoints')" class="nav-link">Search PowerPoints</a>
+
+            {% endif %}
+
+            <!-- Upload links only available to LEVEL_III and ADMIN -->
+            {% if session['user_level'] == 'ADMIN' or session['user_level'] == 'LEVEL_III' %}
+                <a href="#upload-image" onclick="showForm('upload-image')" class="nav-link">Upload Image</a>
+                <a href="#upload-document" onclick="showForm('upload-document')" class="nav-link">Upload Document</a>
+                <a href="#upload-powerpoint" onclick="showForm('upload-powerpoint')" class="nav-link">Upload PowerPoint</a>
+                <a href="#batch-upload" onclick="showForm('batch-upload')" class="nav-link">Batch Upload Documents</a>
+            {% endif %}
+        {% endif %}
+
+        <!-- BOM page specific forms -->
+        {% if current_page == 'bom' %}
+            <!-- BOM specific links - search and edit for LEVEL_I and above -->
+            {% if session['user_level'] == 'LEVEL_I' or session['user_level'] == 'LEVEL_II' or session['user_level'] == 'LEVEL_III' or session['user_level'] == 'ADMIN' %}
+                <a href="#search-bill-of-materials" onclick="showForm('search-bill-of-materials')" class="nav-link">Search Bill of Materials</a>
+                <a href="#edit-part" onclick="showForm('edit-part')" class="nav-link">Edit Part</a>
+            {% endif %}
+
+            <!-- BOM specific links - Enter New Part for LEVEL_II and above -->
+            {% if session['user_level'] == 'LEVEL_II' or session['user_level'] == 'LEVEL_III' or session['user_level'] == 'ADMIN' %}
+                <a href="#enter-new-part" onclick="showForm('enter-new-part')" class="nav-link">Enter New Part</a>
+            {% endif %}
+
+            <!-- BOM specific links - Upload for LEVEL_III and ADMIN -->
+            {% if session['user_level'] == 'ADMIN' or session['user_level'] == 'LEVEL_III' %}
+                <a href="#upload-bill-of-materials" onclick="showForm('upload-bill-of-materials')" class="nav-link">Upload Bill of Materials</a>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <!-- Utility Section (unchanged) -->
+    <div class="sidebar-utils">
+        {% if session['user_level'] == 'LEVEL_III' %}
+        <!-- Voice controls section available only to LEVEL_III -->
+        <div class="voice-controls">
+            <button id="toggle-voice" class="toggle-button">Toggle Voice Recognition</button>
+            <button id="toggle-text-to-speech" class="toggle-button">Toggle Text-to-Speech</button>
+            <select id="voice-selection"></select>
+        </div>
+        {% endif %}
+
+        <!-- Model display section for advanced users -->
+        <div class="model-display-section" {% if session['user_level'] != 'STANDARD' %} style="display: block;" {% else %} style="display: none;" {% endif %}>
+            <p>Current AI Model: {{ current_ai_model|default('Default Model') }}</p>
+            <p>Current Embedding Model: {{ current_embedding_model|default('Default Embedding') }}</p>
+        </div>
+
+        <!-- Logout button at the bottom -->
+        <a href="/logout" class="logout-button">Logout</a>
+    </div>
+
+    <!-- Theme Selector (at bottom of sidebar) -->
+    <div class="sidebar-theme-selector" style="margin-top: 24px; border-top: 1px solid #333; padding-top: 15px;">
+        <label for="theme-select" style="color: #ccc; font-size: 14px;">Theme:</label>
+        <select id="theme-select" style="width: 100%; margin-top: 8px; padding: 6px 8px;">
+            <option value="">Default</option>
+            <option value="theme-blue-grey.css">Professional Blue-Grey</option>
+            <option value="theme-classic-grey-navy.css">Classic Grey & Navy</option>
+            <option value="theme-minimal-white.css">Minimal White & Graphite</option>
+            <option value="theme-green-modern.css">Green Modern</option>
+            <option value="theme-industrial-yellow-steel.css">Industrial Yellow & Steel</option>
+            <option value="theme-modern-purple-indigo.css">Modern Purple & Indigo</option>
+            <option value="theme-teal-black.css">Futuristic Teal & Black</option>
+            <option value="theme-light-orange.css">Modern Light & Orange</option>
+        </select>
+    </div>
+
+</div>

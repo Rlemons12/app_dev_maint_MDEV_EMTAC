@@ -1,0 +1,20 @@
+<!-- Manage Documents Section -->
+<!-- Hidden Field for Position ID -->
+<input type="hidden" id="position_id" name="position_id" value="{{ position.id }}">
+
+<!-- Search Bar for Filtering Documents -->
+<div style="position: relative;">
+    <label for="search-documents">Search Documents:</label>
+    <input type="text" id="search-documents" placeholder="Search documents...">
+    <!-- Suggestion Box -->
+    <div id="document-suggestion-box" class="suggestion-box" style="display: none;"></div>
+</div>
+
+<!-- Existing Documents List -->
+<h4>Existing Documents:</h4>
+<div id="existing-documents-list" class="scrollable-list">
+    <!-- Existing documents will be rendered here -->
+</div>
+
+<!-- Pagination Controls -->
+<div id="documents-pagination" class="pagination-controls"></div>

@@ -1,0 +1,11 @@
+### Login Request (Session-Based)
+POST http://127.0.0.1:5000/login
+Content-Type: application/x-www-form-urlencoded
+
+employee_id=admin&password=admin123
+
+
+### Document Search Request Using Session Cookie
+GET http://127.0.0.1:5000/pst_troubleshooting_guide_edit_update/search_documents?query=document_title
+Content-Type: application/json
+

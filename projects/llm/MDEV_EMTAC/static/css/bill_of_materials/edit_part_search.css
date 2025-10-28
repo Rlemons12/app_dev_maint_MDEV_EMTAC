@@ -1,0 +1,152 @@
+/* Updated edit_part_search.css for improved contrast */
+
+/* Container for search results within edit part */
+#search-results-container {
+  margin: 20px 0;
+  background-color: transparent;
+  padding: 20px;
+  width: 100%;
+  overflow: auto;
+  max-height: 80vh;
+  border: none;
+  color: white; /* Ensure base text is white */
+}
+
+/* Search results heading */
+#search-results-container h3 {
+  color: #39FF14;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 10px;
+  font-size: 1.4em;
+}
+
+/* “Found X parts” message styling */
+#search-results-container p:first-of-type {
+  background-color: rgba(3, 46, 102, 0.3);
+  padding: 12px 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  border-left: 4px solid #007bff;
+  font-weight: bold;
+  font-size: 1.1em;
+  color: yellow;
+}
+
+/* Table styling */
+#search-results-container table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 15px 0;
+  border: 1px solid #444;
+  background-color: transparent;
+  color: white; /* Enforce white text */
+  font-size: 14px;
+}
+
+/* Table header styling */
+#search-results-container thead tr {
+  background-color: rgba(0, 0, 40, 0.8);
+}
+
+#search-results-container th {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 2px solid #555;
+  color: white; /* White text for headers */
+  font-weight: bold;
+}
+
+/* Table cell styling */
+#search-results-container td {
+  padding: 10px;
+  border-bottom: 1px solid #444;
+  vertical-align: middle;
+  color: white; /* Enforce white text */
+}
+
+/* Alternating row colors for readability */
+#search-results-container tbody tr:nth-child(odd) {
+  background-color: rgba(20, 20, 40, 0.9);
+}
+
+#search-results-container tbody tr:nth-child(even) {
+  background-color: rgba(3, 46, 102, 0.9);
+}
+
+/* Hover effect on rows */
+#search-results-container tbody tr:hover {
+  background-color: rgba(50, 50, 150, 0.9);
+  transition: background-color 0.2s ease;
+}
+
+/* Edit button styling */
+#search-results-container .edit-part-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  text-align: center;
+}
+
+#search-results-container .edit-part-btn:hover {
+  background-color: #0056b3;
+}
+
+/* No-results message styling */
+#search-results-container p:not(:first-of-type) {
+  color: white;
+  padding: 15px;
+  background-color: rgba(3, 46, 102, 0.3);
+  border-radius: 5px;
+  margin: 15px 0;
+  border-left: 4px solid #dc3545;
+}
+
+/* Ensure container is visible when it has content */
+#edit-part #search-results-container:not(:empty) {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+/*------------------------------------------------------------
+  FORCE DARK ROWS & WHITE TEXT IN EDIT‑PART SEARCH RESULTS
+------------------------------------------------------------*/
+
+/* Wipe out any light backgrounds and non‑white text */
+#edit-part #search-results-container table,
+#edit-part #search-results-container thead,
+#edit-part #search-results-container tbody,
+#edit-part #search-results-container tr,
+#edit-part #search-results-container th,
+#edit-part #search-results-container td {
+  background-color: transparent !important;
+  color: white             !important;
+}
+
+/* Dark header row */
+#edit-part #search-results-container thead tr {
+  background-color: rgba(0, 0, 40, 0.9) !important;
+}
+
+/* Alternating dark stripes */
+#edit-part #search-results-container tbody tr:nth-child(odd) {
+  background-color: rgba(20, 20, 40, 0.9) !important;
+}
+
+#edit-part #search-results-container tbody tr:nth-child(even) {
+  background-color: rgba(3, 46, 102, 0.9) !important;
+}
+
+/* Strong hover state */
+#edit-part #search-results-container tbody tr:hover {
+  background-color: rgba(50, 50, 150, 0.9) !important;
+}
+
+/* Re‑enforce white text in headers & cells */
+#edit-part #search-results-container th,
+#edit-part #search-results-container td {
+  color: white !important;
+}

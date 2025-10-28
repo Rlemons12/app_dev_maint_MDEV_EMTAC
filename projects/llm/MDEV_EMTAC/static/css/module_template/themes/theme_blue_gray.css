@@ -1,0 +1,21 @@
+body {
+    background: #18233A;
+    background-image: url("/static/background_images/blue_gray.jpg"); /* Replace with your image */
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    color: #F4F7FA;
+}
+.banner {
+    background-color: #375A7F;
+}
+.sidebar {
+    background-color: #375A7F;
+    color: #AAB2BD;
+}
+.nav-link,
+.sidebar a,
+.sidebar button {
+    color: #15D4D8;
+}

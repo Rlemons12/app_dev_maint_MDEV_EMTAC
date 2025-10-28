@@ -1,0 +1,249 @@
+<!-- Problem Tab Content Partial -->
+<div class="tab-pane fade show active" id="problem" role="tabpanel" aria-labelledby="problem-tab">
+    <!-- Accordion for Problem Management -->
+    <div class="accordion mt-3" id="problemAccordion">
+        <!-- Search Problem by Position Accordion Item -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingSearchProblem">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSearchProblem" aria-expanded="false" aria-controls="collapseSearchProblem">
+                    Search Problem by Position
+                </button>
+            </h2>
+            <div id="collapseSearchProblem" class="accordion-collapse collapse" aria-labelledby="headingSearchProblem" data-bs-parent="#problemAccordion">
+                <div class="accordion-body">
+                    <!-- Search Problem Form -->
+                    <form id="searchProblemByPositionForm" method="get">
+                        <div class="mb-3">
+                            <label for="pst_areaDropdown" class="form-label">Area:</label>
+                            <select name="area_id" id="pst_areaDropdown" class="form-select" required>
+                                <option value="">Select Area</option>
+                                {% for area in areas %}
+                                    <option value="{{ area.id }}">{{ area.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="pst_equipmentGroupDropdown" class="form-label">Equipment Group:</label>
+                            <select name="equipment_group_id" id="pst_equipmentGroupDropdown" class="form-select" disabled>
+                                <option value="">Select Equipment Group</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="pst_modelDropdown" class="form-label">Model:</label>
+                            <select name="model_id" id="pst_modelDropdown" class="form-select" disabled>
+                                <option value="">Select Model</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="pst_assetNumberDropdown" class="form-label">Asset Number:</label>
+                            <select class="form-select" id="pst_assetNumberDropdown" name="asset_number" required disabled>
+                                <option value="">Select Asset Number</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="pst_locationDropdown" class="form-label">Location:</label>
+                            <select class="form-select" id="pst_locationDropdown" name="location" required disabled>
+                                <option value="">Select Location</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="pst_siteLocationDropdown" class="form-label">Site Location:</label>
+                            <select name="site_location_id" id="pst_siteLocationDropdown" class="form-select" required>
+                                <option value="">Select Site Location</option>
+                                <option value="new">New Site Location...</option>
+                            </select>
+                        </div>
+
+                        <div id="newSiteLocationFields" class="d-none mt-3" aria-hidden="true">
+                            <div class="mb-3">
+                                <label for="new_siteLocation_title" class="form-label">New Site Location Title:</label>
+                                <input type="text" class="form-control" id="new_siteLocation_title" name="new_siteLocation_title" placeholder="Enter Site Location Title" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="new_siteLocation_room_number" class="form-label">Room Number:</label>
+                                <input type="text" class="form-control" id="new_siteLocation_room_number" name="new_siteLocation_room_number" placeholder="Enter Room Number" required>
+                            </div>
+                        </div>
+
+                        <button type="button" id="searchProblemByPositionBtn" class="btn btn-primary mt-3">Search Problems</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Problem Form Accordion Item -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingNewProblem">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNewProblem" aria-expanded="false" aria-controls="collapseNewProblem">
+                    New Problem Form
+                </button>
+            </h2>
+            <div id="collapseNewProblem" class="accordion-collapse collapse" aria-labelledby="headingNewProblem" data-bs-parent="#problemAccordion">
+                <div class="accordion-body">
+                    <!-- New Problem Form -->
+                    <form id="newProblemForm" method="post">
+                        <div class="mb-3">
+                            <label for="problemName" class="form-label">Name:</label>
+                            <input type="text" class="form-control" id="problemName" name="name" placeholder="Enter Name" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="problemDescription" class="form-label">Description:</label>
+                            <textarea class="form-control" id="problemDescription" name="description" placeholder="Enter Description" rows="4" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="new_pst_areaDropdown" class="form-label">Area:</label>
+                            <select name="area_id" id="new_pst_areaDropdown" class="form-select" required>
+                                <option value="">Select Area</option>
+                                {% for area in areas %}
+                                    <option value="{{ area.id }}">{{ area.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="new_pst_equipmentGroupDropdown" class="form-label">Equipment Group:</label>
+                            <select name="equipment_group_id" id="new_pst_equipmentGroupDropdown" class="form-select" disabled>
+                                <option value="">Select Equipment Group</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="new_pst_modelDropdown" class="form-label">Model:</label>
+                            <select name="model_id" id="new_pst_modelDropdown" class="form-select" disabled>
+                                <option value="">Select Model</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="new_pst_assetNumberDropdown" class="form-label">Asset Number:</label>
+                            <select class="form-select" id="new_pst_assetNumberDropdown" name="asset_number">
+                                <option value="">Select Asset Number</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="new_pst_locationDropdown" class="form-label">Location:</label>
+                            <select class="form-select" id="new_pst_locationDropdown" name="location">
+                                <option value="">Select Location</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="new_pst_siteLocationDropdown" class="form-label">Site Location:</label>
+                            <select name="site_location_id" id="new_pst_siteLocationDropdown" class="form-select">
+                                <option value="">Select Site Location</option>
+                                <option value="new">New Site Location...</option>
+                            </select>
+                        </div>
+
+                        <div id="newSiteLocationFields" class="d-none mb-3">
+                            <div class="mb-3">
+                                <label for="new_siteLocation_title" class="form-label">New Site Location Title:</label>
+                                <input type="text" class="form-control" id="new_siteLocation_title" name="new_siteLocation_title" placeholder="Enter Site Location Title">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="new_siteLocation_room_number" class="form-label">Room Number:</label>
+                                <input type="text" class="form-control" id="new_siteLocation_room_number" name="new_siteLocation_room_number" placeholder="Enter Room Number">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success mt-3">Create Problem</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div> <!-- End of Problem Accordion -->
+
+    <div id="pst_searchResults" class="mt-4" style="display: none;">
+        <h5>Associated Problems:</h5>
+        <ul class="list-group" id="pst_positionResultsList">
+            <!-- Dynamic search results will appear here -->
+        </ul>
+    </div>
+
+    <div id="pst_updateProblemSection" class="mt-4" style="display: none;">
+        <h5>Update Selected Problem:</h5>
+        <form id="updateProblemForm" method="post">
+            <input type="hidden" id="update_problem_id" name="problem_id">
+
+            <div class="mb-3">
+                <label for="update_problem_name" class="form-label">Problem Name</label>
+                <input type="text" class="form-control" id="update_problem_name" name="problem_name" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="update_problem_description" class="form-label">Problem Description</label>
+                <textarea class="form-control" id="update_problem_description" name="problem_description" rows="3" required></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="update_pst_areaDropdown" class="form-label">Area:</label>
+                <select name="area_id" id="update_pst_areaDropdown" class="form-select" required>
+                    <option value="">Select Area</option>
+                    {% for area in areas %}
+                        <option value="{{ area.id }}">{{ area.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="update_pst_equipmentGroupDropdown" class="form-label">Equipment Group:</label>
+                <select name="equipment_group_id" id="update_pst_equipmentGroupDropdown" class="form-select" disabled>
+                    <option value="">Select Equipment Group</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="update_pst_modelDropdown" class="form-label">Model:</label>
+                <select name="model_id" id="update_pst_modelDropdown" class="form-select" disabled>
+                    <option value="">Select Model</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="update_pst_assetNumberDropdown" class="form-label">Asset Number:</label>
+                <select class="form-select" id="update_pst_assetNumberDropdown" name="asset_number_id" required>
+                    <option value="">Select Asset Number</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="update_pst_locationDropdown" class="form-label">Location:</label>
+                <select class="form-select" id="update_pst_locationDropdown" name="location_id" required>
+                    <option value="">Select Location</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="update_pst_siteLocationDropdown" class="form-label">Site Location:</label>
+                <select name="site_location_id" id="update_pst_siteLocationDropdown" class="form-select" required>
+                    <option value="">Select Site Location</option>
+                    <option value="new">New Site Location...</option>
+                </select>
+            </div>
+
+            <div id="newUpdateSiteLocationFields" class="d-none mb-3">
+                <div class="mb-3">
+                    <label for="update_new_siteLocation_title" class="form-label">New Site Location Title:</label>
+                    <input type="text" class="form-control" id="update_new_siteLocation_title" name="new_siteLocation_title" placeholder="Enter Site Location Title">
+                </div>
+
+                <div class="mb-3">
+                    <label for="update_new_siteLocation_room_number" class="form-label">Room Number:</label>
+                    <input type="text" class="form-control" id="update_new_siteLocation_room_number" name="new_siteLocation_room_number" placeholder="Enter Room Number">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-warning mt-3">Update Problem</button>
+        </form>
+    </div>
+</div>

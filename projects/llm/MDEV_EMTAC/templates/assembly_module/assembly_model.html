@@ -1,0 +1,27 @@
+{% extends 'module_template_html/base_template.html' %}
+
+{% block title %}
+Enter Subassembly Details
+{% endblock %}
+
+{% block content %}
+<h2>Enter Subassembly Details</h2>
+<form class="data-entry-form" id="assemblyForm">
+    <label for="assemblyName">Subassembly Name</label>
+    <input type="text" id="assemblyName" name="assemblyName" required>
+
+    <label for="assemblyView">Subassembly View</label>
+    <select id="assemblyView" name="assemblyView" required>
+        <option value="">Select View</option>
+        <option value="front">Front</option>
+        <option value="back">Back</option>
+        <option value="left">Left Side</option>
+        <option value="right">Right Side</option>
+    </select>
+
+    <label for="subAssemblyName">SubAssembly Name</label>
+    <input type="text" id="subAssemblyName" name="subAssemblyName" required>
+
+    <button type="submit">Submit</button>
+</form>
+{% endblock %}

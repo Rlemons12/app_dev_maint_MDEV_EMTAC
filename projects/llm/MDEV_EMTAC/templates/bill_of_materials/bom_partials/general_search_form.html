@@ -1,0 +1,14 @@
+<!-- General Search Form Partial -->
+<form method="POST" action="{{ url_for('create_bill_of_material_bp.bom_general_search') }}">
+    <div style="margin-bottom: 15px;">
+        <label for="general_assetNumber" style="color: Yellow;">Asset Number:</label>
+        <input type="text" id="general_assetNumber" name="general_asset_number" placeholder="Type Asset Number" style="width: 100%; max-width: 600px;">
+    </div>
+    <div style="margin-bottom: 15px;">
+        <label for="general_location" style="color: Yellow;">Location:</label>
+        <input type="text" id="general_location" name="general_location" placeholder="Type Location" style="width: 100%; max-width: 600px;">
+    </div>
+    <div style="margin-bottom: 15px;">
+        <input type="submit" value="Search" style="background-color: #007bff; color: #fff; padding: 10px 20px;">
+    </div>
+</form>

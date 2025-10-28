@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Equipment Information{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- MAIN CONTAINER - Entire Page -->
+    <div class="main-container" id="main-container">
+        <!-- BANNER CONTAINER - Top Bar -->
+        <header class="banner-container">
+            <h1>Equipment Management System</h1>
+        </header>
+
+        <!-- CONTENT AREA - Contains Sidebar and Content -->
+        <div class="content-area">
+            <!-- SIDEBAR AREA - includes toggle button and sidebar -->
+            <div class="sidebar-area">
+                <!-- Sidebar Toggle Button - Now positioned in the sidebar area -->
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">&#9776;</button>
+
+                <!-- SIDEBAR CONTAINER - Using existing sidebar partial -->
+                {% block sidebar %}
+                    {% include 'base_template_sidebar.html' %}
+                {% endblock %}
+            </div>
+
+            <!-- CONTENT CONTAINER - For page-specific content -->
+            <main class="content-container" id="content">
+                {% block content %}
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/base/base_sidebar.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

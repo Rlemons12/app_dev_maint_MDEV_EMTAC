@@ -1,0 +1,114 @@
+<form method="POST" action="{{ url_for('update_part_bp.edit_part', part_id=part.id) }}" enctype="multipart/form-data">
+    <div class="form-group">
+        <label for="part_number" style="color: Yellow;">Part Number:</label>
+        <input type="text" class="form-control" id="part_number" name="part_number" value="{{ part.part_number }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="name" style="color: Yellow;">Name:</label>
+        <input type="text" class="form-control" id="name" name="name" value="{{ part.name }}">
+    </div>
+
+    <div class="form-group">
+        <label for="oem_mfg" style="color: Yellow;">OEM/Manufacturer:</label>
+        <input type="text" class="form-control" id="oem_mfg" name="oem_mfg" value="{{ part.oem_mfg }}">
+    </div>
+
+    <div class="form-group">
+        <label for="model" style="color: Yellow;">Model:</label>
+        <input type="text" class="form-control" id="model" name="model" value="{{ part.model }}">
+    </div>
+
+    <div class="form-group">
+        <label for="class_flag" style="color: Yellow;">Class Flag:</label>
+        <input type="text" class="form-control" id="class_flag" name="class_flag" value="{{ part.class_flag }}">
+    </div>
+
+    <div class="form-group">
+        <label for="ud6" style="color: Yellow;">UD6:</label>
+        <input type="text" class="form-control" id="ud6" name="ud6" value="{{ part.ud6 }}">
+    </div>
+
+    <div class="form-group">
+        <label for="type" style="color: Yellow;">Type:</label>
+        <input type="text" class="form-control" id="type" name="type" value="{{ part.type }}">
+    </div>
+
+    <div class="form-group">
+        <label for="notes" style="color: Yellow;">Notes:</label>
+        <textarea class="form-control" id="notes" name="notes" rows="3">{{ part.notes }}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="documentation" style="color: Yellow;">Documentation:</label>
+        <textarea class="form-control" id="documentation" name="documentation" rows="3">{{ part.documentation }}</textarea>
+    </div>
+
+    <!-- Image Upload Section -->
+    <h4 class="mt-4" style="color: Yellow;">Part Images</h4>
+
+    {% if part_images %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <h5 style="color: Yellow;">Current Images</h5>
+            <div class="row">
+                {% for image in part_images %}
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <a href="{{ url_for('update_part_bp.serve_part_image', image_id=image.id) }}" target="_blank">
+                            <img src="{{ url_for('update_part_bp.serve_part_image', image_id=image.id) }}"
+                                class="card-img-top" alt="{{ image.title }}" style="height: 150px; object-fit: contain;">
+                        </a>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ image.title }}</h5>
+                            <p class="card-text">{{ image.description }}</p>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="remove_image" value="{{ image.id }}" id="remove_image_{{ image.id }}">
+                                <label class="form-check-label" for="remove_image_{{ image.id }}" style="color: Yellow;">
+                                    Remove this image
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card mb-4">
+        <div class="card-header">Add New Image</div>
+        <div class="card-body">
+            <div class="form-group">
+                <label for="part_image" style="color: Yellow;">Upload Image:</label>
+                <input type="file" class="form-control-file" id="part_image" name="part_image" accept="image/*">
+            </div>
+
+            <div class="form-group">
+                <label for="image_title" style="color: Yellow;">Image Title:</label>
+                <input type="text" class="form-control" id="image_title" name="image_title" placeholder="Enter image title">
+            </div>
+
+            <div class="form-group">
+                <label for="image_description" style="color: Yellow;">Image Description:</label>
+                <textarea class="form-control" id="image_description" name="image_description" rows="2" placeholder="Enter image description"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="position_id" style="color: Yellow;">Position:</label>
+                <select class="form-control" id="position_id" name="position_id">
+                    <option value="">Select a position (optional)</option>
+                    {% if positions %}
+                        {% for position in positions %}
+                        <option value="{{ position.id }}">{{ position.name }}</option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Update Part</button>
+    <a href="{{ url_for('update_part_bp.search_part') }}" class="btn btn-secondary">Cancel</a>
+</form>

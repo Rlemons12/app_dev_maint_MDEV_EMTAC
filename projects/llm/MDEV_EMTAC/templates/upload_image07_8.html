@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Database Entry</title>
+    <!-- Add any required styles or links to stylesheets -->
+    <style>
+        /* Add CSS styles here */
+        body {
+            background-image: url("/background_images/abstractfractal.jpg");
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+		
+        .form-container {
+            width: 20%;
+            padding: 0px;
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        /* Style for form headers */
+        .form-container h2 {
+            color: white;
+        }
+
+        /* Style for the return to main page link */
+        a {
+            color: yellow; /* Change text color to yellow */
+        }
+
+        /* Style for file upload button */
+        .form-container input[type="file"] {
+            margin-top: 30px; /* Add space above the file input */
+            display: block; /* Display as block element for full width */
+            padding: 10px; /* Add padding */
+            background-color: #4CAF50; /* Green background color */
+            color: white; /* White text color */
+            border: none; /* Remove border */
+            border-radius: 4px; /* Add border radius */
+            cursor: pointer; /* Change cursor to pointer on hover */
+        }
+
+        .form-container input[type="file"]:hover {
+            background-color: #45a049; /* Darker green color on hover */
+			
+			
+        }
+    </style>
+</head>
+
+<body>
+<a href="/tsg_search_problems"> Search Troubleshooting<a>    
+<a href="/troubleshooting_guide"> Troubleshooting update</a>
+<a href="/">Return to Main Page</a>
+	<!-- Add this block to render flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+	
+<div class="row">
+    <!-- Image Upload Form -->
+    <div class="form-container">
+        <h2>Upload Image</h2>
+        <form action="/images/add_image" method="post" enctype="multipart/form-data">
+            <!-- Your Image Upload Form Fields -->
+            <input type="text" name="title" placeholder="Image Title"><br>
+            <textarea name="description" placeholder="Image Description"></textarea><br>
+            <!-- Dropdowns for area, equipment group, model, asset number, and location -->
+            <select name="area" id="image_areaDropdown" style="width: 100%;">
+                <!-- Options will be populated dynamically -->
+            </select><br>
+            <select name="equipment_group" id="image_equipmentGroupDropdown" style="width: 100%;">
+                <!-- Options will be populated dynamically -->
+            </select><br>
+            <select name="model" id="image_modelDropdown" style="width: 100%;">
+                <!-- Options will be populated dynamically -->
+            </select><br>
+            <select name="asset_number" id="image_assetNumberDropdown" style="width: 100%;">
+                <!-- Options will be populated dynamically -->
+            </select><br>
+            <select name="location" id="image_locationDropdown" style="width: 100%;">
+                <!-- Options will be populated dynamically -->
+            </select><br>
+            <!-- End of dropdowns -->
+            <input type="file" name="image" accept="image/*" required><br>
+            <input type="submit" value="Upload Image">
+        </form>
+    </div>
+
+    <!-- Document Upload Form -->
+    <div class="form-container">
+        <h2>Upload Documents</h2>
+        <form action="/documents/add_document" method="post" enctype="multipart/form-data">
+            <!-- Your Document Upload Form Fields -->
+            <label for="title" style="color: white;">Document Title:</label>
+            <input type="text" name="title" id="title" placeholder="Document Title"><br>
+
+            <label for="areaDropdown" style="color: white;">Area:</label>
+            <select name="area" id="areaDropdown" style="width: 100%;">
+                <!-- Options will be populated dynamically -->
+            </select><br>
+
+            <label for="equipmentGroupDropdown" style="color: white;">Equipment Group:</label>
+            <select name="equipment_group" id="equipmentGroupDropdown" style="width: 100%;">
+                <!-- Options will be populated dynamically -->
+            </select><br>
+
+            <label for="modelDropdown" style="color: white;">Model:</label>
+            <select name="model" id="modelDropdown" style="width: 100%;">
+                <!-- Options will be populated dynamically -->
+            </select><br>
+
+            <label for="assetNumberDropdown" style="color: white;">Asset Number:</label>
+            <select name="asset_number" id="assetNumberDropdown" style="width: 100%;">
+                <!-- Options will be populated dynamically -->
+            </select><br>
+
+            <label for="locationDropdown" style="color: white;">Location:</label>
+            <select name="location" id="locationDropdown" style="width: 100%;">
+                <!-- Options will be populated dynamically -->
+            </select><br>
+
+            <!-- Dropzone for file uploads -->
+            <div class="dropzone" id="myDropzone">
+                <div class="fallback">
+                    <label for="files" style="color: white;">Select File(s):</label>
+                    <input type="file" name="files" id="files" multiple>
+                </div>
+            </div>
+
+            <input type="submit" value="Process Folder">
+        </form>
+    </div>
+	
+<!-- PowerPoint Upload Form -->
+<div class="form-container">
+    <h2>Upload PowerPoint</h2>
+    <form action="/powerpoints/upload_powerpoint" method="post" enctype="multipart/form-data">
+        <input type="text" name="title" placeholder="PowerPoint Title"><br>
+
+        <!-- Dropdowns for area, equipment group, model, asset number, location -->
+        <label for="area" style="color: white;">Area:</label><br>
+        <select name="area" id="uploadpowerpoint_areaDropdown" style="width: 100%;"></select><br>
+
+        <label for="equipment_group" style="color: white;">Equipment Group:</label><br>
+        <select name="equipment_group" id="uploadpowerpoint_equipmentGroupDropdown" style="width: 100%;"></select><br>
+
+        <label for="model" style="color: white;">Model:</label><br>
+        <select name="model" id="uploadpowerpoint_modelDropdown" style="width: 100%;"></select><br>
+
+        <label for="asset_number" style="color: white;">Asset Number:</label><br>
+        <select name="asset_number" id="uploadpowerpoint_assetNumberDropdown" style="width: 100%;"></select><br>
+
+        <label for="location" style="color: white;">Location:</label><br>
+        <select name="location" id="uploadpowerpoint_locationDropdown" style="width: 100%;"></select><br>
+
+        <!-- End of dropdowns -->
+        <input type="text" name="description" placeholder="PowerPoint Description"><br>
+        <input type="file" name="powerpoint" accept=".pptx" required><br>
+        <input type="submit" value="Upload PowerPoint">
+    </form>
+</div>
+
+
+
+		<!-- Batch Upload Documents Form -->
+		<div class="form-container">
+			<h2>Batch Upload Documents</h2>
+			<form action="/batch_processing" method="post" enctype="multipart/form-data">
+				<!-- Your Batch Document Upload Form Fields -->
+				<label for="batchTitle" style="color: white;">Document Title:</label>
+				<input type="text" name="batchTitle" id="batchTitle" placeholder="Document Title"><br>
+
+				<label for="batchAreaDropdown" style="color: white;">Area:</label>
+				<select name="batchArea" id="batchAreaDropdown" style="width: 100%;">
+					<!-- Options will be populated dynamically -->
+				</select><br>
+
+				<label for="batchEquipmentGroupDropdown" style="color: white;">Equipment Group:</label>
+				<select name="batchEquipmentGroup" id="batchEquipmentGroupDropdown" style="width: 100%;">
+					<!-- Options will be populated dynamically -->
+				</select><br>
+
+				<label for="batchModelDropdown" style="color: white;">Model:</label>
+				<select name="batchModel" id="batchModelDropdown" style="width: 100%;">
+					<!-- Options will be populated dynamically -->
+				</select><br>
+
+				<label for="batchAssetNumberDropdown" style="color: white;">Asset Number:</label>
+				<select name="batchAssetNumber" id="batchAssetNumberDropdown" style="width: 100%;">
+					<!-- Options will be populated dynamically -->
+				</select><br>
+
+				<label for="batchLocationDropdown" style="color: white;">Location:</label>
+				<select name="batchLocation" id="batchLocationDropdown" style="width: 100%;">
+					<!-- Options will be populated dynamically -->
+				</select><br>
+
+				<label for="batchFolderPath" style="color: white;">Folder Path:</label>
+				<input type="text" name="batchFolderPath" id="batchFolderPath" placeholder="Absolute Folder Path"><br>
+				<!-- Allow entering the absolute folder path -->
+
+				<!-- Dropzone for file uploads -->
+				<div class="dropzone" id="myDropzone">
+					<div class="fallback">
+						<label for="files" style="color: white;">Select File(s):</label>
+						<input type="file" name="files" id="files" multiple>
+					</div>
+				</div>
+
+				<input type="submit" value="Process Folder">
+			</form>
+		</div>
+	</div>
+
+
+
+<style>
+    .folder-label {
+        color: white;
+        background-color: black; /* Set background color to black */
+        padding: 0px; /* Add some padding for better appearance */
+        cursor: pointer; /* Change cursor to pointer when hovering */
+    }
+</style>
+
+<div class="row">
+    <!-- PowerPoint Search Form with Dropdowns -->
+	<div class="form-container">
+		<h2>Search Power Points</h2>
+		<form action="/search_powerpoint" method="get">
+			
+			<label for="description"style="color: white;" >Description:</label><br>
+			<input type="text" name="description" id="description" placeholder="Search by Description"><br>
+			
+			<label for="title" style="color: white;">Title:</label><br>
+			<input type="text" name="title" id="title" placeholder="Search by Title"><br>
+			
+			<label for="area" style="color: white;">Area:</label><br>
+			<select name="searchpowerpoint_area" id="searchpowerpoint_areaDropdown" style="width: 100%;">
+				<!-- Options will be populated dynamically -->
+			</select><br>
+			
+			<label for="equipment_group" style="color: white;">Equipment Group:</label><br>
+			<select name="searchpowerpoint_equipment_group" id="searchpowerpoint_equipmentGroupDropdown" style="width: 100%;">
+				<!-- Options will be populated dynamically -->
+			</select><br>
+			
+			<label for="model" style="color: white;">Model:</label><br>
+			<select name="searchpowerpoint_model" id="searchpowerpoint_modelDropdown" style="width: 100%;">
+				<!-- Options will be populated dynamically -->
+			</select><br>
+			
+			<label for="asset_number" style="color: white;">Asset Number:</label><br>
+			<select name="searchpowerpoint_asset_number" id="searchpower_assetNumberDropdown" style="width: 100%;">
+				<!-- Options will be populated dynamically -->
+			</select><br>
+			
+			<label for="location" style="color: white;">Location:</label><br>
+			<select name="searchpowerpoint_location" id="searchpowerpoint_locationDropdown" style="width: 100%;">
+				<!-- Options will be populated dynamically -->
+			</select><br>
+			<input type="submit" value="Search">
+		</form>  
+	</div>
+
+    <!-- Image Search Form with Dropdowns -->
+	<div class="form-container">
+		<h2>Search Images</h2>
+		<form action="/search_images" method="get">
+			
+			<label for="description"style="color: white;" >Description:</label><br>
+			<input type="text" name="description" id="description" placeholder="Search by Description"><br>
+			
+			<label for="title" style="color: white;">Title:</label><br>
+			<input type="text" name="title" id="title" placeholder="Search by Title"><br>
+			
+			<label for="area" style="color: white;">Area:</label><br>
+			<select name="searchimage_area" id="searchimage_areaDropdown" style="width: 100%;">
+				<!-- Options will be populated dynamically -->
+			</select><br>
+			
+			<label for="equipment_group" style="color: white;">Equipment Group:</label><br>
+			<select name="searchimage_equipment_group" id="searchimage_equipmentGroupDropdown" style="width: 100%;">
+				<!-- Options will be populated dynamically -->
+			</select><br>
+			
+			<label for="model" style="color: white;">Model:</label><br>
+			<select name="searchimage_model" id="searchimage_modelDropdown" style="width: 100%;">
+				<!-- Options will be populated dynamically -->
+			</select><br>
+			
+			<label for="asset_number" style="color: white;">Asset Number:</label><br>
+			<select name="searchimage_asset_number" id="searchimage_assetNumberDropdown" style="width: 100%;">
+				<!-- Options will be populated dynamically -->
+			</select><br>
+			
+			<label for="location" style="color: white;">Location:</label><br>
+			<select name="searchimage_location" id="searchimage_locationDropdown" style="width: 100%;">
+				<!-- Options will be populated dynamically -->
+			</select><br>
+			<input type="submit" value="Search">
+		</form>  
+	</div>
+
+
+	<!-- Document Search Form with Dropdowns -->
+	<div class="form-container">
+		<h2>Search Documents</h2>
+		<form action="/search_documents" method="get">
+			<label for="title" style="color: white;" >Title:</label><br>
+			<input type="text" name="title" id="title" placeholder="Title"><br>
+			
+			<label for="area" style="color: white;">Area:</label><br>
+			<select name="searchdocument_area" id="searchdocument_areaDropdown" style="width: 100%;">
+			<!-- Options will be populated dynamically -->
+			</select><br>
+			<label for="equipment_group" style="color: white;">Equipment Group:</label><br>
+			<select name="searchdocument_equipmentgroup" id="searchdocument_equipmentGroupDropdown" style="width: 100%;">
+			<!-- Options will be populated dynamically -->
+			</select><br>
+			<label for="model" style="color: white;">Model:</label><br>
+			<select name="searchdocument_model" id="searchdocument_modelDropdown" style="width: 100%;">
+			<!-- Options will be populated dynamically -->
+			</select><br>
+			<label for="asset_number" style="color: white;" >Asset Number:</label><br>
+			<select name="searchdocument_asset_number" id="searchdocument_assetNumberDropdown" style="width: 100%;">
+			<!-- Options will be populated dynamically -->
+			</select><br>
+			
+			<label for="location"style="color: white;" >Location:</label><br>
+			<select name="searchdocument_location" id="searchdocument_locationDropdown" style="width: 100%;">
+			<!-- Options will be populated dynamically -->
+			</select><br>
+			
+			<input type="submit" value="Search">
+		
+		</form>
+	</div>
+</div>
+
+
+	<!-- Include jQuery using a CDN -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+<!-- Include Select2 library -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+
+<!-- Include your custom JavaScript file -->
+<script src="{{ url_for('static', filename='batch_upload.js') }}"></script>
+<script src="{{ url_for('static', filename='upload_image.js') }}"></script>
+<script src="{{ url_for('static', filename='image_upload.js') }}"></script>
+<script src="{{ url_for('static', filename='upload_powerpoint.js') }}"></script>
+<script src="{{ url_for('static', filename='document_search.js') }}"></script>
+<script src="{{ url_for('static', filename='image_search.js') }}"></script>
+<script src="{{ url_for('static', filename='powerpoint_search.js') }}"></script>
+
+
+<script>
+    // Initialize Dropzone
+    Dropzone.autoDiscover = false;
+    var myDropzone = new Dropzone("#batchDropzone", {
+        url: "/your-upload-url", // Replace with your server endpoint
+        uploadMultiple: true,    // Allow multiple files to be uploaded
+        parallelUploads: 1,      // Process each file individually
+        autoProcessQueue: false, // Disable automatic processing
+        paramName: "batchFiles", // Name of the input field
+        maxFiles: null,          // Unlimited file uploads
+        acceptedFiles: null,     // Accept all file types
+        addRemoveLinks: true,    // Show remove links
+        dictDefaultMessage: "Drop files here or click to upload",
+        fallback: function() {
+            // Fallback for non-supported browsers
+            document.getElementById("batchFiles").style.display = "block";
+        }
+    });
+
+    // Process folder on form submission
+    document.querySelector('input[type="submit"]').addEventListener("click", function(e) {
+        e.preventDefault(); // Prevent default form submission
+        myDropzone.processQueue(); // Process the queue
+    });
+</script>
+
+<!-- Script to populate dropdowns when the page loads -->
+<script>
+    // Call the function to populate dropdowns when the page loads
+    $(document).ready(function() {
+        populateDropdowns();
+<script type="text/javascript">
+    window.addEventListener("beforeunload", function (event) {
+        navigator.sendBeacon('/logout_bp');
+    });
+</script>
+
+  <!-- Button to Return to Main Page -->
+<a href="/">Return to Main Page</a>
+</body>
+</html>

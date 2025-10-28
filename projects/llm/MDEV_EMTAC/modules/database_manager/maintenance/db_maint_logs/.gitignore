@@ -1,0 +1,5 @@
+﻿# Ignore everything in this log folder
+*
+
+# Keep these files so the folder exists in Git
+!.gitignore

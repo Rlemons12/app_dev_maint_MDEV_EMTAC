@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <!-- Additional styles specific to admin dashboard if needed -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bass.css') }}">
+    <style>
+        .current-session {
+            background-color: #e6ffe6; /* Light green background */
+        }
+        .remote-session {
+            background-color: #fff0e6; /* Light orange background */
+        }
+        .admin-row {
+            background-color: #f0f8ff; /* Light blue background for admin users */
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+        .current {
+            background-color: #28a745;
+        }
+        .remote {
+            background-color: #fd7e14;
+        }
+        .refresh-button {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Dashboard Content -->
+    <div class="sidebar" id="sidebar">
+        <a href="/">Return to Main Page</a>
+        <a href="#current-user">Current User</a>
+        <a href="#active-sessions">Active Sessions</a>
+        <a href="#set-models">Set Models</a>
+        <a href="#users">Users</a>
+        <a href="#comments">Comments</a>
+    </div>
+    <div class="content">
+        <!-- Current Admin Info -->
+        <div class="table-container">
+            <h2 id="current-user">Current User Information</h2>
+            <p>Current server time: {{ current_time }}</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>User Level</th>
+                        <th>Primary Area</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="current-session">
+                        <td>{{ session['employee_id'] }}</td>
+                        <td>{{ session['first_name'] }} {{ session['last_name'] }}</td>
+                        <td>{{ session['user_level'] }}</td>
+                        <td>{{ session['primary_area'] }}</td>
+                        <td><span class="status-badge current">CURRENT</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <button class="refresh-button" onclick="window.location.reload();">Refresh Dashboard</button>
+        </div>
+
+        <div class="table-container">
+    <h2 id="active-sessions">Active Logins (Last 6 Hours)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Session ID</th>
+                <th>User ID</th>
+                <th>Employee ID</th>
+                <th>User Name</th>
+                <th>IP Address</th>
+                <th>Last Activity</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for login in active_sessions %}
+            <tr class="{% if session['user_id']|string == login.user_id|string %}current-session{% else %}remote-session{% endif %}">
+                <td>{{ login.session_id }}</td>
+                <td>{{ login.user_id }}</td>
+                <td>{{ login.user.employee_id }}</td>
+                <td>
+                    {{ login.user.first_name }} {{ login.user.last_name }}
+                    {% if login.user.user_level == 'ADMIN' %}
+                    <strong>(Admin)</strong>
+                    {% endif %}
+                </td>
+                <td>{{ login.ip_address }}</td>
+                <td>{{ login.last_activity }}</td>
+                <td>
+                    {% if session['user_id']|string == login.user_id|string %}
+                        <span class="status-badge current">CURRENT</span>
+                    {% else %}
+                        <span class="status-badge remote">REMOTE</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+        <!-- Set Models Form -->
+        <div class="form-container">
+            <h2 id="set-models">Set Models</h2>
+            <form action="{{ url_for('admin_bp.set_models') }}" method="post">
+                <div>
+                    <label for="ai_model">Select AI Model:</label>
+                    <select id="ai_model" name="ai_model">
+                        <option value="">Loading models...</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="embedding_model">Select Embedding Model:</label>
+                    <select id="embedding_model" name="embedding_model">
+                        <option value="">Loading models...</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="image_model">Select Image Model:</label>
+                    <select id="image_model" name="image_model">
+                        <option value="">Loading models...</option>
+                    </select>
+                </div>
+                <button type="submit">Set Models</button>
+            </form>
+        </div>
+
+        <!-- Users Table -->
+        <div class="table-container">
+            <h2 id="users">Users</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>User Level</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr {% if user.user_level.name == 'ADMIN' %}class="admin-row"{% endif %}>
+                        <td>{{ user.employee_id }}</td>
+                        <td>{{ user.first_name }}</td>
+                        <td>{{ user.last_name }}</td>
+                        <td>{{ user.user_level.name }}</td>
+                        <td>{% if user.user_level.name == 'ADMIN' %}Administrator{% else %}Regular User{% endif %}</td>
+                        <td>
+                            <form action="{{ url_for('admin_bp.change_user_level') }}" method="post">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <select name="user_level">
+                                    <option value="ADMIN" {% if user.user_level.name == 'ADMIN' %}selected{% endif %}>Admin</option>
+                                    <option value="LEVEL_III" {% if user.user_level.name == 'LEVEL_III' %}selected{% endif %}>Level III</option>
+                                    <option value="LEVEL_II" {% if user.user_level.name == 'LEVEL_II' %}selected{% endif %}>Level II</option>
+                                    <option value="LEVEL_I" {% if user.user_level.name == 'LEVEL_I' %}selected{% endif %}>Level I</option>
+                                    <option value="STANDARD" {% if user.user_level.name == 'STANDARD' %}selected{% endif %}>Default</option>
+                                </select>
+                                <button type="submit">Change Level</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Comments Section -->
+        <div class="table-container">
+            <h2 id="comments">Comments</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Comment</th>
+                        <th>Page URL</th>
+                        <th>Image</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for comment in comments %}
+                    <tr>
+                        <td>{{ comment.user.employee_id if comment.user else 'Anonymous' }}</td>
+                        <td>{{ comment.comment }}</td>
+                        <td><a href="{{ comment.page_url }}" target="_blank">{{ comment.page_url }}</a></td>
+                        <td>
+                            {% if comment.screenshot_path %}
+                            <a href="{{ url_for('static', filename=comment.screenshot_path) }}" target="_blank">View Image</a>
+                            {% else %}
+                            No Image
+                            {% endif %}
+                        </td>
+                        <td>{{ comment.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Additional scripts specific to admin dashboard if needed -->
+    <script src="{{ url_for('static', filename='js/base_sidebar.js') }}"></script>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Fetch available models from the API
+    fetch('/get_available_models')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Populate AI models dropdown
+                populateDropdown('ai_model', data.models.ai, data.current.ai);
+
+                // Populate embedding models dropdown
+                populateDropdown('embedding_model', data.models.embedding, data.current.embedding);
+
+                // Populate image models dropdown
+                populateDropdown('image_model', data.models.image, data.current.image);
+            } else {
+                console.error('Error loading models:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching models:', error);
+        });
+
+    // Function to populate a dropdown with models
+    function populateDropdown(selectId, models, currentModel) {
+        const select = document.getElementById(selectId);
+
+        // Clear existing options
+        select.innerHTML = '';
+
+        // Add new options based on available models
+        models.forEach(model => {
+            const option = document.createElement('option');
+            option.value = model.name;
+            option.textContent = model.display_name;
+            option.selected = (model.name === currentModel);
+
+            // If model is disabled, mark it as such
+            if (!model.enabled) {
+                option.disabled = true;
+                option.textContent += ' (Disabled)';
+            }
+
+            select.appendChild(option);
+        });
+    }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+{% extends "module_template_html/base_template.html" %}
+
+{% block title %}Debug BOM Results{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <style>
+        .debug-container {
+            padding: 20px;
+        }
+        .debug-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .debug-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .debug-table th, .debug-table td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .debug-table th {
+            background-color: #f2f2f2;
+        }
+        .status-ok {
+            color: green;
+        }
+        .status-error {
+            color: red;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="debug-container">
+    <h1>Debug BOM Results</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <div class="debug-actions">
+        <a href="{{ url_for('create_bill_of_material_bp.create_bill_of_material') }}" class="btn btn-primary">Back to BOM</a>
+        <a href="{{ url_for('create_bill_of_material_bp.debug_clear_bom_results') }}" class="btn btn-danger" onclick="return confirm('Are you sure you want to clear all BOM results?');">Clear All BOM Results</a>
+    </div>
+    
+    <div class="debug-section">
+        <h2>Database Summary</h2>
+        <p>Total BOM Results: <strong>{{ count }}</strong></p>
+    </div>
+    
+    <div class="debug-section">
+        <h2>Session Data</h2>
+        <table class="debug-table">
+            <tr>
+                <th>Key</th>
+                <th>Value</th>
+            </tr>
+            {% for key, value in session_data.items() %}
+            <tr>
+                <td>{{ key }}</td>
+                <td>
+                    {% if value is not none %}
+                        {% if key == 'results' and value is string %}
+                            <pre>{{ value }}</pre>
+                        {% else %}
+                            {{ value }}
+                        {% endif %}
+                    {% else %}
+                        <em>None</em>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    
+    {% if sample_data %}
+    <div class="debug-section">
+        <h2>Sample BOM Results ({{ sample_data|length }} of {{ count }})</h2>
+        <table class="debug-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Part ID</th>
+                    <th>Part Info</th>
+                    <th>Position ID</th>
+                    <th>Position Info</th>
+                    <th>Image ID</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in sample_data %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.part.id }}</td>
+                    <td>
+                        {% if item.part.exists %}
+                            <span class="status-ok">Found</span><br>
+                            Number: {{ item.part.part_number }}<br>
+                            Name: {{ item.part.name }}
+                        {% else %}
+                            <span class="status-error">Not Found</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.position.id }}</td>
+                    <td>
+                        {% if item.position.exists %}
+                            <span class="status-ok">Found</span><br>
+                            Name: {{ item.position.name }}
+                        {% else %}
+                            <span class="status-error">Not Found</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.image_id or 'None' }}</td>
+                    <td>{{ item.description or 'No description' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block sidebar %}
+    {% with current_page = 'bom' %}
+        {% include 'module_template_html/base_sidebar.html' %}
+    {% endwith %}
+{% endblock %}

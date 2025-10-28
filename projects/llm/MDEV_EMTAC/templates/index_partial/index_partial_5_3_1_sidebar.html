@@ -1,0 +1,250 @@
+<div class="five331-partial-template">
+  <div class="five331-layout">
+    <!-- Sidebar -->
+    <aside id="five331-sidebar" class="five331-sidebar five331-closed">
+      <div class="five331-sidebar-section">
+        <h3>Quick Actions</h3>
+        <div class="five331-quick-actions">
+          <button id="clear-chat">Clear Chat</button>
+          <button id="export-chat">Export Chat</button>
+          <button id="show-help">Help</button>
+        </div>
+      </div>
+      <div class="five331-sidebar-section">
+        <h3>Feedback</h3>
+        <textarea id="user_comment" placeholder="Comment, suggestions or corrections"></textarea>
+        <div class="five331-rating-section">
+          <label for="rating">Rating:</label>
+          <select id="rating">
+            {% for i in range(1, 11) %}
+              <option value="{{ i }}">{{ i }}</option>
+            {% endfor %}
+          </select>
+          <button id="submit_comment_rating">Submit</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main area -->
+    <main class="five331-main">
+      <!-- Chat -->
+      <section class="five331-chat">
+        <header class="five331-chat-header">
+          <button onclick="five331ToggleSidebar()">☰</button>
+          <h3>EMTAC Assistant</h3>
+        </header>
+
+        <div class="five331-chat-body">
+          <div id="chat-area" class="five331-chat-area">
+            <div class="five331-answer-section">
+              <p id="answer">Welcome to EMTAC Assistant! Ask me anything about maintenance and technical assistance.</p>
+            </div>
+          </div>
+          <div class="five331-chat-input">
+            <input type="text" id="user_id" value="{{ employee_id }}" readonly style="display:none;">
+            <select id="area" style="display:none;"></select>
+            <textarea id="user_input" placeholder="Your Question" rows="2"></textarea>
+            <button id="submit-question">Ask</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right side panels -->
+      <section class="five331-panels">
+        <div class="five331-panel">
+          <div class="five331-panel-head">
+            Images <button class="toggle-btn">Toggle</button>
+          </div>
+          <div class="five331-panel-body" id="images-container"></div>
+        </div>
+        <div class="five331-panel">
+          <div class="five331-panel-head">
+            Documents <button class="toggle-btn">Toggle</button>
+          </div>
+          <div class="five331-panel-body" id="documents-container"></div>
+        </div>
+        <div class="five331-panel">
+          <div class="five331-panel-head">
+            Drawings <button class="toggle-btn">Toggle</button>
+          </div>
+          <div class="five331-panel-body" id="drawings-container"></div>
+        </div>
+        <div class="five331-panel">
+          <div class="five331-panel-head">
+            Parts <button class="toggle-btn">Toggle</button>
+          </div>
+          <div id="parts-container" class="five331-panel-body">
+            <!-- Parts will be injected here -->
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+
+<style>
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .five331-partial-template,
+  .five331-layout {
+    height: 100%;
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Sidebar */
+  .five331-sidebar {
+    width: 260px;
+    background: rgba(255,255,255,0.05);
+    border-right: 2px solid #39FF14;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 10px;
+    height: 100%;
+  }
+  .five331-sidebar.five331-closed {
+    width: 0;
+    padding: 0;
+    overflow: hidden;
+    border: none;
+  }
+  .five331-sidebar-section {
+    background: rgba(0,0,0,0.2);
+    border-radius: 6px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+  }
+
+  /* Main */
+  .five331-main {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    flex: 1;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* Chat */
+  .five331-chat {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    border-right: 1px solid rgba(255,255,255,0.1);
+  }
+  .five331-chat-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+  .five331-chat-area {
+    flex: 1;
+    margin: 8px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 6px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .five331-answer-section { min-height: 100px; }
+  .five331-chat-input {
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 6px;
+  }
+  .five331-chat-input textarea {
+    flex: 1;
+    border: none;
+    background: #222;
+    color: #eee;
+    border-radius: 6px;
+    padding: 8px;
+  }
+  .five331-chat-input button {
+    background: #39FF14;
+    color: #111;
+    border: 0;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* Panels */
+  .five331-panels {
+    display: grid;
+    grid-template-rows: repeat(4, 1fr);
+    gap: 8px;
+    padding: 8px;
+    height: 100%;
+    min-height: 0;
+  }
+  .five331-panel {
+    display: flex;
+    flex-direction: column;
+    background: rgba(255,255,255,0.05);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .five331-panel-head {
+    background: rgba(0,0,0,0.4);
+    padding: 8px 10px;
+    font-weight: 700;
+    color: #39FF14;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .five331-panel-body {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const submitBtn = document.getElementById("submit-question");
+  if (submitBtn) {
+    submitBtn.addEventListener("click", function () {
+      if (typeof submitQuestion === "function") {
+        submitQuestion();
+      } else {
+        console.error("submitQuestion not found");
+      }
+    });
+  }
+
+  const userInput = document.getElementById("user_input");
+  if (userInput) {
+    userInput.addEventListener("keydown", function(e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        if (typeof submitQuestion === "function") {
+          submitQuestion();
+        }
+      }
+    });
+  }
+});
+
+// Sidebar toggle
+function five331ToggleSidebar() {
+  document.getElementById("five331-sidebar").classList.toggle("five331-closed");
+}
+</script>

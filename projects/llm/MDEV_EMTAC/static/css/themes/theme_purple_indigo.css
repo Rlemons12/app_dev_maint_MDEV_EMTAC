@@ -1,0 +1,57 @@
+/* Modern Purple & Indigo Theme for EMTAC */
+
+/* Override body background */
+body {
+    background-color: #4a148c !important; /* Deep purple */
+}
+
+/* Sidebar styling */
+.sidebar {
+    background-color: rgba(106, 27, 154, 0.95) !important; /* Purple */
+    color: #e1bee7 !important; /* Light purple text */
+}
+
+.sidebar-header h1 {
+    color: #00e676 !important; /* Bright green accent */
+}
+
+.sidebar a:hover,
+.sidebar button:hover {
+    color: #00e676 !important; /* Green hover */
+    background-color: rgba(0, 230, 118, 0.1) !important;
+}
+
+.nav-link.highlight {
+    background-color: rgba(0, 230, 118, 0.2) !important;
+    border-left: 3px solid #00e676 !important;
+}
+
+/* Container backgrounds */
+.voice-controls-container,
+.model-display-container,
+.theme-container {
+    background-color: rgba(142, 36, 170, 0.3) !important;
+    border: 1px solid #8e24aa !important;
+}
+
+.voice-controls-container h4,
+.model-display-container h4,
+.theme-container h4 {
+    background-color: rgba(106, 27, 154, 0.6) !important;
+    color: #00e676 !important;
+}
+
+/* Buttons */
+.toggle-button {
+    background-color: #7b1fa2 !important;
+    border: 1px solid #8e24aa !important;
+}
+
+.toggle-button:hover {
+    background-color: #8e24aa !important;
+}
+
+/* Main content area */
+.content {
+    background-color: #6a1b9a !important; /* Medium purple */
+}

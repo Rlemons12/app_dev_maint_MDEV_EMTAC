@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill of Materials</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/search_bill_of_material.css') }}">
+</head>
+<body>
+    <div style="max-width: 800px; margin: 0 auto; padding: 20px;">
+        <h1>Parts Search By Used On</h1>
+        <form method="POST" action="{{ url_for('create_bill_of_material_bp.create_bill_of_material') }}">
+            <div style="margin-bottom: 15px;">
+                <label for="filter_areaDropdown">Area:</label>
+                <select name="area" id="filter_areaDropdown" style="width: 100%; max-width: 600px;"></select>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label for="filter_equipmentGroupDropdown">Equipment Group:</label>
+                <select name="equipment_group" id="filter_equipmentGroupDropdown" style="width: 100%; max-width: 600px;"></select>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label for="filter_modelDropdown">Model:</label>
+                <select name="model" id="filter_modelDropdown" style="width: 100%; max-width: 600px;"></select>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label for="filter_assetNumberDropdown">Asset Number:</label>
+                <select name="asset_number" id="filter_assetNumberDropdown" style="width: 100%; max-width: 600px;"></select>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label for="filter_locationDropdown">Location:</label>
+                <select name="location" id="filter_locationDropdown" style="width: 100%; max-width: 600px;"></select>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <input type="submit" value="Filter" style="background-color: #007bff; border-color: #007bff; color: #fff; padding: 10px 20px; font-size: 16px; cursor: pointer;">
+            </div>
+        </form>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div style="margin-top: 20px; padding: 10px; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; border-radius: 4px;">
+                    <ul>
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='js/get_bill_of_material_query.js') }}"></script>
+</body>
+</html>

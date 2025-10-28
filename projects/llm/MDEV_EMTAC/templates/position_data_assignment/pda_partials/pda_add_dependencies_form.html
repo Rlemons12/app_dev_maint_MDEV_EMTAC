@@ -1,0 +1,167 @@
+<!-- Add Position Dependencies Form -->
+<form id="addPositionDependenciesForm" action="{{ url_for('position_data_assignment_data_add_dependencies_bp.add_position') }}" method="post">
+    <!-- Display the position information -->
+    <div>
+        <h3>Adding Position Dependencies for: {{ position.id }} - {{ position.name }}</h3>
+    </div>
+
+    <!-- Hidden field for Position ID -->
+    <input type="hidden" id="position_id" name="position_id" value="{{ position.id }}">
+
+    <!-- Area Dropdown -->
+    <div>
+        <label for="area_dropdown">Area:</label>
+        <select name="area_id" id="area_dropdown">
+            <option value="">Select Area</option>
+            {% for area in areas %}
+                <option value="{{ area.id }}">{{ area.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" name="area_input" id="area_input" placeholder="Or type new Area">
+        <textarea name="area_description" id="area_description" placeholder="Area Description (if creating new)"></textarea>
+    </div>
+
+    <!-- Equipment Group Dropdown -->
+    <div>
+        <label for="equipment_group_dropdown">Equipment Group:</label>
+        <select name="equipment_group_id" id="equipment_group_dropdown" disabled>
+            <option value="">Select Equipment Group</option>
+        </select>
+        <input type="text" name="equipment_group_input" id="equipment_group_input" placeholder="Or type new Equipment Group">
+        <textarea name="equipment_group_description" id="equipment_group_description" placeholder="Equipment Group Description (if creating new)"></textarea>
+    </div>
+
+    <!-- Model Dropdown -->
+    <div>
+        <label for="model_dropdown">Model:</label>
+        <select name="model_id" id="model_dropdown" disabled>
+            <option value="">Select Model</option>
+        </select>
+        <input type="text" name="model_input" id="model_input" placeholder="Or type new Model">
+        <textarea name="model_description" id="model_description" placeholder="Model Description (if creating new)"></textarea>
+    </div>
+
+    <!-- Asset Number Dropdown -->
+    <div>
+        <label for="asset_number_dropdown">Asset Number:</label>
+        <select name="asset_number_id" id="asset_number_dropdown" disabled>
+            <option value="">Select Asset Number</option>
+        </select>
+        <input type="text" name="asset_number_input" id="asset_number_input" placeholder="Or type new Asset Number">
+        <textarea name="asset_number_description" id="asset_number_description" placeholder="Asset Number Description (if creating new)"></textarea>
+    </div>
+
+    <!-- Location Dropdown -->
+    <div>
+        <label for="location_dropdown">Location:</label>
+        <select name="location_id" id="location_dropdown" disabled>
+            <option value="">Select Location</option>
+        </select>
+        <input type="text" name="location_input" id="location_input" placeholder="Or type new Location">
+        <textarea name="location_description" id="location_description" placeholder="Location Description (if creating new)"></textarea>
+    </div>
+
+    <!-- Subassembly Dropdown -->
+    <div>
+        <label for="subassembly_dropdown">Subassembly:</label>
+        <select name="subassembly_id" id="subassembly_dropdown" disabled>
+            <option value="">Select Subassembly</option>
+            {% for subassembly in subassemblies %}
+                <option value="{{ subassembly.id }}">{{ subassembly.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" name="subassembly_input" id="subassembly_input" placeholder="Or type new Subassembly">
+        <textarea name="subassembly_description" id="subassembly_description" placeholder="Subassembly Description (if creating new)"></textarea>
+    </div>
+
+    <!-- Component Assembly Dropdown -->
+    <div>
+        <label for="component_assembly_dropdown">Component Assembly:</label>
+        <select name="component_assembly_id" id="component_assembly_dropdown" disabled>
+            <option value="">Select Component Assembly</option>
+            {% for component_assembly in component_assemblies %}
+                <option value="{{ component_assembly.id }}">{{ component_assembly.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" name="component_assembly_input" id="component_assembly_input" placeholder="Or type new Component Assembly">
+        <textarea name="component_assembly_description" id="component_assembly_description" placeholder="Component Assembly Description (if creating new)"></textarea>
+    </div>
+
+    <!-- Assembly View Dropdown -->
+    <div>
+        <label for="assembly_view_dropdown">Assembly View:</label>
+        <select name="assembly_view_id" id="assembly_view_dropdown" disabled>
+            <option value="">Select Assembly View</option>
+            {% for av in assembly_views %}
+                <option value="{{ av.id }}">{{ av.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" name="assembly_view_input" id="assembly_view_input" placeholder="Or type new Assembly View">
+        <textarea name="assembly_view_description" id="assembly_view_description" placeholder="Assembly View Description (if creating new)"></textarea>
+    </div>
+
+    <!-- Site Location Dropdown -->
+    <div>
+        <label for="site_location_dropdown">Site Location:</label>
+        <select name="site_location_id" id="site_location_dropdown" disabled>
+            <option value="">Select Site Location</option>
+        </select>
+        <input type="text" name="site_location_input" id="site_location_input" placeholder="Or type new Site Location">
+        <input type="text" name="site_location_room" id="site_location_room" placeholder="Room Number">
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit">Add Position Dependencies</button>
+</form>
+
+<!-- JavaScript for form handling -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Enable dropdowns when parent dropdown changes
+    function enableDropdown(parentId, childId) {
+        const parent = document.getElementById(parentId);
+        const child = document.getElementById(childId);
+
+        parent.addEventListener('change', function() {
+            if (this.value) {
+                child.disabled = false;
+            } else {
+                child.disabled = true;
+                child.value = '';
+                // Reset all child dropdowns
+                const allDropdowns = [
+                    'equipment_group_dropdown',
+                    'model_dropdown',
+                    'asset_number_dropdown',
+                    'location_dropdown',
+                    'subassembly_dropdown',
+                    'component_assembly_dropdown',
+                    'assembly_view_dropdown',
+                    'site_location_dropdown'
+                ];
+
+                const currentIndex = allDropdowns.indexOf(childId);
+                if (currentIndex !== -1) {
+                    for (let i = currentIndex; i < allDropdowns.length; i++) {
+                        const dropdown = document.getElementById(allDropdowns[i]);
+                        if (dropdown) {
+                            dropdown.disabled = true;
+                            dropdown.value = '';
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Chain enable dropdowns
+    enableDropdown('area_dropdown', 'equipment_group_dropdown');
+    enableDropdown('equipment_group_dropdown', 'model_dropdown');
+    enableDropdown('model_dropdown', 'asset_number_dropdown');
+    enableDropdown('asset_number_dropdown', 'location_dropdown');
+    enableDropdown('location_dropdown', 'subassembly_dropdown');
+    enableDropdown('subassembly_dropdown', 'component_assembly_dropdown');
+    enableDropdown('component_assembly_dropdown', 'assembly_view_dropdown');
+    enableDropdown('assembly_view_dropdown', 'site_location_dropdown');
+});
+</script>

@@ -1,0 +1,399 @@
+{% extends "module_template_html/base_template.html" %}
+
+{% block title %}Database Entry{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/upload_styles.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/module_template/base.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            color: #aaa;
+        }
+        .drop-zone.dragover {
+            border-color: white;
+            color: yellow;
+        }
+        .image-details {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .thumbnail {
+            max-width: 100px;
+            max-height: 100px;
+            margin-right: 20px;
+        }
+    </style>
+{% endblock %}
+
+{% block sidebar %}
+    {% set current_page = 'search' %}
+    {% include 'module_template_html/base_sidebar.html' %}
+{% endblock %}
+
+{% block content %}
+    <!-- User level-restricted forms -->
+
+    <!-- Upload forms - only visible to LEVEL_III and ADMIN -->
+    {% if session['user_level'] == 'LEVEL_III' or session['user_level'] == 'ADMIN' %}
+        {% include 'upload_image_form_partial.html' %}
+
+    <div id="upload-document" class="form-container">
+    <h2>Upload Document</h2>
+        <form action="/documents/add_document" method="post" enctype="multipart/form-data">
+            <label for="document_title" style="color: Yellow;">Document Title:</label>
+            <input type="text" name="title" id="document_title" placeholder="Document Title"><br>
+            <label for="document_areaDropdown" style="color: Yellow;">Area:</label>
+            <select name="area" id="document_areaDropdown"></select><br>
+            <label for="document_equipmentGroupDropdown" style="color: Yellow;">Equipment Group:</label>
+            <select name="equipment_group" id="document_equipmentGroupDropdown"></select><br>
+            <label for="document_modelDropdown" style="color: Yellow;">Model:</label>
+            <select name="model" id="document_modelDropdown"></select><br>
+            <label for="document_assetNumberDropdown" style="color: Yellow;">Asset Number:</label>
+            <select name="asset_number" id="document_assetNumberDropdown"></select><br>
+            <label for="document_locationDropdown" style="color: Yellow;">Location:</label>
+            <select name="location" id="document_locationDropdown"></select><br>
+            <input type="file" name="files" id="document_files" multiple><br>
+            <input type="submit" value="Upload Document">
+        </form>
+    </div>
+
+    <div id="upload-powerpoint" class="form-container">
+        <h2>Upload PowerPoint</h2>
+        <form action="/powerpoints/upload_powerpoint" method="post" enctype="multipart/form-data">
+            <input type="text" name="title" placeholder="PowerPoint Title"><br>
+            <label for="area" style="color: Yellow;">Area:</label><br>
+            <select name="area" id="uploadpowerpoint_areaDropdown"></select><br>
+            <label for="equipment_group" style="color: Yellow;">Equipment Group:</label><br>
+            <select name="equipment_group" id="uploadpowerpoint_equipmentGroupDropdown"></select><br>
+            <label for="model" style="color: Yellow;">Model:</label><br>
+            <select name="model" id="uploadpowerpoint_modelDropdown"></select><br>
+            <label for="asset_number" style="color: Yellow;">Asset Number:</label><br>
+            <select name="asset_number" id="uploadpowerpoint_assetNumberDropdown"></select><br>
+            <label for="location" style="color: Yellow;">Location:</label><br>
+            <select name="location" id="uploadpowerpoint_locationDropdown"></select><br>
+            <input type="text" name="description" placeholder="PowerPoint Description"><br>
+            <input type="file" name="powerpoint" accept=".pptx" required><br>
+            <input type="submit" value="Upload PowerPoint">
+        </form>
+    </div>
+
+    <div id="batch-upload" class="form-container">
+        <h2>Batch Upload Documents</h2>
+        <form action="/batch_processing" method="post" enctype="multipart/form-data">
+            <label for="batchTitle" style="color: Yellow;">Document Title:</label>
+            <input type="text" name="batchTitle" id="batchTitle" placeholder="Document Title"><br>
+            <label for="batchAreaDropdown" style="color: Yellow;">Area:</label>
+            <select name="batchArea" id="batchAreaDropdown"></select><br>
+            <label for="batchEquipmentGroupDropdown" style="color: Yellow;">Equipment Group:</label>
+            <select name="batchEquipmentGroup" id="batchEquipmentGroupDropdown"></select><br>
+            <label for="batchModelDropdown" style="color: Yellow;">Model:</label>
+            <select name="batchModel" id="batchModelDropdown"></select><br>
+            <label for="batchAssetNumberDropdown" style="color: Yellow;">Asset Number:</label>
+            <select name="batchAssetNumber" id="batchAssetNumberDropdown"></select><br>
+            <label for="batchLocationDropdown" style="color: Yellow;">Location:</label>
+            <select name="batchLocation" id="batchLocationDropdown"></select><br>
+            <label for="batchFolderPath" style="color: Yellow;">Folder Path:</label>
+            <input type="text" name="batchFolderPath" id="batchFolderPath" placeholder="Absolute Folder Path"><br>
+            <input type="file" name="files" id="files" multiple><br>
+            <input type="submit" value="Process Folder">
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Search forms - available to all users LEVEL_I and above -->
+    {% if session['user_level'] == 'LEVEL_I' or session['user_level'] == 'LEVEL_II' or session['user_level'] == 'LEVEL_III' or session['user_level'] == 'ADMIN' %}
+    <div id="search-powerpoints" class="form-container">
+        <h2>Search PowerPoints</h2>
+        <form id="search-powerpoints-form">
+            <label for="description" style="color: Yellow;">Description:</label><br>
+            <input type="text" name="description" id="search_powerpoints_description" placeholder="Search by Description"><br>
+            <label for="title" style="color: Yellow;">Title:</label><br>
+            <input type="text" name="title" id="search_powerpoints_title" placeholder="Search by Title"><br>
+            <label for="area" style="color: Yellow;">Area:</label><br>
+            <select name="searchpowerpoint_area" id="searchpowerpoint_areaDropdown"></select><br>
+            <label for="equipment_group" style="color: Yellow;">Equipment Group:</label><br>
+            <select name="searchpowerpoint_equipment_group" id="searchpowerpoint_equipmentGroupDropdown"></select><br>
+            <label for="model" style="color: Yellow;">Model:</label><br>
+            <select name="searchpowerpoint_model" id="searchpowerpoint_modelDropdown"></select><br>
+            <label for="asset_number" style="color: Yellow;">Asset Number:</label><br>
+            <select name="searchpowerpoint_asset_number" id="searchpower_assetNumberDropdown"></select><br>
+            <label for="location" style="color: Yellow;">Location:</label><br>
+            <select name="searchpowerpoint_location" id="searchpowerpoint_locationDropdown"></select><br>
+            <input type="submit" value="Search">
+        </form>
+    </div>
+
+    <div id="search-images" class="form-container">
+        <h2>Search Images</h2>
+        <form id="search-images-form">
+            <label for="description" style="color: Yellow;">Description:</label><br>
+            <input type="text" name="description" id="search_images_description" placeholder="Search by Description"><br>
+            <label for="title" style="color: Yellow;">Title:</label><br>
+            <input type="text" name="title" id="search_images_title" placeholder="Search by Title"><br>
+            <label for="area" style="color: Yellow;">Area:</label><br>
+            <select name="searchimage_area" id="searchimage_areaDropdown"></select><br>
+            <label for="equipment_group" style="color: Yellow;">Equipment Group:</label><br>
+            <select name="searchimage_equipment_group" id="searchimage_equipmentGroupDropdown"></select><br>
+            <label for="model" style="color: Yellow;">Model:</label><br>
+            <select name="searchimage_model" id="searchimage_modelDropdown"></select><br>
+            <label for="asset_number" style="color: Yellow;">Asset Number:</label><br>
+            <select name="searchimage_asset_number" id="searchimage_assetNumberDropdown"></select><br>
+            <label for="location" style="color: Yellow;">Location:</label><br>
+            <select name="searchimage_location" id="searchimage_locationDropdown"></select><br>
+            <input type="submit" value="Search">
+        </form>
+    </div>
+
+    <!-- Update the upload-compare-form section inside your HTML -->
+    <div id="compare-images" class="form-container">
+        <h2>Upload and Compare Image</h2>
+        <form id="upload-compare-form" action="/upload_and_compare" method="post" enctype="multipart/form-data">
+            <div id="drop-zone" class="drop-zone">
+                Drag & Drop your image here or click to upload
+            </div>
+            <!-- Add this new div for displaying the uploaded image -->
+            <div id="uploaded-image-preview" style="display: none; margin-top: 20px; text-align: center;">
+                <h3 style="color: yellow;">Your Uploaded Image</h3>
+                <img id="uploaded-image" style="max-width: 650px; max-height: 650px; border: 2px solid #ccc; border-radius: 5px; padding: 5px;" />
+            </div>
+            <input type="file" id="file-input" name="query_image" accept="image/*" style="display: none;">
+            <input type="hidden" name="model_name" value="clip">
+            <button type="submit" style="display: none;">Upload and Compare</button>
+        </form>
+    </div>
+
+        <div id="search-documents" class="form-container">
+            <h2>Search Documents</h2>
+            <form id="search-documents-form">
+                <label for="title" style="color: Yellow;">Title:</label><br>
+                <input type="text" name="title" id="search_documents_title" placeholder="Title"><br>
+                <label for="area" style="color: Yellow;">Area:</label><br>
+                <select name="searchdocument_area" id="searchdocument_areaDropdown"></select><br>
+                <label for="equipment_group" style="color: Yellow;">Equipment Group:</label><br>
+                <select name="searchdocument_equipmentgroup" id="searchdocument_equipmentGroupDropdown"></select><br>
+                <label for="model" style="color: Yellow;">Model:</label><br>
+                <select name="searchdocument_model" id="searchdocument_modelDropdown"></select><br>
+                <label for="asset_number" style="color: Yellow;">Asset Number:</label><br>
+                <select name="searchdocument_asset_number" id="searchdocument_assetNumberDropdown"></select><br>
+                <label for="location" style="color: Yellow;">Location:</label><br>
+                <select name="searchdocument_location" id="searchdocument_locationDropdown"></select><br>
+                <input type="submit" value="Search">
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Results section - available to all users -->
+        <div id="results" class="results-container">
+            <h2>Search Results</h2>
+            <ul id="documents-list"></ul>
+            <ul id="image-results" class="image-results-container"></ul>
+            <ul id="image-compare-results" class="image-compare-results-container"></ul>
+        </div>
+{% endblock %}
+
+{% block extra_scripts %}
+    <!-- jQuery and Select2 -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+    <!-- region TODO: Refactor JS into new folder static/js/upload_search_database -->
+    <!-- Custom JavaScript files -->
+    <script src="{{ url_for('static', filename='js/upload_search_database/upload_document.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/batch_upload.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/upload_image.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/image_upload.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/upload_powerpoint.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/document_search.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/image_search.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/powerpoint_search.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/image_compare.js') }}"></script>
+
+    <!-- endregion -->
+
+
+
+    <script>
+        function showForm(formId) {
+            console.log('Showing form:', formId);
+
+            // Check user level for form access
+            {% if session['user_level'] == 'STANDARD' %}
+                // STANDARD users - no form access
+                alert("You don't have permission to access this feature.");
+                return;
+            {% elif session['user_level'] == 'LEVEL_I' %}
+                // LEVEL_I users - only search forms
+                if (formId.startsWith('upload-') || formId === 'batch-upload') {
+                    alert("You don't have permission to access upload features.");
+                    return;
+                }
+            {% elif session['user_level'] == 'LEVEL_II' %}
+                // LEVEL_II users - only search forms
+                if (formId.startsWith('upload-') || formId === 'batch-upload') {
+                    alert("You don't have permission to access upload features.");
+                    return;
+                }
+            {% endif %}
+
+            var forms = document.getElementsByClassName('form-container');
+            for (var i = 0; i < forms.length; i++) {
+                forms[i].style.display = 'none';
+            }
+
+            var formElement = document.getElementById(formId);
+            if (formElement) {
+                formElement.style.display = 'block';
+                clearPreviousResults(); // Clear previous results when showing a form
+                document.getElementById('results').style.display = 'none'; // Hide results container when showing a form
+            } else {
+                console.error('Form not found:', formId);
+            }
+        }
+
+        function showResults() {
+            console.log('Showing results.');
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function clearPreviousResults() {
+            document.getElementById('documents-list').innerHTML = ''; // Clear document results
+            document.getElementById('image-results').innerHTML = ''; // Clear image search results
+            document.getElementById('image-compare-results').innerHTML = ''; // Clear previous comparison results
+        }
+
+        // Initially hide all forms and results
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM fully loaded and parsed.');
+            var forms = document.getElementsByClassName('form-container');
+            for (var i = 0; i < forms.length; i++) {
+                forms[i].style.display = 'none';
+            }
+            document.getElementById('results').style.display = 'none'; // Hide results container on page load
+        });
+
+        // Handle search form submissions
+        document.getElementById('search-documents-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            console.log('Submitting search documents form.');
+            var formData = new FormData(this);
+            var params = new URLSearchParams(formData);
+            fetch('/search_documents?' + params.toString())
+                .then(response => response.json())
+                .then(data => {
+                    clearPreviousResults(); // Clear previous results before showing new ones
+                    if (data.error) {
+                        console.log('Error from server:', data.error);
+                        showResults();
+                        document.getElementById('documents-list').innerHTML = `<p>${data.error}</p>`;
+                    } else {
+                        console.log('Rendering document results.');
+                        renderDocumentResults(data);
+                    }
+                });
+        });
+
+        function renderDocumentResults(data) {
+            var documentsList = '';
+            data.documents.forEach(document => {
+                documentsList += `<li><a href="search_documents/view_document/${document.id}" target="_blank">${document.title}</a></li>`;
+            });
+            console.log('Document results prepared.');
+            document.getElementById('documents-list').innerHTML = documentsList;
+            showResults();
+        }
+
+        document.getElementById('search-images-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            console.log('Submitting search images form.');
+            var formData = new FormData(this);
+            var params = new URLSearchParams(formData);
+            fetch('/search_images?' + params.toString())
+                .then(response => response.json())
+                .then(data => {
+                    clearPreviousResults(); // Clear previous results before showing new ones
+                    if (data.error) {
+                        console.log('Error from server:', data.error);
+                        showResults();
+                        document.getElementById('documents-list').innerHTML = `<p>${data.error}</p>`;
+                        document.getElementById('image-results').innerHTML = ''; // Clear image results
+                    } else {
+                        console.log('Rendering image results.');
+                        renderImageResults(data);
+                    }
+                });
+        });
+
+        function renderImageResults(data) {
+            let imagesList = '';
+            data.images.forEach(image => {
+                imagesList += `<div class="image-details">
+                                <a href="/serve_image/${image.id}" target="_blank">
+                                    <img class="thumbnail" src="/serve_image/${image.id}" alt="${image.title}">
+                                </a>
+                                <div class="description">
+                                    <h2>${image.title}</h2>
+                                    <p>${image.description}</p>
+                                </div>
+                                <div style="clear: both;"></div>`;
+            });
+            console.log('Image results prepared.');
+            document.getElementById('image-results').innerHTML = imagesList;
+            showResults();
+        }
+
+        // Handle compare image form submission
+        document.getElementById('upload-compare-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            console.log('Submitting image compare form.');
+            const formData = new FormData(this);
+            fetch('/upload_and_compare', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearPreviousResults(); // Clear previous results before showing new ones
+                if (data.error) {
+                    document.getElementById('documents-list').innerHTML = `<p>${data.error}</p>`;
+                    showResults();
+                } else {
+                    renderComparisonResults(data.image_similarity_search);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('documents-list').innerHTML = `<p>Error occurred: ${error}</p>`;
+                showResults();
+            });
+        });
+
+        function renderComparisonResults(results) {
+            clearPreviousResults(); // Ensure previous results are cleared before rendering new ones
+            let imagesList = '';
+            results.forEach(image => {
+                console.log('Rendering result for image:', image);
+                imagesList += `<div class="image-details">
+                                <a href="/uploads/${image.file_path}" target="_blank">
+                                    <img class="thumbnail" src="/uploads/${image.file_path}" alt="${image.title}">
+                                </a>
+                                <div class="description">
+                                    <h2>${image.title}</h2>
+                                    <p>${image.description}</p>
+                                    <p>Similarity: ${image.similarity.toFixed(2)}</p>
+                                </div>
+                                <div style="clear: both;"></div>
+                              </div>`;
+            });
+            console.log('Comparison results prepared.');
+            document.getElementById('image-compare-results').innerHTML = imagesList;
+            showResults();
+        }
+    </script>
+{% endblock %}

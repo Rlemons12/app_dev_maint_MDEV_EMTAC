@@ -1,0 +1,282 @@
+/* static/css/upload_styles.css - Updated version */
+
+/* Add these overrides at the top of upload_styles.css */
+
+/* Fix body background and padding */
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background-color: transparent !important;
+}
+
+body {
+    padding-top: 46px !important; /* Just enough for the banner height */
+}
+
+/* Fix main-container styling */
+.main-container {
+    background-image: url("/static/background_images/abstractfractal.jpg") !important;
+    background-size: cover !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+    height: calc(100vh - 46px) !important; /* Adjust for banner height */
+}
+
+/* Override content background */
+.content {
+    background: transparent !important;
+    margin-top: 0 !important;
+    padding-top: 10px !important;
+}
+
+/* Fix hamburger position - add to your upload_styles.css */
+.hamburger {
+    top: 56px !important; /* Banner height + some padding */
+    left: 0px !important;
+    background-color: rgba(0, 0, 0, 0.5) !important; /* Semi-transparent background */
+    border-radius: 5px !important; /* Rounded corners */
+    padding: 5px 10px !important; /* Add some padding */
+    z-index: 1010 !important; /* Ensure it's above other elements */
+}
+
+/* Add some padding to the top of the sidebar content to avoid overlap */
+.sidebar-header {
+    padding-top: 10px !important;
+}
+
+/* In your upload_styles.css, add this to fix the grey strip */
+body {
+    margin: 0;
+    padding: 0;
+    background-color: transparent;
+}
+
+.main-container {
+    background-image: url("/static/background_images/abstractfractal.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    margin-top: 0 !important; /* Eliminate space after banner */
+    padding-top: 0 !important; /* Eliminate padding at top */
+}
+
+/* Adjust banner to eliminate any gap */
+.banner {
+    margin-bottom: 0 !important;
+}
+
+/* Form and Results Container Styling */
+.form-container,
+.results-container {
+    flex: 1;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.85); /* Slightly transparent black */
+    border-radius: 10px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Content area layout */
+.content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 30px;
+    background-color: transparent !important; /* Force transparency */
+}
+
+/* Text colors for forms and results */
+.form-container h2,
+.results-container h2 {
+    color: white;
+    margin-top: 0;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+}
+
+.results-container a {
+    color: white;
+    text-decoration: none;
+}
+
+.results-container a:hover {
+    color: #cccccc;
+    text-decoration: underline;
+}
+
+.results-container p {
+    color: white;
+}
+
+/* Form input styling */
+.form-container input,
+.form-container select,
+.form-container textarea {
+    width: 100%;
+    max-width: 500px;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: none;
+    box-sizing: border-box;
+    background-color: #f0f0f0;
+}
+
+.form-container input,
+.form-container textarea {
+    color: black;
+}
+
+.form-container select {
+    color: black !important;
+    background-color: #f0f0f0 !important;
+
+}
+
+.form-container select option {
+    color: black !important;
+    background-color: #fff !important;
+}
+
+/* If you are using Select2 for searchable dropdowns */
+.select2-container .select2-selection--single {
+    color: black !important;
+    background-color: #f0f0f0 !important;
+}
+.select2-dropdown,
+.select2-results__option {
+    color: black !important;
+    background-color: #fff !important;
+}
+
+/* Form labels */
+.form-container label {
+    color: yellow;
+    display: block;
+    margin-top: 10px;
+}
+
+/* Submit buttons */
+.form-container input[type="submit"] {
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    width: auto;
+    min-width: 150px;
+    margin-top: 20px;
+    transition: background-color 0.3s;
+}
+
+.form-container input[type="submit"]:hover {
+    background-color: #45a049;
+}
+
+/* Return link styling */
+.return-link {
+    color: yellow;
+    text-decoration: none;
+}
+
+/* Results container styling */
+.results-container {
+    overflow-y: auto;
+    max-height: calc(100vh - 150px); /* Adjust for banner height + padding */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Image thumbnails */
+.thumbnail {
+    width: 200px;
+    height: auto;
+    margin: 10px;
+    cursor: pointer;
+    border: 2px solid #333;
+    border-radius: 5px;
+    transition: transform 0.2s;
+}
+
+.thumbnail:hover {
+    transform: scale(1.05);
+}
+
+/* Image and document containers */
+.image-results-container,
+.document-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.image-details,
+.document-details {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #333;
+}
+
+.image-details h2,
+.document-details h2 {
+    margin-top: 0;
+}
+
+/* Pagination styling */
+.pagination {
+    margin-top: 20px;
+    text-align: right;
+}
+
+.pagination a {
+    margin: 0 5px;
+    text-decoration: none;
+    color: yellow;
+}
+
+.pagination strong {
+    margin: 0 5px;
+    color: yellow;
+}
+
+/* Drop zone styling */
+.drop-zone {
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    color: #aaa;
+    margin: 20px 0;
+    transition: all 0.3s;
+}
+
+.drop-zone.dragover {
+    border-color: white;
+    color: yellow;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Image comparison container */
+#compare-images {
+    flex: 0 0 55%;
+    min-width: 300px;
+    margin-bottom: 20px;
+}
+
+/* Uploaded image preview */
+#uploaded-image-preview {
+    margin-top: 20px;
+    text-align: center;
+}
+
+#uploaded-image {
+    max-width: 100%;
+    height: auto;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    padding: 5px;
+}

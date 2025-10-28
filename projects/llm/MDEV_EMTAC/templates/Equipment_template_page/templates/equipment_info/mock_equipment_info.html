@@ -1,0 +1,31 @@
+{% extends "base_template.html" %}
+
+{% block title %}Equipment Detail: {{ equipment.name }}{% endblock %}
+
+{% block content %}
+<div class="equipment-card">
+    <!-- Equipment details go here -->
+    <div class="equipment-header">
+        <div class="equipment-icon">🔧</div>
+        <h2 class="equipment-title">{{ equipment.name }}</h2>
+    </div>
+
+    <div class="equipment-image-container">
+        {% if equipment.image %}
+        <img src="{{ equipment.image }}" class="equipment-image" alt="{{ equipment.name }}">
+        {% else %}
+        <div class="equipment-image-default">No Image</div>
+        {% endif %}
+    </div>
+
+    <table class="info-table">
+        <!-- Equipment data rows -->
+    </table>
+
+    {% if equipment.notes %}
+    <div class="equipment-notes">
+        <strong>Notes:</strong> {{ equipment.notes }}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

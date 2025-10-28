@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Efficient Maintenance and Technical Assistance Chatbot{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Top Banner -->
+    <div class="banner">
+        THIS IS FOR REFERENCE ONLY. ALL INFORMATION SHOULD BE VERIFIED WITH CURRENT SOP'S
+        <a href="#" id="commentPopupLink">Leave a Comment</a>
+    </div>
+
+    <!-- Hamburger Icon -->
+    <button id="sidebarCollapse" class="hamburger" aria-expanded="true" aria-label="Toggle sidebar">&#9776;</button>
+
+    <!-- Comment Popup Modal -->
+    <div id="commentPopup" style="display: none;">
+        <form id="commentForm">
+            <h2>Leave a Comment</h2>
+            <p>Instructions: You can write your comment, paste an image, or upload a file.</p>
+
+            <textarea name="comment" id="comment" placeholder="Write your comment here..." required></textarea><br>
+            <input type="hidden" id="imageData" name="imageData">
+
+            <div id="pastedImageFeedback" style="display: none; color: green;">
+                Image snippet successfully added!
+            </div>
+            <img id="pastedImagePreview" src="" alt="Pasted Image Preview" style="display:none; max-width: 100px; margin-top: 10px;" />
+
+            <label for="fileUpload">Or upload an image:</label><br>
+            <input type="file" id="fileUpload" name="screenshot" accept="image/*" /><br><br>
+
+            <button type="submit">Send</button>
+            <button type="button" id="closePopup">Close</button>
+        </form>
+    </div>
+
+    <div class="main-container">
+        <!-- Sidebar Component -->
+        {% include 'module_template_html/base_sidebar.html' %}
+
+        <!-- Main Content -->
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+
+        <!-- Results Container (optional, can be used in specific pages) -->
+        <div class="results-container" id="results-container" style="display: none;">
+            <ul id="searchResults" style="color:white;">
+                <!-- Search results will be populated here -->
+            </ul>
+
+            <!-- Thumbnails and Drawing List -->
+            <div id="thumbnails-section">
+                <!-- Thumbnails will be dynamically added here -->
+            </div>
+
+            <div id="drawingList">
+                <!-- Drawing search results will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Include JavaScript -->
+    <script src="{{ url_for('static', filename='js/base_sidebar.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/comment_pop_up.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

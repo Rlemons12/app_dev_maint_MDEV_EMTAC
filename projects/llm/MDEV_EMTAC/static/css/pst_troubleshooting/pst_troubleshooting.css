@@ -1,0 +1,933 @@
+/* ====================================
+   MAIN LAYOUT
+   ==================================== */
+
+html, body {
+    overflow: hidden !important;
+}
+
+.main-container {
+    background-image: url("/static/background_images/dark-blue-futuristic-technology.jpg");
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    flex-direction: row !important;
+    height: 100vh;
+    width: 100%;
+    padding-top: 10px;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 300px;
+    position: fixed;
+    top: 80px;
+    left: 0;
+    height: calc(100% - 80px);
+    background-color: rgba(0, 0, 0, 0.8);
+    overflow-x: hidden;
+    overflow-y: auto;
+    transition: width 0.5s ease;
+    padding: 20px;
+    font-size: 18px;
+    color: yellow;
+    z-index: 1000;
+    box-sizing: border-box;
+}
+
+.sidebar.collapsed {
+    width: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.sidebar a,
+.sidebar button,
+.sidebar .nav-link {
+    color: white !important;
+    background-color: transparent !important;
+    padding: 10px 15px !important;
+    border: none !important;
+    min-width: auto !important;
+}
+
+.sidebar a:hover,
+.sidebar button:hover,
+.sidebar .nav-link:hover {
+    color: #39FF14 !important;
+    background-color: rgba(57, 255, 20, 0.1) !important;
+}
+
+/* Content Area - positioned next to sidebar */
+.content {
+    margin-left: 320px !important;
+    width: calc(100% - 340px) !important;
+    transition: all 0.5s ease !important;
+    background: transparent !important;
+    height: calc(100vh - 80px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px;
+    display: block !important; /* Reset to block for normal layout */
+}
+
+/* Support multiple sidebar-collapsed class locations - no left margin */
+.content.sidebar-collapsed,
+.sidebar-collapsed .content,
+body.sidebar-collapsed .content,
+html.sidebar-collapsed .content,
+.main-container.collapsed .content {
+    margin-left: 0 !important; /* No left margin when sidebar is collapsed */
+    width: 100% !important;
+    max-width: 100% !important;
+    transition: all 0.5s ease !important;
+    padding-left: 0 !important; /* No left padding */
+}
+
+/* ====================================
+   CONTAINERS
+   ==================================== */
+
+.container,
+.container.mt-5,
+.container-fluid {
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.6);
+    margin: 0 !important; /* No margin for alignment */
+    width: 900px !important; /* 3x the sidebar width (300px) */
+    max-width: 100% !important; /* Allow full width in content area */
+    text-align: left;
+    transition: all 0.3s ease-in-out !important;
+}
+
+/* Container positioning when sidebar is collapsed - align left */
+.content.sidebar-collapsed .container,
+.content.sidebar-collapsed .container.mt-5,
+.content.sidebar-collapsed .container-fluid,
+.sidebar-collapsed .container,
+.sidebar-collapsed .container.mt-5,
+.sidebar-collapsed .container-fluid,
+body:has(.sidebar.collapsed) .container,
+.main-container:has(.sidebar.collapsed) .container,
+body.sidebar-collapsed .container,
+html.sidebar-collapsed .container,
+.main-container.collapsed .container {
+    margin-left: 0 !important; /* Aligned to left edge */
+    width: 900px !important; /* 3x the sidebar width (300px) */
+    max-width: 100% !important;
+    left: 0 !important;
+}
+
+/* Container expansion when sidebar collapses - limited to 3x sidebar width */
+.content.sidebar-collapsed .container,
+.content.sidebar-collapsed .container.mt-5,
+.content.sidebar-collapsed .container-fluid,
+.sidebar-collapsed .container,
+.sidebar-collapsed .container.mt-5,
+.sidebar-collapsed .container-fluid,
+body:has(.sidebar.collapsed) .container,
+.main-container:has(.sidebar.collapsed) .container,
+body.sidebar-collapsed .container,
+html.sidebar-collapsed .container,
+.main-container.collapsed .container {
+    width: 900px !important; /* 3x the sidebar width (300px) */
+    max-width: calc(100% - 20px) !important;
+    margin: 0 !important;
+    left: 0 !important;
+}
+
+/* Style selectors based on inline styles - limited to 3x sidebar width */
+.content:has(~ .sidebar[style*="width: 0"]) .container,
+.content:has(~ .sidebar[style*="display: none"]) .container {
+    width: 900px !important; /* 3x the sidebar width (300px) */
+    max-width: calc(100% - 20px) !important;
+    margin: 0 auto !important;
+}
+
+/* ====================================
+   TYPOGRAPHY
+   ==================================== */
+
+.container,
+.container *,
+.tab-content,
+.tab-content *,
+.accordion-body,
+.accordion-body * {
+    color: white !important;
+}
+
+h2 {
+    color: #39FF14 !important;
+    text-align: left;
+    margin-bottom: 30px;
+    font-weight: bold;
+    font-size: 2rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* ====================================
+   FORM STYLING
+   ==================================== */
+
+form {
+    background-color: rgba(0, 0, 0, 0.8) !important;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    margin-bottom: 10px !important;
+    width: 100%;
+    max-width: 100%;
+    font-size: 1.1rem;
+}
+
+.form-group,
+.mb-3,
+.form-control-container,
+form > div {
+    margin-bottom: 5px !important;
+}
+
+/* Labels */
+.form-label,
+label {
+    color: #39FF14 !important;
+    font-weight: bold !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
+    margin-bottom: 2px !important;
+    font-size: 1rem !important;
+    background-color: rgba(0, 0, 0, 0.7) !important;
+    padding: 3px 8px !important;
+    border-radius: 4px !important;
+    display: inline-block !important;
+}
+
+/* Form inputs */
+form input,
+form select,
+form textarea,
+.form-select,
+.form-control,
+select,
+input,
+textarea,
+option {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 2px solid rgba(255, 255, 255, 0.5) !important;
+    border-radius: 5px;
+    padding: 6px 10px !important;
+    margin-bottom: 8px !important;
+    font-size: 0.95rem !important;
+    height: auto !important;
+    min-height: 34px !important;
+}
+
+/* Dropdown menu text color fix - ensure all dropdown options are black */
+select option,
+.form-select option,
+option,
+.dropdown-menu,
+.dropdown-item,
+.dropdown-content,
+.select-items {
+    color: #000000 !important;
+    background-color: #ffffff !important;
+}
+
+/* Force black text for dropdowns */
+[id*="Dropdown"] option,
+[id*="dropdown"] option,
+[class*="dropdown"] option,
+select.form-select option {
+    color: #000000 !important;
+    background-color: #ffffff !important;
+}
+
+/* Selected dropdown items */
+select option:checked,
+.form-select option:selected {
+    color: #000000 !important;
+    background-color: #f8f9fa !important;
+}
+
+/* Ensure consistent element height */
+select.form-select,
+input.form-control {
+    height: 36px !important;
+}
+
+/* Placeholder text color */
+::placeholder {
+    color: #666666 !important;
+    opacity: 1 !important;
+}
+
+/* Disabled inputs */
+form input:disabled,
+form select:disabled,
+form textarea:disabled,
+.form-select:disabled,
+.form-control:disabled {
+    background-color: #f5f5f5 !important;
+    color: #666666 !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* ====================================
+   TABS STYLING
+   ==================================== */
+
+.nav-tabs,
+#troubleshootingTab,
+[id*="tablist"],
+[role="tablist"] {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: hidden !important;
+    overflow-y: hidden !important;
+    margin-bottom: 0 !important;
+    border-bottom: 1px solid #dee2e6 !important;
+    width: 100% !important;
+    justify-content: flex-start !important;
+    gap: 5px !important;
+}
+
+.nav-tabs .nav-item,
+.tab-content [role="presentation"],
+#troubleshootingTab .nav-item {
+    margin-right: 5px !important;
+    padding: 0 !important;
+    flex-shrink: 0 !important;
+    position: relative !important;
+}
+
+.nav-tabs .nav-link,
+.tab-content [role="tab"],
+#troubleshootingTab .nav-link {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    color: white !important;
+    border-radius: 5px 5px 0 0 !important;
+    padding: 8px 15px !important;
+    margin: 0 !important;
+    text-align: center !important;
+    min-width: 90px !important;
+    font-size: 14px !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-bottom: none !important;
+}
+
+.nav-tabs .nav-link.active,
+.tab-content [role="tab"][aria-selected="true"],
+#troubleshootingTab .nav-link.active {
+    background-color: #39FF14 !important;
+    color: black !important;
+    font-weight: bold !important;
+    border: 1px solid #39FF14 !important;
+    border-bottom: none !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+.nav-tabs .nav-link:hover,
+.tab-content [role="tab"]:hover,
+#troubleshootingTab .nav-link:hover {
+    background-color: rgba(0, 0, 0, 0.7) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Fix for the main tab container */
+#troubleshootingTabContent,
+.tab-content,
+div[id$="TabContent"] {
+    background-color: transparent !important;
+}
+
+/* Ensure the tab panes themselves have the dark background */
+.tab-pane,
+.tab-pane.fade,
+.tab-pane.fade.active,
+.tab-pane.fade.active.show,
+#task-images,
+#task-tools {
+    background-color: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* ====================================
+   ACCORDION STYLING
+   ==================================== */
+
+.accordion {
+    background-color: transparent !important;
+}
+
+.accordion-item {
+    background-color: rgba(0, 0, 0, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 5px !important;
+    margin-bottom: 10px;
+}
+
+.accordion-header {
+    background-color: rgba(0, 0, 0, 0.9) !important;
+    border-radius: 5px 5px 0 0 !important;
+}
+
+.accordion-button {
+    background-color: rgba(0, 0, 0, 0.9) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 5px 5px 0 0 !important;
+    font-weight: bold !important;
+}
+
+.accordion-button:not(.collapsed) {
+    color: #39FF14 !important;
+    background-color: rgba(0, 0, 0, 0.95) !important;
+    box-shadow: none !important;
+}
+
+.accordion-button:focus {
+    box-shadow: none !important;
+    border-color: transparent !important;
+}
+
+.accordion-body {
+    background-color: rgba(0, 0, 0, 0.85) !important;
+    color: white !important;
+    border-radius: 0 0 5px 5px !important;
+    padding: 10px !important;
+}
+
+.accordion-collapse {
+    background-color: transparent !important;
+}
+
+/* ====================================
+   BUTTON STYLING
+   ==================================== */
+
+.btn {
+    border-radius: 5px;
+    font-weight: bold;
+    color: white !important;
+    padding: 6px 12px !important;
+    font-size: 1rem !important;
+    margin-top: 5px !important;
+}
+
+.btn-primary {
+    background-color: #007BFF;
+    border: 1px solid #0056b3;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border: 1px solid #c82333;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.btn-success {
+    background-color: #28a745;
+    border: 1px solid #1e7e34;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+/* ====================================
+   SEARCH PROBLEM SPECIFIC STYLING
+   ==================================== */
+
+#searchProblemByPosition,
+.search-problem-by-position,
+[id*="search-problem"] {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+#searchProblemByPosition label,
+.search-problem-by-position label,
+#problem label {
+    color: #39FF14 !important;
+    font-size: 0.9rem !important;
+    padding: 1px 6px !important;
+    margin-top: 0 !important;
+    margin-bottom: 1px !important;
+    background-color: rgba(0, 0, 0, 0.7) !important;
+}
+
+#searchProblemByPosition select,
+.search-problem-by-position select,
+#problem select {
+    margin-top: 0 !important;
+    margin-bottom: 5px !important;
+    height: 32px !important;
+    padding: 4px 8px !important;
+}
+
+#searchProblemByPosition .field-group,
+.search-problem-by-position .field-group,
+#problem .field-group,
+#problem .mb-3 {
+    margin-bottom: 3px !important;
+}
+
+#problem .accordion-body {
+    padding: 8px 12px !important;
+}
+
+#searchProblemByPositionBtn,
+.search-problem-button,
+#problem button[type="button"] {
+    margin-top: 8px !important;
+}
+
+form#searchProblemByPositionForm,
+.search-problem-form {
+    background-color: rgba(0, 0, 0, 0.7) !important;
+    padding: 10px !important;
+    border-radius: 8px !important;
+    margin-bottom: 5px !important;
+}
+
+/* ====================================
+   SELECT2 SPECIFIC FIXES
+   ==================================== */
+
+/* Direct fix for Select2 containers and dropdown elements */
+.select2,
+.select2-container,
+span.select2,
+span[class*="select2-container"],
+[data-select2-id*="select2-data"],
+span[dir="ltr"][data-select2-id],
+.select2-container--default,
+.select2-container--focus,
+.select2-container--below,
+.select2-selection--multiple,
+.select2-selection__rendered,
+.select2-selection__choice {
+    color: #000000 !important;
+    background-color: #ffffff !important;
+}
+
+/* Fix for Select2 selection choices */
+.select2-selection__choice,
+.select2-selection__choice__display,
+ul.select2-selection__rendered li,
+.select2-selection--multiple .select2-selection__choice,
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    color: #000000 !important;
+    background-color: #e4e4e4 !important;
+    border-color: #aaa !important;
+}
+
+/* Fix for Select2 search field */
+.select2-search,
+.select2-search--inline,
+.select2-search__field,
+textarea.select2-search__field {
+    color: #000000 !important;
+    background-color: transparent !important;
+}
+
+/* Fix for Select2 dropdown options */
+.select2-results,
+.select2-results__options,
+.select2-results__option,
+li.select2-results__option {
+    color: #000000 !important;
+    background-color: #ffffff !important;
+}
+
+/* Fix for Select2 highlighted options */
+.select2-results__option--highlighted,
+.select2-container--default .select2-results__option--highlighted {
+    color: #ffffff !important;
+    background-color: #5897fb !important;
+}
+
+/* Fix for Select2 selected options in dropdown */
+.select2-results__option--selected,
+.select2-container--default .select2-results__option--selected {
+    color: #000000 !important;
+    background-color: #ddd !important;
+}
+
+/* Fix for Select2 container with specific IDs shown in your screenshot */
+span[data-select2-id="select2-data-7-4hho"],
+span[data-select2-id="select2-data-7-*"],
+[data-select2-id*="select2-data-7-"],
+span[style*="width: auto;"],
+[dir="ltr"][data-select2-id*="select2-data"] {
+    color: #000000 !important;
+    background-color: #ffffff !important;
+}
+
+/* Override for hidden select element */
+select.select2-hidden-accessible {
+    color: #000000 !important;
+}
+
+/* Direct fix for selection choice items */
+li[id*="select2-"][id*="-container-choice"],
+li[id*="select2-"][id*="-container-choice"] * {
+    color: #000000 !important;
+}
+
+/* ====================================
+   TASK IMAGES AND SELECTED ITEMS STYLING
+   ==================================== */
+
+/* Fix for image boxes */
+#task-images,
+#pst_task_edit_selected_images,
+.selected-items-display-box,
+.selected-item,
+[id*="selected_images"],
+[id*="task-images"],
+.images-container,
+.image-box {
+    color: #000000 !important;
+    background-color: #ffffff !important;
+    border-radius: 4px;
+    padding: 8px;
+    margin-bottom: 5px;
+}
+
+/* Selected items in display boxes */
+.selected-item,
+.selected-items-display-box .selected-item,
+#pst_task_edit_selected_images .selected-item,
+.selected-items-display-box > div,
+[id*="selected_images"] > div,
+[id*="selected_drawings"] > div,
+[id*="selected_documents"] > div,
+[id*="selected_parts"] > div,
+[id*="selected_tools"] > div {
+    color: #000000 !important;
+    background-color: #f8f9fa !important;
+    padding: 6px 10px !important;
+    border: 1px solid rgba(0, 0, 0, 0.125) !important;
+    border-radius: 4px !important;
+    margin-bottom: 4px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+/* Text within the selected items */
+.selected-item > *:not(.btn):not(button),
+.selected-items-display-box .selected-item > *:not(.btn):not(button),
+#pst_task_edit_selected_images .selected-item > *:not(.btn):not(button),
+.selected-items-display-box > div > *:not(.btn):not(button),
+[id*="selected_images"] > div > *:not(.btn):not(button),
+[id*="selected_drawings"] > div > *:not(.btn):not(button),
+[id*="selected_documents"] > div > *:not(.btn):not(button),
+[id*="selected_parts"] > div > *:not(.btn):not(button),
+[id*="selected_tools"] > div > *:not(.btn):not(button) {
+    color: #000000 !important;
+}
+
+/* Fix for "No items selected" text */
+.selected-items-display-box:not(:has(div)),
+#pst_task_edit_selected_images:not(:has(div)),
+[id*="selected_images"]:not(:has(div)),
+[id*="selected_drawings"]:not(:has(div)),
+[id*="selected_documents"]:not(:has(div)),
+[id*="selected_parts"]:not(:has(div)),
+[id*="selected_tools"]:not(:has(div)) {
+    color: #666666 !important;
+    font-style: italic !important;
+}
+
+/* Buttons within selected items */
+.selected-item .btn,
+.selected-item button,
+.selected-items-display-box .btn,
+.selected-items-display-box button,
+#pst_task_edit_selected_images .btn,
+#pst_task_edit_selected_images button {
+    margin-left: 10px !important;
+}
+
+/* Specific fix for task editing tabs content */
+#editTaskSubTabContent .tab-pane,
+.tab-content .tab-pane,
+#task-images.tab-pane,
+#task-details.tab-pane,
+#task-parts.tab-pane,
+#task-drawings.tab-pane,
+#task-documents.tab-pane,
+#task-tools.tab-pane {
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    color: white !important;
+}
+
+/* Selected items inside tabs should have black text */
+#editTaskSubTabContent .selected-items-display-box,
+#task-images .selected-items-display-box,
+#task-details .selected-items-display-box,
+#task-parts .selected-items-display-box,
+#task-drawings .selected-items-display-box,
+#task-documents .selected-items-display-box,
+#task-tools .selected-items-display-box {
+    color: #000000 !important;
+    background-color: #ffffff !important;
+}
+
+/* ====================================
+   SEARCH RESULTS AND LIST GROUP STYLING
+   ==================================== */
+
+#pst_searchResults,
+#pst_searchResults *:not(.btn):not(button):not(h5),
+div[id="pst_searchResults"],
+div[id="pst_searchResults"] *:not(.btn):not(button):not(h5) {
+    color: #000000 !important;
+    background-color: #ffffff !important;
+}
+
+/* Fix for the header in search results */
+#pst_searchResults h5,
+div[id="pst_searchResults"] h5 {
+    color: white !important;
+    background-color: transparent !important;
+}
+
+/* Fix for specific problem list */
+#pst_positionResultsList,
+ul[id="pst_positionResultsList"],
+#pst_positionResultsList li,
+ul[id="pst_positionResultsList"] li,
+#pst_positionResultsList .list-group-item,
+#pst_positionResultsList.list-group .list-group-item {
+    color: #000000 !important;
+    background-color: #ffffff !important;
+}
+
+/* Fix for flex containers within the search results */
+#pst_searchResults .flex,
+#pst_positionResultsList .flex,
+[id*="pst_"] .flex {
+    color: #000000 !important;
+    background-color: #ffffff !important;
+}
+
+/* Make sure nested content has proper color */
+#pst_searchResults ul,
+#pst_searchResults li,
+#pst_searchResults strong,
+#pst_searchResults span,
+#pst_searchResults div:not(.btn):not([class*="btn-"]) {
+    color: #000000 !important;
+}
+
+/* Fix for list groups to have black text */
+.list-group,
+.list-group-item,
+ul.list-group,
+li.list-group-item,
+#pst_positionResultsList,
+#pst_positionResultsList .list-group-item,
+[id*="ResultsList"],
+[id*="resultsList"],
+[id*="ResultsList"] li,
+[id*="resultsList"] li {
+    color: #000000 !important;
+    background-color: #ffffff !important;
+    text-align: left !important;
+}
+
+/* Fix specifically for problem results */
+#pst_positionResultsList li,
+#pst_positionResultsList .list-group-item,
+ul[id*="pst_"] li,
+ul[id*="ResultsList"] li,
+.problem-results li,
+.problem-list li,
+.results-list li {
+    color: #000000 !important;
+    background-color: #ffffff !important;
+    padding: 8px 12px !important;
+    margin-bottom: 2px !important;
+    border: 1px solid rgba(0, 0, 0, 0.125) !important;
+    border-radius: 4px !important;
+}
+
+/* Fix for strong tags inside list items */
+.list-group-item strong,
+#pst_positionResultsList strong,
+[id*="ResultsList"] strong,
+.problem-results strong,
+.results-list strong {
+    color: #000000 !important;
+    font-weight: bold !important;
+}
+
+/* Fix for list-group hover states */
+.list-group-item:hover,
+#pst_positionResultsList li:hover,
+[id*="ResultsList"] li:hover,
+.problem-results li:hover,
+.problem-list li:hover,
+.results-list li:hover {
+    background-color: #f8f9fa !important;
+}
+
+/* Ensure buttons inside list items maintain their styling */
+.list-group-item .btn,
+#pst_positionResultsList .btn,
+[id*="ResultsList"] .btn,
+.problem-results .btn {
+    color: white !important;
+}
+
+/* Fix for the <br> and small tags */
+.list-group-item br + small,
+#pst_positionResultsList br + small,
+[id*="ResultsList"] br + small,
+.problem-results br + small,
+small[id*="Area"],
+small:contains("Area") {
+    color: #666666 !important;
+    font-style: italic !important;
+}
+
+/* ====================================
+   SCROLLABLE CONTAINERS
+   ==================================== */
+
+/* Default height for scrollable containers - fits approximately 5 items */
+.scrollable-container,
+.scroll-container,
+div[class*="scroll"],
+[class*="overflow"],
+.accordion-body.overflow-auto,
+.tab-pane.overflow-auto,
+.form-control[multiple],
+select[multiple],
+.dropdown-menu.show,
+div[style*="overflow: auto"],
+div[style*="overflow-y: auto"],
+.table-responsive,
+.results-container {
+    max-height: initial !important;
+    height: auto !important;
+    min-height: 40px !important; /* Minimum height */
+}
+
+/* Apply auto height up to 5 items (approximately 200px) */
+.scrollable-container:not(.force-scroll),
+.scroll-container:not(.force-scroll),
+div[class*="scroll"]:not(.force-scroll),
+[class*="overflow"]:not(.force-scroll),
+.accordion-body.overflow-auto:not(.force-scroll),
+.tab-pane.overflow-auto:not(.force-scroll),
+.form-control[multiple]:not(.force-scroll),
+select[multiple]:not(.force-scroll),
+.dropdown-menu.show:not(.force-scroll),
+div[style*="overflow: auto"]:not(.force-scroll),
+div[style*="overflow-y: auto"]:not(.force-scroll),
+.table-responsive:not(.force-scroll),
+.results-container:not(.force-scroll) {
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+/* Calculate height based on content - approximate height for 5 items */
+.scrollable-container:not(.force-scroll):has(> *:nth-child(5)),
+.scroll-container:not(.force-scroll):has(> *:nth-child(5)),
+div[class*="scroll"]:not(.force-scroll):has(> *:nth-child(5)),
+[class*="overflow"]:not(.force-scroll):has(> *:nth-child(5)),
+.table-responsive:not(.force-scroll):has(> tr:nth-child(5)),
+.results-container:not(.force-scroll):has(> *:nth-child(5)) {
+    height: auto !important;
+}
+
+/* After 5 items, apply scrolling with max-height */
+.scrollable-container:not(.force-scroll):has(> *:nth-child(6)),
+.scroll-container:not(.force-scroll):has(> *:nth-child(6)),
+div[class*="scroll"]:not(.force-scroll):has(> *:nth-child(6)),
+[class*="overflow"]:not(.force-scroll):has(> *:nth-child(6)),
+.table-responsive:not(.force-scroll):has(> tr:nth-child(6)),
+.results-container:not(.force-scroll):has(> *:nth-child(6)) {
+    max-height: 250px !important; /* Approximate height for 5 items */
+    overflow-y: auto !important;
+}
+
+/* For select dropdowns specifically */
+select[size],
+select[multiple] {
+    height: auto !important;
+    max-height: none !important;
+}
+
+select[size]:has(option:nth-child(6)),
+select[multiple]:has(option:nth-child(6)) {
+    max-height: 250px !important; /* Approximate height for 5 items */
+    overflow-y: auto !important;
+}
+
+/* For specific containers that need scroll behavior */
+#searchResults,
+#problemList,
+.search-results,
+.data-container,
+.results-list {
+    height: auto !important;
+    max-height: none !important;
+}
+
+#searchResults:has(> *:nth-child(6)),
+#problemList:has(> *:nth-child(6)),
+.search-results:has(> *:nth-child(6)),
+.data-container:has(> *:nth-child(6)),
+.results-list:has(> *:nth-child(6)) {
+    max-height: 250px !important;
+    overflow-y: auto !important;
+}
+
+/* Improve scrollbar styling */
+.scrollable-container::-webkit-scrollbar,
+.scroll-container::-webkit-scrollbar,
+div[class*="scroll"]::-webkit-scrollbar,
+[class*="overflow"]::-webkit-scrollbar,
+select[multiple]::-webkit-scrollbar,
+.dropdown-menu.show::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.scrollable-container::-webkit-scrollbar-thumb,
+.scroll-container::-webkit-scrollbar-thumb,
+div[class*="scroll"]::-webkit-scrollbar-thumb,
+[class*="overflow"]::-webkit-scrollbar-thumb,
+select[multiple]::-webkit-scrollbar-thumb,
+.dropdown-menu.show::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+.scrollable-container::-webkit-scrollbar-thumb:hover,
+.scroll-container::-webkit-scrollbar-thumb:hover,
+div[class*="scroll"]::-webkit-scrollbar-thumb:hover,
+[class*="overflow"]::-webkit-scrollbar-thumb:hover,
+select[multiple]::-webkit-scrollbar-thumb:hover,
+.dropdown-menu.show::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+/* Direct override for tab content */
+#task-images, #task-tools {
+    background-color: rgba(0, 0, 0, 0.6) !important;
+}

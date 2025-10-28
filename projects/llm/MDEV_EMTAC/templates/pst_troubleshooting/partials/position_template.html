@@ -1,0 +1,84 @@
+<!-- Position Template Partial -->
+<template id="position-template">
+<div class="position-section border p-3 mb-3" data-position-id="temp-__UNIQUE__">
+    <!-- Area Dropdown -->
+    <div class="mb-3">
+        <label for="areaDropdown__UNIQUE__" class="form-label">Area</label>
+        <select class="form-select areaDropdown" id="areaDropdown__UNIQUE__">
+            <option value="">Select Area</option>
+            <!-- Options will be populated here -->
+        </select>
+    </div>
+
+    <!-- Equipment Group Dropdown -->
+    <div class="mb-3">
+        <label for="equipmentGroupDropdown__UNIQUE__" class="form-label">Equipment Group</label>
+        <select class="form-select equipmentGroupDropdown" id="equipmentGroupDropdown__UNIQUE__" disabled>
+            <option value="">Select Equipment Group</option>
+        </select>
+    </div>
+
+    <!-- Model Dropdown -->
+    <div class="mb-3">
+        <label for="modelDropdown__UNIQUE__" class="form-label">Model</label>
+        <select class="form-select modelDropdown" id="modelDropdown__UNIQUE__" disabled>
+            <option value="">Select Model</option>
+        </select>
+    </div>
+
+    <!-- Asset Number Dropdown -->
+    <div class="mb-3">
+        <label for="assetNumberInput__UNIQUE__" class="form-label">Asset Number</label>
+        <select class="form-select assetNumberInput" id="assetNumberInput__UNIQUE__" disabled>
+            <option value="">Select Asset Number</option>
+        </select>
+    </div>
+
+    <!-- Location Dropdown -->
+    <div class="mb-3">
+        <label for="locationInput__UNIQUE__" class="form-label">Location:</label>
+        <select class="form-select locationInput" id="locationInput__UNIQUE__" disabled>
+            <option value="">Select Location</option>
+        </select>
+    </div>
+
+    <!-- Assemblies Dropdown -->
+    <div class="mb-3">
+        <label for="assembliesDropdown__UNIQUE__" class="form-label">Subassembly</label>
+        <select class="form-select assembliesDropdown" id="assembliesDropdown__UNIQUE__" disabled>
+            <option value="">oh no Select Subassembly</option>
+        </select>
+    </div>
+
+    <!-- Subassemblies Dropdown -->
+    <div class="mb-3">
+        <label for="subassembliesDropdown__UNIQUE__" class="form-label">Component Assembly</label>
+        <select class="form-select subassembliesDropdown" id="subassembliesDropdown__UNIQUE__" disabled>
+            <option value="">Select Subassembly</option>
+        </select>
+    </div>
+
+    <!-- Subassembly Views Dropdown -->
+    <div class="mb-3">
+        <label for="assemblyViewsDropdown__UNIQUE__" class="form-label">Assembly View</label>
+        <select class="form-select assemblyViewsDropdown" id="assemblyViewsDropdown__UNIQUE__" disabled>
+            <option value="">Select Subassembly View</option>
+        </select>
+    </div>
+
+    <!-- Site Location Dropdown -->
+    <div class="mb-3">
+        <label for="siteLocationDropdown__UNIQUE__" class="form-label">Site Location</label>
+        <select class="form-select siteLocationDropdown" id="siteLocationDropdown__UNIQUE__">
+            <option value="">Select Site Location</option>
+            <!-- Options will be populated here -->
+        </select>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="d-flex justify-content-end">
+        <button type="button" class="btn btn-primary me-2 savePositionBtn" id="savePositionBtn__UNIQUE__">Save Position</button>
+        <button type="button" class="btn btn-danger removePositionBtn" id="removePositionBtn__UNIQUE__">Remove Position</button>
+    </div>
+</div>
+</template>

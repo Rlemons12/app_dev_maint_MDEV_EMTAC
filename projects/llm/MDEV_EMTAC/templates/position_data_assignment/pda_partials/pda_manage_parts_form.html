@@ -1,0 +1,39 @@
+<!-- Manage Parts Section -->
+<!-- Updated Hidden Input for Position ID in Manage Parts -->
+<input type="hidden" id="position_id" name="position_id" value="{{ position.id }}">
+
+<!-- Parts Search -->
+<div style="position: relative !important; overflow: visible !important; z-index: 9998 !important;">
+    <label for="parts-search">Search Parts:</label>
+    <input type="text" id="parts-search" placeholder="Search parts...">
+    <div id="parts-suggestion-box" class="suggestion-box"></div>
+</div>
+
+<!-- Existing Parts List -->
+<div id="parts-container">
+    <h4>Existing Parts:</h4>
+    <div id="existing-parts-list" class="scrollable-list">
+        {% for part in existing_parts %}
+            <div class="existing-part" id="part-{{ part.id }}">
+                <span>Part Number: {{ part.part_number }}, Name: {{ part.name }}</span>
+                <button type="button" class="remove-existing-part-button"
+                        data-part-id="{{ part.id }}" data-position-id="{{ position.position_id }}">Remove</button>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Pagination Controls -->
+<div id="parts-pagination" class="pagination-controls"></div>
+
+<!-- Add New Parts Section -->
+<h4>Add New Parts:</h4>
+<div id="new-parts-container">
+    <!-- Dynamically added part entries will appear here -->
+</div>
+
+<!-- Button to Add More Parts -->
+<button type="button" id="add-part-button">Add Another Part</button>
+
+<!-- Button to Submit New Parts -->
+<button type="button" id="submit-parts-button">Submit New Parts</button>

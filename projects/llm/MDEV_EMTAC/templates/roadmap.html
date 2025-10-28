@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Roadmap - AI-Enhanced Maintenance Support Chatbot</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f4f4f9;
+        color: #333;
+    }
+    .timeline {
+        position: relative;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    .timeline::after {
+        content: '';
+        position: absolute;
+        width: 6px;
+        background-color: #f44336;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        margin-left: -3px;
+    }
+    .container {
+        padding: 10px 40px;
+        position: relative;
+        background-color: inherit;
+        width: 50%;
+    }
+    .container.left {
+        left: 0;
+    }
+    .container.right {
+        left: 50%;
+    }
+    .container::after {
+        content: '';
+        position: absolute;
+        width: 25px;
+        height: 25px;
+        right: -17px;
+        background-color: white;
+        border: 4px solid #f44336;
+        top: 15px;
+        border-radius: 50%;
+        z-index: 1;
+    }
+    .right::after {
+        left: -17px;
+    }
+    .content {
+        padding: 20px 30px;
+        background-color: white;
+        position: relative;
+        border-radius: 6px;
+    }
+    @media screen and (max-width: 600px) {
+        .timeline::after {
+        left: 31px;
+        }
+
+        .container {
+        width: 100%;
+        padding-left: 70px;
+        padding-right: 25px;
+        }
+
+        .container::before {
+        left: 60px;
+        border: medium solid white;
+        border-width: 10px 10px 10px 0;
+        border-color: transparent white transparent transparent;
+        }
+
+        .left::after, .right::after {
+        left: 15px;
+        }
+
+        .right {
+        left: 0%;
+        }
+    }
+</style>
+</head>
+<body>
+<h2>Project Roadmap - AI-Enhanced Maintenance Support Chatbot</h2>
+<div class="timeline">
+    <div class="container left">
+        <div class="content">
+            <h2>Initiation</h2>
+            <p>Define project scope, objectives, and conduct stakeholder meetings to secure input and buy-in.</p>
+        </div>
+    </div>
+    <div class="container right">
+        <div class="content">
+            <h2>Database Development</h2>
+            <p>Develop and implement the relational database schema to organize and store data securely.</p>
+        </div>
+    </div>
+    <div class="container left">
+        <div class="content">
+            <h2>Chatbot Development</h2>
+            <p>Develop the core functionalities of the chatbot, integrating with the database and OpenAI's API for NLP capabilities.</p>
+        </div>
+    </div>
+    <div class="container right">
+        <div the="content">
+            <h2>Fine-Tuning</h2>
+            <p>Collect and prepare training data, fine-tune the AI model, and evaluate performance iteratively to optimize response accuracy.</p>
+        </div>
+    </div>
+    <div class="container left">
+        <div class="content">
+            <h2>Testing and Deployment</h2>
+            <p>Conduct extensive testing with actual maintenance personnel, followed by controlled deployment and full-scale rollout.</p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

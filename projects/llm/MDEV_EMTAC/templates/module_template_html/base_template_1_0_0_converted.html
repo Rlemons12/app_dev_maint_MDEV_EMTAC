@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Efficient Maintenance and Technical Assistance Chatbot{% endblock %}</title>
+    {% block extra_head %}{% endblock %}
+    <style>
+        /* Red Banner Styles */
+        .banner {
+            width: 100%;
+            background-color: red;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1002;
+            font-weight: bold;
+            font-size: 1.5em;
+            text-transform: uppercase;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Ensure the rest of the content is below the banner */
+        body {
+            padding-top: 0;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Main Container */
+        .main-container {
+            display: flex;
+            flex-direction: row;
+            height: calc(100vh - 80px);
+            width: 100vw;
+            margin-top: 80px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            height: calc(100vh - 80px);
+            background-color: rgba(0, 0, 0, 0.8);
+            overflow-x: hidden;
+            overflow-y: auto;
+            transition: width 0.3s ease, opacity 0.3s ease;
+            position: fixed;
+            top: 80px;
+            left: 0; /* Start from the very left edge */
+            width: 300px; /* Full width */
+            padding-top: 20px;
+            font-size: 18px;
+            color: yellow;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            opacity: 1;
+        }
+
+        /* Sidebar Header */
+        .sidebar-header {
+            padding: 0 15px 20px 15px;
+            border-bottom: 1px solid #333;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header h1 {
+            margin: 0 0 10px 0;
+            color: #39FF14;
+            font-size: 24px;
+        }
+
+        .user-level {
+            margin: 5px 0;
+            color: #ccc;
+        }
+
+        .welcome-message {
+            margin: 10px 0 0 0;
+            color: white;
+            font-size: 16px;
+        }
+
+        /* Navigation Container - Scrollable */
+        .sidebar-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 15px;
+            margin-bottom: 20px;
+        }
+
+        .sidebar a,
+        .sidebar button {
+            padding: 10px 15px;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            transition: 0.3s;
+            background: none;
+            border: none;
+            text-align: left;
+            cursor: pointer;
+            font-size: inherit;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .sidebar a:hover,
+        .sidebar button:hover {
+            color: #39FF14;
+            background-color: rgba(57, 255, 20, 0.1);
+        }
+
+        .nav-link.highlight {
+            background-color: rgba(255, 255, 0, 0.1);
+            border-left: 3px solid yellow;
+        }
+
+        /* Sidebar Utilities */
+        .sidebar-utils {
+            flex-shrink: 0;
+            padding: 15px;
+            border-top: 1px solid #333;
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+
+        .voice-controls {
+            margin-bottom: 15px;
+        }
+
+        .toggle-button {
+            display: block;
+            width: 100%;
+            margin-bottom: 8px;
+            padding: 8px;
+            background-color: #333;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .toggle-button:hover {
+            background-color: #555;
+        }
+
+        .toggle-button.active {
+            background-color: #39FF14;
+            color: black;
+        }
+
+        .voice-controls select {
+            width: 100%;
+            padding: 6px 8px;
+            background-color: #333;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .model-display-section {
+            margin-bottom: 15px;
+            font-size: 11px;
+            color: #ccc;
+        }
+
+        .model-display-section p {
+            margin: 4px 0;
+        }
+
+        .logout-button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #d32f2f !important;
+            color: white !important;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+
+        .logout-button:hover {
+            background-color: #b71c1c !important;
+        }
+
+        /* Hamburger Button - Always at far left, overlaying sidebar */
+        #sidebarCollapse {
+            position: fixed;
+            top: 48px; /* Moved up closer to banner */
+            left: 10px;
+            font-size: 20px;
+            cursor: pointer;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.9);
+            border: 1px solid #555;
+            outline: none;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            z-index: 1003; /* Higher than sidebar to overlay it */
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        #sidebarCollapse:hover {
+            color: #39FF14;
+            background-color: rgba(57, 255, 20, 0.2);
+            border-color: #39FF14;
+            transform: scale(1.05);
+        }
+
+        /* Main Content Area */
+        .content {
+            width: calc(100vw - 300px);
+            margin-left: 300px;
+            transition: width 0.3s ease, margin-left 0.3s ease;
+            padding: 0;
+            height: calc(100vh - 80px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            box-sizing: border-box;
+        }
+
+        /* Collapsed State */
+        .main-container.collapsed .sidebar {
+            width: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .main-container.collapsed .content {
+            width: 100vw;
+            margin-left: 0;
+        }
+
+        /* Comment Popup */
+        #commentPopup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #333;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            z-index: 1003;
+            color: white;
+            width: 400px;
+            max-width: 90%;
+        }
+
+        #commentPopup h2 {
+            margin-top: 0;
+            color: #39FF14;
+        }
+
+        #commentPopup textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #555;
+            background-color: #444;
+            color: white;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+
+        #commentPopup input[type="file"] {
+            margin: 10px 0;
+            color: white;
+        }
+
+        #commentPopup button {
+            margin: 10px 5px 0 0;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #commentPopup button:hover {
+            background-color: #45a049;
+        }
+
+        #commentPopup button[type="button"] {
+            background-color: #666;
+        }
+
+        #commentPopup button[type="button"]:hover {
+            background-color: #555;
+        }
+
+        #commentPopupLink {
+            cursor: pointer;
+            text-decoration: underline;
+            color: white;
+            margin-left: 20px;
+        }
+
+        #pastedImagePreview {
+            max-width: 100px;
+            margin-top: 10px;
+            border: 1px solid #555;
+            border-radius: 4px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 250px;
+                left: 0;
+            }
+
+            .content {
+                width: calc(100vw - 250px);
+                margin-left: 250px;
+            }
+
+            .main-container.collapsed .content {
+                width: 100vw;
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Banner -->
+    <div class="banner">
+        THIS IS FOR REFERENCE ONLY. ALL INFORMATION SHOULD BE VERIFIED WITH CURRENT SOP'S
+        <a href="#" id="commentPopupLink">Leave a Comment</a>
+    </div>
+
+    <!-- Comment Popup Modal -->
+    <div id="commentPopup" style="display: none;">
+        <form id="commentForm">
+            <h2>Leave a Comment</h2>
+            <p>Instructions: You can write your comment, paste an image, or upload a file.</p>
+
+            <textarea name="comment" id="comment" placeholder="Write your comment here..." required></textarea>
+            <input type="hidden" id="imageData" name="imageData">
+
+            <div id="pastedImageFeedback" style="display: none; color: #39FF14;">
+                Image snippet successfully added!
+            </div>
+            <img id="pastedImagePreview" src="" alt="Pasted Image Preview" style="display:none;" />
+
+            <label for="fileUpload">Or upload an image:</label><br>
+            <input type="file" id="fileUpload" name="screenshot" accept="image/*" />
+
+            <button type="submit">Send</button>
+            <button type="button" id="closePopup">Close</button>
+        </form>
+    </div>
+
+    <div class="main-container">
+        <!-- Hamburger Button - Always visible -->
+        <button id="sidebarCollapse" class="hamburger" aria-expanded="true" aria-label="Toggle sidebar">&#9776;</button>
+
+        <!-- Sidebar Component -->
+        {% block sidebar %}
+        <div class="sidebar" id="mainSidebar">
+            <!-- Header Section Container -->
+            <div class="sidebar-header">
+                <h1>EMTAC</h1>
+                <p class="user-level">User Level: {{ session['user_level'] }}</p>
+                <h2 class="welcome-message">Welcome {{ session['first_name'] }}! How can I assist you?</h2>
+            </div>
+
+            <!-- Main Navigation Links - ENDPOINTS FIRST -->
+            <div class="sidebar-nav">
+                <!-- ==================== -->
+                <!-- ENDPOINT LINKS FIRST -->
+                <!-- ==================== -->
+
+                <!-- Common endpoints for all users -->
+                <a href="/" class="nav-link highlight">Return to Main</a>
+                <a href="/upload_search_database" class="nav-link highlight">Search and Upload</a>
+                <a href="/bill_of_materials" class="nav-link highlight">Parts and BOMs</a>
+
+                <!-- LEVEL_I and above endpoints -->
+                {% if session['user_level'] == 'LEVEL_I' or session['user_level'] == 'LEVEL_II' or session['user_level'] == 'LEVEL_III' or session['user_level'] == 'ADMIN' %}
+                    <a href="/pst_troubleshooting/" class="nav-link highlight">Search Troubleshooting</a>
+                {% endif %}
+
+                <!-- LEVEL_II and above endpoints -->
+                {% if session['user_level'] == 'LEVEL_II' or session['user_level'] == 'LEVEL_III' or session['user_level'] == 'ADMIN' %}
+                    <a href="/tool/submit_tool_data" class="nav-link highlight">Tools: Entry and Search</a>
+                {% endif %}
+
+                <!-- Admin and Level III endpoints -->
+                {% if session['user_level'] == 'ADMIN' or session['user_level'] == 'LEVEL_III' %}
+                    <a href="/position_data_assignment" class="nav-link highlight">Position Data Assignment</a>
+                {% endif %}
+
+                <!-- ================ -->
+                <!-- FORM LINKS NEXT -->
+                <!-- ================ -->
+
+                <!-- Search page specific forms - LEVEL_I and above -->
+                {% if current_page == 'search' %}
+                    {% if session['user_level'] == 'LEVEL_I' or session['user_level'] == 'LEVEL_II' or session['user_level'] == 'LEVEL_III' or session['user_level'] == 'ADMIN' %}
+                        <a href="#search-documents" onclick="showForm('search-documents')" class="nav-link">Search Documents</a>
+                        <a href="#search-drawings" onclick="showForm('search-drawings')" class="nav-link">Search Drawings</a>
+                        <a href="#search-images" onclick="showForm('search-images')" class="nav-link">Search Images</a>
+                        <a href="#compare-images" onclick="showForm('compare-images')" class="nav-link">Compare Images</a>
+                        <a href="#search-powerpoints" onclick="showForm('search-powerpoints')" class="nav-link">Search PowerPoints</a>
+                    {% endif %}
+
+                    <!-- Upload links only available to LEVEL_III and ADMIN -->
+                    {% if session['user_level'] == 'ADMIN' or session['user_level'] == 'LEVEL_III' %}
+                        <a href="#upload-image" onclick="showForm('upload-image')" class="nav-link">Upload Image</a>
+                        <a href="#upload-document" onclick="showForm('upload-document')" class="nav-link">Upload Document</a>
+                        <a href="#upload-powerpoint" onclick="showForm('upload-powerpoint')" class="nav-link">Upload PowerPoint</a>
+                        <a href="#batch-upload" onclick="showForm('batch-upload')" class="nav-link">Batch Upload Documents</a>
+                    {% endif %}
+                {% endif %}
+
+                <!-- BOM page specific forms -->
+                {% if current_page == 'bom' %}
+                    <!-- BOM specific links - search and edit for LEVEL_I and above -->
+                    {% if session['user_level'] == 'LEVEL_I' or session['user_level'] == 'LEVEL_II' or session['user_level'] == 'LEVEL_III' or session['user_level'] == 'ADMIN' %}
+                        <a href="#search-bill-of-materials" onclick="showForm('search-bill-of-materials')" class="nav-link">Search Bill of Materials</a>
+                        <a href="#edit-part" onclick="showForm('edit-part')" class="nav-link">Edit Part</a>
+                    {% endif %}
+
+                    <!-- BOM specific links - Enter New Part for LEVEL_II and above -->
+                    {% if session['user_level'] == 'LEVEL_II' or session['user_level'] == 'LEVEL_III' or session['user_level'] == 'ADMIN' %}
+                        <a href="#enter-new-part" onclick="showForm('enter-new-part')" class="nav-link">Enter New Part</a>
+                    {% endif %}
+
+                    <!-- BOM specific links - Upload for LEVEL_III and ADMIN -->
+                    {% if session['user_level'] == 'ADMIN' or session['user_level'] == 'LEVEL_III' %}
+                        <a href="#upload-bill-of-materials" onclick="showForm('upload-bill-of-materials')" class="nav-link">Upload Bill of Materials</a>
+                    {% endif %}
+                {% endif %}
+
+                <!-- Theme Selector in navigation area -->
+                <div class="theme-selector-nav" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #333;">
+                    <label for="theme-select" style="color: #ccc; font-size: 12px; display: block; margin-bottom: 5px;">Theme:</label>
+                    <select id="theme-select" style="width: 100%; padding: 6px 8px; background-color: #333; color: white; border: 1px solid #555; border-radius: 4px; font-size: 12px;">
+                        <option value="">Default</option>
+                        <option value="theme_blue_grey.css">Professional Blue-Grey</option>
+                        <option value="theme_green_modern.css">Green Modern</option>
+                        <option value="theme_grey_navy.css">Classic Grey & Navy</option>
+                        <option value="theme_light_orange.css">Modern Light & Orange</option>
+                        <option value="theme_minimal_white.css">Minimal White & Graphite</option>
+                        <option value="theme_purple_indigo.css">Modern Purple & Indigo</option>
+                        <option value="theme_teal_black.css">Futuristic Teal & Black</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Utility Section -->
+            <div class="sidebar-utils">
+                {% if session['user_level'] == 'LEVEL_III' %}
+                <!-- Voice controls section available only to LEVEL_III -->
+                <div class="voice-controls">
+                    <button id="toggle-voice" class="toggle-button">Toggle Voice Recognition</button>
+                    <button id="toggle-text-to-speech" class="toggle-button">Toggle Text-to-Speech</button>
+                    <select id="voice-selection"></select>
+                </div>
+                {% endif %}
+
+                <!-- Model display section for advanced users -->
+                <div class="model-display-section" {% if session['user_level'] != 'STANDARD' %} style="display: block;" {% else %} style="display: none;" {% endif %}>
+                    <p>Current AI Model: {{ current_ai_model|default('Default Model') }}</p>
+                    <p>Current Embedding Model: {{ current_embedding_model|default('Default Embedding') }}</p>
+                </div>
+
+                <!-- Logout button at the bottom -->
+                <a href="/logout" class="logout-button">Logout</a>
+            </div>
+        </div>
+        {% endblock %}
+
+        <!-- Main Content -->
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <script>
+        // Enhanced sidebar collapse functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarCollapse = document.getElementById('sidebarCollapse');
+            const mainContainer = document.querySelector('.main-container');
+
+            if (sidebarCollapse && mainContainer) {
+                sidebarCollapse.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    console.log('Sidebar collapse clicked'); // Debug log
+
+                    mainContainer.classList.toggle('collapsed');
+
+                    const isExpanded = !mainContainer.classList.contains('collapsed');
+                    this.setAttribute('aria-expanded', isExpanded);
+
+                    console.log('Sidebar collapsed state:', mainContainer.classList.contains('collapsed')); // Debug log
+                });
+            }
+        });
+
+        // Comment popup functionality
+        document.getElementById('commentPopupLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('commentPopup').style.display = 'block';
+        });
+
+        document.getElementById('closePopup').addEventListener('click', function() {
+            document.getElementById('commentPopup').style.display = 'none';
+        });
+
+        // Handle comment form submission
+        document.getElementById('commentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Comment submitted! (This is a demo - no actual submission)');
+            document.getElementById('commentPopup').style.display = 'none';
+            this.reset();
+        });
+
+        // File upload preview
+        document.getElementById('fileUpload').addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('pastedImagePreview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+        // Handle paste events for images
+        document.getElementById('comment').addEventListener('paste', function(e) {
+            const items = e.clipboardData.items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const blob = items[i].getAsFile();
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById('imageData').value = e.target.result;
+                        document.getElementById('pastedImageFeedback').style.display = 'block';
+                        const preview = document.getElementById('pastedImagePreview');
+                        preview.src = e.target.result;
+                        preview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(blob);
+                    break;
+                }
+            }
+        });
+
+        // Close popup when clicking outside
+        window.addEventListener('click', function(e) {
+            const popup = document.getElementById('commentPopup');
+            if (e.target === popup) {
+                popup.style.display = 'none';
+            }
+        });
+
+        // Theme selector functionality
+        document.getElementById('theme-select').addEventListener('change', function() {
+            const themeFile = this.value;
+
+            // Remove existing theme link if any
+            const existingTheme = document.getElementById('theme-css');
+            if (existingTheme) {
+                existingTheme.remove();
+            }
+
+            // If a theme is selected, load it
+            if (themeFile) {
+                const link = document.createElement('link');
+                link.id = 'theme-css';
+                link.rel = 'stylesheet';
+                link.type = 'text/css';
+                link.href = '/static/css/themes/' + themeFile;
+                document.head.appendChild(link);
+
+                // Store selection in memory for this session
+                sessionStorage.setItem('selectedTheme', themeFile);
+            } else {
+                // Remove from storage if default is selected
+                sessionStorage.removeItem('selectedTheme');
+            }
+        });
+
+        // Load saved theme on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = sessionStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                document.getElementById('theme-select').value = savedTheme;
+
+                // Apply the saved theme
+                const link = document.createElement('link');
+                link.id = 'theme-css';
+                link.rel = 'stylesheet';
+                link.type = 'text/css';
+                link.href = '/static/css/themes/' + savedTheme;
+                document.head.appendChild(link);
+            }
+        });
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

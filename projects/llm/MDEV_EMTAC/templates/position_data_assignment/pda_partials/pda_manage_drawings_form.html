@@ -1,0 +1,48 @@
+<!-- Manage Drawings Section -->
+<!-- Search Drawings -->
+<div style="position: relative !important; overflow: visible !important; z-index: 9998 !important;">
+    <label for="search-drawings">Search Drawings:</label>
+    <input type="text" id="search-drawings" placeholder="Search drawings...">
+    <div id="drawing-suggestion-box" class="suggestion-box"></div>
+</div>
+
+<!-- Existing Drawings List -->
+<div id="drawings-container">
+    <h4>Existing Drawings:</h4>
+    <div id="existing-drawings-list" class="scrollable-list">
+        {% for drawing in existing_drawings %}
+            <div class="existing-drawing">
+                <span>Name: {{ drawing.drw_name }}, Number: {{ drawing.drw_number }}</span>
+                <button type="button" class="remove-existing-drawing-button" data-drawing-id="{{ drawing.id }}">Remove</button>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Upload New Drawings -->
+<h4>Upload New Drawings:</h4>
+<div>
+    <!-- Input fields for drawing attributes -->
+    <label for="drw_equipment_name">Equipment Name:</label>
+    <input type="text" id="drw_equipment_name"><br>
+
+    <label for="drw_number">Drawing Number:</label>
+    <input type="text" id="drw_number"><br>
+
+    <label for="drw_name">Drawing Name:</label>
+    <input type="text" id="drw_name" required><br>
+
+    <label for="drw_revision">Revision:</label>
+    <input type="text" id="drw_revision"><br>
+
+    <label for="drw_spare_part_number">Spare Part Number:</label>
+    <input type="text" id="drw_spare_part_number"><br>
+
+    <label for="drawings-upload">Upload Drawing:</label>
+    <input type="file" id="drawings-upload" accept=".pdf,.jpg,.jpeg,.png"><br>
+
+    <button type="button" id="upload-drawing-button">Upload Drawing</button>
+</div>
+
+<!-- Hidden Input for Position ID -->
+<input type="hidden" id="position_id" value="{{ position.id }}">

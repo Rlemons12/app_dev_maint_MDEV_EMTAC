@@ -1,0 +1,62 @@
+/* Professional Blue-Grey Theme for EMTAC */
+
+/* Override body background */
+body {
+    background-color: #263238 !important; /* Dark blue-grey */
+}
+
+/* Sidebar styling */
+.sidebar {
+    background-color: rgba(55, 71, 79, 0.95) !important; /* Blue-grey with transparency */
+    color: #b3e5fc !important; /* Light blue text */
+}
+
+.sidebar-header h1 {
+    color: #81c784 !important; /* Green accent */
+}
+
+.sidebar a:hover,
+.sidebar button:hover {
+    color: #81c784 !important; /* Green hover */
+    background-color: rgba(129, 199, 132, 0.1) !important;
+}
+
+.nav-link.highlight {
+    background-color: rgba(129, 199, 132, 0.2) !important;
+    border-left: 3px solid #81c784 !important;
+}
+
+/* Container backgrounds */
+.voice-controls-container,
+.model-display-container,
+.theme-container {
+    background-color: rgba(84, 110, 122, 0.3) !important;
+    border: 1px solid #546e7a !important;
+}
+
+.voice-controls-container h4,
+.model-display-container h4,
+.theme-container h4 {
+    background-color: rgba(55, 71, 79, 0.5) !important;
+    color: #81c784 !important;
+}
+
+/* Buttons */
+.toggle-button {
+    background-color: #546e7a !important;
+    border: 1px solid #78909c !important;
+}
+
+.toggle-button:hover {
+    background-color: #78909c !important;
+}
+
+/* Main content area */
+.content {
+    background-color: #37474f !important; /* Darker blue-grey */
+}
+
+/* Banner stays red for safety */
+.banner {
+    background-color: #c62828 !important; /* Darker red */
+}

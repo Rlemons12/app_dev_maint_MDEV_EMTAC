@@ -1,0 +1,590 @@
+IMAGE_NATURAL_LANGUAGE_VARIATIONS = {
+
+    # IMAGE_OF_EQUIPMENT - Expanded to 45 variations
+    "IMAGE_OF_EQUIPMENT": {
+        "formal": [
+            "image of equipment {equipment_number}",
+            "photograph of equipment {equipment_number}",
+            "picture of equipment {equipment_number}",
+            "photo of unit {equipment_number}",
+            "image showing equipment {equipment_number}",
+            "photograph showing unit {equipment_number}",
+            "picture of machine {equipment_number}",
+            "photo of machine {equipment_number}",
+            "visual of equipment {equipment_number}",
+            "image depicting equipment {equipment_number}",
+            "photograph of machine {equipment_number}",
+            "picture showing unit {equipment_number}",
+            "image of unit {equipment_number}",
+            "visual representation of equipment {equipment_number}",
+            "photographic documentation of equipment {equipment_number}"
+        ],
+        "casual": [
+            "pic of {equipment_number}",
+            "photo of {equipment_number}",
+            "picture of {equipment_number}",
+            "image of {equipment_number}",
+            "shot of {equipment_number}",
+            "snap of {equipment_number}",
+            "pic showing {equipment_number}",
+            "{equipment_number} photo",
+            "{equipment_number} picture",
+            "{equipment_number} image",
+            "photo showing {equipment_number}",
+            "picture showing {equipment_number}",
+            "some pics of {equipment_number}",
+            "any photos of {equipment_number}",
+            "images of {equipment_number}"
+        ],
+        "contextual": [
+            "what does equipment {equipment_number} look like",
+            "show me equipment {equipment_number}",
+            "visual of equipment {equipment_number}",
+            "appearance of equipment {equipment_number}",
+            "how equipment {equipment_number} looks",
+            "pictures showing equipment {equipment_number}",
+            "photos depicting equipment {equipment_number}",
+            "images displaying equipment {equipment_number}",
+            "visual documentation of equipment {equipment_number}",
+            "photographic record of equipment {equipment_number}",
+            "see equipment {equipment_number}",
+            "view equipment {equipment_number}",
+            "look at equipment {equipment_number}",
+            "display equipment {equipment_number}",
+            "equipment {equipment_number} appearance"
+        ]
+    },
+
+    # IMAGE_OF_EQUIPMENT_NAME - Expanded to 45 variations
+    "IMAGE_OF_EQUIPMENT_NAME": {
+        "formal": [
+            "image of {equipment_name}",
+            "photograph of {equipment_name}",
+            "picture of {equipment_name}",
+            "photo of {equipment_name}",
+            "image showing {equipment_name}",
+            "photograph depicting {equipment_name}",
+            "picture displaying {equipment_name}",
+            "visual of {equipment_name}",
+            "image of {equipment_name} equipment",
+            "photograph of {equipment_name} unit",
+            "picture of {equipment_name} machine",
+            "photo of {equipment_name} system",
+            "visual representation of {equipment_name}",
+            "photographic documentation of {equipment_name}",
+            "image depicting {equipment_name}"
+        ],
+        "casual": [
+            "pic of {equipment_name}",
+            "photo of {equipment_name}",
+            "picture of {equipment_name}",
+            "{equipment_name} pic",
+            "{equipment_name} photo",
+            "{equipment_name} picture",
+            "{equipment_name} image",
+            "shot of {equipment_name}",
+            "snap of {equipment_name}",
+            "some {equipment_name} pics",
+            "any {equipment_name} photos",
+            "{equipment_name} images",
+            "pics showing {equipment_name}",
+            "photos of {equipment_name}",
+            "{equipment_name} shots"
+        ],
+        "contextual": [
+            "what does {equipment_name} look like",
+            "show me {equipment_name}",
+            "appearance of {equipment_name}",
+            "how {equipment_name} looks",
+            "visual of {equipment_name}",
+            "what a {equipment_name} looks like",
+            "see {equipment_name}",
+            "view {equipment_name}",
+            "look at {equipment_name}",
+            "display {equipment_name}",
+            "{equipment_name} appearance",
+            "pictures showing {equipment_name}",
+            "photos depicting {equipment_name}",
+            "images displaying {equipment_name}",
+            "visual documentation of {equipment_name}"
+        ]
+    },
+
+    # IMAGE_OF_PART - Expanded to 45 variations
+    "IMAGE_OF_PART": {
+        "formal": [
+            "image of part number {part_number}",
+            "photograph of part {part_number}",
+            "picture of part {part_number}",
+            "photo of component {part_number}",
+            "image showing part {part_number}",
+            "photograph depicting part number {part_number}",
+            "picture of component {part_number}",
+            "visual of part {part_number}",
+            "image of item {part_number}",
+            "photograph of item {part_number}",
+            "picture showing part number {part_number}",
+            "photo displaying part {part_number}",
+            "visual representation of part {part_number}",
+            "photographic documentation of part {part_number}",
+            "image depicting component {part_number}"
+        ],
+        "casual": [
+            "pic of part {part_number}",
+            "photo of {part_number}",
+            "picture of {part_number}",
+            "{part_number} pic",
+            "{part_number} photo",
+            "{part_number} picture",
+            "{part_number} image",
+            "shot of part {part_number}",
+            "snap of {part_number}",
+            "part {part_number} pic",
+            "part {part_number} photo",
+            "some pics of {part_number}",
+            "any photos of part {part_number}",
+            "images of {part_number}",
+            "{part_number} shots"
+        ],
+        "contextual": [
+            "what does part {part_number} look like",
+            "show me part {part_number}",
+            "appearance of part {part_number}",
+            "how part {part_number} looks",
+            "visual of part {part_number}",
+            "see part {part_number}",
+            "view part {part_number}",
+            "look at part {part_number}",
+            "display part {part_number}",
+            "part {part_number} appearance",
+            "pictures showing part {part_number}",
+            "photos depicting part {part_number}",
+            "images displaying part {part_number}",
+            "visual documentation of part {part_number}",
+            "photographic record of part {part_number}"
+        ]
+    },
+
+    # IMAGE_OF_DESCRIPTION - Expanded to 45 variations
+    "IMAGE_OF_DESCRIPTION": {
+        "formal": [
+            "image of {description}",
+            "photograph of {description}",
+            "picture of {description}",
+            "photo of {description}",
+            "image showing {description}",
+            "photograph depicting {description}",
+            "picture displaying {description}",
+            "visual of {description}",
+            "image of {description} component",
+            "photograph of {description} part",
+            "picture of {description} assembly",
+            "photo of {description} unit",
+            "visual representation of {description}",
+            "photographic documentation of {description}",
+            "image depicting {description}"
+        ],
+        "casual": [
+            "pic of {description}",
+            "photo of {description}",
+            "picture of {description}",
+            "{description} pic",
+            "{description} photo",
+            "{description} picture",
+            "{description} image",
+            "shot of {description}",
+            "snap of {description}",
+            "some {description} pics",
+            "any {description} photos",
+            "{description} images",
+            "pics showing {description}",
+            "photos of {description}",
+            "{description} shots"
+        ],
+        "contextual": [
+            "what does {description} look like",
+            "show me {description}",
+            "appearance of {description}",
+            "how {description} looks",
+            "visual of {description}",
+            "what a {description} looks like",
+            "see {description}",
+            "view {description}",
+            "look at {description}",
+            "display {description}",
+            "{description} appearance",
+            "pictures showing {description}",
+            "photos depicting {description}",
+            "images displaying {description}",
+            "visual documentation of {description}"
+        ]
+    },
+
+    # IMAGE_BY_LOCATION - Expanded to 45 variations
+    "IMAGE_BY_LOCATION": {
+        "formal": [
+            "images from location {location}",
+            "photographs from {location}",
+            "pictures from area {location}",
+            "photos from {location}",
+            "images taken at {location}",
+            "photographs from area {location}",
+            "pictures from location {location}",
+            "photos from section {location}",
+            "visual documentation from {location}",
+            "photographic record from {location}",
+            "images of {location} area",
+            "photographs of {location} location",
+            "pictures of {location} section",
+            "photos of {location} facility",
+            "visual record from {location}"
+        ],
+        "casual": [
+            "pics from {location}",
+            "photos from {location}",
+            "pictures from {location}",
+            "{location} pics",
+            "{location} photos",
+            "{location} pictures",
+            "{location} images",
+            "shots from {location}",
+            "snaps from {location}",
+            "some {location} pics",
+            "any {location} photos",
+            "{location} area pics",
+            "pics at {location}",
+            "photos at {location}",
+            "{location} shots"
+        ],
+        "contextual": [
+            "what does {location} look like",
+            "show me {location}",
+            "appearance of {location}",
+            "how {location} looks",
+            "visual of {location}",
+            "see {location}",
+            "view {location}",
+            "look at {location}",
+            "display {location}",
+            "{location} appearance",
+            "pictures showing {location}",
+            "photos depicting {location}",
+            "images from {location} area",
+            "visual documentation of {location}",
+            "photographic record of {location}"
+        ]
+    },
+
+    # IMAGE_BY_MANUFACTURER - Expanded to 45 variations
+    "IMAGE_BY_MANUFACTURER": {
+        "formal": [
+            "images of {manufacturer} equipment",
+            "photographs of {manufacturer} products",
+            "pictures of {manufacturer} parts",
+            "photos of {manufacturer} components",
+            "images showing {manufacturer} equipment",
+            "photographs depicting {manufacturer} products",
+            "pictures of {manufacturer} machinery",
+            "photos of {manufacturer} devices",
+            "visual documentation of {manufacturer} equipment",
+            "photographic record of {manufacturer} products",
+            "images of {manufacturer} manufactured equipment",
+            "photographs of {manufacturer} brand",
+            "pictures showing {manufacturer} products",
+            "photos depicting {manufacturer} equipment",
+            "visual of {manufacturer} components"
+        ],
+        "casual": [
+            "pics of {manufacturer} stuff",
+            "photos of {manufacturer}",
+            "pictures of {manufacturer}",
+            "{manufacturer} pics",
+            "{manufacturer} photos",
+            "{manufacturer} pictures",
+            "{manufacturer} images",
+            "shots of {manufacturer}",
+            "snaps of {manufacturer}",
+            "some {manufacturer} pics",
+            "any {manufacturer} photos",
+            "{manufacturer} equipment pics",
+            "pics showing {manufacturer}",
+            "photos of {manufacturer} things",
+            "{manufacturer} shots"
+        ],
+        "contextual": [
+            "what does {manufacturer} equipment look like",
+            "show me {manufacturer} products",
+            "appearance of {manufacturer} equipment",
+            "how {manufacturer} products look",
+            "visual of {manufacturer} equipment",
+            "see {manufacturer} equipment",
+            "view {manufacturer} products",
+            "look at {manufacturer} equipment",
+            "display {manufacturer} products",
+            "{manufacturer} equipment appearance",
+            "pictures showing {manufacturer} equipment",
+            "photos depicting {manufacturer} products",
+            "images of {manufacturer} machinery",
+            "visual documentation of {manufacturer}",
+            "photographic record of {manufacturer} equipment"
+        ]
+    },
+
+    # Additional contextual combinations for multi-entity queries
+    "COMBINATIONS": {
+        "formal": [
+            "image of {equipment_name} at {location}",
+            "photograph of part {part_number} on equipment {equipment_number}",
+            "picture showing {description} from {manufacturer}",
+            "photo of {equipment_name} manufactured by {manufacturer}",
+            "image of equipment {equipment_number} at {location}",
+            "photograph of {description} component on {equipment_name}",
+            "picture of {manufacturer} {equipment_name}",
+            "photo showing part {part_number} in {location}",
+            "image of {description} at location {location}",
+            "photograph depicting {equipment_name} equipment {equipment_number}"
+        ],
+        "casual": [
+            "pic of {equipment_name} at {location}",
+            "photo of {part_number} on {equipment_number}",
+            "picture of {manufacturer} {description}",
+            "{equipment_name} pic from {location}",
+            "{manufacturer} {equipment_name} photo",
+            "some pics of {description} at {location}",
+            "{equipment_number} at {location} pics",
+            "photos of {part_number} stuff",
+            "{description} from {manufacturer} images",
+            "{location} {equipment_name} shots"
+        ],
+        "contextual": [
+            "what does {equipment_name} look like at {location}",
+            "show me {description} from {manufacturer}",
+            "appearance of part {part_number} on equipment {equipment_number}",
+            "how {equipment_name} looks at {location}",
+            "visual of {manufacturer} {description}",
+            "see {equipment_name} in {location}",
+            "view part {part_number} on {equipment_name}",
+            "look at {description} from {manufacturer}",
+            "display {equipment_number} at {location}",
+            "pictures showing {equipment_name} at {location}"
+        ]
+    },
+
+    # Image type variations (installation, condition, etc.)
+    "IMAGE_TYPES": {
+        "formal": [
+            "installation image",
+            "condition assessment photograph",
+            "maintenance photograph",
+            "inspection image",
+            "as-built photograph",
+            "field photograph",
+            "site image",
+            "operational photograph",
+            "damage assessment image",
+            "before condition photograph",
+            "after condition photograph",
+            "close-up image",
+            "overview photograph",
+            "detail photograph",
+            "aerial photograph"
+        ],
+        "casual": [
+            "install pic",
+            "condition photo",
+            "maintenance pic",
+            "inspection photo",
+            "as-built pic",
+            "field photo",
+            "site pic",
+            "running photo",
+            "damage pic",
+            "before pic",
+            "after pic",
+            "close-up",
+            "overview shot",
+            "detail shot",
+            "aerial shot"
+        ]
+    },
+
+    # Image perspective/view variations
+    "IMAGE_VIEWS": {
+        "formal": [
+            "front view image",
+            "rear view photograph",
+            "side view picture",
+            "top view photo",
+            "bottom view image",
+            "left side photograph",
+            "right side picture",
+            "isometric view photo",
+            "overhead view image",
+            "underneath view photograph",
+            "close-up view picture",
+            "wide angle view photo",
+            "panoramic view image",
+            "sectional view photograph",
+            "cutaway view picture"
+        ],
+        "casual": [
+            "front pic",
+            "back photo",
+            "side pic",
+            "top view",
+            "bottom view",
+            "left side pic",
+            "right side pic",
+            "angle shot",
+            "overhead shot",
+            "underneath pic",
+            "close-up",
+            "wide shot",
+            "panorama",
+            "section view",
+            "cutaway"
+        ]
+    },
+
+    # Image quality/detail variations
+    "IMAGE_QUALITY": {
+        "formal": [
+            "high resolution image",
+            "detailed photograph",
+            "clear picture",
+            "close-up photograph",
+            "macro image",
+            "enlarged photograph",
+            "zoomed image",
+            "high quality photograph",
+            "full resolution picture",
+            "detailed view photograph",
+            "precision image",
+            "enhanced photograph",
+            "professional photograph",
+            "technical photograph",
+            "engineering photograph"
+        ],
+        "casual": [
+            "hi-res pic",
+            "detailed photo",
+            "clear pic",
+            "close-up",
+            "macro shot",
+            "zoomed pic",
+            "good quality photo",
+            "full res pic",
+            "detailed shot",
+            "zoomed in pic",
+            "big pic",
+            "enhanced photo",
+            "pro pic",
+            "tech photo",
+            "good pic"
+        ]
+    },
+
+    # Urgency/Priority variations for images
+    "URGENCY": {
+        "formal": [
+            "urgently need image of {equipment_name}",
+            "immediately require photograph of {part_number}",
+            "priority request for picture of {equipment_number}",
+            "emergency image of {description}",
+            "critical need for photograph of {equipment_name}",
+            "expedited request for image of {part_number}",
+            "rush order photograph of {equipment_number}",
+            "urgent requirement for picture of {description}",
+            "immediate need for image of {equipment_name}",
+            "emergency photograph of {part_number}"
+        ],
+        "casual": [
+            "really need pic of {equipment_name}",
+            "gotta have photo of {part_number}",
+            "need image of {equipment_number} ASAP",
+            "must have picture of {description}",
+            "desperate for pic of {equipment_name}",
+            "really need that {part_number} photo",
+            "gotta get image of {equipment_number}",
+            "need {description} pic now",
+            "must find picture of {equipment_name}",
+            "really want photo of {part_number}"
+        ]
+    },
+
+    # Temporal/condition variations
+    "TEMPORAL": {
+        "formal": [
+            "current image of {equipment_name}",
+            "recent photograph of {equipment_number}",
+            "latest picture of {part_number}",
+            "historical image of {equipment_name}",
+            "original photograph of {equipment_number}",
+            "updated picture of {part_number}",
+            "archived image of {equipment_name}",
+            "previous photograph of {equipment_number}",
+            "baseline picture of {part_number}",
+            "initial image of {equipment_name}",
+            "before condition photograph of {equipment_number}",
+            "after condition picture of {part_number}",
+            "as-installed image of {equipment_name}",
+            "as-maintained photograph of {equipment_number}",
+            "as-found picture of {part_number}"
+        ],
+        "casual": [
+            "current pic of {equipment_name}",
+            "recent photo of {equipment_number}",
+            "latest pic of {part_number}",
+            "old pic of {equipment_name}",
+            "original photo of {equipment_number}",
+            "new pic of {part_number}",
+            "archived photo of {equipment_name}",
+            "old photo of {equipment_number}",
+            "first pic of {part_number}",
+            "initial photo of {equipment_name}",
+            "before pic of {equipment_number}",
+            "after pic of {part_number}",
+            "install pic of {equipment_name}",
+            "maintenance photo of {equipment_number}",
+            "as-found pic of {part_number}"
+        ]
+    },
+
+    # Purpose/usage variations
+    "PURPOSE": {
+        "formal": [
+            "reference image",
+            "documentation photograph",
+            "identification picture",
+            "verification photo",
+            "comparison image",
+            "training photograph",
+            "instruction picture",
+            "demonstration photo",
+            "example image",
+            "sample photograph",
+            "illustration picture",
+            "evidence photo",
+            "record image",
+            "archive photograph",
+            "catalog picture"
+        ],
+        "casual": [
+            "reference pic",
+            "doc photo",
+            "ID pic",
+            "check photo",
+            "comparison pic",
+            "training photo",
+            "how-to pic",
+            "demo photo",
+            "example pic",
+            "sample photo",
+            "illustration",
+            "proof pic",
+            "record photo",
+            "archive pic",
+            "catalog photo"
+        ]
+    }
+}

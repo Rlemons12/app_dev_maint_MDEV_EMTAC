@@ -1,0 +1,19 @@
+{% extends "module_template_html/base_template_1_0_0_converted.html" %}
+
+{% block title %}EMTAC Assistant{% endblock %}
+
+{% block content %}
+    {% include 'index_partial/index_partial_5_3_1_sidebar.html' %}
+{% endblock %}
+
+{% block extra_scripts %}
+
+<script src="{{ url_for('static', filename='js/index/chatbot.js') }}"></script>
+<script src="{{ url_for('static', filename='js/update_qanda_table.js') }}"></script>
+    <!-- Container-specific renderers -->
+<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_parts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_thumbnails.js') }}"></script>
+<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_documents.js') }}"></script>
+<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_drawings.js') }}"></script>
+
+{% endblock %}

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload####Compare Image</title>
+
+    <style>
+        .drop-zone {
+            border: 2px dashed #cccccc;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            color: #cccccc;
+            font-size: 20px;
+        }
+        .drop-zone.dragover {
+            border-color: #3333cc;
+            color: #3333cc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload and ###########Compare Image</h1>
+    <form id="upload-form" action="/compare_image/upload_and_compare" method="post" enctype="multipart/form-data">
+        <div id="drop-zone" class="drop-zone">
+            Drag & Drop your image here or click to upload
+        </div>
+        <input type="file" id="file-input" name="query_image" accept="image/*" style="display: none;">
+        <button type="submit" style="display: none;">Upload and Compare</button>
+    </form>
+
+    <h1>Embed Folder</h1>
+    <form action="/folder_image_embedding/process_folder" method="post">
+        <input type="text" name="folder_path" placeholder="Enter folder path">
+        <button type="submit">Embed Folder</button>
+    </form>
+
+    {% if results %}
+        <h2>Top Matches</h2>
+        <ul>
+        {% for result in results %}
+            <li>
+                <img src="{{ url_for('image_compare_bp.uploaded_file', filename=result.file_path) }}" alt="{{ result.title }}" style="width: 100px; height: 100px;">
+                <p>Title: {{ result.title }}</p>
+                <p>Description: {{ result.description }}</p>
+                <p>Similarity: {{ result.similarity }}</p>
+            </li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const uploadForm = document.getElementById('upload-form');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                uploadForm.submit();
+            }
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                uploadForm.submit();
+            }
+        });
+    </script>
+</body>
+</html>

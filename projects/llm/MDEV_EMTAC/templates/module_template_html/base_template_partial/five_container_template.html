@@ -1,0 +1,209 @@
+<div class="partial-template">
+    <div class="partial-header">
+        <h1>five_container_template</h1>
+        <p class="partial-description">One large container with four smaller panels</p>
+    </div>
+
+    <div class="container-grid grid-5">
+        <div class="content-container main-large">
+            <div class="container-header">
+                <h3>Main Content Area</h3>
+                <button class="toggle-btn">🎛️</button>
+            </div>
+            <div class="container-body">
+                <p>five_container_template main content</p>
+                <div class="sample-content">
+                    <div class="content-item large">five_container_template primary interface</div>
+                    <div class="content-item">five_container_template secondary data</div>
+                    <div class="content-item">five_container_template additional info</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-container">
+            <div class="container-header">
+                <h3>Panel 1</h3>
+                <button class="toggle-btn">📊</button>
+            </div>
+            <div class="container-body">
+                <p>five_container_template panel 1</p>
+                <div class="sample-content">
+                    <div class="content-item small">five_container_template widget A</div>
+                    <div class="content-item small">five_container_template status</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-container">
+            <div class="container-header">
+                <h3>Panel 2</h3>
+                <button class="toggle-btn">📈</button>
+            </div>
+            <div class="container-body">
+                <p>five_container_template panel 2</p>
+                <div class="sample-content">
+                    <div class="content-item small">five_container_template widget B</div>
+                    <div class="content-item small">five_container_template metrics</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-container">
+            <div class="container-header">
+                <h3>Panel 3</h3>
+                <button class="toggle-btn">🔧</button>
+            </div>
+            <div class="container-body">
+                <p>five_container_template panel 3</p>
+                <div class="sample-content">
+                    <div class="content-item small">five_container_template widget C</div>
+                    <div class="content-item small">five_container_template tools</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-container">
+            <div class="container-header">
+                <h3>Panel 4</h3>
+                <button class="toggle-btn">📋</button>
+            </div>
+            <div class="container-body">
+                <p>five_container_template panel 4</p>
+                <div class="sample-content">
+                    <div class="content-item small">five_container_template widget D</div>
+                    <div class="content-item small">five_container_template actions</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* five_container_template styles */
+.partial-template {
+    padding: 20px;
+    height: 100%;
+    overflow-y: auto;
+    background-color: inherit;
+    box-sizing: border-box;
+}
+
+.partial-header {
+    margin-bottom: 20px;
+    text-align: center;
+    border-bottom: 2px solid rgba(57, 255, 20, 0.3);
+    padding-bottom: 15px;
+}
+
+.partial-header h1 {
+    margin: 0 0 8px 0;
+    color: #39FF14;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.partial-description {
+    margin: 0;
+    color: #ccc;
+    font-size: 14px;
+    font-style: italic;
+}
+
+.container-grid {
+    display: grid;
+    gap: 15px;
+    height: calc(100% - 120px);
+    min-height: 400px;
+}
+
+.grid-5 {
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: repeat(4, 1fr);
+}
+
+.grid-5 .main-large {
+    grid-row: 1 / -1;
+}
+
+.content-container {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+}
+
+.content-container:hover {
+    border-color: rgba(57, 255, 20, 0.5);
+    box-shadow: 0 2px 8px rgba(57, 255, 20, 0.2);
+}
+
+.container-header {
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.container-header h3 {
+    margin: 0;
+    color: #39FF14;
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.toggle-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.toggle-btn:hover {
+    background: #39FF14;
+    color: black;
+    border-color: #39FF14;
+}
+
+.container-body {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.sample-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 100%;
+}
+
+.content-item {
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 12px;
+    color: white;
+    font-size: 14px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.content-item:hover {
+    background-color: rgba(57, 255, 20, 0.1);
+    border-color: #39FF14;
+}
+
+.content-item.small {
+    padding: 8px;

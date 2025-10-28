@@ -1,0 +1,119 @@
+<!-- Create New Position Form -->
+<form id="createPositionForm" method="POST" action="{{ url_for('position_data_assignment_bp.create_position_form') }}">
+    {{ form_create_position.hidden_tag() }}
+
+    <!-- Area Dropdown -->
+    <div>
+        <label for="area">Area:</label>
+        {{ form_create_position.area(class="form-control", id="area") }}
+        <input type="text" name="area_input" id="area_input" placeholder="Or type new Area">
+    </div>
+
+    <!-- Equipment Group Dropdown -->
+    <div>
+        <label for="equipment_group">Equipment Group:</label>
+        {{ form_create_position.equipment_group(class="form-control", id="equipment_group", disabled=True) }}
+        <input type="text" name="equipment_group_input" id="equipment_group_input" placeholder="Or type new Equipment Group">
+    </div>
+
+    <!-- Model Dropdown -->
+    <div>
+        <label for="model">Model:</label>
+        {{ form_create_position.model(class="form-control", id="model", disabled=True) }}
+        <input type="text" name="model_input" id="model_input" placeholder="Or type new Model">
+    </div>
+
+    <!-- Asset Number Dropdown -->
+    <div>
+        <label for="asset_number">Asset Number:</label>
+        {{ form_create_position.asset_number(class="form-control", id="asset_number", disabled=True) }}
+        <input type="text" name="asset_number_input" id="asset_number_input" placeholder="Or type new Asset Number">
+    </div>
+
+    <!-- Location Dropdown -->
+    <div>
+        <label for="location">Location:</label>
+        {{ form_create_position.location(class="form-control", id="location", disabled=True) }}
+        <input type="text" name="location_input" id="location_input" placeholder="Or type new Location">
+    </div>
+
+    <!-- Subassembly Dropdown -->
+    <div>
+        <label for="subassembly">Subassembly:</label>
+        {{ form_create_position.subassembly(class="form-control", id="subassembly", disabled=True) }}
+        <input type="text" name="subassembly_input" id="subassembly_input" placeholder="Or type new Subassembly">
+    </div>
+
+    <!-- Component Assembly Dropdown -->
+    <div>
+        <label for="component_assembly">Component Assembly:</label>
+        {{ form_create_position.component_assembly(class="form-control", id="component_assembly", disabled=True) }}
+        <input type="text" name="component_assembly_input" id="component_assembly_input" placeholder="Or type new Component Assembly">
+    </div>
+
+    <!-- Assembly View Dropdown -->
+    <div>
+        <label for="assembly_view">Assembly View:</label>
+        {{ form_create_position.assembly_view(class="form-control", id="assembly_view", disabled=True) }}
+        <input type="text" name="assembly_view_input" id="assembly_view_input" placeholder="Or type new Assembly View">
+    </div>
+
+    <!-- Site Location Dropdown -->
+    <div>
+        <label for="site_location">Site Location:</label>
+        {{ form_create_position.site_location(class="form-control", id="site_location", disabled=True) }}
+        <input type="text" name="site_location_input" id="site_location_input" placeholder="Or type new Site Location">
+        <input type="text" name="site_location_room" id="site_location_room" placeholder="Room Number">
+    </div>
+
+    <!-- Submit Button -->
+    {{ form_create_position.submit(class="btn btn-primary", value="Create Position") }}
+</form>
+
+<!-- Loading Spinner -->
+<div id="loadingSpinner" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+<!-- JavaScript for form handling -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Enable dropdowns when parent dropdown changes
+    function enableDropdown(parentId, childId) {
+        const parent = document.getElementById(parentId);
+        const child = document.getElementById(childId);
+
+        parent.addEventListener('change', function() {
+            if (this.value) {
+                child.disabled = false;
+            } else {
+                child.disabled = true;
+                child.value = '';
+            }
+        });
+    }
+
+    // Chain enable dropdowns
+    enableDropdown('area', 'equipment_group');
+    enableDropdown('equipment_group', 'model');
+    enableDropdown('model', 'asset_number');
+    enableDropdown('asset_number', 'location');
+    enableDropdown('location', 'subassembly');
+    enableDropdown('subassembly', 'component_assembly');
+    enableDropdown('component_assembly', 'assembly_view');
+    enableDropdown('assembly_view', 'site_location');
+
+    // Show loading spinner on form submission
+    var form = document.getElementById("createPositionForm");
+    if (form) {
+        form.addEventListener("submit", function() {
+            var spinner = document.getElementById("loadingSpinner");
+            if (spinner) {
+                spinner.style.display = "block";
+            }
+        });
+    }
+});
+</script>

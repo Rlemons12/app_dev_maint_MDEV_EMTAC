@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Tool</title>
+</head>
+<body>
+    <h1>Add a New Tool</h1>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.name.label }}<br>
+            {{ form.name(size=32) }}
+        </p>
+        <p>
+            {{ form.size.label }}<br>
+            {{ form.size(size=32) }}
+        </p>
+        <p>
+            {{ form.type.label }}<br>
+            {{ form.type(size=32) }}
+        </p>
+        <p>
+            {{ form.material.label }}<br>
+            {{ form.material(size=32) }}
+        </p>
+        <p>
+            {{ form.description.label }}<br>
+            {{ form.description(rows=4, cols=32) }}
+        </p>
+        <p>
+            {{ form.category.label }}<br>
+            {{ form.category() }}
+        </p>
+        <p>
+            {{ form.manufacturer.label }}<br>
+            {{ form.manufacturer() }}
+        </p>
+        <p>
+            {{ form.image_ids.label }}<br>
+            {{ form.image_ids() }}
+        </p>
+        <p>{{ form.submit() }}</p>
+    </form>
+</body>
+</html>

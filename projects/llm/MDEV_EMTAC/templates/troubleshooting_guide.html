@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trouble Shooting Guide</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css')}}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/troubleshooting_guide.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="banner">
+        THIS IS FOR REFERENCE ONLY. ALL INFORMATION SHOULD BE VERIFIED WITH CURRENT SOP'S
+        <a href="#" id="commentPopupLink" style="color: #39FF14;">Leave a Comment</a>
+    </div>
+
+<div class="hamburger" id="hamburger">&#9776;</div>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <h1>Edit TSG</h1>
+    <!-- Display the current user level -->
+            <p>User Level: {{ session['user_level'] }}</p>
+    <a href="/" style="color:  #FFFFFF;">Return to Main Page</a>
+    <a href="#" onclick="showForm('new-troubleshooting-guide-form')">New Troubleshooting Guide Entry</a>
+    <a href="#" onclick="showForm('edit-troubleshooting-guide-form')">Edit Troubleshooting Guide Entry</a>
+    <a href="#" onclick="showForm('drawing-search-form')">Search Drawings</a>
+    <a href="#" onclick="showForm('image-search-form')">Search Images</a>
+    <a href="#upload-image" onclick="showForm('upload-image')">Upload Image</a>
+    <a href="/tsg_search_problems" style="color: #39FF14">To Search Troubleshooting Guide</a>
+    <a href="/upload_search_database" style="color: #39FF14;" class="upload-button">To Search and Upload </a>
+    <a href="/bill_of_materials" style="color: #39FF14;">To Parts and BOMs</a>
+    <a href="/logout" class="logout-button" style="color: #FF5F1f">Logout</a>
+</div>
+
+<div class="main-content">
+    <!-- Popup Modal Structure -->
+    <div id="commentPopup" style="display: none;">
+        <form id="commentForm">
+            <h2>Leave a Comment</h2>
+            <!-- Instructions for filling out the form -->
+            <p>Instructions: You can write your comment, paste an image, or upload a file.</p>
+
+            <!-- Comment box where users can paste an image or type text -->
+            <textarea name="comment" id="comment" placeholder="Write your comment here..." required></textarea><br>
+
+            <!-- Hidden field to store base64 image data -->
+            <input type="hidden" id="imageData" name="imageData">
+
+            <!-- Display an indicator or preview if an image was pasted -->
+            <div id="pastedImageFeedback" style="display: none; color: green;">
+                Image snippet successfully added!
+            </div>
+            <img id="pastedImagePreview" src="" alt="Pasted Image Preview" style="display:none; max-width: 100px; margin-top: 10px;" />
+
+            <!-- Option to upload a file -->
+            <label for="fileUpload">Or upload an image:</label><br>
+            <input type="file" id="fileUpload" name="screenshot" accept="image/*" /><br><br>
+
+            <button type="submit">Send</button>
+            <button type="button" id="closePopup">Close</button>
+        </form>
+    </div>
+    <!-- Edit Troubleshooting Guide Form -->
+<div class="form-container" id="edit-troubleshooting-guide-form">
+    <div style="color: white;">
+        <h2>Edit Troubleshooting Guide</h2>
+
+        <!-- Form for searching and editing problems -->
+        <form id="editProblemSolutionForm" action="/troubleshooting_guide_edit_update" method="post" enctype="multipart/form-data">
+
+            <!-- Collapsible Search Problem Section -->
+            <details open>
+                <summary>Search for Problem</summary>
+                <label for="searchProblem">Search for Problem:</label>
+                <input type="text" id="searchProblem" name="search_problem" placeholder="Enter problem title or ID"><br>
+                <label for="tsg_edit_areaDropdown">Area:</label>
+                <select name="tsg_edit_area" id="tsg_edit_areaDropdown"></select><br>
+                <label for="tsg_edit_equipmentGroupDropdown">Equipment Group:</label>
+                <select name="tsg_edit_equipment_group" id="tsg_edit_equipmentGroupDropdown"></select><br>
+                <label for="tsg_edit_modelDropdown">Model:</label>
+                <select name="tsg_edit_model" id="tsg_edit_modelDropdown"></select><br>
+                <label for="tsg_edit_assetNumberDropdown">Asset Number:</label>
+                <select name="tsg_edit_asset_number" id="tsg_edit_assetNumberDropdown"></select><br>
+                <label for="tsg_edit_locationDropdown">Location:</label>
+                <select name="tsg_edit_location" id="tsg_edit_locationDropdown"></select><br>
+                <button type="button" onclick="searchForProblem()">Search</button><br>
+            </details>
+
+            <!-- Collapsible Problem Details Section -->
+            <details>
+                <summary>Problem Details</summary>
+                <input type="hidden" name="problem_id" id="edit_problem_id">
+                <input type="hidden" name="solution_id" id="edit_solution_id">
+                <label for="edit_problem_name"><strong>Problem Name:</strong></label>
+                <input type="text" name="problem_name" id="edit_problem_name"><br>
+                <label for="edit_problem_description">Problem Description:</label><br>
+                <textarea name="problem_description" id="edit_problem_description" rows="4" cols="50"></textarea><br>
+                <label for="edit_problem_image">Associated Problem Images:</label><br>
+                <select name="edit_problem_image[]" id="edit_problem_imageDropdown" multiple style="width: 100%;"></select><br>
+                <label for="imageSearch" style="color:white;">Search Problem Images:</label><br>
+                <select id="tsg_imageSearchDropdown" style="width: 100%;"></select><br>
+                <button type="button" id="addImageButton">Add Selected Image(s)</button><br>
+                <button type="button" id="removeImageButton">Remove Selected Image(s)</button><br>
+            </details>
+
+            <!-- Collapsible Solution Section -->
+            <details>
+                <summary>Solution Details</summary>
+                <label for="edit_solution_description">Solution Description:</label><br>
+                <textarea name="solution_description" id="edit_solution_description" rows="4" cols="50"></textarea><br>
+                <label for="edit_solution_image">Associated Solution Images:</label><br>
+                <select name="edit_solution_image[]" id="edit_solution_imageDropdown" multiple style="width: 100%;"></select><br>
+                <label for="solutionImageSearch" style="color:white;">Search Solution Images:</label><br>
+                <select id="tsg_solutionImageSearchDropdown" style="width: 100%;"></select><br>
+                <button type="button" id="addSolutionImageButton">Add Selected Solution Image(s)</button><br>
+                <button type="button" id="removeSolutionImageButton">Remove Selected Solution Image(s)</button><br>
+            </details>
+
+            <!-- Collapsible Documents Section -->
+            <details>
+                <summary>Associated Documents</summary>
+                <label for="edit_document">Associated Documents:</label><br>
+                <select name="edit_document[]" id="edit_documentDropdown" multiple></select><br>
+                <label for="search_document">Search for Documents to Add:</label><br>
+                <input type="text" id="search_document" placeholder="Search for documents"><br>
+                <ul id="documentSearchResults"></ul>
+                <button type="button" id="addDocumentButton">Add Selected Document(s)</button><br>
+                <button type="button" id="deleteDocumentButton">Delete Selected Document(s)</button><br>
+            </details>
+
+            <!-- Collapsible Parts Section -->
+            <details>
+                <summary>Associated Parts</summary>
+                <label for="edit_part">Associated Parts:</label><br>
+                <select name="edit_part[]" id="edit_partDropdown" multiple style="width: 100%;"></select><br>
+                <label for="partnumberSearch" style="color:white;">Search Part Number:</label><br>
+                <select id="tsg_partSearchDropdown" style="width: 100%;"></select><br>
+                <button type="button" id="addPartButton">Add Selected Part(s)</button><br>
+                <button type="button" id="removePartButton">Remove Selected Part(s)</button><br>
+            </details>
+
+            <!-- Collapsible Drawings Section -->
+            <details>
+                <summary>Associated Drawing Numbers</summary>
+                <label for="edit_drawing">Associated Drawing Numbers:</label><br>
+                <select name="edit_drawing[]" id="edit_drawingdropdown" multiple style="width: 100%;"></select><br>
+                <label for="drawingSearch" style="color:white;">Search Drawing Numbers:</label><br>
+                <select id="tsg_drawingSearchDropdown" style="width: 100%;"></select><br>
+                <button type="button" id="addDrawingButton">Add Selected Drawing(s)</button><br>
+                <button type="button" id="removeDrawingButton">Remove Selected Drawing(s)</button><br>
+            </details>
+
+            <!-- Save Changes Button -->
+            <button type="submit">Save Changes</button>
+        </form>
+    </div>
+</div>
+
+
+
+    <!-- Troubleshooting Guide New Entry Form -->
+    <div class="form-container" id="new-troubleshooting-guide-form">
+        <div style="color: white;">
+            <h2>Troubleshooting Guide</h2>
+            <form action="/update_problem_solution" method="post" enctype="multipart/form-data">
+                <label for="title" style="color: white;">Problem Title:</label>
+                <input type="text" name="problem_name" id="problem_name" placeholder="Problem"><br>
+
+                <label for="areaDropdown" style="color: white;">Area:</label>
+                <select name="tsg_area" id="tsg_areaDropdown" style="width: 100%;">
+                    <!-- Options will be populated dynamically -->
+                </select><br>
+
+                <label for="equipmentGroupDropdown" style="color: white;">Equipment Group:</label>
+                <select name="tsg_equipment_group" id="tsg_equipmentGroupDropdown" style="width: 100%;">
+                    <!-- Options will be populated dynamically -->
+                </select><br>
+
+                <label for="modelDropdown" style="color: white;">Model:</label>
+                <select name="tsg_model" id="tsg_modelDropdown" style="width: 100%;">
+                    <!-- Options will be populated dynamically -->
+                </select><br>
+
+                <label for="assetNumberDropdown" style="color: white;">Asset Number:</label>
+                <select name="tsg_asset_number" id="tsg_assetNumberDropdown" style="width: 100%;">
+                    <!-- Options will be populated dynamically -->
+                </select><br>
+
+                <label for="locationDropdown" style="color: white;">Location:</label>
+                <select name="tsg_location" id="tsg_locationDropdown" style="width: 100%;">
+                    <!-- Options will be populated dynamically -->
+                </select><br>
+
+                <!-- Problem Description -->
+                <label for="problemDescription" style="color: white;">Problem Description:</label><br>
+                <textarea name="problem_description" id="problemDescription" rows="4" cols="50"></textarea><br>
+
+                <!-- Problem Image Selection -->
+                <label for="problemImageSearch" style="color: white;">Attach Problem Images:</label><br>
+                <select name="tsg_problem_image_search" id="tsg_problemImageSearchDropdown" multiple style="width: 100%;">
+                    <!-- Options will be populated dynamically -->
+                </select><br>
+
+                <!-- Solution Description -->
+                <label for="solutionDescription" style="color: white;">Solution Description:</label><br>
+                <textarea name="solution_description" id="solutionDescription" rows="4" cols="50"></textarea><br>
+
+                <!-- Solution Image Selection -->
+                <label for="solutionImageSearch" style="color: white;">Attach Solution Images:</label><br>
+                <select name="tsg_solution_image_search" id="tsg_solutionImageSearchDropdown" multiple style="width: 100%;">
+                    <!-- Options will be populated dynamically -->
+                </select><br>
+
+                <!-- Document Search -->
+                <label for="documentSearch" style="color: white;">Search Document:</label><br>
+                <select name="tsg_document_search" id="tsg_documentSearchDropdown" style="width: 100%;"></select><br>
+
+                <!-- Drawing Number -->
+				<label for="drawingnumberSearch" style="color:white;">Search Drawing Number:</label><br>
+				<select name="tsg_selected_drawing_search" id="tsg_drawingSearchDropdown" multiple style="width: 100%;"></select><br>
+
+                <!-- Part Number -->
+                <label for="partnumberSearch" style="color:white;">Search Part Number:</label><br>
+                <select name="tsg_selected_part_search" id="tsg_partSearchDropdown" multiple style="width: 100%;"></select><br>
+
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+    </div> <!-- End of Troubleshooting Guide Form -->
+
+    <!-- Drawing Search Form -->
+    <div class="form-container" id="drawing-search-form">
+        <div style="color: white;">
+            <h2>Search Drawings</h2>
+            <form id="searchForm">
+                <label for="drw_equipment_name">Equipment Name:</label><br>
+                <input type="text" name="drw_equipment_name" id="drw_equipment_name" placeholder="Search by Equipment Name"><br>
+
+                <label for="drw_number">Drawing Number:</label><br>
+                <input type="text" name="drw_number" id="drw_number" placeholder="Search by Drawing Number"><br>
+
+                <label for="drw_name">Drawing Name:</label><br>
+                <input type="text" name="drw_name" id="drw_name" placeholder="Search by Drawing Name"><br>
+
+                <label for="drw_revision">Revision:</label><br>
+                <input type="text" name="drw_revision" id="drw_revision" placeholder="Search by Revision"><br>
+
+                <label for="drw_spare_part_number">Spare Part Number:</label><br>
+                <input type="text" name="drw_spare_part_number" id="drw_spare_part_number" placeholder="Search by Spare Part Number"><br>
+
+                <button type="submit">Search</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Image Search Form -->
+    <div class="form-container" id="image-search-form">
+        <div style="color: white;">
+            <h2>Search Images</h2>
+            <form action="/tsg_search_images" method="get">
+                <label for="description">Description:</label><br>
+                <input type="text" name="description" id="description" placeholder="Search by Description"><br>
+
+                <label for="title">Title:</label><br>
+                <input type="text" name="title" id="title" placeholder="Search by Title"><br>
+
+                <label for="tsg_searchimage_areaDropdown">Area:</label><br>
+                <select name="tsg_searchimage_area" id="tsg_searchimage_areaDropdown"></select><br>
+
+                <label for="tsg_searchimage_equipmentGroupDropdown">Equipment Group:</label><br>
+                <select name="tsg_searchimage_equipment_group" id="tsg_searchimage_equipmentGroupDropdown"></select><br>
+
+                <label for="tsg_searchimage_modelDropdown">Model:</label><br>
+                <select name="tsg_searchimage_model" id="tsg_searchimage_modelDropdown"></select><br>
+
+                <label for="tsg_searchimage_assetNumberDropdown">Asset Number:</label><br>
+                <select name="tsg_searchimage_asset_number" id="tsg_searchimage_assetNumberDropdown"></select><br>
+
+                <label for="tsg_searchimage_locationDropdown">Location:</label><br>
+                <select name="tsg_searchimage_location" id="tsg_searchimage_locationDropdown"></select><br>
+
+                <input type="submit" value="Search">
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Container -->
+    <div class="results-container" id="results-container">
+        <!-- Dynamic results will be displayed here -->
+        <ul id="searchResults" style="color:white;">
+            <!-- Search results will be populated here -->
+        </ul>
+
+        <!-- Thumbnails and Drawing List -->
+        <div id="thumbnails-section">
+            <!-- Thumbnails will be dynamically added here -->
+        </div>
+
+        <div id="drawingList">
+            <!-- Drawing search results will be dynamically added here -->
+        </div>
+    </div>
+
+<!-- Include jQuery (Select2 depends on it) -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<!-- Include Select2 CSS and JS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<!-- Include jQuery using a CDN -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+<!-- Include your custom JavaScript file -->
+<script src="{{ url_for('static', filename='tsg_document_search.js') }}"></script>
+<script src="{{ url_for('static', filename='tsg_image_search.js') }}"></script>
+<script src="{{ url_for('static', filename='tsg_upload1.js') }}"></script>
+<script src="{{ url_for('static', filename='tsg_image_thumbnail.js') }}"></script>
+<script src="{{ url_for('static', filename='tsg_drawing_search.js')}}"></script>
+<script src="{{ url_for('static', filename='tsg_drawing_form.js') }}"></script>
+<script src="{{ url_for('static', filename='tsg_part_form.js')}}"></script>
+<script src="{{ url_for('static', filename='js/get_problem_solution_edit_data.js') }}"></script>
+<script src="{{ url_for('static', filename='js/get_tsg_guide_edit.js') }}"></script>
+<script src="{{ url_for('static', filename='js/comment_pop_up.js')}}"></script>
+<script src="{{ url_for('static', filename='js/upload_image.js') }}"></script>
+<script src="{{ url_for('static', filename='js/image_search.js') }}"></script>
+<script>
+function showForm(formId) {
+    // Hide all forms
+    document.querySelectorAll('.form-container').forEach(function(form) {
+        form.classList.remove('active');
+    });
+    // Show the selected form
+    document.getElementById(formId).classList.add('active');
+}
+</script>
+
+<script>
+    // Call the function to populate dropdowns when the page loads
+    $(document).ready(function() {
+        populateTroubleshootingGuideDropdowns();
+    });
+</script>
+
+<script>
+
+        // Initialize Dropzone for uploading multiple images
+        Dropzone.autoDiscover = false;
+        $("#imageDropzone").dropzone({
+            url: "/upload_images",
+            paramName: "file", // The name that will be used to transfer the file
+            maxFilesize: 5, // MB
+            maxFiles: 20,
+            acceptedFiles: 'image/*',
+            addRemoveLinks: true,
+            dictDefaultMessage: "Drop images here or click to upload",
+            dictRemoveFile: "Remove",
+            dictFileTooBig: "File is too big. Max filesize: 5MB.",
+            dictMaxFilesExceeded: "You can only upload 20 images.",
+            success: function(file, response) {
+                // Handle the success callback if needed
+            },
+            error: function(file, errorMessage) {
+                // Handle the error callback if needed
+            }
+        });
+    });
+</script>
+
+<script type="text/javascript">
+    let isFormSubmitting = false;
+
+    // Add event listener to mark when form submission starts
+    document.querySelectorAll('form').forEach(function(form) {
+        form.addEventListener('submit', function() {
+            isFormSubmitting = true;
+        });
+    });
+
+    window.addEventListener("beforeunload", function (event) {
+        if (!isFormSubmitting) {
+            navigator.sendBeacon('/logout_bp');
+        }
+    });
+</script>
+
+
+<script>
+    document.getElementById("hamburger").onclick = function() {
+        document.querySelector(".sidebar").classList.toggle("active");
+        document.querySelector(".main-content").classList.toggle("sidebar-active");
+    };
+</script>
+<script>
+    // Automatically select all documents in the dropdown before submitting the form
+    $('#editProblemSolutionForm').on('submit', function() {
+        $('#edit_documentDropdown option').prop('selected', true);
+    });
+</script>
+<script>
+    // Automatically select all parts in the dropdown before submitting the form
+    $('#editProblemSolutionForm').on('submit', function() {
+        $('#selectedPartsDropdown option').prop('selected', true);
+    });
+</script>
+<script>
+    $(document).ready(function() {
+        // Remove selected parts from the dropdown
+        $('#removePartButton').on('click', function() {
+            $('#edit_partDropdown option:selected').each(function() {
+                $(this).remove();  // Remove the selected option
+            });
+        });
+
+        // Automatically select all parts in the dropdown before submitting the form
+        $('#editProblemSolutionForm').on('submit', function() {
+            $('#edit_partDropdown option').prop('selected', true);  // Ensure all parts are selected when submitting
+        });
+    });
+</script>
+
+
+</body>
+</html>

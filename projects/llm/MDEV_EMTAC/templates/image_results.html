@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Results</title>
+    <style>
+        body {
+            background: linear-gradient(to bottom, #ffffff, #f0f0f0);
+            font-family: Arial, sans-serif;
+        }
+        .thumbnail {
+            width: 150px;
+            height: auto;
+            margin: 10px;
+            cursor: pointer;
+            float: left;
+        }
+        .image-container {
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        .image-details {
+            margin-left: 180px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+        .image-details h2 {
+            margin-top: 0;
+        }
+        .search-form {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Images Found</h1>
+    
+    <!-- Search Form -->
+    <form action="{{ url_for('search_images_bp.search_images') }}" method="GET" class="search-form">
+        <label for="search_query">Search:</label>
+        <input type="text" id="search_query" name="query">
+        <button type="submit">Search</button>
+    </form>
+    
+    {% if images %}
+        <div class="image-container">
+            {% for image in images %}
+                <div class="image-details">
+                    <a href="{{ url_for('search_images_bp.serve_image_route', image_id=image.id) }}">
+                        <img class="thumbnail" src="{{ url_for('search_images_bp.serve_image_route', image_id=image.id) }}" alt="{{ image.title }}">
+                    </a>
+                    <div class="description">
+                        <h2>{{ image.title }}</h2>
+                        <p>{{ image.description }}</p>
+                    </div>
+                    <div style="clear: both;"></div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination links -->
+        <div>
+            {% if page > 1 %}
+                <a href="{{ url_for('search_images_bp.search_images', description=description, area=area, equipment_group=equipment_group, model=model, asset_number=asset_number, page=1) }}">First</a>
+                <a href="{{ url_for('search_images_bp.search_images', description=description, area=area, equipment_group=equipment_group, model=model, asset_number=asset_number, page=page-1) }}">Previous</a>
+            {% endif %}
+            
+            Page {{ page }} of {{ total_pages }}
+            
+            {% if total_pages > 1 %}
+                {% for p in range(1, total_pages + 1) %}
+                    {% if p == page %}
+                        <strong>{{ p }}</strong>
+                    {% else %}
+                        <a href="{{ url_for('search_images_bp.search_images', description=description, area=area, equipment_group=equipment_group, model=model, asset_number=asset_number, page=p) }}">{{ p }}</a>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            
+            {% if total_pages > 1 and page < total_pages %}
+                <a href="{{ url_for('search_images_bp.search_images', description=description, area=area, equipment_group=equipment_group, model=model, asset_number=asset_number, page=page+1) }}">Next</a>
+                <a href="{{ url_for('search_images_bp.search_images', description=description, area=area, equipment_group=equipment_group, model=model, asset_number=asset_number, page=total_pages) }}">Last</a>
+            {% endif %}
+        </div>
+    {% else %}
+        <p>No images found with the description "{{ description }}"</p>
+    {% endif %}
+    <a href="{{ url_for('upload_image_page') }}">Back to Search</a>
+</body>
+</html>

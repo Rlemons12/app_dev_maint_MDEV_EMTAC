@@ -1,0 +1,446 @@
+/* Custom background image for this page */
+body {
+    background-image: url("/static/background_images/abstractfractal.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    margin: 0;
+    overflow: hidden !important; /* Prevent body scrolling */
+}
+
+/* Force content to be closer to sidebar - override all other rules */
+.main-container .content {
+    margin-left: 150px !important; /* Shorter distance to sidebar */
+    /* Use max-width with a responsive approach */
+    width: 70% !important; /* Use percentage instead of fixed calculation */
+    max-width: 800px !important; /* Maximum width for larger screens */
+    min-width: 400px !important; /* Minimum width for smaller screens */
+    transition: margin-left 0.5s ease, width 0.5s ease;
+    background: transparent !important; /* Remove grey background */
+    height: calc(100vh - 80px) !important; /* Fixed height for viewport */
+    overflow-y: auto !important; /* Enable scrolling in main container */
+    overflow-x: hidden !important; /* Prevent horizontal scroll */
+    padding: 8px !important; /* Reduced padding */
+}
+
+/* When sidebar is collapsed */
+.main-container.collapsed .content,
+.content.sidebar-collapsed {
+    margin-left: 50px !important; /* Account for hamburger menu */
+    width: 75% !important; /* Slightly wider when sidebar is collapsed */
+    max-width: 850px !important; /* Maximum width for larger screens */
+    min-width: 450px !important; /* Minimum width for smaller screens */
+    height: calc(100vh - 80px) !important; /* Fixed height for viewport */
+    overflow-y: auto !important; /* Enable scrolling in main container */
+    overflow-x: hidden !important; /* Prevent horizontal scroll */
+}
+
+/* Ensure content container styling - REMOVE GREY BACKGROUND */
+.content {
+    padding: 8px !important; /* Minimal padding */
+    color: yellow !important;
+    height: 100% !important; /* Fill parent container */
+    background: transparent !important; /* Make it transparent */
+    box-sizing: border-box !important; /* Include padding in width calculation */
+}
+
+/* Main container - ensure no overflow */
+.main-container {
+    height: 100vh !important;
+    overflow: hidden !important;
+}
+
+/* Position Data Container - should match content dimensions */
+.position-data-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+    height: auto !important; /* Let height adjust */
+    overflow: visible !important;
+}
+
+/* Reset any margin overrides from other CSS files */
+.content h1 {
+    color: #39FF14 !important;
+    text-align: center !important;
+    margin-bottom: 8px !important; /* Minimal margin */
+    margin-top: 0 !important;
+    font-size: 22px !important; /* Slightly smaller heading for narrower container */
+}
+
+/* Tab container should not have any margins */
+.tab-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+}
+
+/* Tab grid styling - more compact */
+.tab-grid {
+    display: grid !important;
+    width: 100% !important;
+    grid-template-rows: auto auto !important;
+    gap: 0 !important;
+    position: sticky !important; /* Keep tabs at top when scrolling */
+    top: 30px !important; /* Stick below the h1 */
+    z-index: 10 !important; /* Ensure tabs stay on top */
+    background: transparent !important;
+}
+
+.tab-grid-row-1 {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 1px !important; /* Smaller gap for narrower container */
+    margin-bottom: 1px !important; /* Smaller margin */
+}
+
+.tab-grid-row-2 {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 1px !important; /* Smaller gap for narrower container */
+    border-bottom: 2px solid yellow !important;
+}
+
+.tab-item {
+    padding: 4px !important; /* More compact padding */
+    cursor: pointer;
+    background-color: #333 !important;
+    color: yellow !important;
+    border: 1px solid yellow !important;
+    border-top-left-radius: 4px !important;
+    border-top-right-radius: 4px !important;
+    transition: background-color 0.3s, color 0.3s;
+    text-align: center !important;
+    font-size: 11px !important; /* Smaller font for narrower tabs */
+}
+
+.tab-item:hover,
+.tab-item.active {
+    background-color: yellow !important;
+    color: black !important;
+}
+
+.tab-item.active {
+    font-weight: bold !important;
+}
+
+/* Tab content - NO INTERNAL SCROLLING */
+.tab-content {
+    display: none !important;
+    padding: 8px !important; /* Reduced padding for narrower container */
+    background-color: rgba(0, 0, 0, 0.8) !important;
+    border: 1px solid yellow !important;
+    border-top: none !important;
+    color: yellow !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    overflow: visible !important; /* No internal scrolling */
+}
+
+.tab-content.active {
+    display: block !important;
+}
+
+/* Form styling - more compact for narrow container */
+#searchPositionForm,
+#addPositionDependenciesForm,
+#updatePositionForm,
+#createPositionForm {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important; /* Let form adjust to content */
+}
+
+#searchPositionForm input,
+#searchPositionForm select,
+#updatePositionForm input,
+#updatePositionForm select,
+#addPositionDependenciesForm input,
+#addPositionDependenciesForm select,
+#createPositionForm input,
+#createPositionForm select {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    color: black !important;
+    border: 1px solid #ccc !important;
+    padding: 3px !important; /* Very minimal padding for narrow container */
+    border-radius: 3px !important;
+    margin-bottom: 4px !important; /* Smaller margin */
+    width: 100% !important;
+    box-sizing: border-box !important;
+    font-size: 12px !important; /* Smaller font for narrow inputs */
+}
+
+/* Textarea styling for descriptions */
+textarea {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    color: black !important;
+    border: 1px solid #ccc !important;
+    padding: 3px !important;
+    border-radius: 3px !important;
+    margin-bottom: 4px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    font-size: 12px !important;
+    min-height: 60px !important; /* Minimum height for textareas */
+    resize: vertical !important; /* Allow vertical resizing only */
+}
+
+/* Labels - compact */
+label {
+    color: yellow !important;
+    display: block !important;
+    margin-bottom: 1px !important; /* Minimal margin */
+    font-size: 12px !important; /* Smaller font for narrow container */
+}
+
+/* Buttons - compact */
+button {
+    background-color: #333 !important;
+    color: yellow !important;
+    border: 2px solid yellow !important;
+    padding: 3px 6px !important; /* Very compact padding */
+    cursor: pointer;
+    border-radius: 3px !important;
+    transition: background-color 0.3s, color 0.3s;
+    font-size: 11px !important; /* Smaller font for narrow container */
+    margin: 3px 0 !important;
+}
+
+button:hover {
+    background-color: yellow !important;
+    color: black !important;
+}
+
+/* Special styling for forms with many elements */
+.collapsible-section {
+    margin-bottom: 4px !important;
+}
+
+.collapsible-section h4 {
+    margin: 4px 0 !important;
+    font-size: 13px !important; /* Smaller for narrow container */
+}
+
+/* Override any results container styling that might be interfering */
+.results-container {
+    margin: 0 !important;
+    padding: 8px !important; /* Reduced padding */
+    display: none !important; /* Hidden unless needed */
+    background: transparent !important; /* Also remove background from results */
+    overflow: visible !important;
+}
+
+/* Override base CSS content background */
+.main-container .content,
+.sidebar + .content,
+div.content {
+    background: transparent !important; /* Force transparent background */
+    background-color: transparent !important;
+}
+
+/* COMPLETELY REMOVE ALL CUSTOM SCROLLBAR STYLING */
+/* Reset any webkit scrollbar styling that might be applied */
+*::-webkit-scrollbar,
+.content::-webkit-scrollbar,
+.tab-content::-webkit-scrollbar,
+div::-webkit-scrollbar {
+    width: auto !important;
+    height: auto !important;
+    background: transparent !important;
+}
+
+*::-webkit-scrollbar-track,
+.content::-webkit-scrollbar-track,
+.tab-content::-webkit-scrollbar-track,
+div::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+*::-webkit-scrollbar-thumb,
+.content::-webkit-scrollbar-thumb,
+.tab-content::-webkit-scrollbar-thumb,
+div::-webkit-scrollbar-thumb {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+}
+
+/* Hide scrollbars for everything except main content */
+body,
+.main-container,
+.position-data-container,
+.tab-content,
+textarea,
+select {
+    overflow: visible !important;
+    -ms-overflow-style: none !important; /* IE and Edge */
+    scrollbar-width: none !important; /* Firefox */
+}
+
+/* Ensure textareas don't create extra scrollbars */
+textarea {
+    overflow: auto !important;
+}
+
+/* Responsive breakpoints for different window sizes */
+@media (max-width: 1200px) {
+    .main-container .content {
+        width: 65% !important;
+        max-width: 700px !important;
+    }
+
+    .main-container.collapsed .content,
+    .content.sidebar-collapsed {
+        width: 70% !important;
+        max-width: 750px !important;
+    }
+}
+
+@media (max-width: 900px) {
+    .main-container .content {
+        width: 60% !important;
+        max-width: 600px !important;
+        margin-left: 120px !important;
+    }
+
+    .main-container.collapsed .content,
+    .content.sidebar-collapsed {
+        width: 65% !important;
+        max-width: 650px !important;
+        margin-left: 40px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-container .content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-width: auto !important;
+        padding: 6px !important;
+        height: calc(100vh - 70px) !important;
+    }
+
+    .main-container.collapsed .content,
+    .content.sidebar-collapsed {
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-width: auto !important;
+        height: calc(100vh - 70px) !important;
+    }
+
+    .tab-grid-row-1,
+    .tab-grid-row-2 {
+        grid-template-columns: 1fr !important;
+        gap: 1px !important;
+    }
+
+    .tab-item {
+        padding: 3px !important;
+        font-size: 10px !important;
+    }
+
+    .content h1 {
+        font-size: 18px !important;
+    }
+}
+/* Add this to your CSS */
+/* CRITICAL override for suggestion boxes */
+#image-suggestion-box.suggestion-box[style*="display: block"],
+#drawing-suggestion-box.suggestion-box[style*="display: block"],
+#part-suggestion-box.suggestion-box[style*="display: block"] {
+    position: absolute !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    background-color: rgba(0, 0, 0, 0.95) !important;
+    border: 3px solid yellow !important;
+    color: yellow !important;
+    z-index: 999999 !important;
+    max-height: 300px !important;
+    overflow-y: auto !important;
+    transform: none !important;
+    pointer-events: auto !important;
+    clip: auto !important;
+    clip-path: none !important;
+}
+
+.suggestion-box .suggestion-item {
+    padding: 8px !important;
+    cursor: pointer !important;
+    border-bottom: 1px solid yellow !important;
+}
+
+.suggestion-box .suggestion-item:hover {
+    background-color: rgba(255, 255, 0, 0.2) !important;
+}
+
+/* Styling for all suggestion boxes */
+.suggestion-box {
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    background-color: rgba(0, 0, 0, 0.9) !important;
+    border: 2px solid yellow !important;
+    width: 100% !important;
+    max-height: 300px !important;
+    overflow-y: auto !important;
+    z-index: 9999 !important;
+    color: yellow !important;
+    display: none !important;
+}
+
+/* Make sure items are clearly visible */
+.suggestion-item {
+    padding: 10px !important;
+    cursor: pointer !important;
+    border-bottom: 1px solid yellow !important;
+}
+
+.suggestion-item:hover {
+    background-color: rgba(255, 255, 0, 0.2) !important;
+}
+
+/* Override any overflow hidden settings on parent elements */
+body, .main-container, .content, .tab-content, #drawings-container {
+    overflow: visible !important;
+}
+/* Override for document suggestion box specifically */
+#document-suggestion-box.suggestion-box[style*="display: block"] {
+    position: absolute !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    background-color: rgba(0, 0, 0, 0.95) !important;
+    border: 3px solid yellow !important;
+    color: yellow !important;
+    z-index: 999999 !important;
+    max-height: 300px !important;
+    overflow-y: auto !important;
+    transform: none !important;
+    pointer-events: auto !important;
+    clip: auto !important;
+    clip-path: none !important;
+}
+
+/* Ensure parent containers don't block the dropdown */
+.tab-content,
+#document-container,
+.manage-documents-container {
+    overflow: visible !important;
+    position: relative !important;
+}

@@ -1,0 +1,200 @@
+/* Red Banner Styles */
+.banner {
+    width: 100%;
+    background-color: red; /* Solid red background */
+    color: white; /* White text color */
+    text-align: center;
+    padding: 10px 0; /* Vertical padding */
+    position: fixed; /* Fixed position at the top */
+    top: 0;
+    left: 0;
+    z-index: 1002; /* Ensure it stays above other content */
+    font-weight: bold; /* Bold text */
+    font-size: 1.5em; /* Font size */
+    text-transform: uppercase; /* Capital letters */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional shadow for depth */
+}
+
+/* Ensure the rest of the content is below the banner */
+body {
+    padding-top: 80px; /* Adjust based on the banner height (80px here for banner height + spacing) */
+    margin: 0;
+}
+
+/* Main Container (content and sidebar) */
+.main-container {
+    display: flex;
+    flex-direction: row;
+    height: 100vh; /* Full height */
+    width: 100%;
+    transition: margin-left 0.5s ease, width 0.5s ease; /* Smooth transition for layout changes */
+    padding-top: 10px; /* Additional padding to ensure space below banner */
+}
+
+/* Sidebar Styling */
+.sidebar {
+    height: calc(100% - 80px); /* Full height minus the height of the banner */
+    background-color: rgba(0, 0, 0, 0.8);
+    overflow-x: hidden;
+    transition: width 2.0 s ease; /* Smooth transition for sidebar */
+    position: fixed;
+    top: 80px; /* Below the banner */
+    left: 0;
+    width: 300px; /* Sidebar width when visible */
+    padding-top: 20px;
+    font-size: 18px;
+    color: yellow;
+    z-index: 1000; /* Ensure it's above content */
+}
+
+/* Sidebar links and buttons */
+.sidebar a,
+.sidebar button,
+.sidebar select {
+    padding: 10px 15px;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: 0.3s;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: inherit;
+}
+
+.sidebar a:hover,
+.sidebar button:hover,
+.sidebar select:hover {
+    color: #39FF14; /* Bright green hover color */
+}
+
+/* Close Button for Sidebar (X button) */
+.sidebar .close-btn {
+    position: absolute;
+    top: 0;
+    right: -40px; /* Keep the close button outside the sidebar when collapsed */
+    font-size: 36px;
+    z-index: 1001; /* Ensure it stays on top */
+    cursor: pointer;
+    color: white;
+    transition: right 0.5s ease; /* Smooth transition */
+}
+
+/* Sidebar Collapse Button (Hamburger icon) */
+#sidebarCollapse {
+    font-size: 30px; /* Size of the hamburger icon */
+    cursor: pointer;
+    color: white; /* Make sure it's visible on the dark background */
+    position: fixed;
+    top: 70px; /* Adjusted to be just below the banner */
+    left: 10px; /* Positioned on the left */
+    z-index: 1001; /* Ensure it appears on top of other elements */
+    background: none; /* No background */
+    border: none; /* No border */
+    outline: none; /* No outline */
+}
+
+#sidebarCollapse:hover {
+    color: #39FF14; /* Bright green on hover for visibility */
+}
+
+/* Ensure the button stays in place when the sidebar is collapsed */
+.main-container.collapsed #sidebarCollapse {
+    left: 10px; /* Keep it on the left when sidebar is collapsed */
+}
+
+.main-container #sidebarCollapse {
+    left: 10px; /* Positioned outside the sidebar when expanded */
+}
+
+
+/* Main Content Area */
+.content {
+    margin-left: 250px; /* Align with sidebar width */
+    transition: margin-left 0.5s ease; /* Smooth transition for sidebar collapsing */
+    padding: 16px;
+    padding-top: 20px; /* Ensure content is below the banner */
+}
+
+/* Collapsed State Styling */
+.main-container.collapsed .sidebar {
+    width: 0;
+    padding: 0; /* Hide the sidebar */
+    overflow: hidden; /* Hide sidebar content */
+}
+
+.main-container.collapsed .content {
+    margin-left: 0; /* Adjust content to full width when sidebar is hidden */
+}
+
+/* Comment Popup Styles */
+#commentPopup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: grey; /* Ensure solid grey background */
+    opacity: 1; /* Ensure no transparency */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* More pronounced shadow */
+    z-index: 1000;
+    color: white; /* White text for contrast */
+    width: 400px;
+}
+
+#commentPopup textarea {
+    width: 100%;
+    height: 100px;
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    outline: none;
+    background-color: #f0f0f0; /* Light grey for input field */
+    color: black; /* Black text inside textarea */
+}
+
+#commentPopup button {
+    margin-top: 10px;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#commentPopup button:hover {
+    background-color: #45a049;
+}
+
+#commentPopupLink {
+    cursor: pointer;
+    text-decoration: underline;
+    color: white;
+}
+/* Results Container */
+.results-container {
+    width: 100%; /* Adjust to desired width */
+    padding-left: 20px; /* Space between form and results */
+    color: white; /* Ensure text is visible */
+}
+
+/* Additional Styles for Thumbnails and Drawing List */
+#thumbnails-section {
+    width: 50%;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.thumbnail {
+    margin-right: 10px;
+}
+
+#drawingList {
+    color: white; /* Ensure visibility over dark backgrounds */
+}
+
+

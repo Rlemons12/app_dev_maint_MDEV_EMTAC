@@ -1,0 +1,69 @@
+/* Red Banner Styles */
+.banner {
+    width: 100%;
+    background-color: red; /* Solid red background */
+    color: white; /* White text color */
+    text-align: center;
+    padding: 10px 0; /* Vertical padding */
+    position: fixed; /* Fixed position at the top */
+    top: 0;
+    left: 0;
+    z-index: 1000; /* Ensure it stays on top */
+    font-weight: bold; /* Bold text */
+    font-size: 1.5em; /* Font size */
+    text-transform: uppercase; /* Capital letters */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional shadow for depth */
+}
+
+/* Ensure the rest of the content is below the banner */
+body {
+    padding-top: 60px; /* Adjust based on the banner height */
+}
+
+/* Comment Popup Styles */
+#commentPopup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: grey; /* Ensure solid grey background */
+    opacity: 1; /* Ensure no transparency */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* More pronounced shadow */
+    z-index: 1000;
+    color: white; /* White text for contrast */
+    width: 400px;
+}
+
+#commentPopup textarea {
+    width: 100%;
+    height: 100px;
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    outline: none;
+    background-color: #f0f0f0; /* Light grey for input field */
+    color: black; /* Black text inside textarea */
+}
+
+#commentPopup button {
+    margin-top: 10px;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#commentPopup button:hover {
+    background-color: #45a049;
+}
+
+#commentPopupLink {
+    cursor: pointer;
+    text-decoration: underline;
+    color: white;
+}

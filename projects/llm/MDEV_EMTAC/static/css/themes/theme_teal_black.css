@@ -1,0 +1,57 @@
+/* Futuristic Teal & Black Theme for EMTAC */
+
+/* Override body background */
+body {
+    background-color: #000000 !important; /* Pure black */
+}
+
+/* Sidebar styling */
+.sidebar {
+    background-color: rgba(0, 77, 64, 0.95) !important; /* Dark teal */
+    color: #80cbc4 !important; /* Light teal text */
+}
+
+.sidebar-header h1 {
+    color: #00ffff !important; /* Cyan accent */
+}
+
+.sidebar a:hover,
+.sidebar button:hover {
+    color: #00ffff !important; /* Cyan hover */
+    background-color: rgba(0, 255, 255, 0.1) !important;
+}
+
+.nav-link.highlight {
+    background-color: rgba(0, 255, 255, 0.2) !important;
+    border-left: 3px solid #00ffff !important;
+}
+
+/* Container backgrounds */
+.voice-controls-container,
+.model-display-container,
+.theme-container {
+    background-color: rgba(0, 121, 107, 0.4) !important;
+    border: 1px solid #00695c !important;
+}
+
+.voice-controls-container h4,
+.model-display-container h4,
+.theme-container h4 {
+    background-color: rgba(0, 77, 64, 0.8) !important;
+    color: #00ffff !important;
+}
+
+/* Buttons */
+.toggle-button {
+    background-color: #00695c !important;
+    border: 1px solid #00796b !important;
+}
+
+.toggle-button:hover {
+    background-color: #00796b !important;
+}
+
+/* Main content area */
+.content {
+    background-color: #1a1a1a !important; /* Very dark grey */
+}

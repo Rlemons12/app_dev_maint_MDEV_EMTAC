@@ -1,0 +1,14 @@
+### Test POST Route for Adding a Tool
+# @no-redirect
+POST http://127.0.0.1:5000/tool/submit_tool_data
+Content-Type: application/json
+
+{
+    "tool_name": "Hammer",
+    "tool_size": "Large",
+    "tool_type": "Hand Tool",
+    "tool_material": "Steel",
+    "tool_description": "A heavy-duty hammer",
+    "tool_category": "1",
+    "tool_manufacturer": "2"
+}

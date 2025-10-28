@@ -1,0 +1,18 @@
+body {
+    background: #FFFFFF;
+    background-image: url("/static/background_images/min_white_graphite.jpg"); /* Replace with your image */
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    color: #2D2D2D;
+}
+.banner, .sidebar {
+    background-color: #F2F2F7;
+    color: #2D2D2D;
+}
+.nav-link,
+.sidebar a,
+.sidebar button {
+    color: #6E8EF5;
+}

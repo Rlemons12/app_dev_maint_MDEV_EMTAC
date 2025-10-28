@@ -1,0 +1,55 @@
+<!-- search_drawing_form_partial.html -->
+<form id="drawing-search-form" action="/drawings/search" method="get">
+  <label for="search_text" style="color: Yellow;">Search Text:</label><br>
+  <input type="text" id="search_text" name="search_text" placeholder="Enter text to search across multiple fields"><br>
+
+  <label for="fields" style="color: Yellow;">Search Fields:</label><br>
+  <select id="fields" name="fields" multiple>
+    <option value="drw_equipment_name">Equipment Name</option>
+    <option value="drw_number">Drawing Number</option>
+    <option value="drw_name">Drawing Name</option>
+    <option value="drw_revision">Revision</option>
+    <option value="drw_spare_part_number">Spare Part Number</option>
+    <option value="file_path">File Path</option>
+  </select><br>
+  <small>Hold Ctrl/Cmd to select multiple fields</small><br>
+
+  <div>
+    <input type="checkbox" id="exact_match" name="exact_match" value="true">
+    <label for="exact_match" style="color: Yellow; display: inline;">Exact Match</label>
+    <small> - If checked, performs exact string matching instead of partial</small><br>
+  </div>
+
+  <label for="drawing_id" style="color: Yellow;">Drawing ID:</label><br>
+  <input type="number" id="drawing_id" name="drawing_id" placeholder="Enter drawing ID"><br>
+
+  <label for="drw_equipment_name" style="color: Yellow;">Equipment Name:</label><br>
+  <input type="text" id="drw_equipment_name" name="drw_equipment_name" placeholder="Equipment name"><br>
+
+  <label for="drw_number" style="color: Yellow;">Drawing Number:</label><br>
+  <input type="text" id="drw_number" name="drw_number" placeholder="Drawing number"><br>
+
+  <label for="drw_name" style="color: Yellow;">Drawing Name:</label><br>
+  <input type="text" id="drw_name" name="drw_name" placeholder="Drawing name"><br>
+
+  <label for="drw_revision" style="color: Yellow;">Revision:</label><br>
+  <input type="text" id="drw_revision" name="drw_revision" placeholder="Revision"><br>
+
+  <label for="drw_spare_part_number" style="color: Yellow;">Spare Part Number:</label><br>
+  <input type="text" id="drw_spare_part_number" name="drw_spare_part_number" placeholder="Spare part number"><br>
+
+  <label for="file_path" style="color: Yellow;">File Path:</label><br>
+  <input type="text" id="file_path" name="file_path" placeholder="File path"><br>
+
+  <label for="limit" style="color: Yellow;">Result Limit:</label><br>
+  <input type="number" id="limit" name="limit" value="100" min="1" max="1000"><br>
+
+  <div>
+    <input type="checkbox" id="include_part_images" name="include_part_images" value="true">
+    <label for="include_part_images" style="color: Yellow; display: inline;">Include Part Images</label>
+    <small> - If checked, results will include images of associated spare parts</small><br>
+  </div>
+
+  <input type="submit" value="Search">
+  <button type="reset">Reset</button>
+</form>

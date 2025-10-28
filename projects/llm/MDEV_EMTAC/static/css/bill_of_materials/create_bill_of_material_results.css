@@ -1,0 +1,225 @@
+/* static/css/create_bill_of_material_results.css */
+
+/* Base page styling */
+body {
+  background-image: url("/static/background_images/abstractfractal.jpg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-position: center;
+  font-family: Arial, sans-serif;
+  color: #333;
+}
+
+/* Flex layout for sidebar + main content */
+#content {
+  display: flex;
+  position: relative;
+  overflow-x: auto;
+}
+#content > #sidebar {
+  flex: 0 0 200px; /* Sidebar width */
+}
+#content > div:not(#sidebar) {
+  flex: 1 1 auto;  /* Main area fills remaining space */
+  margin-left: 0;
+}
+
+/* Container and header */
+.container {
+  max-width: 1800px;
+  margin: 0;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.header-info {
+  padding: 10px 0;
+  text-align: center;
+  margin-bottom: 20px;
+  background-color: #f2f2f2;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Table and scrolling */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 20px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  table-layout: fixed;
+}
+th, td {
+  padding: 10px;
+  text-align: left;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  word-wrap: break-word;
+  vertical-align: middle;
+}
+th {
+  background-color: #f2f2f2;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+/* Column widths optimized for flex container */
+th:nth-child(1), td:nth-child(1) { width: 6%; }
+th:nth-child(2), td:nth-child(2) { width: 15%; }
+th:nth-child(3), td:nth-child(3) { width: 10%; }
+th:nth-child(4), td:nth-child(4) { width: 10%; }
+th:nth-child(5), td:nth-child(5) { width: 5%; }
+th:nth-child(6), td:nth-child(6) { width: 5%; }
+th:nth-child(7), td:nth-child(7) { width: 5%; }
+th:nth-child(8), td:nth-child(8) { width: 20%; }
+th:nth-child(9), td:nth-child(9) { width: 20%; }
+th:nth-child(10), td:nth-child(10) { width: 5%; }
+/* Uniform row height */
+tbody tr {
+  height: 120px;
+}
+/* Thumbnail styling */
+.thumbnail {
+  width: 50px;
+  height: 50px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 2px;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform .15s ease;
+}
+.thumbnail:hover {
+  transform: scale(1.1);
+}
+a > .thumbnail {
+  display: inline-block;
+}
+/* Pagination and controls */
+.pagination {
+  margin-top: 20px;
+  background-color: #032e66;
+  padding: 10px;
+  border-radius: 8px;
+}
+.pagination a {
+  margin-right: 10px;
+  text-decoration: none;
+  color: #007BFF;
+}
+.pagination a:hover {
+  text-decoration: underline;
+}
+.pagination .next {
+  float: right;
+}
+.back-to-form {
+  display: block;
+  margin: 20px auto;
+  width: 200px;
+  text-align: center;
+  color: #007BFF;
+  background-color: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  text-decoration: none;
+}
+.back-to-form:hover {
+  text-decoration: underline;
+}
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  #content {
+    flex-direction: column;
+  }
+  #sidebar {
+    display: none;
+  }
+  .container {
+    margin: 0;
+    padding: 10px;
+  }
+  table {
+    font-size: 0.9em;
+  }
+  .thumbnail {
+    width: 40px;
+    height: 40px;
+  }
+}
+/* Flash messages */
+.flash-messages {
+  margin: 20px 0;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.flash-messages div {
+  padding: 10px;
+  margin-bottom: 5px;
+  border-radius: 4px;
+}
+
+.flash-messages .error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.flash-messages .warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+}
+
+.flash-messages .success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.flash-messages .info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+/* No results message */
+.no-results {
+  padding: 15px;
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 5px;
+  margin: 20px 0;
+}
+
+/* Pagination info styling */
+.pagination-info {
+  color: white;
+  display: inline-block;
+  margin: 0 10px;
+}
+
+/* Per page form styling */
+#per-page-form {
+  display: inline-block;
+  margin-right: 15px;
+}
+
+#per-page-form label {
+  color: white;
+  margin-right: 5px;
+}
+
+#per-page-form select {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}

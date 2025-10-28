@@ -1,0 +1,264 @@
+<!-- Manage Tools Tab Content -->
+<div class="tool-management-container">
+    <!-- Hidden field for Position ID -->
+    <input type="hidden" id="tool_position_id" value="{{ position.id }}">
+
+    <!-- Search Tools Section -->
+    <div class="search-section">
+    <h4>Search Tools</h4>
+    <div style="position: relative !important; overflow: visible !important; z-index: 9998 !important;">
+        <label for="tool-search">Search Tools:</label>
+        <input type="text" id="tool-search" placeholder="Search tools...">
+        <div id="tool-suggestion-box" class="suggestion-box"></div>
+    </div>
+</div>
+
+    <!-- Existing Tools Section -->
+    <div class="existing-tools-section">
+        <h4>Existing Tools:</h4>
+        <div id="existing-tools-list" class="scrollable-list">
+            {% for tool in existing_tools %}
+                <div class="existing-tool" id="tool-{{ tool.id }}">
+                    <div class="tool-info">
+                        <span class="tool-details">Tool Code: {{ tool.tool_code }}, Description: {{ tool.tool_name }}</span>
+                        <button type="button" class="remove-existing-tool-button"
+                                data-tool-id="{{ tool.id }}"
+                                data-position-id="{{ position.position_id }}">Remove</button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div id="tools-pagination" class="pagination-controls"></div>
+
+    <!-- Add New Tools Section -->
+    <div class="new-tools-section">
+        <h4>Add New Tools:</h4>
+        <div id="new-tools-container">
+            <!-- Dynamically added tool entries will appear here -->
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="tool-controls">
+            <button type="button" id="add-tool-button">Add Another Tool</button>
+            <button type="button" id="submit-tools-button">Submit New Tools</button>
+        </div>
+    </div>
+
+    <!-- Tool Creation Form Section (initially hidden) -->
+    <div id="tool-creation-section" style="display: none;">
+        <h4>Create New Tool</h4>
+        <form id="create-tool-form">
+            <div class="form-group">
+                <label for="new-tool-code">Tool Code:</label>
+                <input type="text" id="new-tool-code" name="tool_code" required>
+            </div>
+
+            <div class="form-group">
+                <label for="new-tool-name">Tool Name:</label>
+                <input type="text" id="new-tool-name" name="tool_name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="new-tool-description">Tool Description:</label>
+                <textarea id="new-tool-description" name="tool_description"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="new-tool-status">Tool Status:</label>
+                <select id="new-tool-status" name="tool_status">
+                    <option value="available">Available</option>
+                    <option value="in_use">In Use</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="retired">Retired</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="new-tool-location">Tool Location:</label>
+                <input type="text" id="new-tool-location" name="tool_location">
+            </div>
+
+            <div class="form-controls">
+                <button type="submit">Create Tool</button>
+                <button type="button" id="cancel-tool-creation">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Styles for Tool Management -->
+<style>
+    .tool-management-container {
+        padding: 20px;
+    }
+
+    .search-section {
+        margin-bottom: 30px;
+    }
+
+    .existing-tools-section {
+        margin-bottom: 30px;
+    }
+
+    .scrollable-list {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .existing-tool {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .tool-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .tool-details {
+        flex-grow: 1;
+    }
+
+    .remove-existing-tool-button {
+        background-color: #ff4444;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+    }
+
+    .remove-existing-tool-button:hover {
+        background-color: #cc0000;
+    }
+
+    .new-tools-section {
+        margin-bottom: 30px;
+    }
+
+    .tool-controls {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+    }
+
+    #add-tool-button, #submit-tools-button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    #add-tool-button:hover, #submit-tools-button:hover {
+        background-color: #45a049;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+
+    .form-group input, .form-group textarea, .form-group select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .form-group textarea {
+        height: 80px;
+        resize: vertical;
+    }
+
+    .form-controls {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+    }
+
+    .form-controls button {
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .form-controls button[type="submit"] {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+    }
+
+    .form-controls button[type="submit"]:hover {
+        background-color: #45a049;
+    }
+
+    #cancel-tool-creation {
+        background-color: #f44336;
+        color: white;
+        border: none;
+    }
+
+    #cancel-tool-creation:hover {
+        background-color: #da190b;
+    }
+
+    .suggestion-box {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #ddd;
+        border-top: none;
+        max-height: 150px;
+        overflow-y: auto;
+        z-index: 1000;
+    }
+
+    .suggestion-item {
+        padding: 10px;
+        cursor: pointer;
+    }
+
+    .suggestion-item:hover {
+        background-color: #f5f5f5;
+    }
+
+    .pagination-controls {
+        margin-top: 10px;
+        text-align: center;
+    }
+
+    .pagination-controls button {
+        margin: 0 5px;
+        padding: 5px 10px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+    }
+
+    .pagination-controls button:hover {
+        background-color: #45a049;
+    }
+
+    .pagination-controls button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+</style>

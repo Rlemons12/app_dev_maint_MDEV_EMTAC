@@ -1,0 +1,8 @@
+touch Database/db_backup/.gitkeep
+touch Database/DB_DOC/.gitkeep
+touch Database/DB_IMAGES/.gitkeep
+touch Database/DB_LOADSHEETS/.gitkeep
+touch Database/DB_LOADSHEETS_BACKUP/.gitkeep
+touch Database/logs/.gitkeep
+touch Database/PDF_FILES/.gitkeep
+touch Database/PPT_FILES/.gitkeep

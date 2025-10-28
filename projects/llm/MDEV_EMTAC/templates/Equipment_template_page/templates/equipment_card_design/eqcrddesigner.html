@@ -1,0 +1,546 @@
+{% extends "base_template.html" %}
+
+{% block title %}Equipment Card Designer{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/card-designer.css') }}">
+<style>
+/* Make designer container fully responsive to sidebar toggle */
+.designer-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 25px;
+    width: 100%;
+    max-width: 100%;
+    transition: all 0.3s ease;
+}
+
+/* Adjust container widths to fill available space */
+.designer-form-container,
+.preview-container {
+    flex: 1;
+    min-width: 320px;
+    transition: all 0.3s ease;
+}
+
+/* Card containers */
+.card-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+/* When sidebar is retracted, adjust max-width to use full space */
+.main-container.sidebar-retracted .designer-container {
+    max-width: 100%;
+}
+
+/* Ensure tabs work */
+.form-section {
+    display: none;
+}
+
+.form-section.active {
+    display: block;
+}
+
+/* Tab button styling */
+.tab-btn {
+    padding: 8px 15px;
+    background-color: #f0f5fa;
+    border: 1px solid #d8e1eb;
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+    margin-right: 4px;
+    font-weight: 600;
+    color: #5b7a9a;
+}
+
+.tab-btn.active {
+    background-color: #d8ebfa;
+    color: #2e7ebf;
+}
+
+/* Better responsive behavior */
+@media (max-width: 1100px) {
+    .designer-container {
+        flex-direction: column;
+    }
+
+    .designer-form-container,
+    .preview-container {
+        min-width: 100%;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Equipment Card Designer</h1>
+
+<div class="designer-container">
+    <!-- FORM CONTAINER - Left Side -->
+    <div class="designer-form-container card-container">
+        <h2>Design Your Equipment Card</h2>
+
+        <!-- Tab Navigation with inline handlers -->
+        <div class="form-tabs">
+            <button type="button" class="tab-btn active" onclick="switchTab('basic-info', this)">Basic Info</button>
+            <button type="button" class="tab-btn" onclick="switchTab('specifications', this)">Specifications</button>
+            <button type="button" class="tab-btn" onclick="switchTab('appearance', this)">Appearance</button>
+            <button type="button" class="tab-btn" onclick="switchTab('notes', this)">Notes</button>
+            <button type="button" class="tab-btn" onclick="switchTab('export', this)">Export</button>
+        </div>
+
+        <!-- Form Content -->
+        <form id="equipmentForm" class="designer-form">
+            <!-- Basic Information Section -->
+            <div class="form-section active" id="basic-info">
+                <div class="form-group">
+                    <label for="equipment-name">Equipment Name</label>
+                    <input type="text" id="equipment-name" name="equipment-name" class="form-control" placeholder="e.g. High-Speed Bottle Filler" oninput="updatePreview('name')">
+                </div>
+
+                <div class="form-group">
+                    <label for="equipment-id">Equipment ID</label>
+                    <input type="text" id="equipment-id" name="equipment-id" class="form-control" placeholder="e.g. EQP-1021" oninput="updatePreview('id')">
+                </div>
+
+                <div class="form-group">
+                    <label for="asset-number">Asset Number</label>
+                    <input type="text" id="asset-number" name="asset-number" class="form-control" placeholder="e.g. 00024578" oninput="updatePreview('asset')">
+                </div>
+
+                <div class="form-group">
+                    <label for="manufacturer">Manufacturer</label>
+                    <input type="text" id="manufacturer" name="manufacturer" class="form-control" placeholder="e.g. Krones AG" oninput="updatePreview('manufacturer')">
+                </div>
+
+                <div class="form-group">
+                    <label for="model-number">Model Number</label>
+                    <input type="text" id="model-number" name="model-number" class="form-control" placeholder="e.g. LVP-8000" oninput="updatePreview('model')">
+                </div>
+
+                <div class="form-group">
+                    <label for="serial-number">Serial Number</label>
+                    <input type="text" id="serial-number" name="serial-number" class="form-control" placeholder="e.g. SN-4578923" oninput="updatePreview('serial')">
+                </div>
+
+                <div class="form-group">
+                    <label for="year">Year of Manufacture</label>
+                    <input type="text" id="year" name="year" class="form-control" placeholder="e.g. 2021" oninput="updatePreview('year')">
+                </div>
+            </div>
+
+            <!-- Specifications Section -->
+            <div class="form-section" id="specifications">
+                <div class="form-group">
+                    <label for="site-facility">Site/Facility</label>
+                    <input type="text" id="site-facility" name="site-facility" class="form-control" placeholder="e.g. Main Plant - Line 2" oninput="updatePreview('site')">
+                </div>
+
+                <div class="form-group">
+                    <label for="area">Area</label>
+                    <input type="text" id="area" name="area" class="form-control" placeholder="e.g. Packaging Hall" oninput="updatePreview('area')">
+                </div>
+
+                <div class="form-group">
+                    <label for="line-section">Line/Section</label>
+                    <input type="text" id="line-section" name="line-section" class="form-control" placeholder="e.g. Line 2" oninput="updatePreview('line')">
+                </div>
+
+                <div class="form-group">
+                    <label for="location-code">Location Code</label>
+                    <input type="text" id="location-code" name="location-code" class="form-control" placeholder="e.g. P2A-04" oninput="updatePreview('location')">
+                </div>
+
+                <div class="form-group">
+                    <label>Custom Fields</label>
+                    <button type="button" id="add-field" class="btn btn-secondary" onclick="addCustomField()">+ Add Custom Field</button>
+                    <div id="custom-fields-container"></div>
+                </div>
+            </div>
+
+            <!-- Appearance Section -->
+            <div class="form-section" id="appearance">
+                <div class="form-group">
+                    <label>Card Icon</label>
+                    <div class="icon-grid">
+                        <div class="icon-option" onclick="selectIcon(this, '🔧')"><span>🔧</span></div>
+                        <div class="icon-option" onclick="selectIcon(this, '⚙️')"><span>⚙️</span></div>
+                        <div class="icon-option" onclick="selectIcon(this, '🏭')"><span>🏭</span></div>
+                        <div class="icon-option" onclick="selectIcon(this, '🧰')"><span>🧰</span></div>
+                        <div class="icon-option" onclick="selectIcon(this, '🔌')"><span>🔌</span></div>
+                        <div class="icon-option" onclick="selectIcon(this, '📊')"><span>📊</span></div>
+                        <div class="icon-option" onclick="selectIcon(this, '📡')"><span>📡</span></div>
+                        <div class="icon-option" onclick="selectIcon(this, '🖨️')"><span>🖨️</span></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="card-color">Card Accent Color</label>
+                    <input type="color" id="card-color" name="card-color" value="#d8ebfa" oninput="updateCardColor()">
+                </div>
+
+                <div class="form-group">
+                    <label for="equipment-image">Equipment Image</label>
+                    <input type="file" id="equipment-image" name="equipment-image" accept="image/*" onchange="previewImage(this)">
+                    <p class="help-text">Recommended size: 370px × 260px</p>
+                </div>
+            </div>
+
+            <!-- Notes Section -->
+            <div class="form-section" id="notes">
+                <div class="form-group">
+                    <label for="maintenance-notes">Maintenance Notes</label>
+                    <textarea id="maintenance-notes" name="maintenance-notes" class="form-control" rows="4" placeholder="e.g. This filler was upgraded in 2023 to include automatic bottle size adjustment. Scheduled maintenance is every 3 months." oninput="updateNotes()"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="maintenance-schedule">Maintenance Schedule</label>
+                    <select id="maintenance-schedule" name="maintenance-schedule" class="form-control" onchange="updateNotes()">
+                        <option value="">Select frequency</option>
+                        <option value="Weekly">Weekly</option>
+                        <option value="Monthly">Monthly</option>
+                        <option value="Quarterly">Quarterly (3 months)</option>
+                        <option value="Biannually">Biannually (6 months)</option>
+                        <option value="Annually">Annually</option>
+                        <option value="Custom">Custom</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Export Section -->
+            <div class="form-section" id="export">
+                <p>You can save your design as a template or export it in different formats.</p>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-primary" onclick="saveTemplate()">Save as Template</button>
+                    <button type="button" class="btn" onclick="exportPDF()">Export as PDF</button>
+                    <button type="button" class="btn" onclick="exportHTML()">Export as HTML</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- PREVIEW CONTAINER - Right Side -->
+    <div class="preview-container card-container">
+        <h2>Card Preview</h2>
+        <div class="equipment-card" id="previewCard">
+            <div class="equipment-header">
+                <div class="equipment-icon" id="previewIcon">🔧</div>
+                <h2 class="equipment-title" id="previewTitle">Equipment Name</h2>
+            </div>
+
+            <div class="equipment-id" id="previewEquipmentId">Equipment ID: ---</div>
+
+            <div class="equipment-image-container">
+                <div class="equipment-image-default" id="previewImageContainer">No Image</div>
+            </div>
+
+            <table class="info-table" id="previewInfoTable">
+                <tr>
+                    <th>Asset Number</th>
+                    <td id="previewAssetNumber">---</td>
+                </tr>
+                <tr>
+                    <th>Manufacturer</th>
+                    <td id="previewManufacturer">---</td>
+                </tr>
+                <tr>
+                    <th>Model Number</th>
+                    <td id="previewModelNumber">---</td>
+                </tr>
+                <tr>
+                    <th>Serial Number</th>
+                    <td id="previewSerialNumber">---</td>
+                </tr>
+                <tr>
+                    <th>Year of Manufacture</th>
+                    <td id="previewYear">---</td>
+                </tr>
+                <tr>
+                    <th>Site/Facility</th>
+                    <td id="previewSiteFacility">---</td>
+                </tr>
+                <tr>
+                    <th>Area</th>
+                    <td id="previewArea">---</td>
+                </tr>
+                <tr>
+                    <th>Line/Section</th>
+                    <td id="previewLineSection">---</td>
+                </tr>
+                <tr>
+                    <th>Location Code</th>
+                    <td id="previewLocationCode">---</td>
+                </tr>
+                <!-- Custom fields will be added here -->
+            </table>
+
+            <div class="equipment-notes" id="previewNotes">
+                <strong>Notes:</strong> <span id="previewMaintenanceNotes">No maintenance notes available.</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Tab switching functionality
+function switchTab(tabId, clickedButton) {
+    console.log('Switching to tab:', tabId);
+
+    // Hide all sections
+    document.querySelectorAll('.form-section').forEach(section => {
+        section.classList.remove('active');
+    });
+
+    // Show selected section
+    document.getElementById(tabId).classList.add('active');
+
+    // Update button styles
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    clickedButton.classList.add('active');
+}
+
+// Update preview based on form inputs
+function updatePreview(field) {
+    switch(field) {
+        case 'name':
+            const name = document.getElementById('equipment-name').value || 'Equipment Name';
+            document.getElementById('previewTitle').textContent = name;
+            break;
+        case 'id':
+            const id = document.getElementById('equipment-id').value || '---';
+            document.getElementById('previewEquipmentId').textContent = 'Equipment ID: ' + id;
+            break;
+        case 'asset':
+            const asset = document.getElementById('asset-number').value || '---';
+            document.getElementById('previewAssetNumber').textContent = asset;
+            break;
+        case 'manufacturer':
+            const manufacturer = document.getElementById('manufacturer').value || '---';
+            document.getElementById('previewManufacturer').textContent = manufacturer;
+            break;
+        case 'model':
+            const model = document.getElementById('model-number').value || '---';
+            document.getElementById('previewModelNumber').textContent = model;
+            break;
+        case 'serial':
+            const serial = document.getElementById('serial-number').value || '---';
+            document.getElementById('previewSerialNumber').textContent = serial;
+            break;
+        case 'year':
+            const year = document.getElementById('year').value || '---';
+            document.getElementById('previewYear').textContent = year;
+            break;
+        case 'site':
+            const site = document.getElementById('site-facility').value || '---';
+            document.getElementById('previewSiteFacility').textContent = site;
+            break;
+        case 'area':
+            const area = document.getElementById('area').value || '---';
+            document.getElementById('previewArea').textContent = area;
+            break;
+        case 'line':
+            const line = document.getElementById('line-section').value || '---';
+            document.getElementById('previewLineSection').textContent = line;
+            break;
+        case 'location':
+            const location = document.getElementById('location-code').value || '---';
+            document.getElementById('previewLocationCode').textContent = location;
+            break;
+    }
+}
+
+// Update card color
+function updateCardColor() {
+    const color = document.getElementById('card-color').value;
+    document.getElementById('previewIcon').style.backgroundColor = color;
+}
+
+// Handle icon selection
+function selectIcon(element, icon) {
+    // Remove selected class from all icons
+    document.querySelectorAll('.icon-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+
+    // Add selected class to clicked icon
+    element.classList.add('selected');
+
+    // Update preview
+    document.getElementById('previewIcon').textContent = icon;
+}
+
+// Preview uploaded image
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const imageContainer = document.getElementById('previewImageContainer');
+
+            // Create image element
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.className = 'equipment-image';
+            img.alt = document.getElementById('equipment-name').value || 'Equipment Image';
+
+            // Clear container and add new image
+            imageContainer.innerHTML = '';
+            imageContainer.classList.remove('equipment-image-default');
+            imageContainer.classList.add('equipment-image');
+            imageContainer.appendChild(img);
+        };
+
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Update maintenance notes
+function updateNotes() {
+    const notes = document.getElementById('maintenance-notes').value;
+    const schedule = document.getElementById('maintenance-schedule').value;
+
+    let displayText = notes || 'No maintenance notes available.';
+
+    if (schedule && schedule !== '') {
+        if (notes) {
+            displayText += ` Scheduled maintenance: ${schedule}.`;
+        } else {
+            displayText = `Scheduled maintenance: ${schedule}.`;
+        }
+    }
+
+    document.getElementById('previewMaintenanceNotes').textContent = displayText;
+}
+
+// Add custom field
+function addCustomField() {
+    const container = document.getElementById('custom-fields-container');
+    const fieldId = Date.now();
+
+    const fieldRow = document.createElement('div');
+    fieldRow.className = 'custom-field-row';
+    fieldRow.dataset.fieldId = fieldId;
+
+    // Create label input
+    const labelInput = document.createElement('input');
+    labelInput.type = 'text';
+    labelInput.className = 'form-control';
+    labelInput.placeholder = 'Field Name';
+    labelInput.addEventListener('input', function() { updateCustomField(fieldId); });
+
+    // Create value input
+    const valueInput = document.createElement('input');
+    valueInput.type = 'text';
+    valueInput.className = 'form-control';
+    valueInput.placeholder = 'Value';
+    valueInput.addEventListener('input', function() { updateCustomField(fieldId); });
+
+    // Create remove button
+    const removeButton = document.createElement('button');
+    removeButton.textContent = '×';
+    removeButton.addEventListener('click', function() { removeCustomField(fieldId); });
+
+    // Assemble and add to container
+    fieldRow.appendChild(labelInput);
+    fieldRow.appendChild(valueInput);
+    fieldRow.appendChild(removeButton);
+    container.appendChild(fieldRow);
+}
+
+// Update custom field in preview
+function updateCustomField(fieldId) {
+    const row = document.querySelector(`.custom-field-row[data-field-id="${fieldId}"]`);
+    if (!row) return;
+
+    const inputs = row.querySelectorAll('input');
+    if (inputs.length < 2) return;
+
+    const label = inputs[0].value;
+    const value = inputs[1].value || '---';
+
+    // Check if field already exists in preview
+    const tableId = 'custom-field-' + fieldId;
+    let tableRow = document.getElementById(tableId);
+
+    if (!tableRow && label) {
+        // Create new row in preview table
+        tableRow = document.createElement('tr');
+        tableRow.id = tableId;
+
+        const thCell = document.createElement('th');
+        thCell.textContent = label;
+
+        const tdCell = document.createElement('td');
+        tdCell.textContent = value;
+
+        tableRow.appendChild(thCell);
+        tableRow.appendChild(tdCell);
+
+        document.getElementById('previewInfoTable').appendChild(tableRow);
+    } else if (tableRow) {
+        // Update existing row
+        const cells = tableRow.children;
+        if (cells.length >= 2) {
+            cells[0].textContent = label;
+            cells[1].textContent = value;
+        }
+
+        // Remove row if label is empty
+        if (!label) {
+            tableRow.remove();
+        }
+    }
+}
+
+// Remove custom field
+function removeCustomField(fieldId) {
+    // Remove from form
+    const fieldRow = document.querySelector(`.custom-field-row[data-field-id="${fieldId}"]`);
+    if (fieldRow) {
+        fieldRow.remove();
+    }
+
+    // Remove from preview
+    const tableRow = document.getElementById('custom-field-' + fieldId);
+    if (tableRow) {
+        tableRow.remove();
+    }
+}
+
+// Save as template
+function saveTemplate() {
+    alert('Template saved successfully!');
+}
+
+// Export as PDF
+function exportPDF() {
+    alert('PDF export functionality would require additional libraries or server-side processing.');
+}
+
+// Export as HTML
+function exportHTML() {
+    alert('HTML export completed!');
+}
+
+// Initialize the page - make sure first tab is active
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Card Designer loaded');
+
+    // Make sure the first tab is active by default
+    document.querySelector('.tab-btn').classList.add('active');
+    document.getElementById('basic-info').classList.add('active');
+
+    // Select the first icon by default
+    document.querySelector('.icon-option').classList.add('selected');
+});
+</script>
+{% endblock %}

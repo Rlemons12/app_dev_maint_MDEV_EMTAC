@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Drawing Search{% endblock %}
+
+{% block content %}
+    <h1>Drawing Search</h1>
+    <p>Search for drawings and associated parts.</p>
+    
+    <div id="search-drawings" class="form-container">
+        <h2>Search Drawings</h2>
+        {% include "upload_search_database/upload_search_database_partial/search_drawing_form_partial.html" %}
+    </div>
+
+    <!-- This div will hold the search results -->
+    <div id="search-results" {% if not request.args %}style="display: none;"{% endif %}>
+        {% if request.args %}
+            <h2>Search Results</h2>
+            <p class="loading-message">Loading results...</p>
+            <div class="drawing-results-container"></div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block extra_scripts %}
+    <!-- Include the drawing search JavaScript -->
+    <script src="{{ url_for('static', filename='js/upload_search_database/search_drawing.js') }}"></script>
+
+    {% if request.args %}
+    <script>
+        // Auto-submit the form when the page loads with URL parameters
+        document.addEventListener('DOMContentLoaded', function() {
+            // The search form's action is already /drawings/search, so this will execute the search
+            // and display results via fetch/AJAX to avoid a page reload
+            const urlParams = window.location.search;
+            if (urlParams) {
+                // First, populate the form with the URL parameters
+                populateFormFromUrl();
+
+                // Show loading indicator
+                document.getElementById('search-results').style.display = 'block';
+
+                // Fetch the results
+                fetch('/drawings/search' + urlParams)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Hide loading message
+                        document.querySelector('.loading-message').style.display = 'none';
+                        displaySearchResults(data);
+                    })
+                    .catch(error => {
+                        document.querySelector('.drawing-results-container').innerHTML =
+                            '<div class="error">Error loading search results: ' + error.message + '</div>';
+                    });
+            }
+        });
+
+        function displaySearchResults(data) {
+            const resultsDiv = document.querySelector('.drawing-results-container');
+
+            if (data.count === 0) {
+                resultsDiv.innerHTML = '<p>No drawings found matching your search criteria.</p>';
+                return;
+            }
+
+            let html = `<p>Found ${data.count} drawing(s).</p>
+                        <div class="results-grid">`;
+
+            data.results.forEach(drawing => {
+                html += `
+                    <div class="result-card">
+                        <h3>${drawing.drw_name || 'Unnamed Drawing'}</h3>
+                        <div class="drawing-details">
+                            <p><strong>ID:</strong> ${drawing.id}</p>
+                            <p><strong>Equipment:</strong> ${drawing.drw_equipment_name || 'N/A'}</p>
+                            <p><strong>Number:</strong> ${drawing.drw_number || 'N/A'}</p>
+                            <p><strong>Revision:</strong> ${drawing.drw_revision || 'N/A'}</p>
+                            <p><strong>Spare Part #:</strong> ${drawing.drw_spare_part_number || 'N/A'}</p>
+                        </div>`;
+
+                // Add part images if they exist
+                if (drawing.part_images && drawing.part_images.length > 0) {
+                    html += `<div class="part-images">
+                              <h4>Associated Part Images (${drawing.part_images.length})</h4>
+                              <div class="image-gallery">`;
+
+                    drawing.part_images.forEach(image => {
+                        html += `
+                            <div class="image-item">
+                                <a href="${image.image_url}" target="_blank">
+                                    <img src="${image.image_url}" alt="${image.image_title}" style="max-width: 150px; max-height: 150px;">
+                                </a>
+                                <div class="image-caption">
+                                    <p>${image.image_title}</p>
+                                    <p>Part: ${image.part_name || image.part_number || 'ID: ' + image.part_id}</p>
+                                </div>
+                            </div>`;
+                    });
+
+                    html += `</div></div>`;
+                }
+
+                html += `</div>`;
+            });
+
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+        }
+
+        // This function is already defined in search_drawing.js but we include it here to ensure it works
+        function populateFormFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+
+            // Populate text and number fields
+            document.getElementById('search_text').value = urlParams.get('search_text') || '';
+            document.getElementById('drawing_id').value = urlParams.get('drawing_id') || '';
+            document.getElementById('drw_equipment_name').value = urlParams.get('drw_equipment_name') || '';
+            document.getElementById('drw_number').value = urlParams.get('drw_number') || '';
+            document.getElementById('drw_name').value = urlParams.get('drw_name') || '';
+            document.getElementById('drw_revision').value = urlParams.get('drw_revision') || '';
+            document.getElementById('drw_spare_part_number').value = urlParams.get('drw_spare_part_number') || '';
+            document.getElementById('file_path').value = urlParams.get('file_path') || '';
+            document.getElementById('limit').value = urlParams.get('limit') || '100';
+
+            // Populate checkboxes
+            document.getElementById('exact_match').checked = urlParams.get('exact_match') === 'true';
+            document.getElementById('include_part_images').checked = urlParams.get('include_part_images') === 'true';
+
+            // Populate multi-select fields
+            const fieldsParam = urlParams.get('fields');
+            if (fieldsParam) {
+                const fieldsArray = fieldsParam.split(',');
+                const fieldsSelect = document.getElementById('fields');
+
+                Array.from(fieldsSelect.options).forEach(option => {
+                    option.selected = fieldsArray.includes(option.value);
+                });
+            }
+        }
+    </script>
+    {% endif %}
+{% endblock %}

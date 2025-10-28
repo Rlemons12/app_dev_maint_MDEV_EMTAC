@@ -1,0 +1,18 @@
+body {
+    background: #232323;
+    background-image: url("/static/background_images/yellow_steel.jpg"); /* Replace with your image */
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    color: #E7E9EC;
+}
+.banner, .sidebar {
+    background-color: #FFD600;
+    color: #232323;
+}
+.nav-link,
+.sidebar a,
+.sidebar button {
+    color: #FF8500;
+}

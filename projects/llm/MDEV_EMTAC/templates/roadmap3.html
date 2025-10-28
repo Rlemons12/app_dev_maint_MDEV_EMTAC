@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Roadmap - AI-Enhanced Maintenance Support Chatbot</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #020024 0%, #090979 35%, #00d4ff 100%);
+        color: white;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+    .roadmap {
+        width: 80%;
+        max-width: 1000px;
+        position: relative;
+    }
+    .hexagon {
+        position: relative;
+        width: 200px; 
+        height: 115.47px;
+        background-color: #1a1a1d;
+        margin: 57.74px 0;
+        display: inline-block;
+        transition: transform 0.2s;
+    }
+    .hexagon:before,
+    .hexagon:after {
+        content: "";
+        position: absolute;
+        width: 0;
+        border-left: 100px solid transparent;
+        border-right: 100px solid transparent;
+    }
+    .hexagon:before {
+        bottom: 100%;
+        border-bottom: 57.74px solid #1a1a1d;
+    }
+    .hexagon:after {
+        top: 100%;
+        width: 0;
+        border-top: 57.74px solid #1a1a1d;
+    }
+    .hexagon:hover {
+        transform: scale(1.1);
+    }
+    .content {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+    .roadmap .hexagon:nth-child(odd) {
+        transform: translateY(-100px);
+    }
+    .roadmap .hexagon:nth-child(even) {
+        transform: translateY(100px);
+    }
+    .title {
+        text-align: center;
+        margin-bottom: 20px;
+        font-size: 2em;
+    }
+</style>
+</head>
+<body>
+<div class="roadmap">
+    <div class="title">Project Roadmap - AI-Enhanced Maintenance Support Chatbot</div>
+    <div class="hexagon">
+        <div class="content">
+            <h3>Initiation</h3>
+            <p>Define project scope, objectives, and conduct stakeholder meetings to secure input and buy-in.</p>
+        </div>
+    </div>
+    <div class="hexagon">
+        <div class="content">
+            <h3>Database Development</h3>
+            <p>Develop and implement the relational database schema to organize and store data securely.</p>
+        </div>
+    </div>
+    <div class="hexagon">
+        <div class="content">
+            <h3>Chatbot Development</h3>
+            <p>Develop the core functionalities of the chatbot, integrating with the database and OpenAI's API for NLP capabilities.</p>
+        </div>
+    </div>
+    <div class="hexagon">
+        <div class="content">
+            <h3>Fine-Tuning</h3>
+            <p>Collect and prepare training data, fine-tune the AI model, and evaluate performance iteratively to optimize response accuracy.</p>
+        </div>
+    </div>
+    <div class="hexagon">
+        <div class="content">
+            <h3>Testing and Deployment</h3>
+            <p>Conduct extensive testing with actual maintenance personnel, followed by controlled deployment and full-scale rollout.</p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,158 @@
+body {
+    background-image: url("/static/background_images/abstractfractal.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    display: flex;
+    color: white;
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    box-sizing: border-box;
+    transition: width 0.3s;
+    overflow-x: hidden;
+}
+
+.sidebar.collapsed {
+    width: 60px;
+}
+
+.sidebar h2 {
+    color: white;
+    text-align: center;
+}
+
+.sidebar a {
+    color: yellow;
+    text-decoration: none;
+    display: block;
+    padding: 10px;
+    transition: padding-left 0.3s;
+}
+
+.sidebar.collapsed a {
+    padding-left: 10px;
+}
+
+.sidebar a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.toggle-btn {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 10px 20px;
+    display: block;
+    margin: 0 auto 20px;
+}
+
+.content {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    gap: 20px;
+    overflow-y: auto;
+}
+
+.form-container {
+    flex: 1;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    max-height: calc(100vh - 40px); /* Adjust height to fit within viewport */
+    overflow-y: auto;
+}
+
+.form-container h2 {
+    color: white;
+}
+
+.form-container input,
+.form-container select,
+.form-container textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: none;
+    box-sizing: border-box;
+}
+
+.form-container input[type="submit"] {
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+}
+
+.form-container input[type="submit"]:hover {
+    background-color: #45a049;
+}
+
+.results-container {
+    flex: 1;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    max-height: calc(100vh - 40px); /* Adjust height to fit within viewport */
+    overflow-y: auto;
+}
+
+.results-container h2 {
+    color: white;
+}
+
+.results-container p {
+    color: white;
+}
+
+.thumbnail {
+    width: 150px;
+    height: auto;
+    margin: 10px;
+    cursor: pointer;
+    float: left;
+}
+
+.image-container,
+.document-container {
+    margin-top: 20px;
+    overflow: hidden;
+}
+
+.image-details,
+.document-details {
+    margin-left: 180px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+.image-details h2,
+.document-details h2 {
+    margin-top: 0;
+}
+
+.pagination {
+    margin-top: 20px;
+    text-align: right;
+}
+
+.pagination a {
+    margin: 0 5px;
+    text-decoration: none;
+    color: #007bff;
+}
+
+.pagination strong {
+    margin: 0 5px;
+    color: #000;
+}

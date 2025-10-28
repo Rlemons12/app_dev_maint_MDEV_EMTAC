@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Database Interaction</title>
+    <style>
+        /* Add your styles here */
+    </style>
+</head>
+<body>
+    <h1>Interact with Database</h1>
+	
+	<!-- Form for Adding Images -->
+	<h2>Add Image</h2>
+	<form id="add-image-form" action="/upload" method="post" enctype="multipart/form-data">
+		<input type="text" name="title" placeholder="Image Title" required><br>
+		<input type="file" name="image" accept="image/*" required><br> <!-- File input for images -->
+		<textarea name="description" placeholder="Image Description"></textarea><br>
+		<input type="submit" value="Add Image">
+	</form>
+
+    
+    <!-- Form for Adding Documents -->
+    <h2>Add Document</h2>
+    <form id="add-document-form" action="/documents/add_document" method="post" enctype="multipart/form-data">
+        <input type="text" name="title" placeholder="Document Title" required><br>
+        <input type="file" name="document" accept=".pdf,.txt" required><br> <!-- File input for documents -->
+        <input type="submit" value="Add Document">
+    </form>
+
+    <!-- Section for Search Results -->
+    <h2>Search Documents</h2>
+    <input type="text" id="search-query" placeholder="Enter search query">
+    <button id="search-button">Search</button>
+    <div id="search-results"></div>
+
+    <!-- JavaScript to handle form submissions and search -->
+    <script>
+        // Add JavaScript to handle form submissions and search
+        // Example: Handle the document search
+        document.getElementById('search-button').addEventListener('click', function() {
+            var query = document.getElementById('search-query').value;
+            // Implement AJAX request to search documents
+        });
+    </script>
+</body>
+</html>

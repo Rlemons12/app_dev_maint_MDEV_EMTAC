@@ -1,0 +1,215 @@
+<!-- templates/bill_of_materials/bom_partials/bill_of_material_results_partial.html -->
+
+<!-- Load necessary styles -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bill_of_materials.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bill_of_materials/create_bill_of_material_results.css') }}">
+
+<!-- More aggressive styling overrides -->
+<style>
+  /* Force the content area to extend full width and remove gap */
+  body, html {
+    overflow-x: hidden;
+  }
+
+  /* Remove all margins and padding from main content div */
+  #content > div:not(#sidebar) {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: calc(100% - 200px) !important; /* 200px is sidebar width */
+    position: absolute !important;
+    left: 200px !important; /* Exactly align with sidebar */
+    top: 0 !important;
+  }
+
+  /* Make the results container full width of available space */
+  .bom-results-content {
+    margin: 0 !important;
+    padding: 15px !important;
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+    background-color: rgba(0, 20, 60, 0.8) !important;
+  }
+
+  /* Ensure the table uses full width */
+  #searchResults,
+  .results-table {
+    width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Make table columns more evenly distributed */
+  .results-table th,
+  .results-table td {
+    padding: 10px !important;
+    border: 1px solid #444 !important;
+  }
+
+  /* Adjust the pagination container width */
+  .pagination {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin-top: 15px !important;
+  }
+
+  /* Force the content-wrapper to be full width */
+  .content-wrapper, .main-container {
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Remove any container width restrictions */
+  .container, .results-container {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+</style>
+
+<!-- Container div for results -->
+<div class="bom-results-content">
+  <h1 class="results-title">Bill of Materials Results</h1>
+
+  <a href="{{ url_for('bill_of_materials_bp.bill_of_materials') }}" class="back-to-search">
+    Back to Search
+  </a>
+
+  {% if debug_info %}
+  <div class="debug-info">
+    <p>Found {{ debug_info.result_count }} results ({{ debug_info.parts_count }} parts)</p>
+  </div>
+  {% endif %}
+
+  <div id="searchResults">
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Part Number</th>
+          <th>Description</th>
+          <th>OEM Manufacturer</th>
+          <th>Model</th>
+          <th>Class Flag</th>
+          <th>UD6</th>
+          <th>Type</th>
+          <th>Notes</th>
+          <th>Documentation</th>
+          <th>Image</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Simple initial table output - helps us see what's actually rendering -->
+        {% for item in parts_and_images %}
+        <tr class="part-row" data-part-number="{{ item.part.part_number }}">
+          <td>{{ item.part.part_number }}</td>
+          <td>{{ item.part.name }}</td>
+          <td>{{ item.part.oem_mfg or 'N/A' }}</td>
+          <td>{{ item.part.model or 'N/A' }}</td>
+          <td>{{ item.part.class_flag or 'N/A' }}</td>
+          <td>{{ item.part.ud6 or 'N/A' }}</td>
+          <td>{{ item.part.type or 'N/A' }}</td>
+          <td>{{ item.part.notes or 'N/A' }}</td>
+          <td>{{ item.part.documentation or 'N/A' }}</td>
+          <td>
+            {% if item.image %}
+              <a href="{{ url_for('create_bill_of_material_bp.bom_serve_image_route', image_id=item.image.id) }}" target="_blank">
+                <img class="thumbnail" src="{{ url_for('create_bill_of_material_bp.bom_serve_image_route', image_id=item.image.id) }}" alt="{{ item.image.title }}">
+              </a>
+            {% else %}
+              <p>No image available</p>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    {% if prev_index is not none %}
+      <a href="{{ url_for('create_bill_of_material_bp.view_bill_of_material', index=prev_index, per_page=per_page) }}">Previous</a>
+    {% endif %}
+    <form id="per-page-form" method="GET" action="{{ url_for('create_bill_of_material_bp.view_bill_of_material') }}">
+      <label for="per_page">Items per page:</label>
+      <select id="per_page" name="per_page" onchange="this.form.submit()">
+        <option value="4" {% if per_page == 4 %}selected{% endif %}>4</option>
+        <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+        <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+        <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+      </select>
+      <input type="hidden" name="index" value="{{ index }}">
+    </form>
+    {% if next_index is not none %}
+      <a class="next" href="{{ url_for('create_bill_of_material_bp.view_bill_of_material', index=next_index, per_page=per_page) }}">Next</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- JavaScript to ensure proper positioning and remove duplicates -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('Content loaded - running initialization scripts');
+
+  // Force position of content element to align with sidebar
+  var content = document.querySelector('#content > div:not(#sidebar)');
+  var sidebar = document.getElementById('sidebar');
+
+  if (content && sidebar) {
+    // Get sidebar width to position content
+    var sidebarWidth = sidebar.offsetWidth;
+
+    // Position content precisely
+    content.style.position = 'absolute';
+    content.style.left = sidebarWidth + 'px';
+    content.style.top = '0';
+    content.style.width = 'calc(100% - ' + sidebarWidth + 'px)';
+    content.style.margin = '0';
+    content.style.padding = '0';
+
+    console.log('Content adjusted to sidebar width: ' + sidebarWidth + 'px');
+  }
+
+  // Also ensure container widths
+  var containers = document.querySelectorAll('.container, .results-container, .bom-results-content');
+  containers.forEach(function(container) {
+    container.style.width = '100%';
+    container.style.maxWidth = 'none';
+    container.style.margin = '0';
+    container.style.boxSizing = 'border-box';
+  });
+
+  // Fix table width
+  var tables = document.querySelectorAll('.results-table');
+  tables.forEach(function(table) {
+    table.style.width = '100%';
+    table.style.tableLayout = 'auto';
+  });
+
+  // ULTRA-SIMPLE DEDUPLICATION
+  // Instead of complex Jinja template logic, we'll do it simple with JavaScript
+  var seenPartNumbers = {};
+  var rows = document.querySelectorAll('.part-row');
+
+  console.log('Found ' + rows.length + ' rows to process for duplicates');
+
+  rows.forEach(function(row) {
+    var partNumber = row.getAttribute('data-part-number');
+    if (!partNumber) {
+      partNumber = row.cells[0].textContent.trim();
+    }
+
+    if (seenPartNumbers[partNumber]) {
+      // We've seen this part number before, hide this row
+      row.style.display = 'none';
+      console.log('Hiding duplicate row for part: ' + partNumber);
+    } else {
+      // First time seeing this part number
+      seenPartNumbers[partNumber] = true;
+    }
+  });
+
+  console.log('Deduplication completed - found ' + Object.keys(seenPartNumbers).length + ' unique parts');
+});
+</script>

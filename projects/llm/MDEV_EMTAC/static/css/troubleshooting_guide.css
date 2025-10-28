@@ -1,0 +1,139 @@
+
+body {
+    background-image: url("/static/background_images/abstractfractal.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    color: black;
+    font-family: Arial, sans-serif;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    height: 100%;
+    width: 275px;
+    background-color: rgba(0, 0, 0, 0.8);
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding-top: 60px;
+    overflow-x: hidden;
+    transition: 0.5s;
+    color: white;
+    font-size: 16px;
+}
+
+.sidebar a {
+    padding: 15px;
+    text-decoration: none;
+    color: yellow;
+    display: block;
+    transition: 0.3s;
+}
+
+.sidebar a:hover {
+    background-color: #555;
+    color: white;
+}
+
+/* Main Content Area */
+.main-content {
+    margin-left: 275px; /* Matches the sidebar width */
+    padding: 20px;
+    display: flex;
+    transition: margin-left 0.5s; /* Smooth transition when the sidebar is toggled */
+}
+
+/* Hide all forms initially */
+.form-container {
+    display: none;
+    width: 50%; /* Adjust to desired width */
+}
+
+.form-container.active {
+    display: block;
+}
+
+/* Results Container */
+.results-container {
+    width: 50%; /* Adjust to desired width */
+    padding-left: 20px; /* Space between form and results */
+    color: white; /* Ensure text is visible */
+}
+
+/* Additional Styles */
+#thumbnails-section {
+    width: 50%;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.thumbnail {
+    margin-right: 10px;
+}
+
+label {
+    margin-top: 10px;
+}
+
+input[type="text"],
+textarea,
+select {
+    width: 100%; /* Ensure the select elements take up the full width of their container */
+    min-width: 150px; /* Prevent collapsing */
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 5px;
+    border: none;
+    box-sizing: border-box; /* Ensures padding doesn't affect the width */
+    appearance: none; /* Remove default dropdown arrow for better control over styling */
+}
+
+button {
+    padding: 10px 20px;
+    margin-top: 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+#drawingList {
+    color: white;
+}
+
+/* Hamburger Icon */
+.hamburger {
+    font-size: 30px;
+    cursor: pointer;
+    color: white;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1001;
+    display: block; /* Always visible */
+}
+
+/* Sidebar Toggle */
+.sidebar.active {
+    width: 0;
+}
+
+.main-content.sidebar-active {
+    margin-left: 0;
+}
+
+/* Responsive Adjustments */
+@media screen and (max-width: 768px) {
+    .sidebar {
+        width: 250px;
+    }
+
+    .main-content {
+        margin-left: 250px;
+    }
+}

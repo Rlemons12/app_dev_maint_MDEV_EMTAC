@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Roadmap - AI-Enhanced Maintenance Support Chatbot</title>
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        background: #0d0d0d; /* Dark background for a futuristic feel */
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-image: url('https://source.unsplash.com/1600x900/?space,stars');
+        background-size: cover;
+        background-blend-mode: darken;
+        background-position: center;
+    }
+
+    .container {
+        width: 80%;
+        max-width: 1200px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+    }
+
+    h2 {
+        color: #ffcc00;
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+    }
+
+    .timeline {
+        position: relative;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .timeline::after {
+        content: '';
+        position: absolute;
+        width: 6px;
+        background: #ffcc00;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        margin-left: -3px;
+    }
+
+    .container-timeline {
+        padding: 20px 40px;
+        position: relative;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .container-timeline.left {
+        left: 0;
+    }
+
+    .container-timeline.right {
+        left: 50%;
+    }
+
+    .container-timeline::after {
+        content: '';
+        position: absolute;
+        width: 25px;
+        height: 25px;
+        background: #ffcc00;
+        border-radius: 50%;
+        top: 20px;
+        border: 4px solid #0d0d0d;
+        z-index: 1;
+    }
+
+    .right::after {
+        left: -17px;
+    }
+
+    .content {
+        padding: 20px;
+        background: #0d0d0d;
+        border-radius: 10px;
+        color: #fff;
+        text-align: center;
+    }
+
+    .content h3 {
+        color: #ffcc00;
+        margin-bottom: 10px;
+    }
+
+    .content p {
+        font-size: 1rem;
+        color: #bbb;
+    }
+
+    @media screen and (max-width: 600px) {
+        .timeline::after {
+            left: 31px;
+        }
+
+        .container-timeline {
+            width: 100%;
+            padding-left: 70px;
+            padding-right: 25px;
+        }
+
+        .container-timeline::before {
+            left: 60px;
+            border: medium solid #fff;
+            border-width: 10px 10px 10px 0;
+            border-color: transparent #0d0d0d transparent transparent;
+        }
+
+        .left::after, .right::after {
+            left: 15px;
+        }
+
+        .right {
+            left: 0%;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <h2>Project Roadmap - AI-Enhanced Maintenance Support Chatbot</h2>
+    <div class="timeline">
+        <div class="container-timeline left">
+            <div class="content">
+                <h3>Initiation</h3>
+                <p>Define project scope, objectives, and conduct stakeholder meetings to secure input and buy-in.</p>
+            </div>
+        </div>
+        <div class="container-timeline right">
+            <div class="content">
+                <h3>Database Development</h3>
+                <p>Develop and implement the relational database schema to organize and store data securely.</p>
+            </div>
+        </div>
+        <div class="container-timeline left">
+            <div class="content">
+                <h3>Chatbot Development</h3>
+                <p>Develop the core functionalities of the chatbot, integrating with the database and OpenAI's API for NLP capabilities.</p>
+            </div>
+        </div>
+        <div class="container-timeline right">
+            <div class="content">
+                <h3>Fine-Tuning</h3>
+                <p>Collect and prepare training data, fine-tune the AI model, and evaluate performance iteratively to optimize response accuracy.</p>
+            </div>
+        </div>
+        <div class="container-timeline left">
+            <div class="content">
+                <h3>Testing and Deployment</h3>
+                <p>Conduct extensive testing with actual maintenance personnel, followed by controlled deployment and full-scale rollout.</p>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

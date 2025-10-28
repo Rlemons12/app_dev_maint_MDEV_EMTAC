@@ -1,0 +1,363 @@
+﻿# ===========================================================
+# EMTAC PROJECT - MASTER GITIGNORE
+# ===========================================================
+
+# --- ENVIRONMENTS ---
+.venv/
+.venv_old/
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.class
+
+# Ignore generated audit & log files
+*.txt
+!README.txt
+
+# --- IDEs / EDITORS ---
+.idea/
+.vscode/
+.vs/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.user
+*.iml
+
+# --- OS FILES ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- LOGS & TEMPORARY FILES ---
+logs/
+log_backup/
+*.log
+*.tmp
+*.bak
+debug.log
+
+# --- PYTHON / CACHE / BUILD ---
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+bin/
+pip-wheel-metadata/
+MANIFEST
+htmlcov/
+.tox/
+.coverage
+.pytest_cache/
+coverage.xml
+.cache/
+nosetests.xml
+
+
+# --- Data folders: track structure, ignore content ---
+
+# Ignore everything under /data/
+data/**
+
+# But keep the folder structure placeholders
+!data/
+!data/**/
+!data/**/.gitkeep
+
+
+# --- DATABASES / BACKUPS ---
+db_backup/
+Database/db_backup/
+Database/logs/
+*.sqlite
+*.db
+*.sql
+*.bak
+*.tar
+*.zip
+*.7z
+
+# --- MODELS / DATA / EXPERIMENTS ---
+models/
+data/
+experiments/
+mlruns/
+outputs/
+runs/
+*.pt
+*.pth
+*.bin
+*.h5
+*.onnx
+*.npz
+*.npy
+
+# --- GIT LFS / DVC / BUNDLES ---
+git_lfs_vault/
+*.bundle
+.dvc/
+.dvcignore
+*.dvc
+.DVC*
+
+# --- PDF, PPT, IMAGE & OTHER GENERATED FILES ---
+PDF_FILES/
+PPT_FILES/
+DB_IMAGES/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.tif
+*.svg
+*.pdf
+*.pptx
+*.docx
+*.xls*
+*.xlsx
+
+# --- TOOLS / THIRD-PARTY INSTALLERS ---
+tools/git/
+tools/python/
+tools/dbeaver/
+tools/pycharm/
+tools/*.exe
+tools/*.msi
+tools/*.zip
+tools/*.whl
+
+# --- MACHINE LEARNING / CACHE DIRECTORIES ---
+huggingface/
+transformers_cache/
+HF_HOME/
+HF_DATASETS_CACHE/
+datasets/
+cache/
+.git-lfs/
+__pycache__/
+
+# --- OFFLINE MIGRATION / BUNDLES / LOGGING ---
+commit_bundles/
+update_*.bundle
+tools/custom_scripts/ps1/bundle_log.txt
+tools/custom_scripts/ps1/sync_log.txt
+
+# --- PROJECT GENERATED OUTPUT ---
+project_documention/
+project_documentation/
+uploads/
+output/
+temp/
+tmp/
+
+# --- SYSTEM SPECIFIC ---
+*.swp
+*.swo
+*.orig
+*.rej
+
+# --- SAFETY ---
+!**/.gitkeep
+
+# ===========================================================
+# DATABASE FOLDER (STRUCTURE ONLY)
+# ===========================================================
+Database/db_backup/**
+!Database/db_backup/.gitkeep
+
+Database/DB_DOC/**
+!Database/DB_DOC/.gitkeep
+
+Database/DB_IMAGES/**
+!Database/DB_IMAGES/.gitkeep
+
+Database/DB_LOADSHEETS/**
+!Database/DB_LOADSHEETS/.gitkeep
+
+Database/DB_LOADSHEETS_BACKUP/**
+!Database/DB_LOADSHEETS_BACKUP/.gitkeep
+
+Database/logs/**
+!Database/logs/.gitkeep
+
+Database/PDF_FILES/**
+!Database/PDF_FILES/.gitkeep
+
+Database/PPT_FILES/**
+!Database/PPT_FILES/.gitkeep
+
+# ===========================================================
+# DATABASE ENGINES (STRUCTURE ONLY)
+# ===========================================================
+Database/postgreSQL/**
+!Database/postgreSQL/.gitkeep
+
+# ===========================================================
+# DEV_ENV FOLDER (STRUCTURE ONLY)
+# ===========================================================
+dev_env/**
+!dev_env/.gitkeep
+
+# ===========================================================
+# EXPERIMENTS FOLDER (STRUCTURE ONLY)
+# ===========================================================
+experiments/**
+!experiments/.gitkeep
+
+# ===========================================================
+# GIT LFS VAULT (STRUCTURE ONLY)
+# ===========================================================
+git_lfs_vault/objects/**
+git_lfs_vault/temp/**
+!git_lfs_vault/.gitkeep
+
+# ===========================================================
+# GIT_REPOS DIRECTORY RULES
+# ===========================================================
+
+# Ignore everything in git_repos by default
+git_repos/**
+
+# Explicitly track commit logs and verify logs
+!git_repos/commit_logs/**
+!git_repos/verify_logs/**
+!git_repos/commit_logs/.gitkeep
+!git_repos/verify_logs/.gitkeep
+
+# Do NOT track large bundle archives
+git_repos/bundles/**
+
+# ===========================================================
+# LOGS FOLDER (STRUCTURE ONLY)
+# ===========================================================
+logs/**
+!logs/.gitkeep
+
+# ===========================================================
+# MODELS FOLDER (STRUCTURE ONLY UNTIL GIT LFS ENABLED)
+# ===========================================================
+models/smoke_tests/**
+!models/smoke_tests/.gitkeep
+
+models/cache/**
+!models/cache/.gitkeep
+
+models/image/**
+!models/image/.gitkeep
+
+models/llm/**
+!models/llm/.gitkeep
+
+models/plugins/**
+!models/plugins/.gitkeep
+
+# ===========================================================
+# PROJECT DOCUMENTATION (FULLY TRACKED)
+# ===========================================================
+!project_documention/**
+
+# ===========================================================
+# TOOLS FOLDER (TRACK SCRIPTS, IGNORE INSTALLERS)
+# ===========================================================
+!tools/custom_scripts/**
+tools/dbeaver/**
+!tools/dbeaver/.gitkeep
+tools/git/**
+!tools/git/.gitkeep
+tools/git-lfs-3.7.0/**
+!tools/git-lfs-3.7.0/.gitkeep
+tools/pycharm/**
+!tools/pycharm/.gitkeep
+tools/python/**
+!tools/python/.gitkeep
+tools/utilities/**
+!tools/utilities/.gitkeep
+
+# ===========================================================
+# SUBPROJECT: projects/llm/MDEV_EMTAC
+# ===========================================================
+
+# -----------------------------
+# EMTAC Project Clean GitIgnore
+# -----------------------------
+
+# Virtual environments (local to MDEV_EMTAC)
+projects/llm/MDEV_EMTAC/.venv/
+projects/llm/MDEV_EMTAC/.venv_old/
+projects/llm/MDEV_EMTAC/old_venv/
+projects/llm/MDEV_EMTAC/dev_env/
+projects/llm/MDEV_EMTAC/.env 
+
+# IDE and editor settings
+projects/llm/MDEV_EMTAC/.idea/
+projects/llm/MDEV_EMTAC/.vs/
+projects/llm/MDEV_EMTAC/__pycache__/
+projects/llm/MDEV_EMTAC/*.pyc
+projects/llm/MDEV_EMTAC/*.pyo
+
+# Ignore Windows executables and installer data files
+projects/llm/MDEV_EMTAC/*.exe
+projects/llm/MDEV_EMTAC/*.dat
+
+
+# Logs and reports
+projects/llm/MDEV_EMTAC/logs/
+projects/llm/MDEV_EMTAC/log_backup/
+projects/llm/MDEV_EMTAC/*.log
+projects/llm/MDEV_EMTAC/*_tracking_report_*.txt
+
+# plugins
+projects/llm/MDEV_EMTAC/plugins/ai_modules/GPT-2
+projects/llm/MDEV_EMTAC/plugins/ai_modules/gpt4all
+projects/llm/MDEV_EMTAC/plugins/ai_modules/TinyLlama_1_1B
+
+# Database binaries and backups
+projects/llm/MDEV_EMTAC/Database/**/*.db
+projects/llm/MDEV_EMTAC/Database/**/*.sqlite
+projects/llm/MDEV_EMTAC/Database/**/*.zip
+projects/llm/MDEV_EMTAC/Database/**/*.bak
+projects/llm/MDEV_EMTAC/Database/DB_DOC/
+projects/llm/MDEV_EMTAC/Database/DB_IMAGES/
+projects/llm/MDEV_EMTAC/Database/DB_LOADSHEETS/
+projects/llm/MDEV_EMTAC/Database/DB_LOADSHEETS_BACKUP/
+projects/llm/MDEV_EMTAC/Database/temp_upload_files/
+projects/llm/MDEV_EMTAC/Database/postgreSQL/
+projects/llm/MDEV_EMTAC/Database/Release-*/
+projects/llm/MDEV_EMTAC/Database/tool_load_sheet.xlsx
+projects/llm/MDEV_EMTAC/Database/Tool Load Sheet Creation.html
+projects/llm/MDEV_EMTAC/Database/Tool Load Sheet Creation_files/
+
+# Models and embeddings
+projects/llm/MDEV_EMTAC/pgvector/
+projects/llm/MDEV_EMTAC/models/
+projects/llm/MDEV_EMTAC/git_lfs_vault/
+
+# Temporary / local data
+projects/llm/MDEV_EMTAC/output/
+projects/llm/MDEV_EMTAC/uploads/
+projects/llm/MDEV_EMTAC/data/
+projects/llm/MDEV_EMTAC/experiments/
+projects/llm/MDEV_EMTAC/intent_test_reports/
+
+# Old / internal folders
+projects/llm/MDEV_EMTAC/_internal/
+projects/llm/MDEV_EMTAC/old_venv/
+projects/llm/MDEV_EMTAC/utility_tools/reviewimage/
+
+# OS junk
+projects/llm/MDEV_EMTAC/.DS_Store
+projects/llm/MDEV_EMTAC/Thumbs.db
+projects/llm/MDEV_EMTAC/desktop.ini
+
+# ===========================================================
+# SAFETY
+# ===========================================================
+!projects/llm/MDEV_EMTAC/**/.gitkeep
+projects/llm/MDEV_EMTAC/static/**/*.webp
+projects/llm/MDEV_EMTAC/static/background_images/**/*.webp

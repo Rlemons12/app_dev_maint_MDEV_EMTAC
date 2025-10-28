@@ -1,0 +1,79 @@
+<h1>Parts Search and Edit</h1>
+
+<!-- Search form for finding a part -->
+<form id="search-part-form" method="GET" action="{{ url_for('update_part_bp.search_part') }}">
+    <label for="search_query" style="color: Yellow;">Search by Part Number, Name, OEM Manufacturer, or Model:</label>
+    <input type="text" id="search_query" name="search_query" value="{{ search_query|default('') }}" required><br>
+    
+    <input type="submit" value="Search">
+</form>
+
+<!-- Container for search results (will be populated via AJAX) -->
+<div id="search-results-container" style="margin-top: 20px; background-color: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 5px;">
+    {% if parts is defined and parts|length > 0 %}
+        <h3 style="color: Yellow;">Search Results</h3>
+        <p>Found {{ parts|length }} parts matching "{{ search_query }}".</p>
+        
+        <table style="width: 100%; border-collapse: collapse; color: white;">
+            <thead>
+                <tr style="background-color: rgba(0, 0, 40, 0.6);">
+                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #444;">Part Number</th>
+                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #444;">Name</th>
+                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #444;">OEM/Manufacturer</th>
+                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid #444;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for part in parts %}
+                <tr style="{% if loop.index is odd %}background-color: rgba(0, 0, 0, 0.3);{% endif %}">
+                    <td style="padding: 10px; border-bottom: 1px solid #444;">{{ part.part_number }}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #444;">{{ part.name }}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #444;">{{ part.oem_mfg }}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #444;">
+                        <button type="button" class="edit-part-btn" 
+                                style="background-color: #007bff; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px;"
+                                data-part-id="{{ part.id }}">Edit</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% elif search_query is defined %}
+        <p style="color: white;">No parts found matching "{{ search_query }}".</p>
+    {% endif %}
+</div>
+
+<!-- Edit form container -->
+<div id="edit-form-container" style="margin-top: 30px; display: none;">
+    <!-- This will be populated via AJAX when an edit button is clicked -->
+</div>
+
+<!-- Simple JavaScript to handle edit button clicks -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Find all edit buttons
+        var editButtons = document.querySelectorAll('.edit-part-btn');
+        
+        // Add click event to each button
+        editButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                var partId = this.getAttribute('data-part-id');
+                
+                // Show loading message
+                document.getElementById('edit-form-container').style.display = 'block';
+                document.getElementById('edit-form-container').innerHTML = '<p style="color: white;">Loading edit form...</p>';
+                
+                // Fetch the edit form via AJAX
+                fetch('/get_edit_form/' + partId)
+                    .then(response => response.text())
+                    .then(html => {
+                        document.getElementById('edit-form-container').innerHTML = html;
+                    })
+                    .catch(error => {
+                        document.getElementById('edit-form-container').innerHTML = 
+                            '<p style="color: red;">Error loading edit form: ' + error.message + '</p>';
+                    });
+            });
+        });
+    });
+</script>

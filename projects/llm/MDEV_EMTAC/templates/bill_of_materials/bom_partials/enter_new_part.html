@@ -1,0 +1,58 @@
+
+
+    <h1>Enter New Part</h1>
+    <form method="POST" action="{{ url_for('enter_new_part_bp.enter_part') }}" enctype="multipart/form-data">
+        <label for="part_number" style="color: Yellow;">Part Number:</label>
+        <input type="text" id="part_number" name="part_number" required><br>
+
+        <label for="name" style="color: Yellow;">Name:</label>
+        <input type="text" id="name" name="name" required><br>
+
+        <label for="oem_mfg" style="color: Yellow;">OEM Manufacturer:</label>
+        <input type="text" id="oem_mfg" name="oem_mfg"><br>
+
+        <label for="model" style="color: Yellow;">Model:</label>
+        <input type="text" id="model" name="model"><br>
+
+        <label for="class_flag" style="color: Yellow;">Category:</label>
+        <input type="text" id="class_flag" name="class_flag"><br>
+
+        <label for="ud6" style="color: Yellow;">UD6:</label>
+        <input type="text" id="ud6" name="ud6"><br>
+
+        <label for="type" style="color: Yellow;">Type:</label>
+        <input type="text" id="type" name="type"><br>
+
+        <label for="notes" style="color: Yellow;">Long Description:</label>
+        <textarea id="notes" name="notes"></textarea><br>
+
+        <label for="documentation" style="color: Yellow;">Specifications:</label>
+        <textarea id="documentation" name="documentation"></textarea><br>
+
+        <!-- Image Upload Section -->
+        <h4 style="color: Yellow;" class="mt-4">Part Images</h4>
+
+        <div class="form-group">
+            <label for="part_image" style="color: Yellow;">Upload Image:</label>
+            <input type="file" id="part_image" name="part_image" accept="image/*"><br>
+
+            <label for="image_title" style="color: Yellow;">Image Title:</label>
+            <input type="text" id="image_title" name="image_title" placeholder="Enter image title"><br>
+
+            <label for="image_description" style="color: Yellow;">Image Description:</label>
+            <textarea id="image_description" name="image_description" placeholder="Enter image description"></textarea><br>
+
+            <label for="position_id" style="color: Yellow;">Position:</label>
+            <select id="position_id" name="position_id">
+                <option value="">Select a position (optional)</option>
+                {% if positions is defined %}
+                    {% for position in positions %}
+                    <option value="{{ position.id }}">{{ position.name }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select><br>
+        </div>
+
+        <input type="submit" value="Submit">
+    </form>
+

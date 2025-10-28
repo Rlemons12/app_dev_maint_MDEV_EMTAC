@@ -1,0 +1,31 @@
+# Virtual environments
+.venv/
+venv/
+
+# Python cache / junk
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs & temp files
+logs/
+**/training.log
+*.tmp
+/tmp/
+/cache/
+/datasets/
+
+# All model artifacts by default
+modules/emtac_ai/models/**/
+
+# Re-include only small final/best model folders if needed
+!modules/emtac_ai/models/**/best/**
+!modules/emtac_ai/models/**/final/**
+
+# Big intermediate training files
+*.bin
+*.pt
+*.safetensors
+optimizer.pt
+scheduler.pt
+pytorch_model.bin

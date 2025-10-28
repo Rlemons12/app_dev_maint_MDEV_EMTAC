@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PowerPoint Presentation</title>
+    <!-- Add any required styles or links to stylesheets -->
+</head>
+<body>
+    <h1>PowerPoint Presentation</h1>
+
+    <!-- Display the PowerPoint using an iframe -->
+    <div id="powerpoint-container">
+        {% if powerpoint_html %}
+            {{ powerpoint_html | safe }} <!-- Use the 'safe' filter to render HTML content -->
+        {% else %}
+            <p>No PowerPoint data available for this presentation.</p>
+        {% endif %}
+    </div>
+
+    <!-- Button or link to return to the search results -->
+    <a href="{{ url_for('upload_image_page') }}">Back to Upload Image</a>
+</body>
+</html>

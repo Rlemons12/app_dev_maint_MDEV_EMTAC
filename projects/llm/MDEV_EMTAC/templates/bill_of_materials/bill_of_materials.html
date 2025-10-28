@@ -1,0 +1,331 @@
+{% extends "module_template_html/base_template.html" %}
+
+{% block title %}Bill of Materials{% endblock %}
+
+{% block extra_head %}
+    <!-- 1. External Libraries - jQuery and Select2 -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+    <!-- 2. Custom Stylesheets -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/search_bill_of_material.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bill_of_materials.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bill_of_materials/edit_part_search.css') }}">
+
+    <!-- 3. Critical Styling for Advanced Search Form -->
+    <style>
+        /* Main container for advanced search */
+        #advancedSearchForm {
+            background-color: rgba(0, 0, 0, 0.9) !important;
+            padding: 20px !important;
+            border: 3px solid red !important;
+            margin-top: 15px !important;
+            position: relative !important;
+            z-index: 9999 !important;
+            display: none;
+        }
+
+        /* Target the form within advancedSearchForm as well */
+        #advancedSearchFilterForm {
+            width: 100%;
+        }
+
+        /* Form labels - target both forms */
+        #advancedSearchForm label, #advancedSearchFilterForm label {
+            display: block !important;
+            color: yellow !important;
+            font-size: 16px !important;
+            font-weight: bold !important;
+            margin-bottom: 8px !important;
+        }
+
+        /* Select elements - direct styling - target both forms */
+        #advancedSearchForm select, #advancedSearchFilterForm select {
+            display: block !important;
+            visibility: visible !important;
+            width: 100% !important;
+            max-width: 600px !important;
+            min-height: 38px !important;
+            margin-bottom: 15px !important;
+            padding: 8px !important;
+            background-color: white !important;
+            color: black !important;
+            border: 2px solid green !important;
+            position: relative !important;
+            opacity: 1 !important;
+            z-index: 10000 !important;
+        }
+
+        /* Select2 container */
+        .select2-container {
+            display: block !important;
+            visibility: visible !important;
+            width: 100% !important;
+            max-width: 600px !important;
+            margin-bottom: 15px !important;
+            z-index: 10001 !important;
+        }
+
+        /* Force Select2 dropdown to be visible */
+        .select2-container--open .select2-dropdown {
+            display: block !important;
+            visibility: visible !important;
+            z-index: 10002 !important;
+            background-color: white !important;
+            color: black !important;
+            border: 2px solid blue !important;
+        }
+
+        /* Filter button styling */
+        .filter-btn, #advancedSearchFilterForm input[type="submit"] {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .filter-btn:hover, #advancedSearchFilterForm input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+    </style>
+
+    <!-- 4. Load Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="bom-container">
+    <!-- Container for form elements -->
+    <div id="main-forms-area">
+        <!-- Search Forms for BOM -->
+        {% if session['user_level'] in ['LEVEL_I', 'LEVEL_II', 'LEVEL_III', 'ADMIN'] %}
+        <div id="search-bill-of-materials" class="form-container">
+            <h1>Search Parts by... </h1>
+
+            <!-- Toggle button for advanced search -->
+            <button type="button" id="toggleFormBtn" class="btn btn-primary">
+                Search (Area, Equipment Group, Model)
+            </button>
+
+            <!-- Advanced Search Form - Now using the partial template -->
+            <div id="advancedSearchForm">
+                {% include 'bill_of_materials/bom_partials/advanced_search_form.html' %}
+
+                <!-- This hidden element helps with debugging -->
+                <div id="searchDebugInfo" style="display: none; margin-top: 10px; padding: 5px; background: #333; color: #0f0; font-family: monospace; font-size: 12px; max-height: 200px; overflow: auto;"></div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Part Search Section -->
+        {% if session['user_level'] in ['LEVEL_II', 'LEVEL_III', 'ADMIN'] %}
+        <div id="edit-part" class="form-container">
+            <h1>Search and Edit Part</h1>
+            <!-- Search form for finding a part -->
+            <form id="search-part-form" method="GET" action="{{ url_for('update_part_bp.search_part') }}">
+                <label for="search_query" style="color: Yellow;">Search by Part Number, Name, OEM Manufacturer, or Model:</label>
+                <input type="text" id="search_query" name="search_query" value="{{ search_query|default('') }}" required><br>
+                <input type="hidden" name="ajax" value="true">
+                <input type="submit" value="Search">
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Upload BOM Form - For LEVEL_III and ADMIN -->
+        {% if session['user_level'] in ['LEVEL_III', 'ADMIN'] %}
+        <div id="upload-bill-of-materials" class="form-container">
+            <h2>Upload Bill of Materials</h2>
+            {% include 'bill_of_materials/bom_partials/upload_bom_form.html' %}
+        </div>
+        {% endif %}
+
+        <!-- Enter New Part Form - For LEVEL_II and above -->
+        {% if session['user_level'] in ['LEVEL_II', 'LEVEL_III', 'ADMIN'] %}
+        <div id="enter-new-part" class="form-container">
+            {% include 'bill_of_materials/bom_partials/enter_new_part.html' %}
+        </div>
+        {% endif %}
+
+        <!-- Edit Form Container -->
+        <div id="edit-part-form" class="form-container" style="display: none;">
+            <!-- Edit form will be loaded here via AJAX when a part is selected for editing -->
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-messages">
+                    <ul>
+                        {% for message in messages %}
+                            <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Results section has been removed - now using standalone page -->
+
+</div>
+{% endblock %}
+
+{% block sidebar %}
+    {% with current_page = 'bom' %}
+        {% include 'module_template_html/base_sidebar.html' %}
+    {% endwith %}
+{% endblock %}
+
+{% block extra_scripts %}
+    <!-- Core functions for UI navigation -->
+    <script>
+    // Function to show/hide forms
+    function showForm(formId) {
+        // Hide all form containers
+        document.querySelectorAll('.form-container').forEach(function(container) {
+            container.style.display = 'none';
+        });
+
+        // Show main forms area
+        var mainFormsArea = document.getElementById('main-forms-area');
+        if (mainFormsArea) {
+            mainFormsArea.style.display = 'block';
+        }
+
+        // Show the requested form
+        var form = document.getElementById(formId);
+        if (form) {
+            form.style.display = 'block';
+        } else {
+            console.warn('Form not found:', formId);
+        }
+    }
+
+    // Function to show search form and hide results
+    function showSearchForm() {
+        var mainFormsArea = document.getElementById('main-forms-area');
+        if (mainFormsArea) {
+            mainFormsArea.style.display = 'block';
+        }
+
+        showForm('search-bill-of-materials');
+    }
+
+    // Toggle function for advanced search form - UPDATED to handle the partial template
+    function toggleAndPopulate() {
+    console.log("toggleAndPopulate function called");
+
+    var advancedForm = document.getElementById('advancedSearchForm');
+    console.log("Found advancedForm:", advancedForm);
+
+    var wasHidden = advancedForm.style.display === 'none' || getComputedStyle(advancedForm).display === 'none';
+    console.log("Form was hidden:", wasHidden);
+
+    // Toggle display
+    advancedForm.style.display = wasHidden ? 'block' : 'none';
+    console.log("Set display to:", advancedForm.style.display);
+
+    // If showing the form, populate the dropdowns with a slight delay to ensure DOM is ready
+    if (wasHidden) {
+        console.log("Form is now visible, populating dropdowns");
+        setTimeout(function() {
+            // Check for form clearing flag here if needed
+            if (sessionStorage.getItem('clearAdvancedForm') === 'true') {
+                sessionStorage.removeItem('clearAdvancedForm');
+                window.BOMAdvancedSearch.clearAdvancedForm();
+            }
+
+            window.populateDropdownsForPartsPosition();
+
+            // Enhanced form visibility check
+            // ... rest of your existing code ...
+        }, 100);
+    }
+
+    return false;
+}
+
+    // Helper function to diagnose form issues
+    window.checkFormState = function() {
+        console.log("Checking form state...");
+
+        // Log which form containers exist
+        console.log("advancedSearchForm exists:", document.getElementById('advancedSearchForm') !== null);
+        console.log("advancedSearchFilterForm exists:", document.getElementById('advancedSearchFilterForm') !== null);
+
+        // Check all form elements
+        ['filter_areaDropdown', 'filter_equipmentGroupDropdown', 'filter_modelDropdown',
+         'filter_assetNumberDropdown', 'filter_locationDropdown'].forEach(function(id) {
+            const element = document.getElementById(id);
+            console.log(`Element #${id} exists:`, element !== null);
+            if (element) {
+                console.log(`- Options: ${element.options.length}`);
+                console.log(`- Visible: ${getComputedStyle(element).display !== 'none'}`);
+            }
+        });
+
+        // Check Select2 initialization
+        if (window.jQuery && $.fn.select2) {
+            console.log("Select2 is available");
+            ['filter_areaDropdown', 'filter_equipmentGroupDropdown', 'filter_modelDropdown',
+             'filter_assetNumberDropdown', 'filter_locationDropdown'].forEach(function(id) {
+                const element = document.getElementById(id);
+                if (element) {
+                    console.log(`#${id} has Select2:`, $(element).data('select2') !== undefined);
+                }
+            });
+        } else {
+            console.log("Select2 is NOT available");
+        }
+    }
+    </script>
+
+    <!-- Initialization and event handling -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Document ready - initializing BOM page");
+
+        // Set up toggle button for advanced search
+        var toggleBtn = document.getElementById('toggleFormBtn');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', toggleAndPopulate);
+            console.log("Toggle button event listener added");
+        }
+
+        // Handle hash changes for navigation
+        function handleHash() {
+            var hash = window.location.hash.substring(1);
+            if (hash) {
+                showForm(hash);
+            } else {
+                showForm('search-bill-of-materials');
+            }
+        }
+
+        // Initial hash handling
+        handleHash();
+
+        // Listen for hash changes
+        window.addEventListener('hashchange', handleHash);
+
+        // Set up back to search links
+        document.querySelectorAll('.back-to-form').forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                showSearchForm();
+                return false;
+            });
+        });
+
+        console.log("BOM page initialization complete");
+    });
+    </script>
+
+    <!-- Load the external JavaScript files -->
+    <script src="{{ url_for('static', filename='js/bill_of_materials/get_bill_of_material_query.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bill_of_materials/bill_of_materials.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bill_of_materials/search_edit_part.js') }}"></script>
+{% endblock %}

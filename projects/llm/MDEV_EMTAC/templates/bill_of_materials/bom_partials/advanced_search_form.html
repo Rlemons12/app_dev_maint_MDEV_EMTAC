@@ -1,0 +1,52 @@
+<!-- templates/bill_of_materials/bom_partials/advanced_search_form.html -->
+
+<form method="POST" action="{{ url_for('create_bill_of_material_bp.create_bill_of_material') }}" id="advancedSearchFilterForm">
+    <!-- Each dropdown has a single ID and clear structure -->
+    <div style="margin-bottom: 15px;">
+        <label for="filter_areaDropdown" style="color: Yellow;">Area:</label>
+        <select name="area" id="filter_areaDropdown" style="width: 100%; max-width: 600px;">
+            <option value="">Select an area...</option>
+            <!-- Options will be populated via JavaScript -->
+        </select>
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label for="filter_equipmentGroupDropdown" style="color: Yellow;">Equipment Group:</label>
+        <select name="equipment_group" id="filter_equipmentGroupDropdown" style="width: 100%; max-width: 600px;">
+            <option value="">Select an equipment group...</option>
+            <!-- Options will be populated via JavaScript -->
+        </select>
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label for="filter_modelDropdown" style="color: Yellow;">Model:</label>
+        <select name="model" id="filter_modelDropdown" style="width: 100%; max-width: 600px;">
+            <option value="">Select a model...</option>
+            <!-- Options will be populated via JavaScript -->
+        </select>
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label for="filter_assetNumberDropdown" style="color: Yellow;">Asset Number:</label>
+        <select name="asset_number" id="filter_assetNumberDropdown" style="width: 100%; max-width: 600px;">
+            <option value="">Select an asset number...</option>
+            <!-- Options will be populated via JavaScript -->
+        </select>
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label for="filter_locationDropdown" style="color: Yellow;">Location:</label>
+        <select name="location" id="filter_locationDropdown" style="width: 100%; max-width: 600px;">
+            <option value="">Select a location...</option>
+            <!-- Options will be populated via JavaScript -->
+        </select>
+    </div>
+
+    <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+        <input type="submit" value="Filter" style="background-color: #007bff; color: #fff; padding: 10px 20px; border: none; cursor: pointer;">
+        <button type="button" onclick="window.clearAdvancedForm()" style="background-color: #6c757d; color: #fff; padding: 10px 20px; border: none; cursor: pointer;">Clear Form</button>
+    </div>
+</form>
+
+<!-- This hidden element helps with debugging -->
+<div id="searchDebugInfo" style="display: none; margin-top: 10px; padding: 5px; background: #333; color: #0f0; font-family: monospace; font-size: 12px; max-height: 200px; overflow: auto;"></div>

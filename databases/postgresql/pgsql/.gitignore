@@ -1,0 +1,6 @@
+﻿# Ignore everything in this folder
+*
+
+# But keep these control files
+!.gitignore
+!.gitkeep

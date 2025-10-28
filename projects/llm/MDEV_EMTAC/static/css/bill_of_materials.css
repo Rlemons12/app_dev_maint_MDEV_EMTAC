@@ -1,0 +1,328 @@
+/* static/css/bill_of_materials.css - Final version with width fixes */
+
+/* Background image */
+body {
+  background: url("/static/background_images/abstractfractal.jpg") center/cover fixed;
+}
+
+/* BOM wrapper */
+.bom-container {
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+/* Form container styling */
+.form-container {
+  display: none;
+  width: 100%;
+  margin: 20px auto;
+  padding: 30px;
+  background: rgba(0,0,0,0.8);
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+  color: #fff;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+/* Show initial search by default */
+#search-bill-of-materials.form-container {
+  display: block;
+}
+
+/* Edit form container */
+#edit-part-form.form-container {
+  background: rgba(3,46,102,0.8);
+  padding: 30px;
+  border-radius: 10px;
+  max-width: 1200px;
+}
+
+/* Results container styling */
+.results-container {
+  width: calc(100% - 40px) !important; /* Enforcing width */
+  margin: 20px auto;
+  padding: 30px;
+  background: rgba(0,0,0,0.8);
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+  box-sizing: border-box;
+  overflow: auto;
+  max-height: 80vh; /* Limit height to prevent excessive scrolling */
+}
+
+/* Search results list */
+#searchResults {
+  padding: 20px;
+  background: rgba(3,46,102,0.8);
+  border-radius: 5px;
+  border: 1px solid #444;
+  margin-top: 10px;
+}
+
+/* Thumbnails section */
+#thumbnails-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  padding: 20px;
+  background: rgba(3,46,102,0.8);
+  border-radius: 5px;
+  border: 1px solid #444;
+  margin-top: 20px;
+}
+
+/* Drawing list */
+#drawingList {
+  padding: 20px;
+  background: rgba(3,46,102,0.8);
+  border-radius: 5px;
+  border: 1px solid #444;
+  margin-top: 20px;
+}
+
+/* Sidebar-aware responsive layout */
+/* These will work with the existing sidebar.js */
+.main-container .content,
+.main-container .results-container {
+  transition: margin-left 0.3s ease, width 0.3s ease;
+}
+
+/* When sidebar is visible (default state) */
+.main-container .content,
+.main-container .results-container {
+  margin-left: 300px;
+  width: calc(100% - 320px) !important; /* Extra space for padding */
+}
+
+/* When sidebar is collapsed */
+.main-container.collapsed .content,
+.main-container.collapsed .results-container {
+  margin-left: 0;
+  width: 100% !important;
+}
+
+/* Fix for results container width */
+.results-container {
+  right: 20px; /* Pull right edge closer to window edge */
+  position: absolute;
+  left: 320px; /* Position from left edge */
+}
+
+.main-container.collapsed .results-container {
+  left: 20px; /* Adjust when sidebar is collapsed */
+}
+
+/* Typography and inputs */
+.bom-container h1,
+.bom-container h2,
+.bom-container h3,
+.results-container h1,
+.results-container h2,
+.results-container h3 {
+  color: #39FF14;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 10px;
+}
+
+.bom-container label,
+.results-container label {
+  color: yellow;
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.bom-container input,
+.bom-container select,
+.bom-container textarea,
+.results-container input,
+.results-container select,
+.results-container textarea {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0 20px;
+  border-radius: 5px;
+  border: 1px solid #444;
+  background: rgba(30,30,30,0.9);
+  color: #fff;
+  box-sizing: border-box;
+}
+
+/* Buttons */
+.bom-container button,
+.bom-container input[type="submit"],
+.results-container button,
+.results-container input[type="submit"],
+#toggleFormBtn {
+  background: #007bff;
+  color: #fff;
+  padding: 12px 25px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.bom-container button:hover,
+.bom-container input[type="submit"]:hover,
+.results-container button:hover,
+.results-container input[type="submit"]:hover,
+#toggleFormBtn:hover {
+  background: #0056b3;
+}
+
+/* Table styling */
+.results-container table {
+  width: 100%;
+  border-collapse: collapse;
+  color: white;
+  margin-top: 20px;
+}
+
+.results-container thead tr {
+  background-color: rgba(0, 0, 40, 0.6);
+}
+
+.results-container th {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #444;
+}
+
+.results-container td {
+  padding: 10px;
+  border-bottom: 1px solid #444;
+}
+
+.results-container tbody tr:nth-child(odd) {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Edit part button styling */
+.edit-part-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.edit-part-btn:hover {
+  background-color: #0056b3;
+}
+
+/* Card styling */
+.card {
+  background: rgba(20,20,40,0.8);
+  border: 1px solid #444;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.card-header {
+  background: rgba(0,0,50,0.7);
+  color: #fff;
+  padding: 15px;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.card-body {
+  padding: 20px;
+}
+
+.card-img-top {
+  height: 150px;
+  object-fit: contain;
+}
+
+/* Flash messages */
+.flash-messages {
+  margin: 20px 0;
+  padding: 15px;
+  border-radius: 5px;
+  background: rgba(0,0,0,0.7);
+}
+
+.flash-messages ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.flash-messages li {
+  padding: 10px;
+  margin-bottom: 5px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.1);
+}
+
+/* Media queries for responsive design */
+@media (max-width: 768px) {
+  .main-container .content,
+  .main-container .results-container {
+    margin-left: 0;
+    width: 100% !important;
+  }
+
+  .results-container {
+    position: static;
+    left: auto;
+    right: auto;
+  }
+
+  .form-container {
+    padding: 15px;
+  }
+
+  .results-container {
+    padding: 15px;
+  }
+}
+
+/*------------------------------------------------------------
+  FORCE DARK ROWS & WHITE TEXT IN MAIN RESULTS CONTAINER
+------------------------------------------------------------*/
+
+/* Nuke any light backgrounds on the table and its cells */
+.results-container table,
+.results-container table thead,
+.results-container table tbody,
+.results-container table tr,
+.results-container table th,
+.results-container table td {
+  background-color: transparent !important;
+  color: white           !important;
+}
+
+/* Dark header row */
+.results-container table thead tr {
+  background-color: rgba(0, 0, 40, 0.9) !important;
+}
+
+/* Alternating dark stripes */
+.results-container table tbody tr:nth-child(odd) {
+  background-color: rgba(20, 20, 40, 0.9) !important;
+}
+
+.results-container table tbody tr:nth-child(even) {
+  background-color: rgba(3, 46, 102, 0.9) !important;
+}
+
+/* Strong hover state */
+.results-container table tbody tr:hover {
+  background-color: rgba(50, 50, 150, 0.9) !important;
+}
+
+/* Re‑enforce white text in headers & cells */
+.results-container table th,
+.results-container table td {
+  color: white !important;
+}

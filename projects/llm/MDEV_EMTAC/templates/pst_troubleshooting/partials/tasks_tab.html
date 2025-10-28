@@ -1,0 +1,25 @@
+<!-- Tasks Tab Content Partial -->
+<div class="tab-pane fade" id="task" role="tabpanel" aria-labelledby="task-tab">
+    <h5>Tasks for Selected Solution</h5>
+    <div id="alertContainer" class="mt-2"></div>
+    <div class="mb-3">
+        <label for="existing_tasks" class="form-label">Select a Task to Edit (Double-click to edit)</label>
+        <select class="form-select" id="existing_tasks" size="5" multiple></select>
+    </div>
+    <div class="mb-3">
+        <button type="button" class="btn btn-danger" id="removeTaskBtn">Remove Selected Task</button>
+    </div>
+    <div class="mt-4">
+        <h6>Add New Task</h6>
+        <div class="mb-3">
+            <label for="new_task_name" class="form-label">Task Name</label>
+            <input type="text" class="form-control" id="new_task_name" required>
+        </div>
+        <div class="mb-3">
+            <label for="new_task_description" class="form-label">Task Description</label>
+            <textarea class="form-control" id="new_task_description" rows="3"></textarea>
+        </div>
+        <button type="button" class="btn btn-primary" id="addTaskBtn">Add Task</button>
+    </div>
+    <div id="new-tasks-container" class="mt-3"></div>
+</div>

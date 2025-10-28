@@ -1,0 +1,159 @@
+/* static/css/tutorial/tour.css */
+
+/* Tooltip styling */
+.introjs-tooltip {
+    min-width: 300px;
+    max-width: 400px;
+    background-color: #f8f9fa;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    border-radius: 6px;
+    position: relative !important;
+    margin-top: 10px !important; /* Reduced margin since skip button is now inside */
+}
+
+.introjs-tooltiptext {
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #333;
+    text-align: left !important;
+}
+
+/* Ensure all text in tooltips is left-aligned */
+.introjs-tooltiptext p,
+.introjs-tooltip .introjs-tooltiptext > *:not(#custom-step-counter),
+.intro-left-text {
+    text-align: left !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
+
+/* Button container styling */
+.introjs-tooltipbuttons {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 10px !important;
+    border-top: 1px solid rgba(0,0,0,0.1) !important;
+}
+
+/* Skip button styling - IMPORTANT: now positioned INSIDE the tooltip */
+.introjs-skipbutton {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    z-index: 1 !important;
+    padding: 6px 12px !important;
+    background-color: #dc3545 !important;
+    color: white !important;
+    border-radius: 4px !important;
+    font-weight: bold !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) !important;
+    opacity: 0.9 !important;
+    width: auto !important;
+    height: auto !important;
+    text-align: center !important;
+    order: 1 !important;
+    margin: 0 10px !important;
+    float: none !important;
+    display: inline-block !important;
+}
+
+/* Hide any skip button that might be outside the tooltip */
+body > .introjs-skipbutton {
+    display: none !important;
+}
+
+.introjs-skipbutton:hover {
+    opacity: 1 !important;
+    background-color: #bd2130 !important;
+}
+
+/* Back button - positioned on left */
+.introjs-prevbutton {
+    background-color: #17a2b8 !important;
+    color: white !important;
+    border: none !important;
+    text-shadow: none !important;
+    padding: 6px 12px !important;
+    font-weight: bold !important;
+    order: 0 !important;
+    margin-right: auto !important;
+}
+
+/* Next/Done button - positioned on right */
+.introjs-nextbutton,
+.introjs-donebutton {
+    background-color: #17a2b8 !important;
+    color: white !important;
+    border: none !important;
+    text-shadow: none !important;
+    padding: 6px 12px !important;
+    font-weight: bold !important;
+    order: 2 !important;
+    margin-left: auto !important;
+}
+
+.introjs-nextbutton:hover,
+.introjs-prevbutton:hover,
+.introjs-donebutton:hover {
+    background-color: #138496 !important;
+}
+
+/* Tour button styling */
+#startTourBtn {
+    background-color: #17a2b8;
+    color: white;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+#startTourBtn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Fix tooltip text color in dark mode */
+.introjs-tooltip,
+.introjs-tooltiptext,
+.introjs-tooltip * {
+    color: #333 !important;
+}
+
+/* Make the highlighted elements more visible */
+.introjs-helperLayer {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 3px solid #17a2b8 !important;
+    box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.6);
+}
+
+/* Custom step counter styling - add these rules */
+#custom-step-counter {
+    text-align: center !important;
+    margin-top: 10px !important;
+    padding-top: 5px !important;
+    border-top: 1px solid rgba(0,0,0,0.1) !important;
+    font-weight: bold !important;
+    direction: ltr !important; /* Force left-to-right text direction */
+    unicode-bidi: isolate !important; /* Isolate this element from surrounding text direction */
+}
+
+/* Add this to further ensure proper display */
+#custom-step-counter span {
+    display: inline-block !important;
+    direction: ltr !important;
+}
+
+/* Improve tooltip positioning on narrow screens */
+@media (max-width: 768px) {
+    .introjs-tooltip {
+        max-width: 300px !important;
+        min-width: 250px !important;
+    }
+
+    .introjs-tooltiptext {
+        font-size: 0.9rem !important;
+    }
+}

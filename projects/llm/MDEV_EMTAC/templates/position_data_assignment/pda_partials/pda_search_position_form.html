@@ -1,0 +1,82 @@
+<!-- Search Position Form -->
+<form id="searchPositionForm" method="get">
+    <!-- Area Dropdown -->
+    <div>
+        <label for="pda_areaDropdown">Area:</label>
+        <select name="area_id" id="pda_areaDropdown">
+            <option value="">Select Area</option>
+            {% for area in areas %}
+                <option value="{{ area.id }}">{{ area.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Equipment Group Dropdown -->
+    <div>
+        <label for="pda_equipmentGroupDropdown">Equipment Group:</label>
+        <select name="equipment_group_id" id="pda_equipmentGroupDropdown" disabled>
+            <option value="">Select Equipment Group</option>
+        </select>
+    </div>
+
+    <!-- Model Dropdown -->
+    <div>
+        <label for="pda_modelDropdown">Model:</label>
+        <select name="model_id" id="pda_modelDropdown" disabled>
+            <option value="">Select Model</option>
+        </select>
+    </div>
+
+    <!-- Asset Number Dropdown or Input -->
+    <div>
+        <label for="pda_assetNumberDropdown">Asset Number:</label>
+        <select name="asset_number_id" id="pda_assetNumberDropdown" disabled>
+            <option value="">Select Asset Number</option>
+        </select>
+        <input type="text" name="asset_number_input" id="pda_assetNumberInput" placeholder="Or type Asset Number">
+    </div>
+
+    <!-- Location Dropdown or Input -->
+    <div>
+        <label for="pda_locationDropdown">Location:</label>
+        <select name="location_id" id="pda_locationDropdown" disabled>
+            <option value="">Select Location</option>
+        </select>
+        <input type="text" name="location_input" id="pda_locationInput" placeholder="Or type Location">
+    </div>
+
+    <!-- Subassembly Dropdown -->
+    <div>
+        <label for="pda_subassemblyDropdown">Subassembly:</label>
+        <select name="assembly_id" id="pda_subassemblyDropdown" disabled>
+            <option value="">Select Subassembly</option>
+        </select>
+    </div>
+
+    <!-- ComponentAssembly Dropdown -->
+    <div>
+        <label for="pda_componentAssemblyDropdown">Component Assembly:</label>
+        <select name="subassembly_id" id="pda_componentAssemblyDropdown" disabled>
+            <option value="">Component Assembly</option>
+        </select>
+    </div>
+
+    <!-- Subassembly View Dropdown -->
+    <div>
+        <label for="pda_assemblyViewDropdown">Assembly View:</label>
+        <select name="assembly_view_id" id="pda_assemblyViewDropdown" disabled>
+            <option value="">Select Assembly View</option>
+        </select>
+    </div>
+
+    <!-- Site Location Dropdown -->
+    <div>
+        <label for="pda_siteLocation">Site Location:</label>
+        <select name="site_location_id" id="pda_siteLocation" disabled>
+            <option value="">Select Site Location</option>
+        </select>
+    </div>
+
+    <!-- Search Button -->
+    <button type="button" id="searchPositionBtn">Search Position</button>
+</form>

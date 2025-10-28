@@ -1,0 +1,14 @@
+# Temporarily disable all LFS tracking until after successful push
+*.bin !text !filter !merge !diff
+*.pt !text !filter !merge !diff
+*.ckpt !text !filter !merge !diff
+*.safetensors !text !filter !merge !diff
+*.onnx !text !filter !merge !diff
+*.h5 !text !filter !merge !diff
+*.tflite !text !filter !merge !diff
+*.msgpack !text !filter !merge !diff
+*.zip !text !filter !merge !diff
+*.tar.gz !text !filter !merge !diff
+*.jpg !text !filter !merge !diff
+*.png !text !filter !merge !diff
+*.pdf !text !filter !merge !diff

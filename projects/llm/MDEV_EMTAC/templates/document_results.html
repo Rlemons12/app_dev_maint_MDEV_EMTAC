@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Results</title>
+</head>
+<body>
+    <h1>Document Results</h1>
+    {% if documents %}
+    <ul>
+        {% for document in documents %}
+            <li><a href="{{ url_for('search_documents_bp.view_document', document_id=document.id) }}">{{ document.title }}</a></li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No documents found.</p>
+{% endif %}
+<a href="{{ url_for('upload_image_page') }}">Back to Upload Image</a>
+
+</body>
+</html>

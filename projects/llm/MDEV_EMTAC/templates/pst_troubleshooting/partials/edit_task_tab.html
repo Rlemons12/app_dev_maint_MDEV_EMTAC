@@ -1,0 +1,97 @@
+<!-- Edit Task Tab Content Partial -->
+<div class="tab-pane fade" id="edit-task" role="tabpanel" aria-labelledby="edit-task-tab">
+    <h5>Edit Task</h5>
+    <div class="mb-3">
+        <label for="pst_task_edit_task_name" class="form-label">Task Name</label>
+        <input type="text" class="form-control" id="pst_task_edit_task_name" placeholder="Enter Task Name">
+    </div>
+    <div class="mb-3">
+        <label for="pst_task_edit_task_description" class="form-label">Task Description</label>
+        <textarea class="form-control" id="pst_task_edit_task_description" rows="3" placeholder="Enter Task Description"></textarea>
+    </div>
+    <button type="button" id="updateTaskDetailsBtn" class="btn btn-primary">Update Task Name and Description</button>
+
+    <!-- Sub Tabs Navigation -->
+    <ul class="nav nav-tabs mt-3" id="editTaskSubTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="task-details-tab" data-bs-toggle="tab" data-bs-target="#task-details" type="button" role="tab" aria-controls="task-details" aria-selected="true">Task Details</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="task-images-tab" data-bs-toggle="tab" data-bs-target="#task-images" type="button" role="tab" aria-controls="task-images" aria-selected="false">Images</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="task-parts-tab" data-bs-toggle="tab" data-bs-target="#task-parts" type="button" role="tab" aria-controls="task-parts" aria-selected="false">Parts</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="task-drawings-tab" data-bs-toggle="tab" data-bs-target="#task-drawings" type="button" role="tab" aria-controls="task-drawings" aria-selected="false">Drawings</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="task-documents-tab" data-bs-toggle="tab" data-bs-target="#task-documents" type="button" role="tab" aria-controls="task-documents" aria-selected="false">Documents</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="task-tools-tab" data-bs-toggle="tab" data-bs-target="#task-tools" type="button" role="tab" aria-controls="task-tools" aria-selected="false">Tools</button>
+        </li>
+    </ul>
+
+    <div class="tab-content mt-3" id="editTaskSubTabContent">
+        <div class="tab-pane fade show active" id="task-details" role="tabpanel" aria-labelledby="task-details-tab">
+            <div id="pst_task_edit_positions_container">
+                <!-- Dynamic position sections will be inserted here by JavaScript -->
+            </div>
+            <button type="button" class="btn btn-secondary mt-3" id="addPositionBtn">Add Position</button>
+        </div>
+
+        <div class="tab-pane fade" id="task-parts" role="tabpanel" aria-labelledby="task-parts-tab">
+            <label for="pst_task_edit_task_parts" class="form-label">Parts</label>
+            <select class="form-select" id="pst_task_edit_task_parts" multiple>
+                <option value="" disabled>Select or search for parts</option>
+            </select>
+            <button id="savePartsBtn" class="btn btn-primary mt-2">Save Parts</button>
+            <div id="pst_task_edit_selected_parts" class="selected-items-display-box mt-2"></div>
+        </div>
+
+        <div class="tab-pane fade" id="task-drawings" role="tabpanel" aria-labelledby="task-drawings-tab">
+            <label for="pst_task_edit_task_drawings" class="form-label">Drawings</label>
+            <select class="form-select" id="pst_task_edit_task_drawings" multiple>
+                <option value="" disabled>Select or search for drawings</option>
+            </select>
+            <button id="saveDrawingsBtn" class="btn btn-primary mt-2">Save Drawings</button>
+            <div id="pst_task_edit_selected_drawings" class="selected-items-display-box mt-2"></div>
+        </div>
+
+        <div class="tab-pane fade" id="task-documents" role="tabpanel" aria-labelledby="task-documents-tab">
+            <label for="pst_task_edit_task_documents" class="form-label">Documents</label>
+            <select class="form-select" id="pst_task_edit_task_documents" multiple>
+                <option value="" disabled>Select or search for documents</option>
+            </select>
+            <button id="saveDocumentsBtn" class="btn btn-primary mt-2">Save Documents</button>
+            <div id="pst_task_edit_selected_documents" class="selected-items-display-box mt-2"></div>
+        </div>
+
+        <div class="tab-pane fade" id="task-images" role="tabpanel" aria-labelledby="task-images-tab">
+            <label for="pst_task_edit_task_images" class="form-label">Images</label>
+            <select class="form-select" id="pst_task_edit_task_images" multiple>
+                <option value="" disabled>Select or search for images</option>
+            </select>
+            <button id="saveImagesBtn" class="btn btn-primary mt-2">Save Images</button>
+            <div id="pst_task_edit_selected_images" class="selected-items-display-box mt-2"></div>
+        </div>
+
+        <div class="tab-pane fade" id="task-tools" role="tabpanel" aria-labelledby="task-tools-tab">
+            <h6>Tools Configuration</h6>
+            <div class="mb-3">
+                <label for="pst_task_edit_task_tools" class="form-label">Available Tools</label>
+                <select class="form-select" id="pst_task_edit_task_tools" multiple>
+                    <option value="" disabled>Select or search for tools</option>
+                    <!-- Add tool options here -->
+                    <option value="tool1">Tool 1</option>
+                    <option value="tool2">Tool 2</option>
+                    <option value="tool3">Tool 3</option>
+                    <!-- ... -->
+                </select>
+            </div>
+            <button id="saveToolsBtn" class="btn btn-primary mt-2">Save Tools</button>
+            <div id="pst_task_edit_selected_tools" class="selected-items-display-box mt-2"></div>
+        </div>
+    </div>
+</div>

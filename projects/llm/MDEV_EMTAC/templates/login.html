@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login Page</title>
+  <!-- Ensure viewport units map correctly -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Your existing banner CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/redbanner.css') }}">
+
+  <style>
+    /* 1. Base font-size (100% of browser default, usually 16px) */
+    html {
+      font-size: 100%; /* 1rem = 16px at 100% zoom */
+    }
+
+    /* 2. Full‑viewport reset */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* 3. Background covers entire viewport */
+    body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;      /* banner + content stack */
+  justify-content: center;
+  align-items: center;
+  background: url('{{ url_for("static", filename="background_images/squartooth.png") }}') center/cover no-repeat;
+}
+
+    /* 4. Fixed banner (text in rem for scalability) */
+    .banner {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      background: rgba(200,0,0,0.8);
+      color: white;
+      padding: 0.75rem;           /* ~12px */
+      font-size: 1rem;            /* scales with zoom */
+      text-align: center;
+      z-index: 2;
+    }
+    .banner a {
+      color: yellow;
+      font-size: 1rem;
+      margin-left: 1rem;
+    }
+
+    /* 5. Flash messages */
+    .flashes {
+      list-style: none;
+      padding: 0;
+      margin: 1rem 0;
+    }
+    .flashes li {
+      margin: 0.5rem 0;
+      padding: 0.75rem;
+      border-radius: 0.25rem;
+      font-size: 1rem;
+    }
+    .success { background: #d4edda; color: #155724; border: 0.0625rem solid #c3e6cb; }
+    .error   { background: #f8d7da; color: #721c24; border: 0.0625rem solid #f5c6cb; }
+    .warning { background: #fff3cd; color: #856404; border: 0.0625rem solid #ffeeba; }
+    .info    { background: #d1ecf1; color: #0c5460; border: 0.0625rem solid #bee5eb; }
+
+    /* 6. Login box: fluid width + max, padding in rem */
+    .login-container {
+      width: 50vw;               /* 80% of viewport width */
+      max-width: 32.5rem;        /* 600px if 1rem=16px */
+      padding: 1.5rem;           /* ~24px */
+      background: rgba(255,255,255,0.8);
+      border-radius: 0.5rem;     /* ~8px */
+      box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.2);
+      box-sizing: border-box;
+      z-index: 1;
+    }
+
+    /* 7. Headings & form elements scale with rem */
+    .login-container h2 {
+      font-size: clamp(1.25rem, 4vw, 2rem); /* between 20px–32px */
+      margin-bottom: 1rem;
+    }
+    .login-container label,
+    .login-container input,
+    .login-container button,
+    .login-container a {
+      font-size: 1rem;
+    }
+    .login-container input {
+      width: 100%;
+      padding: 0.5rem;
+      margin: 0.5rem 0 1rem;
+      border: 0.0625rem solid #ccc;
+      border-radius: 0.25rem;
+      box-sizing: border-box;
+    }
+    .login-container button {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 0.25rem;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    /* 8. Fullscreen button (optional) */
+    #fs-btn {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      padding: 0.5rem 1rem;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      border: none;
+      border-radius: 0.25rem;
+      font-size: 1rem;
+      cursor: pointer;
+      z-index: 3;
+    }
+  </style>
+</head>
+<body>
+  <div class="banner">
+    THIS IS FOR REFERENCE ONLY. ALL INFORMATION SHOULD BE VERIFIED WITH CURRENT SOP'S
+    <a href="#" id="commentPopupLink">Leave a Comment</a>
+  </div>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul class="flashes">
+        {% for category, message in messages %}
+          <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
+  <div class="login-container">
+    <h2>Login</h2>
+    <form action="/login" method="post">
+      <label for="employee_id">Employee ID:</label>
+      <input type="text" id="employee_id" name="employee_id" required>
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required>
+
+      <button type="submit">Log In</button>
+    </form>
+    <p style="margin-top:1rem;">
+      <a href="/create_user">Create User</a>
+    </p>
+  </div>
+
+  <!-- (Optional) Fullscreen toggle -->
+  <button id="fs-btn">⛶ Fullscreen</button>
+
+  <!-- Comment popup (unchanged) -->
+  <div id="commentPopup" style="display:none; position:fixed; top:50%; left:50%;
+       transform:translate(-50%,-50%); background:white; padding:1rem; z-index:4;
+       box-shadow:0 0 0.625rem rgba(0,0,0,0.5);">
+    <!-- …form markup… -->
+  </div>
+
+  <!-- Audio & scripts (unchanged) -->
+  <audio id="background-audio" src="/static/audio/login_sound"></audio>
+  <script>
+    document.getElementById('background-audio').play().catch(()=>{});
+    document.getElementById('fs-btn').addEventListener('click', () => {
+      const el = document.documentElement;
+      if (!document.fullscreenElement) {
+        el.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    });
+  </script>
+  <script src="{{ url_for('static', filename='js/comment_pop_up.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+# KivyMD Maintenance Troubleshooting UI
+
+This project is a conversion of a web-based maintenance troubleshooting interface into a KivyMD application. KivyMD is a collection of Material Design widgets for use with the Kivy framework, allowing for the creation of modern, responsive cross-platform applications in Python.
+
+## Features
+
+- **Draggable and Resizable Panels**: All panels can be moved and resized
+- **Expandable Panels**: Click a panel to expand it to full screen
+- **Navigation Drawer**: Side menu with navigation options
+- **Layout Management**: Choose between different predefined layouts or save your own
+- **Problem/Solution Management**: View and search maintenance problems and solutions
+- **Parts Management**: Browse parts by tasks and locations
+- **Image Gallery**: View and manage images with thumbnails
+- **Custom Radial Menu**: Specialized search interface
+
+## Project Structure
+
+- `main.py`: Main application file with Python classes and logic
+- `maintenance_ui.kv`: KivyMD UI definition using Kivy Language
+- `custom_widgets.py`: Custom widget implementations for specialized features
+
+## Requirements
+
+- Python 3.7+
+- Kivy 2.0.0+
+- KivyMD 1.1.1+
+
+## Installation
+
+1. Install required packages:
+
+```bash
+pip install kivy kivymd
+```
+
+2. Run the application:
+
+```bash
+python main.py
+```
+
+## Usage
+
+### Panel Management
+
+- **Drag**: Click and drag on a panel to move it
+- **Resize**: Click and drag the resize handle (bottom-right corner) to resize a panel
+- **Expand**: Click anywhere on a panel (except resize handle) to expand it to full screen
+- **Close Expanded View**: Click the arrow-collapse button or click outside the panel
+
+### Navigation
+
+- Open the navigation drawer by clicking the menu icon in the top-left corner
+- Select menu items to navigate to different sections
+- Use the layout dropdown to switch between predefined layouts or save your custom layout
+
+### Searching
+
+- Use the search box in each panel to filter content
+- The radial search menu provides a specialized search interface for finding problems and solutions
+
+## Implementation Notes
+
+### Conversion from Web to KivyMD
+
+This application was converted from a web-based interface that used HTML, CSS, and JavaScript. The conversion followed these principles:
+
+1. **Structure Preservation**: Maintained the same visual structure and panel organization
+2. **Feature Parity**: Implemented all the same features available in the web version
+3. **Material Design Adoption**: Used KivyMD widgets for a modern look and feel
+4. **Python-First Approach**: Leveraged Python's strengths for the application logic
+
+### Kivy vs Web Differences
+
+- **Layout System**: Kivy uses a different layout system than CSS; positioning is relative rather than absolute
+- **Event Handling**: Touch events in Kivy replace mouse events in the web version
+- **Animation**: Kivy's animation system is used instead of CSS/JS animations
+- **Theming**: KivyMD's theming system replaces CSS custom properties
+
+## Extending the Application
+
+### Adding New Panels
+
+1. Create a new `ResizableDraggableCard` in the KV file
+2. Add it to the layout management in `main.py`
+3. Add any specialized content and behavior
+
+### Customizing Appearance
+
+- Edit the theme colors in `MaintenanceTroubleshootingApp.build()`
+- Modify card colors and effects in the KV file
+
+### Adding Features
+
+New features can be added by:
+1. Creating new custom widgets in `custom_widgets.py`
+2. Adding them to the KV file
+3. Connecting them to application logic in `main.py`
+
+## License
+
+This project is open source and available under the MIT License.

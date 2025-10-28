@@ -1,0 +1,240 @@
+<div class="partial-template">
+    <div class="partial-header">
+        <h1>four_container_template</h1>
+        <p class="partial-description">Four equal containers in 2x2 grid</p>
+    </div>
+
+    <div class="container-grid grid-4">
+        <div class="content-container">
+            <div class="container-header">
+                <h3>Top Left</h3>
+                <button class="toggle-btn">📊</button>
+            </div>
+            <div class="container-body">
+                <p>four_container_template top left</p>
+                <div class="sample-content">
+                    <div class="content-item">four_container_template dashboard A</div>
+                    <div class="content-item small">four_container_template metrics</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-container">
+            <div class="container-header">
+                <h3>Top Right</h3>
+                <button class="toggle-btn">📈</button>
+            </div>
+            <div class="container-body">
+                <p>four_container_template top right</p>
+                <div class="sample-content">
+                    <div class="content-item">four_container_template dashboard B</div>
+                    <div class="content-item small">four_container_template analytics</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-container">
+            <div class="container-header">
+                <h3>Bottom Left</h3>
+                <button class="toggle-btn">🔧</button>
+            </div>
+            <div class="container-body">
+                <p>four_container_template bottom left</p>
+                <div class="sample-content">
+                    <div class="content-item">four_container_template tools panel</div>
+                    <div class="content-item small">four_container_template controls</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-container">
+            <div class="container-header">
+                <h3>Bottom Right</h3>
+                <button class="toggle-btn">📋</button>
+            </div>
+            <div class="container-body">
+                <p>four_container_template bottom right</p>
+                <div class="sample-content">
+                    <div class="content-item">four_container_template data view</div>
+                    <div class="content-item small">four_container_template details</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* four_container_template styles */
+.partial-template {
+    padding: 20px;
+    height: 100%;
+    overflow-y: auto;
+    background-color: inherit;
+    box-sizing: border-box;
+}
+
+.partial-header {
+    margin-bottom: 20px;
+    text-align: center;
+    border-bottom: 2px solid rgba(57, 255, 20, 0.3);
+    padding-bottom: 15px;
+}
+
+.partial-header h1 {
+    margin: 0 0 8px 0;
+    color: #39FF14;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.partial-description {
+    margin: 0;
+    color: #ccc;
+    font-size: 14px;
+    font-style: italic;
+}
+
+.container-grid {
+    display: grid;
+    gap: 15px;
+    height: calc(100% - 120px);
+    min-height: 400px;
+}
+
+.grid-4 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+
+.content-container {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+}
+
+.content-container:hover {
+    border-color: rgba(57, 255, 20, 0.5);
+    box-shadow: 0 2px 8px rgba(57, 255, 20, 0.2);
+}
+
+.container-header {
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.container-header h3 {
+    margin: 0;
+    color: #39FF14;
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.toggle-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.toggle-btn:hover {
+    background: #39FF14;
+    color: black;
+    border-color: #39FF14;
+}
+
+.container-body {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.sample-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 100%;
+}
+
+.content-item {
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 12px;
+    color: white;
+    font-size: 14px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.content-item:hover {
+    background-color: rgba(57, 255, 20, 0.1);
+    border-color: #39FF14;
+}
+
+.content-item.small {
+    padding: 8px;
+    font-size: 12px;
+}
+
+@media (max-width: 1024px) {
+    .grid-4 {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .partial-template {
+        padding: 10px;
+    }
+
+    .container-grid {
+        gap: 10px;
+    }
+}
+</style>
+
+<script>
+// four_container_template functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const contentItems = document.querySelectorAll('.content-item');
+    contentItems.forEach(item => {
+        item.addEventListener('click', function() {
+            this.style.backgroundColor = 'rgba(57, 255, 20, 0.2)';
+            setTimeout(() => {
+                this.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
+            }, 1000);
+        });
+    });
+
+    const toggleButtons = document.querySelectorAll('.toggle-btn');
+    toggleButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const container = this.closest('.content-container');
+            const body = container.querySelector('.container-body');
+
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                this.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            } else {
+                body.style.display = 'none';
+                this.style.backgroundColor = '#ff4444';
+            }
+        });
+    });
+});
+</script>

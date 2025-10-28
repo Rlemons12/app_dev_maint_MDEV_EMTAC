@@ -1,0 +1,18 @@
+body {
+    background: #3D246C;
+    background-image: url("/static/background_images/purple_indigo.jpg"); /* Replace with your image */
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    color: #F8F7FF;
+}
+.banner, .sidebar {
+    background-color: #5F0A87;
+    color: #B983FF;
+}
+.nav-link,
+.sidebar a,
+.sidebar button {
+    color: #00F0FF;
+}

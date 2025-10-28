@@ -1,0 +1,57 @@
+/* Green Modern Theme for EMTAC */
+
+/* Override body background */
+body {
+    background-color: #1b5e20 !important; /* Dark green */
+}
+
+/* Sidebar styling */
+.sidebar {
+    background-color: rgba(46, 125, 50, 0.95) !important; /* Green */
+    color: #e8f5e8 !important; /* Light green text */
+}
+
+.sidebar-header h1 {
+    color: #ffeb3b !important; /* Yellow accent */
+}
+
+.sidebar a:hover,
+.sidebar button:hover {
+    color: #ffeb3b !important; /* Yellow hover */
+    background-color: rgba(255, 235, 59, 0.1) !important;
+}
+
+.nav-link.highlight {
+    background-color: rgba(255, 235, 59, 0.2) !important;
+    border-left: 3px solid #ffeb3b !important;
+}
+
+/* Container backgrounds */
+.voice-controls-container,
+.model-display-container,
+.theme-container {
+    background-color: rgba(67, 160, 71, 0.3) !important;
+    border: 1px solid #4caf50 !important;
+}
+
+.voice-controls-container h4,
+.model-display-container h4,
+.theme-container h4 {
+    background-color: rgba(46, 125, 50, 0.6) !important;
+    color: #ffeb3b !important;
+}
+
+/* Buttons */
+.toggle-button {
+    background-color: #388e3c !important;
+    border: 1px solid #4caf50 !important;
+}
+
+.toggle-button:hover {
+    background-color: #4caf50 !important;
+}
+
+/* Main content area */
+.content {
+    background-color: #2e7d32 !important; /* Medium green */
+}

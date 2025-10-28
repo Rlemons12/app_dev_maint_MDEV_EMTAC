@@ -1,0 +1,35 @@
+<!-- Manage Images Section -->
+<!-- Hidden Field for Position ID -->
+<input type="hidden" id="position_id" name="position_id" value="{{ position.id }}">
+
+
+<!-- Search Images -->
+<div style="position: relative !important; overflow: visible !important; z-index: 9998 !important;">
+    <label for="images-search">Search Images:</label>
+    <input type="text" id="images-search" placeholder="Search images...">
+    <div id="image-suggestion-box" class="suggestion-box" style="display: none !important;"></div>
+</div>
+
+<!-- Existing Images List -->
+<div id="images-container">
+    <h4>Existing Images:</h4>
+    <div id="existing-images-list" class="scrollable-list">
+        {% for image in existing_images %}
+            <div class="existing-image" id="image-{{ image.id }}">
+                <span>Title: {{ image.title }}, Description: {{ image.description }}</span>
+                <button type="button" class="remove-existing-image-button" data-image-id="{{ image.id }}">Remove</button>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Pagination Controls -->
+<div id="images-pagination" class="pagination-controls"></div>
+
+<!-- Add New Images -->
+<h4>Add New Images:</h4>
+<div id="new-images-container">
+    <!-- New image entries will be dynamically added here -->
+</div>
+<button type="button" id="add-image-button">Add Another Image</button>
+<button type="button" id="submit-images-button">Submit New Images</button>

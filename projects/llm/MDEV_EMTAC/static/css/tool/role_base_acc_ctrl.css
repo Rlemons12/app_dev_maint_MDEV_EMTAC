@@ -1,0 +1,88 @@
+/* CSS for Tool Templates Role-Based Access Control */
+
+/* Style for disabled buttons */
+.btn-disabled {
+    pointer-events: none;
+    opacity: 0.65;
+    cursor: not-allowed !important;
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    color: white !important;
+}
+
+/* Disabled tab styling */
+.tab-item.disabled-tab {
+    opacity: 0.5;
+    cursor: not-allowed !important;
+    position: relative;
+}
+
+.tab-item.disabled-tab::after {
+    content: "🔒";
+    font-size: 12px;
+    position: absolute;
+    top: 2px;
+    right: 5px;
+}
+
+/* Read-only form styling */
+.read-only-form {
+    position: relative;
+}
+
+.read-only-form::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.05);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Read-only form labels */
+.read-only-form label::after {
+    content: " (read-only)";
+    font-size: 0.8em;
+    color: #dc3545;
+    font-style: italic;
+}
+
+/* Notification banner */
+.user-level-notification {
+    background-color: rgba(255, 193, 7, 0.2);
+    color: #ffec00;
+    border: 1px solid #ffc107;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* Make text easier to read on dark backgrounds */
+.user-level-notification strong {
+    color: #ffffff;
+}
+
+/* Style for forms in read-only mode */
+.accordion-item .accordion-button.collapsed {
+    background-color: rgba(108, 117, 125, 0.1);
+}
+
+.read-only-form input,
+.read-only-form textarea,
+.read-only-form select {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-color: #6c757d;
+}
+
+/* Additional contrast for dark themes */
+.read-only-form.dark-theme input,
+.read-only-form.dark-theme textarea,
+.read-only-form.dark-theme select {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #e0e0e0;
+}

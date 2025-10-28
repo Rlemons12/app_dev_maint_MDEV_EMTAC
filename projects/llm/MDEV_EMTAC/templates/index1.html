@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Efficient Maintenance and Technical Assistance Chatbot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index_styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css')}}">
+</head>
+<body>
+    <div class="banner">
+        THIS IS FOR REFERENCE ONLY. ALL INFORMATION SHOULD BE VERIFIED WITH CURRENT SOP'S
+        <a href="#" id="commentPopupLink" style="color: #39FF14;">Leave a Comment</a>
+    </div>
+
+    <span id="sidebarCollapse">&#9776; Menu</span>
+    <div class="main-container">
+        <!-- Left side content (Sidebar) -->
+        {% include 'module_template_html/base_sidebar.html' %}
+        <!-- Right side content -->
+        <!-- Popup Modal Structure -->
+        <div id="commentPopup" style="display: none;">
+            <form id="commentForm">
+                <h2>Leave a Comment</h2>
+                <!-- Instructions for filling out the form -->
+                <p>Instructions: You can write your comment, paste an image, or upload a file.</p>
+
+                <!-- Comment box where users can paste an image or type text -->
+                <textarea name="comment" id="comment" placeholder="Write your comment here..." required></textarea><br>
+
+                <!-- Hidden field to store base64 image data -->
+                <input type="hidden" id="imageData" name="imageData">
+
+                <!-- Display an indicator or preview if an image was pasted -->
+                <div id="pastedImageFeedback" style="display: none; color: green;">
+                    Image snippet successfully added!
+                </div>
+                <img id="pastedImagePreview" src="" alt="Pasted Image Preview" style="display:none; max-width: 100px; margin-top: 10px;" />
+
+                <!-- Option to upload a file -->
+                <label for="fileUpload">Or upload an image:</label><br>
+                <input type="file" id="fileUpload" name="screenshot" accept="image/*" /><br><br>
+
+                <button type="submit">Send</button>
+                <button type="button" id="closePopup">Close</button>
+            </form>
+        </div>
+        <div class="content">
+            <div class="answer-section" id="answer-section">
+                <p id="answer"></p>
+            </div>
+
+            <div class="thumbnails-section" id="thumbnails-section">
+                <!-- Thumbnails will be displayed here -->
+            </div>
+
+            <div class="doc-links-section" id="doc-links-section">
+                <!-- Hoverable links for relevant documents will be displayed here -->
+            </div>
+
+            <div class="user-input-container">
+                <input type="text" id="user_id" placeholder="User ID" value="{{ employee_id }}" readonly style="display: none;">
+                <select id="area" style="display: none;">
+                    <!-- Options will be populated here -->
+                </select>
+                <div class="input-and-button">
+                    <textarea id="user_input" placeholder="Your Question" rows="2" cols="50"></textarea>
+                    <button id="submit-question" onclick="submitQuestion()">Ask</button>
+                </div>
+            </div>
+
+            <div class="comment-box">
+                <textarea id="comment" placeholder="Comment, suggestions or corrections"></textarea>
+                <div class="rating-section">
+                    <label for="rating">Rating:</label>
+                    <select id="rating">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                    <button id="submit_comment_rating">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link to the external JavaScript files -->
+    <script src="{{ url_for('static', filename='chatbot.js') }}"></script>
+    <script src="{{ url_for('static', filename='chatbot_display_thumbnails.js') }}"></script>
+    <script src="{{ url_for('static', filename='update_qanda_table.js') }}"></script>
+    <script>
+        // Event handler for sidebar collapse
+        document.getElementById("sidebarCollapse").onclick = function() {
+            document.querySelector(".main-container").classList.toggle("collapsed");
+        };
+
+        // Add functionality to toggle buttons to highlight when active
+        document.addEventListener("DOMContentLoaded", function() {
+            const toggleButtons = document.querySelectorAll(".toggle-button");
+            toggleButtons.forEach(button => {
+                button.onclick = function() {
+                    this.classList.toggle("active");
+                };
+            });
+
+            // Ensure the Ask button works
+            document.getElementById("submit-question").addEventListener("click", function() {
+                if (typeof submitQuestion === "function") {
+                    submitQuestion();
+                } else {
+                    console.error("submitQuestion function not found");
+                }
+            });
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/comment_pop_up.js')}}"></script>
+
+    <!-- Fallback script in case external JS fails to load -->
+    <script>
+        // Ensure submitQuestion exists
+        if (typeof submitQuestion !== 'function') {
+            function submitQuestion() {
+                const userInput = document.getElementById('user_input').value;
+                const userId = document.getElementById('user_id').value;
+
+                if (!userInput.trim()) {
+                    alert('Please enter a question');
+                    return;
+                }
+
+                // Display loading state
+                const answerElement = document.getElementById('answer');
+                if (answerElement) {
+                    answerElement.innerHTML = 'Processing your question...';
+                }
+
+                // Send to server
+                fetch('/ask_question', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_input: userInput,
+                        user_id: userId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (answerElement) {
+                        answerElement.innerHTML = data.answer || 'No answer found';
+                    }
+
+                    // Display any thumbnails if they exist
+                    const thumbnailsSection = document.getElementById('thumbnails-section');
+                    if (thumbnailsSection && data.thumbnails) {
+                        thumbnailsSection.innerHTML = '';
+                        data.thumbnails.forEach(thumb => {
+                            const img = document.createElement('img');
+                            img.src = thumb.url;
+                            img.alt = thumb.alt || 'Thumbnail';
+                            img.className = 'thumbnail';
+                            thumbnailsSection.appendChild(img);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    if (answerElement) {
+                        answerElement.innerHTML = 'Error processing your question. Please try again.';
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

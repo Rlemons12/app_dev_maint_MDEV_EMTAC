@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Position Data Assignment Demo</title>
+    <style>
+        /* BASIC RESET & GLOBAL STYLES */
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #222;
+            color: white;
+        }
+
+        body {
+            padding-top: 80px; /* Space for the banner */
+            background-image: url("https://via.placeholder.com/1920x1080/333333/666666?text=Background+Image");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* LABELS FOR DEMO ELEMENTS */
+        .demo-label {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            position: absolute;
+            font-weight: bold;
+            font-size: 12px;
+            z-index: 1005;
+        }
+
+        /* BANNER STYLES */
+        .banner {
+            width: 100%;
+            background-color: red;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1002;
+            font-weight: bold;
+            font-size: 1.5em;
+            text-transform: uppercase;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .banner a {
+            color: #39FF14;
+            text-decoration: underline;
+            margin-left: 15px;
+        }
+
+        /* MAIN CONTAINER & SIDEBAR */
+        .main-container {
+            display: flex;
+            flex-direction: row;
+            min-height: calc(100vh - 80px);
+            width: 100%;
+            transition: margin-left 0.5s ease, width 0.5s ease;
+            padding-top: 10px;
+            position: relative;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 80px;
+            left: 0;
+            width: 300px;
+            height: calc(100% - 80px);
+            background-color: rgba(0, 0, 0, 0.8);
+            overflow-x: hidden;
+            overflow-y: auto;
+            transition: width 0.5s ease;
+            padding: 20px;
+            font-size: 18px;
+            color: yellow;
+            z-index: 1000;
+            box-sizing: border-box;
+            border: 1px dashed yellow;
+        }
+
+        /* SIDEBAR SECTIONS */
+        .sidebar-header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 15px;
+        }
+
+        .sidebar h1 {
+            margin-top: 0;
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .welcome-message {
+            color: yellow;
+            font-size: 18px;
+            margin: 10px 0;
+        }
+
+        .user-level {
+            font-size: 14px;
+            opacity: 0.8;
+            margin: 5px 0;
+            color: white;
+        }
+
+        /* HAMBURGER ICON */
+        .hamburger {
+            font-size: 30px;
+            cursor: pointer;
+            color: white;
+            position: fixed;
+            top: 90px;
+            left: 10px;
+            z-index: 1001;
+            background: none;
+            border: none;
+            outline: none;
+        }
+
+        /* MAIN CONTENT STYLES */
+        .content {
+            margin-left: 300px;
+            width: calc(100% - 300px);
+            min-height: calc(100vh - 80px);
+            transition: margin-left 0.5s ease, width 0.5s ease;
+            padding: 20px;
+            background: rgba(51, 51, 51, 0.7);
+            overflow: visible;
+            position: relative;
+            border: 1px dashed skyblue;
+        }
+
+        .position-data-container {
+            width: 100%;
+            color: yellow;
+        }
+
+        .content h1 {
+            color: #39FF14;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* TAB NAVIGATION STYLES */
+        .tab-container {
+            margin-left: 0;
+            width: 100%;
+            position: relative;
+        }
+
+        /* GRID-BASED TAB LAYOUT */
+        .tab-grid {
+            display: grid;
+            width: 100%;
+            grid-template-rows: auto auto;
+            border: 1px dashed magenta;
+        }
+
+        /* FIRST ROW WITH 5 TABS */
+        .tab-grid-row-1 {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(120px, 1fr));
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+
+        /* SECOND ROW WITH 4 TABS */
+        .tab-grid-row-2 {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(150px, 1fr));
+            gap: 5px;
+            border-bottom: 2px solid yellow;
+        }
+
+        .tab-item {
+            padding: 10px 10px;
+            cursor: pointer;
+            background-color: #333;
+            color: yellow;
+            border: 1px solid yellow;
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+            transition: background-color 0.3s, color 0.3s;
+            text-align: center;
+        }
+
+        .tab-item:hover {
+            background-color: yellow;
+            color: black;
+        }
+
+        .tab-item.active {
+            background-color: yellow;
+            color: black;
+            font-weight: bold;
+        }
+
+        /* TAB CONTENT CONTAINER */
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border: 1px solid yellow;
+            border-top: none;
+            color: yellow;
+            overflow: visible;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 5px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* FORM ELEMENTS */
+        form div {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: yellow;
+        }
+
+        input, select {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: black;
+            border: 1px solid #ccc;
+            padding: 8px;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #333;
+            color: yellow;
+            border: 2px solid yellow;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s, color 0.3s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: yellow;
+            color: black;
+        }
+
+        /* RESULTS CONTAINER STYLING */
+        .results-container {
+            margin-top: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px dashed white;
+        }
+
+        /* RESPONSIVE STYLES */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+
+            .sidebar.active {
+                width: 300px;
+                padding: 20px;
+            }
+
+            .content {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .tab-grid-row-1,
+            .tab-grid-row-2 {
+                grid-template-columns: 1fr;
+                margin-bottom: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Banner -->
+    <div class="banner">
+        <span class="demo-label" style="top: 0; left: 0;">BANNER</span>
+        THIS IS FOR REFERENCE ONLY. ALL INFORMATION SHOULD BE VERIFIED WITH CURRENT SOP'S
+        <a href="#" id="commentPopupLink">Leave a Comment</a>
+    </div>
+
+    <!-- Hamburger Icon -->
+    <button id="sidebarCollapse" class="hamburger" aria-expanded="true" aria-label="Toggle sidebar">&#9776;</button>
+
+    <div class="main-container">
+        <!-- Sidebar Component -->
+        <div class="sidebar" id="mainSidebar">
+            <span class="demo-label" style="top: 85px; left: 5px;">SIDEBAR</span>
+            <!-- Header Section -->
+            <div class="sidebar-header">
+                <h1>EMTAC</h1>
+                <p class="user-level">User Level: STANDARD</p>
+                <h2 class="welcome-message">Welcome User! How can I assist you?</h2>
+            </div>
+
+            <!-- Main Navigation Links -->
+            <div class="sidebar-nav">
+                <a href="#" class="nav-link highlight">Return to Main</a>
+                <a href="#" class="nav-link highlight">Search and Upload</a>
+                <a href="#" class="nav-link highlight">Parts and BOMs</a>
+                <a href="#" class="nav-link highlight">Position Data Assignment</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <span class="demo-label" style="top: 85px; right: 20px;">CONTENT CONTAINER</span>
+
+            <h1>Position Data Assignment</h1>
+
+            <!-- Tab Navigation with Grid Layout -->
+            <div class="tab-container">
+                <span class="demo-label" style="top: 5px; left: 5px;">TAB CONTAINER</span>
+                <div class="tab-grid">
+                    <!-- First Row: 5 Tabs -->
+                    <div class="tab-grid-row-1">
+                        <span class="demo-label" style="top: -15px; left: 50%;">TAB GRID ROW 1</span>
+                        <div class="tab-item active" data-tab="search-tab">Search Position</div>
+                        <div class="tab-item" data-tab="create-position-tab">Create New Position</div>
+                        <div class="tab-item" data-tab="add-dependencies-tab">Add Position Dependencies</div>
+                        <div class="tab-item" data-tab="update-tab">Update Position Data</div>
+                        <div class="tab-item" data-tab="documents-tab">Manage Documents</div>
+                    </div>
+
+                    <!-- Second Row: 4 Tabs -->
+                    <div class="tab-grid-row-2">
+                        <span class="demo-label" style="top: -15px; left: 50%;">TAB GRID ROW 2</span>
+                        <div class="tab-item" data-tab="parts-tab">Manage Parts</div>
+                        <div class="tab-item" data-tab="images-tab">Manage Images</div>
+                        <div class="tab-item" data-tab="drawings-tab">Manage Drawings</div>
+                        <div class="tab-item" data-tab="tool-tab">Manage Tools</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content Sections -->
+            <div id="search-tab" class="tab-content active">
+                <span class="demo-label" style="top: 5px; left: 5px;">TAB CONTENT (SEARCH TAB)</span>
+                <form id="searchPositionForm" method="get">
+                    <!-- Area Dropdown -->
+                    <div>
+                        <label for="pda_areaDropdown">Area:</label>
+                        <select name="area_id" id="pda_areaDropdown">
+                            <option value="">Select Area</option>
+                            <option value="1">Area 1</option>
+                            <option value="2">Area 2</option>
+                        </select>
+                    </div>
+
+                    <!-- Equipment Group Dropdown -->
+                    <div>
+                        <label for="pda_equipmentGroupDropdown">Equipment Group:</label>
+                        <select name="equipment_group_id" id="pda_equipmentGroupDropdown">
+                            <option value="">Select Equipment Group</option>
+                            <option value="1">Equipment Group 1</option>
+                            <option value="2">Equipment Group 2</option>
+                        </select>
+                    </div>
+
+                    <!-- Asset Number Dropdown or Input -->
+                    <div>
+                        <label for="pda_assetNumberDropdown">Asset Number:</label>
+                        <select name="asset_number_id" id="pda_assetNumberDropdown">
+                            <option value="">Select Asset Number</option>
+                            <option value="1">A12345</option>
+                            <option value="2">B67890</option>
+                        </select>
+                    </div>
+
+                    <!-- Search Button -->
+                    <button type="button" id="searchPositionBtn">Search Position</button>
+                </form>
+            </div>
+
+            <!-- Example of another tab content -->
+            <div id="parts-tab" class="tab-content">
+                <span class="demo-label" style="top: 5px; left: 5px;">TAB CONTENT (PARTS TAB)</span>
+
+                <!-- Parts Search -->
+                <div>
+                    <label for="parts-search">Search Parts:</label>
+                    <input type="text" id="parts-search" placeholder="Search parts...">
+                </div>
+
+                <!-- Existing Parts List -->
+                <div id="parts-container">
+                    <h4>Existing Parts:</h4>
+                    <div id="existing-parts-list">
+                        <div class="existing-part">
+                            <span>Part Number: P123, Name: Sample Part 1</span>
+                            <button type="button" class="remove-existing-part-button">Remove</button>
+                        </div>
+                        <div class="existing-part">
+                            <span>Part Number: P456, Name: Sample Part 2</span>
+                            <button type="button" class="remove-existing-part-button">Remove</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple tab toggling functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('.tab-item');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove 'active' class from all tabs and contents
+                    tabs.forEach(item => item.classList.remove('active'));
+                    contents.forEach(content => content.classList.remove('active'));
+
+                    // Add 'active' class to the clicked tab and corresponding content
+                    this.classList.add('active');
+                    const tabContent = document.getElementById(this.getAttribute('data-tab'));
+                    if (tabContent) {
+                        tabContent.classList.add('active');
+                    }
+                });
+            });
+
+            // Sidebar toggle functionality
+            const sidebarToggle = document.getElementById('sidebarCollapse');
+            const sidebar = document.getElementById('mainSidebar');
+            const content = document.querySelector('.content');
+
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                content.classList.toggle('sidebar-collapsed');
+            });
+        });
+    </script>
+</body>
+</html>

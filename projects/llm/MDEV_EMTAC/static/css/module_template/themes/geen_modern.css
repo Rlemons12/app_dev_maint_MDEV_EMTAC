@@ -1,0 +1,21 @@
+body {
+    background-color: #123524;
+    background-image: url("/static/background_images/greenmodern.jpg");  /* Replace with your image */
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    color: #D8E1E9;
+}
+
+.banner,
+.sidebar {
+    background-color: #3BC14A;
+    color: #123524;
+}
+
+.nav-link,
+.sidebar a,
+.sidebar button {
+    color: #C3FF00;
+}

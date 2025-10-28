@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PowerPoint Search Results</title>
+    <!-- Add any required styles or links to stylesheets -->
+</head>
+<body>
+    <h1>PowerPoint Search Results</h1>
+
+    <div id="powerpoint-container">
+        {% for powerpoint in powerpoints %}
+            <div class="powerpoint-entry">
+                <!-- Make the title a clickable link -->
+                <a href="{{ url_for('search_powerpoint_bp.view_pdf_by_title', title=powerpoint.title) }}">{{ powerpoint.title }}</a>
+                <!-- Display other information about the PowerPoint -->
+                <p>Area: {{ powerpoint.area }}</p>
+                <p>Equipment Group: {{ powerpoint.equipment_group }}</p>
+                <p>Model: {{ powerpoint.model }}</p>
+                <!-- Add more information as needed -->
+            </div>
+        {% else %}
+            <p>No PowerPoint presentations found.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Button or link to return to the search form -->
+    <a href="{{ url_for('upload_image_page') }}">Back to Upload Image</a>
+</body>
+</html>

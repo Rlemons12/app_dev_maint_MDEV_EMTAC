@@ -1,0 +1,174 @@
+<!-- templates/tool_templates/search_tool.html -->
+{% set tools = tools | default([]) %}
+{% set page = page | default(1) %}
+{% set per_page = per_page | default(20) %}
+{% set total_pages = total_pages | default(0) %}
+
+<div class="search-tool-container">
+    <form id="tool_search_form" action="{{ url_for('tool_routes.submit_tool_data') }}" method="POST" class="mt-4">
+        {{ search_tool_form.hidden_tag() }}
+
+        <!-- Search Criteria Section -->
+        <div class="accordion" id="searchToolAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingSearchCriteria">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapseSearchCriteria" aria-expanded="true" aria-controls="collapseSearchCriteria">
+                        Search Criteria
+                    </button>
+                </h2>
+                <div id="collapseSearchCriteria" class="accordion-collapse collapse show"
+                     aria-labelledby="headingSearchCriteria" data-bs-parent="#searchToolAccordion">
+                    <div class="accordion-body">
+                        <!-- Tool Name Field -->
+                        <div class="mb-3">
+                            {{ search_tool_form.tool_name.label(class="form-label") }}
+                            {{ search_tool_form.tool_name(class="form-control", placeholder="Enter tool name") }}
+                            {% for error in search_tool_form.tool_name.errors %}
+                                <span class="text-danger">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Tool Size Field -->
+                        <div class="mb-3">
+                            {{ search_tool_form.tool_size.label(class="form-label") }}
+                            {{ search_tool_form.tool_size(class="form-control", placeholder="Enter tool size") }}
+                            {% for error in search_tool_form.tool_size.errors %}
+                                <span class="text-danger">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Tool Type Field -->
+                        <div class="mb-3">
+                            {{ search_tool_form.tool_type.label(class="form-label") }}
+                            {{ search_tool_form.tool_type(class="form-control", placeholder="Enter tool type") }}
+                            {% for error in search_tool_form.tool_type.errors %}
+                                <span class="text-danger">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Tool Material Field -->
+                        <div class="mb-3">
+                            {{ search_tool_form.tool_material.label(class="form-label") }}
+                            {{ search_tool_form.tool_material(class="form-control", placeholder="Enter tool material") }}
+                            {% for error in search_tool_form.tool_material.errors %}
+                                <span class="text-danger">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Tool Category Field -->
+                        <div class="mb-3">
+                            {{ search_tool_form.tool_category.label(class="form-label") }}
+                            {{ search_tool_form.tool_category(class="form-select", multiple="multiple") }}
+                            {% for error in search_tool_form.tool_category.errors %}
+                                <span class="text-danger">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Tool Manufacturer Field -->
+                        <div class="mb-3">
+                            {{ search_tool_form.tool_manufacturer.label(class="form-label") }}
+                            {{ search_tool_form.tool_manufacturer(class="form-select", multiple="multiple") }}
+                            {% for error in search_tool_form.tool_manufacturer.errors %}
+                                <span class="text-danger">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="text-end mt-4">
+            {{ search_tool_form.submit_search(class="btn btn-primary") }}
+        </div>
+    </form>
+
+    <!-- Search Results Section -->
+    <div class="mt-5">
+        <h2>Search Results</h2>
+        <div id="search-results-container" class="results">
+            {% if tools %}
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Tool Name</th>
+                            <th>Size</th>
+                            <th>Type</th>
+                            <th>Material</th>
+                            <th>Category</th>
+                            <th>Manufacturer</th>
+                            <th>Description</th>
+                            <th>Images</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tool in tools %}
+                            <tr>
+                                <td>{{ tool.name }}</td>
+                                <td>{{ tool.size or 'N/A' }}</td>
+                                <td>{{ tool.type or 'N/A' }}</td>
+                                <td>{{ tool.material or 'N/A' }}</td>
+                                <td>{{ tool.category.name if tool.category else 'N/A' }}</td>
+                                <td>{{ tool.manufacturer.name if tool.manufacturer else 'N/A' }}</td>
+                                <td>{{ tool.description or 'N/A' }}</td>
+                                <td>
+                                    {% if tool.images and tool.images|length > 0 %}
+                                        {% for image in tool.images %}
+                                            <img src="{{ url_for('static', filename=image.file_path) }}" alt="{{ image.title }}" width="100">
+                                        {% endfor %}
+                                    {% else %}
+                                        No Image
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- Pagination Controls -->
+                {% if total_pages > 1 %}
+                    <nav aria-label="Search results pages">
+                        <ul class="pagination justify-content-center">
+                            {% if page > 1 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('tool_routes.submit_tool_data', page=page-1, **request.args.to_dict(flat=False)) }}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo; Previous</span>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo; Previous</span>
+                                    </span>
+                                </li>
+                            {% endif %}
+
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    Page {{ page }} of {{ total_pages }}
+                                </span>
+                            </li>
+
+                            {% if page < total_pages %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('tool_routes.submit_tool_data', page=page+1, **request.args.to_dict(flat=False)) }}" aria-label="Next">
+                                        <span aria-hidden="true">Next &raquo;</span>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link" aria-label="Next">
+                                        <span aria-hidden="true">Next &raquo;</span>
+                                    </span>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <p>No tools found matching your criteria.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>

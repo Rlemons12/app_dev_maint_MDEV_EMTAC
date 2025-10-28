@@ -1,0 +1,23 @@
+#toolManagementContainer {
+    background-color: rgba(0, 0, 0, 0.8); /* Black with 80% transparency */
+    padding: 20px;
+    border-radius: 5px; /* Optional: rounded corners */
+    color: #fff; /* Ensure text remains readable */
+}
+
+.sub-tab-container ul.sub-tab-list {
+    background-color: rgba(255, 255, 255, 0.2); /* Light with 20% transparency */
+    border: 1px solid #fff; /* Optional: border for clarity */
+    border-radius: 5px;
+}
+
+.sub-tab-content {
+    background-color: rgba(255, 255, 255, 0.1); /* Light background for content */
+    padding: 15px;
+    border-radius: 5px;
+    display: none; /* Hide by default */
+}
+
+.sub-tab-content.active {
+    display: block; /* Show only the active tab's content */
+}

@@ -1,0 +1,60 @@
+﻿# -----------------------------
+# EMTAC Project Clean GitIgnore
+# -----------------------------
+
+# Virtual environments
+.venv/
+.venv_old/
+old_venv/
+dev_env/
+
+# IDE and editor settings
+.idea/
+.vs/
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs and reports
+logs/
+log_backup/
+*.log
+*_tracking_report_*.txt
+
+# Database binaries and backups
+Database/**/*.db
+Database/**/*.sqlite
+Database/**/*.zip
+Database/**/*.bak
+Database/DB_DOC/
+Database/DB_IMAGES/
+Database/DB_LOADSHEETS/
+Database/DB_LOADSHEETS_BACKUP/
+Database/temp_upload_files/
+Database/postgreSQL/
+Database/Release-*/
+Database/tool_load_sheet.xlsx
+Database/Tool Load Sheet Creation.html
+Database/Tool Load Sheet Creation_files/
+
+# Models and embeddings
+pgvector/
+models/
+git_lfs_vault/
+
+# Temporary / local data
+output/
+uploads/
+data/
+experiments/
+intent_test_reports/
+
+# Old / internal folders
+_internal/
+old_venv/
+utility_tools/reviewimage/
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini

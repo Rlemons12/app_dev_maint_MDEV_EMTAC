@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Search Problems
+{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tsg_search_problems.css') }}">
+{% endblock %}
+
+{% block content %}
+  <div class="sidebar">
+         <h2 style="color: Yellow;">Welcome {{ session['first_name'] }}! How can I assist you?</h2>
+        {% if session['user_level'] != 'STANDARD' %}
+            <a href="/" style="color:  #FFFFFF;">Return to Main Page</a>
+        {% endif %}
+        <!-- Display the current user level -->
+        <p>User Level: {{ session['user_level'] }}</p>
+        <a href="/upload_search_database" style="color: #39FF14;" class="upload-button"> To Search and Upload </a>
+        <a href="/bill_of_materials"style="color: #39FF14;"> To Parts and BOMs</a>
+        {% if session['user_level'] != 'STANDARD' %}
+            <a href="/troubleshooting_guide"style="color: #39FF14;"> To Update Troubleshooting Guide</a>
+        {% endif %}
+        <a href="/logout" style="color:  #FF5F1F;" class="logout-button">Logout</a>
+        <button class="toggle-btn" onclick="toggleSidebar()">Toggle</button>
+    </div>
+<div class="content">
+    <div class="form-container">
+        <h2>Search Problems</h2>
+        <form id="search-form" action="/search_problem_solution" method="get">
+            <label for="problemDescription" style="color: white;">Description:</label><br>
+            <input type="text" name="problem_description" id="problemDescription" placeholder="Search by Description"><br>
+
+            <label for="problemArea" style="color: white;">Area:</label><br>
+            <select name="problem_area" id="problemArea"></select><br>
+
+            <label for="problemEquipmentGroup" style="color: white;">Equipment Group:</label><br>
+            <select name="problem_equipment_group" id="problemEquipmentGroup"></select><br>
+
+            <label for="problemModel" style="color: white;">Model:</label><br>
+            <select name="problem_model" id="problemModel"></select><br>
+
+            <label for="problemAssetNumber" style="color: white;">Asset Number:</label><br>
+            <select name="problem_asset_number" id="problemAssetNumber"></select><br>
+
+            <label for="problemLocation" style="color: white;">Location:</label><br>
+            <select name="problem_location" id="problemLocation"></select><br>
+
+            <label for="problemTitle" style="color: white;">Problem Title:</label><br>
+            <select name="problem_title" id="problemTitle">
+                <option value="">Select...</option>
+            </select><br>
+
+            <button type="submit">Search</button>
+        </form>
+    </div>
+
+    <div class="results-container">
+        <h2>Results</h2>
+        <div id="answer-section">
+            <div class="row">
+                <div class="column">
+                    <h3>Problem:</h3>
+                    <p id="problem"></p>
+                    <h3>Solution:</h3>
+                    <p id="solution"></p>
+                    <div class="column">
+                        <h3>Associated Documents:</h3>
+                        <ul id="documents-list"></ul>
+                    </div>
+                </div>
+
+                <div class="column thumbnails-section" id="thumbnails-section"></div>
+
+                <div class="column">
+                    <h3>Associated Images:</h3>
+                    <div id="images-section"></div>
+                    <h3>Associated Drawings:</h3>
+                    <div id="drawings-section"></div>
+                    <h3>Associated Parts:</h3>
+                    <div id="parts-section"></div>
+                </div>
+            </div>
+            <h3>Generated SQL Query:</h3>
+            <pre id="sql-query"></pre>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="{{ url_for('static', filename='tsg_search_problem.js') }}"></script>
+<script src="{{ url_for('static', filename='tsg_search_problem_thumbnail.js') }}"></script>
+<script src="{{ url_for('static', filename='tsg_handleSearchResults.js') }}"></script>
+<script src="{{ url_for('static', filename='tsg_displaypartsthumbnails.js') }}"></script>
+<script src="{{ url_for('static', filename='js/comment_pop_up.js')}}"></script>
+<script>
+    function toggleSidebar() {
+        document.querySelector('.sidebar').classList.toggle('collapsed');
+    }
+
+    $(document).ready(function() {
+        $('#problemTitle').on('change focus', function() {
+            var maxWidth = $(this).parent().width();
+            $(this).css('max-width', maxWidth + 'px');
+        });
+    });
+
+    $('#search-form').submit(function(event) {
+        event.preventDefault();
+        var formData = $(this).serialize();
+        $.ajax({
+            url: '/search_problem_solution',
+            type: 'GET',
+            data: formData,
+            success: function(data) {
+                $('#answer-section').html(data);
+                $('.document-link').click(function() {
+                    var documentId = $(this).data('document-id');
+                    window.location.href = '/view_document/' + documentId;
+                });
+                displayThumbnails(data.thumbnails);
+                renderDocumentLinks(data.documents);
+                console.log(data.documents);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+            }
+        });
+    });
+
+    function renderDocumentLinks(documents) {
+        var documentsList = $('#documents-list');
+        if (documentsList.length) {
+            documentsList.empty();
+            documents.forEach(function(document) {
+                var listItem = $('<li>');
+                var documentLink = $('<a>')
+                    .attr('href', '/view_document/' + document.id)
+                    .attr('data-document-id', document.id)
+                    .addClass('document-link')
+                    .text(document.title);
+                listItem.append(documentLink);
+                documentsList.append(listItem);
+            });
+        } else {
+            console.error('#documents-list element not found');
+        }
+    }
+</script>
+{% endblock %}

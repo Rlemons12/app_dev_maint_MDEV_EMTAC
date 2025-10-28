@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layout Demonstration</title>
+    <style>
+        /* Basic Reset & Global Styles */
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #222;
+            color: white;
+        }
+
+        body {
+            padding-top: 80px; /* Space for the banner */
+        }
+
+        /* Labels for demonstration */
+        .demo-label {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            z-index: 10;
+        }
+
+        /* Banner Styles */
+        .banner {
+            width: 100%;
+            background-color: red;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1002;
+            font-weight: bold;
+            font-size: 1.5em;
+            text-transform: uppercase;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .banner a {
+            color: #39FF14;
+            text-decoration: underline;
+            margin-left: 15px;
+        }
+
+        /* Main Container & Sidebar */
+        .main-container {
+            display: flex;
+            flex-direction: row;
+            height: 100vh;
+            width: 100%;
+            transition: margin-left 0.5s ease, width 0.5s ease;
+            padding-top: 10px;
+            position: relative;
+            border: 2px dashed #39FF14;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 80px;
+            left: 0;
+            width: 300px;
+            height: calc(100% - 80px);
+            background-color: rgba(0, 0, 0, 0.8);
+            overflow-x: hidden;
+            overflow-y: auto;
+            transition: width 0.5s ease;
+            padding: 20px;
+            font-size: 18px;
+            color: yellow;
+            z-index: 1000;
+            box-sizing: border-box;
+            border: 2px dashed yellow;
+        }
+
+        /* Sidebar sections */
+        .sidebar-header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 15px;
+        }
+
+        .sidebar h1 {
+            margin-top: 0;
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .welcome-message {
+            color: yellow;
+            font-size: 18px;
+            margin: 10px 0;
+        }
+
+        .user-level {
+            font-size: 14px;
+            opacity: 0.8;
+            margin: 5px 0;
+            color: white;
+        }
+
+        /* Hamburger Icon */
+        .hamburger {
+            font-size: 30px;
+            cursor: pointer;
+            color: white;
+            position: fixed;
+            top: 90px;
+            left: 10px;
+            z-index: 1001;
+            background: none;
+            border: none;
+            outline: none;
+        }
+
+        .hamburger:hover {
+            color: #39FF14;
+        }
+
+        /* Main Content Styles */
+        .content {
+            margin-left: 300px;
+            width: calc(100% - 300px);
+            height: calc(100vh - 80px);
+            transition: margin-left 0.5s ease, width 0.5s ease;
+            padding: 20px;
+            background: #333;
+            overflow: auto;
+            position: relative;
+            border: 2px dashed skyblue;
+        }
+
+        /* Results Container & Thumbnails */
+        .results-container {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px;
+            color: white;
+            position: relative;
+            border: 2px dashed magenta;
+            /* Override display:none for demo */
+            display: block !important;
+        }
+
+        #thumbnails-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .thumbnail {
+            margin-right: 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            overflow: hidden;
+            background: #444;
+            height: 100px;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+
+            .sidebar.active {
+                width: 300px;
+                padding: 20px;
+            }
+
+            .content {
+                margin-left: 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Banner -->
+    <div class="banner">
+        THIS IS FOR REFERENCE ONLY. ALL INFORMATION SHOULD BE VERIFIED WITH CURRENT SOP'S
+        <a href="#" id="commentPopupLink">Leave a Comment</a>
+    </div>
+
+    <!-- Hamburger Icon -->
+    <button id="sidebarCollapse" class="hamburger" aria-expanded="true" aria-label="Toggle sidebar">&#9776;</button>
+
+    <div class="main-container">
+        <div class="demo-label" style="top: 85px; left: 50%; transform: translateX(-50%);">MAIN CONTAINER</div>
+
+        <!-- Sidebar Component -->
+        <div class="sidebar" id="mainSidebar">
+            <div class="demo-label">SIDEBAR</div>
+            <!-- Header Section -->
+            <div class="sidebar-header">
+                <h1>EMTAC</h1>
+                <p class="user-level">User Level: STANDARD</p>
+                <h2 class="welcome-message">Welcome User! How can I assist you?</h2>
+            </div>
+
+            <!-- Main Navigation Links -->
+            <div class="sidebar-nav">
+                <a href="#" class="nav-link highlight">Return to Main</a>
+                <a href="#" class="nav-link highlight">Search and Upload</a>
+                <a href="#" class="nav-link highlight">Parts and BOMs</a>
+            </div>
+
+            <!-- Utility Section -->
+            <div class="sidebar-utils">
+                <div class="model-display-section">
+                    <p>Current AI Model: Default Model</p>
+                    <p>Current Embedding Model: Default Embedding</p>
+                </div>
+
+                <!-- Logout button at the bottom -->
+                <a href="#" class="logout-button">Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <div class="demo-label">CONTENT CONTAINER</div>
+            <h1>Content Area</h1>
+            <p>This is where your main content would appear. It adjusts based on the sidebar visibility.</p>
+            <p>The content area has its own scrollbar if the content exceeds the height.</p>
+            <div style="height: 200px; background-color: #444; margin: 20px 0; padding: 20px; border-radius: 5px;">
+                Sample content block
+            </div>
+            <p>The content container is positioned to the right of the sidebar and takes up the remaining width.</p>
+
+            <!-- Results Container (made visible for demo) -->
+            <div class="results-container" id="results-container">
+                <div class="demo-label">RESULTS CONTAINER</div>
+                <h2>Search Results Area</h2>
+                <p>This container would normally be hidden until search results are available.</p>
+                <ul id="searchResults" style="color:white;">
+                    <li>Sample search result 1</li>
+                    <li>Sample search result 2</li>
+                    <li>Sample search result 3</li>
+                </ul>
+                <!-- Thumbnails Section -->
+                <div id="thumbnails-section">
+                    <!-- Sample thumbnails -->
+                    <div class="thumbnail">Thumbnail 1</div>
+                    <div class="thumbnail">Thumbnail 2</div>
+                    <div class="thumbnail">Thumbnail 3</div>
+                </div>
+                <div id="drawingList">
+                    <p>Drawing search results would appear here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple toggle functionality for the sidebar
+        document.getElementById('sidebarCollapse').addEventListener('click', function() {
+            const sidebar = document.getElementById('mainSidebar');
+            const content = document.querySelector('.content');
+
+            sidebar.classList.toggle('collapsed');
+            content.classList.toggle('sidebar-collapsed');
+        });
+    </script>
+</body>
+</html>

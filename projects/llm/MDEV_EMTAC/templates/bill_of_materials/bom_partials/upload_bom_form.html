@@ -1,0 +1,24 @@
+<!-- Upload BOM Form Partial -->
+<form id="upload-bom-form" action="/bill_of_materials" method="post" enctype="multipart/form-data">
+    <label for="area" style="color: Yellow;">Area:</label>
+    <select name="area" id="bom_areaDropdown"></select><br>
+
+    <label for="equipment_group" style="color: Yellow;">Equipment Group:</label>
+    <select name="equipment_group" id="bom_equipmentGroupDropdown"></select><br>
+
+    <label for="model" style="color: Yellow;">Model:</label>
+    <select name="model" id="bom_modelDropdown"></select><br>
+
+    <label for="asset_number" style="color: Yellow;">Asset Number:</label>
+    <select name="asset_number" id="bom_assetNumberDropdown"></select><br>
+
+    <label for="location" style="color: Yellow;">Location:</label>
+    <select name="location" id="bom_locationDropdown"></select><br>
+
+    <label for="image_path" style="color: Yellow;">Image Path:</label>
+    <input type="text" name="image_path" id="image_path"><br>
+
+    <input type="file" name="file" required><br>
+
+    <input type="submit" value="Upload">
+</form>

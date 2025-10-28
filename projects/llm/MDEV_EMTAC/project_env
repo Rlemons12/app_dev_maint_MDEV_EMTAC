@@ -1,0 +1,91 @@
+# =====================================================================
+# EMTAC ENVIRONMENT CONFIGURATION
+# ---------------------------------------------------------------------
+# This file defines all key directories, project paths, and connections
+# for the local EMTAC development and runtime environment.
+# =====================================================================
+
+# --- BASE PATHS ---
+EMTAC_BASE=E:\emtac
+PROJECTS_DIR=E:\emtac\projects
+TOOLS_DIR=E:\emtac\tools
+MODELS_DIR=E:\emtac\models
+DATABASES_DIR=E:\emtac\databases
+LOGS_DIR=E:\emtac\logs
+BACKUPS_DIR=E:\emtac\backups
+DATA_DIR=E:\emtac\data
+DEV_ENV_DIR=E:\emtac\dev_env
+EXPERIMENTS_DIR=E:\emtac\experiments
+GIT_REPOS_DIR=E:\emtac\git_repos
+
+# --- SUBDIRECTORY PATHS ---
+# Data
+DATA_BACKUP_DIR=E:\emtac\data\backup
+DATA_EMBEDDINGS_DIR=E:\emtac\data\embeddings
+DATA_PROCESSED_DIR=E:\emtac\data\processed_data
+DATA_RAW_DIR=E:\emtac\data\raw_documention
+
+# Databases
+SQLITE_DIR=E:\emtac\databases
+POSTGRES_DIR=E:\emtac\databases\postgresql
+
+# Models
+MODELS_IMAGE_DIR=E:\emtac\models\image
+MODELS_LLM_DIR=E:\emtac\models\llm
+MODELS_QWEN_DIR=E:\emtac\models\Qwen2.5-3B-Instruct
+MODELS_TINY_LLAMA_DIR=E:\emtac\models\TinyLlama_1_1B
+MODELS_APPLE_ELM_DIR=E:\emtac\models\apple_OpenELM-1_1B-Instruct
+MODELS_GEMMA_DIR=E:\emtac\models\google_gemma-2-2b-it
+MODELS_CLIP_DIR=E:\emtac\models\openai_clip-vit-base-patch32
+MODELS_GPT2_DIR=E:\emtac\models\GPT-2
+
+# Plugins / AI Modules
+PLUGINS_DIR=E:\emtac\plugins
+AI_MODULES_DIR=E:\emtac\ai_modules
+
+# Tools
+TOOLS_DBEAVER_DIR=E:\emtac\tools\dbeaver
+TOOLS_GIT_DIR=E:\emtac\tools\git
+TOOLS_PYCHARM_DIR=E:\emtac\tools\pycharm
+TOOLS_PYTHON_DIR=E:\emtac\tools\python
+
+# --- ACTIVE PROJECT SETTINGS ---
+ACTIVE_PROJECT=MDEV_EMTAC
+PROJECT_PATH=E:\emtac\projects\llm\MDEV_EMTAC
+PROJECT_APP_PATH=E:\emtac\projects\app\ShopSync
+VENV_PATH=E:\emtac\projects\llm\MDEV_EMTAC\.venv
+PYTHON_EXE=E:\emtac\projects\llm\MDEV_EMTAC\.venv\Scripts\python.exe
+
+# --- DATABASE CONNECTIONS ---
+SQLITE_DB_PATH=E:\emtac\databases\emtacdb_fts.sqlite
+POSTGRES_DB=emtac_local
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+
+# --- LOGGING ---
+LOG_LEVEL=INFO
+LOG_FILE=E:\emtac\logs\emtac_app.log
+
+# --- MODEL PATHS ---
+MODEL_PATH_CLIP=E:\emtac\models\openai_clip-vit-base-patch32
+MODEL_PATH_TRANSFORMERS=E:\emtac\models\transformers
+MODEL_PATH_LLM=E:\emtac\models\llm
+
+# --- BACKUP & MAINTENANCE ---
+BACKUP_PATH=E:\emtac\backups
+AUTOSAVE_INTERVAL=15
+
+# --- DEV ENVIRONMENT VARIABLES ---
+PYTHONUTF8=1
+PYTHONIOENCODING=utf-8
+PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# --- GIT & VERSION CONTROL ---
+GIT_EXE=E:\emtac\tools\git\cmd\git.exe
+GIT_LFS_EXE=E:\emtac\tools\git-lfs-3.7.0\git-lfs.exe
+GIT_LFS_STORAGE=E:\emtac\git_lfs_vault
+GIT_DEFAULT_BRANCH=main
+GIT_USER_NAME=Robert Lemons
+GIT_USER_EMAIL=kermitsrocket@gmail.com

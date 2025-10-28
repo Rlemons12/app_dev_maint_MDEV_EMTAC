@@ -1,0 +1,13 @@
+<!-- templates/base_template_sidebar.html -->
+<nav id="sidebar" class="sidebar sticky">
+    <h3>Related Documents</h3>
+    <div class="document-links" id="sidebarLinks">
+        {% for doc in related_docs %}
+            <a href="{{ doc.url }}" class="sidebar-link">{{ doc.name }}</a>
+        {% else %}
+            <span style="color: #aaa;">No documents available</span>
+        {% endfor %}
+    </div>
+</nav>
+
+

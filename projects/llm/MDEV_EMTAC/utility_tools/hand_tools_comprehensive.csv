@@ -1,0 +1,930 @@
+Tool_Name,Size,Type,Category,Material,Description,Typical_Use
+Precision Screwdriver,0.8mm,Flathead,Screwdrivers,Chrome Vanadium Steel,Ultra-fine precision screwdriver for electronics,Electronics/Watch repair
+Precision Screwdriver,1.0mm,Flathead,Screwdrivers,Chrome Vanadium Steel,Precision screwdriver for small screws,Electronics/Instrument repair
+Precision Screwdriver,1.2mm,Flathead,Screwdrivers,Chrome Vanadium Steel,Small precision screwdriver,Electronics/Fine mechanics
+Precision Screwdriver,1.4mm,Flathead,Screwdrivers,Chrome Vanadium Steel,Precision screwdriver for delicate work,Electronics/Optics repair
+Precision Screwdriver,1.6mm,Flathead,Screwdrivers,Chrome Vanadium Steel,Fine precision screwdriver,Electronics/Computer repair
+Precision Screwdriver,1.8mm,Flathead,Screwdrivers,Chrome Vanadium Steel,Small flathead precision screwdriver,Electronics/Instrument work
+Precision Screwdriver,2.0mm,Flathead,Screwdrivers,Chrome Vanadium Steel,Compact precision screwdriver,Electronics/Fine assembly
+Precision Screwdriver,2.5mm,Flathead,Screwdrivers,Chrome Vanadium Steel,Medium precision screwdriver,Electronics/Small appliances
+Flathead Screwdriver,3mm,Flathead,Screwdrivers,Chrome Vanadium Steel,Small flathead screwdriver,General small screw work
+Flathead Screwdriver,4mm,Flathead,Screwdrivers,Chrome Vanadium Steel,Standard small flathead screwdriver,Light assembly work
+Flathead Screwdriver,5.5mm,Flathead,Screwdrivers,Chrome Vanadium Steel,Medium flathead screwdriver,General purpose assembly
+Flathead Screwdriver,6.5mm,Flathead,Screwdrivers,Chrome Vanadium Steel,Standard flathead screwdriver,General maintenance work
+Flathead Screwdriver,8mm,Flathead,Screwdrivers,Chrome Vanadium Steel,Large flathead screwdriver,Heavy assembly work
+Flathead Screwdriver,10mm,Flathead,Screwdrivers,Chrome Vanadium Steel,Heavy duty flathead screwdriver,Industrial assembly
+Flathead Screwdriver,12mm,Flathead,Screwdrivers,Chrome Vanadium Steel,Extra large flathead screwdriver,Heavy industrial work
+Flathead Screwdriver,14mm,Flathead,Screwdrivers,Chrome Vanadium Steel,Heavy duty large flathead,Industrial maintenance
+Flathead Screwdriver,16mm,Flathead,Screwdrivers,Chrome Vanadium Steel,Extra heavy duty flathead,Heavy machinery work
+Phillips Screwdriver,PH000,Phillips,Screwdrivers,Chrome Vanadium Steel,Micro Phillips screwdriver,Electronics/Watch repair
+Phillips Screwdriver,PH00,Phillips,Screwdrivers,Chrome Vanadium Steel,Extra small Phillips screwdriver,Electronics/Computer repair
+Phillips Screwdriver,PH0,Phillips,Screwdrivers,Chrome Vanadium Steel,Small Phillips screwdriver,Electronics/Small appliances
+Phillips Screwdriver,PH1,Phillips,Screwdrivers,Chrome Vanadium Steel,Standard Phillips screwdriver,General assembly work
+Phillips Screwdriver,PH2,Phillips,Screwdrivers,Chrome Vanadium Steel,Medium Phillips screwdriver,General maintenance
+Phillips Screwdriver,PH3,Phillips,Screwdrivers,Chrome Vanadium Steel,Large Phillips screwdriver,Heavy assembly work
+Phillips Screwdriver,PH4,Phillips,Screwdrivers,Chrome Vanadium Steel,Extra large Phillips screwdriver,Industrial assembly
+Phillips Screwdriver,PH5,Phillips,Screwdrivers,Chrome Vanadium Steel,Heavy duty Phillips screwdriver,Heavy industrial work
+Robertson Screwdriver,R1,Robertson,Screwdrivers,Chrome Vanadium Steel,Small Robertson square drive,Construction/Assembly
+Robertson Screwdriver,R2,Robertson,Screwdrivers,Chrome Vanadium Steel,Medium Robertson square drive,General construction
+Robertson Screwdriver,R3,Robertson,Screwdrivers,Chrome Vanadium Steel,Large Robertson square drive,Heavy construction
+Robertson Screwdriver,R4,Robertson,Screwdrivers,Chrome Vanadium Steel,Extra large Robertson square drive,Industrial construction
+Torx Screwdriver,T5,Torx,Screwdrivers,Chrome Vanadium Steel,Small Torx star screwdriver,Electronics/Automotive
+Torx Screwdriver,T10,Torx,Screwdrivers,Chrome Vanadium Steel,Medium small Torx screwdriver,Automotive/Electronics
+Torx Screwdriver,T15,Torx,Screwdrivers,Chrome Vanadium Steel,Standard Torx screwdriver,Automotive maintenance
+Torx Screwdriver,T20,Torx,Screwdrivers,Chrome Vanadium Steel,Medium Torx screwdriver,Automotive/Machinery
+Torx Screwdriver,T25,Torx,Screwdrivers,Chrome Vanadium Steel,Large Torx screwdriver,Heavy automotive work
+Torx Screwdriver,T30,Torx,Screwdrivers,Chrome Vanadium Steel,Extra large Torx screwdriver,Industrial machinery
+Torx Screwdriver,T40,Torx,Screwdrivers,Chrome Vanadium Steel,Heavy duty Torx screwdriver,Heavy machinery
+Torx Screwdriver,T50,Torx,Screwdrivers,Chrome Vanadium Steel,Industrial Torx screwdriver,Industrial equipment
+Hex Key Set,1.5mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Small hex Allen key,Electronics/Small machinery
+Hex Key Set,2mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Standard small hex key,General assembly
+Hex Key Set,2.5mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Medium small hex key,Machinery assembly
+Hex Key Set,3mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Standard hex key,General maintenance
+Hex Key Set,4mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Medium hex key,Machinery maintenance
+Hex Key Set,5mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Large hex key,Heavy assembly
+Hex Key Set,6mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Extra large hex key,Industrial assembly
+Hex Key Set,8mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Heavy duty hex key,Industrial machinery
+Hex Key Set,10mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Industrial hex key,Heavy industrial work
+Hex Key Set,12mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Extra heavy hex key,Heavy machinery
+Hex Key Set,14mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Large industrial hex key,Industrial equipment
+Hex Key Set,17mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Heavy industrial hex key,Heavy equipment
+Hex Key Set,19mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Extra large hex key,Heavy machinery
+Ball End Hex Set,1.5-10mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Ball end hex key set,Angled access work
+Long Arm Hex Set,1.5-10mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Long arm hex key set,Extended reach work
+T-Handle Hex Set,3-10mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,T-handle hex key set,High torque applications
+Folding Hex Set,1.5-8mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Folding hex key set,Portable maintenance
+Metric Hex Set,1.5-19mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Complete metric hex set,Metric machinery
+Imperial Hex Set,1/16-3/4",Hex Key,Screwdrivers,Chrome Vanadium Steel,Complete imperial hex set,Imperial machinery
+Security Hex Set,2-10mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Security hex with center pin,Tamper-resistant fasteners
+Torx Hex Set,T6-T50,Hex Key,Screwdrivers,Chrome Vanadium Steel,Torx hex key set,Torx fastener work
+Star Hex Set,T8-T40,Hex Key,Screwdrivers,Chrome Vanadium Steel,Star-shaped hex key set,Star fastener work
+Tamper-Proof Hex,2-10mm,Hex Key,Screwdrivers,Chrome Vanadium Steel,Tamper-proof hex key set,Security applications
+Combination Wrench,6mm,Combination,Wrenches,Chrome Vanadium Steel,Small combination wrench,Light assembly work
+Combination Wrench,7mm,Combination,Wrenches,Chrome Vanadium Steel,Small metric combination wrench,General assembly
+Combination Wrench,8mm,Combination,Wrenches,Chrome Vanadium Steel,Standard small combination wrench,Machinery maintenance
+Combination Wrench,9mm,Combination,Wrenches,Chrome Vanadium Steel,Medium small combination wrench,General maintenance
+Combination Wrench,10mm,Combination,Wrenches,Chrome Vanadium Steel,Standard combination wrench,General purpose work
+Combination Wrench,11mm,Combination,Wrenches,Chrome Vanadium Steel,Medium combination wrench,Automotive/Machinery
+Combination Wrench,12mm,Combination,Wrenches,Chrome Vanadium Steel,Standard medium combination wrench,General heavy work
+Combination Wrench,13mm,Combination,Wrenches,Chrome Vanadium Steel,Large combination wrench,Heavy assembly
+Combination Wrench,14mm,Combination,Wrenches,Chrome Vanadium Steel,Large metric combination wrench,Industrial work
+Combination Wrench,15mm,Combination,Wrenches,Chrome Vanadium Steel,Extra large combination wrench,Heavy machinery
+Combination Wrench,16mm,Combination,Wrenches,Chrome Vanadium Steel,Heavy duty combination wrench,Industrial assembly
+Combination Wrench,17mm,Combination,Wrenches,Chrome Vanadium Steel,Large industrial combination wrench,Heavy equipment
+Combination Wrench,18mm,Combination,Wrenches,Chrome Vanadium Steel,Extra heavy combination wrench,Industrial machinery
+Combination Wrench,19mm,Combination,Wrenches,Chrome Vanadium Steel,Heavy industrial combination wrench,Heavy industrial work
+Combination Wrench,20mm,Combination,Wrenches,Chrome Vanadium Steel,Large heavy duty combination wrench,Heavy equipment
+Combination Wrench,21mm,Combination,Wrenches,Chrome Vanadium Steel,Extra large combination wrench,Industrial equipment
+Combination Wrench,22mm,Combination,Wrenches,Chrome Vanadium Steel,Heavy duty large combination wrench,Heavy machinery
+Combination Wrench,24mm,Combination,Wrenches,Chrome Vanadium Steel,Industrial combination wrench,Industrial applications
+Combination Wrench,27mm,Combination,Wrenches,Chrome Vanadium Steel,Extra heavy combination wrench,Heavy industrial equipment
+Combination Wrench,30mm,Combination,Wrenches,Chrome Vanadium Steel,Large industrial combination wrench,Heavy equipment maintenance
+Combination Wrench,32mm,Combination,Wrenches,Chrome Vanadium Steel,Heavy industrial combination wrench,Industrial machinery
+Combination Wrench,36mm,Combination,Wrenches,Chrome Vanadium Steel,Extra large industrial wrench,Heavy equipment
+Imperial Wrench,1/4",Combination,Wrenches,Chrome Vanadium Steel,Small imperial combination wrench,Imperial fasteners
+Imperial Wrench,5/16",Combination,Wrenches,Chrome Vanadium Steel,Standard imperial combination wrench,General imperial work
+Imperial Wrench,3/8",Combination,Wrenches,Chrome Vanadium Steel,Medium imperial combination wrench,Automotive/Machinery
+Imperial Wrench,7/16",Combination,Wrenches,Chrome Vanadium Steel,Large imperial combination wrench,Heavy imperial work
+Imperial Wrench,1/2",Combination,Wrenches,Chrome Vanadium Steel,Standard large imperial wrench,Heavy assembly
+Imperial Wrench,9/16",Combination,Wrenches,Chrome Vanadium Steel,Extra large imperial wrench,Industrial imperial work
+Imperial Wrench,5/8",Combination,Wrenches,Chrome Vanadium Steel,Heavy duty imperial wrench,Heavy machinery
+Imperial Wrench,11/16",Combination,Wrenches,Chrome Vanadium Steel,Large heavy imperial wrench,Industrial equipment
+Imperial Wrench,3/4",Combination,Wrenches,Chrome Vanadium Steel,Extra heavy imperial wrench,Heavy industrial work
+Imperial Wrench,13/16",Combination,Wrenches,Chrome Vanadium Steel,Large industrial imperial wrench,Heavy equipment
+Imperial Wrench,7/8",Combination,Wrenches,Chrome Vanadium Steel,Heavy industrial imperial wrench,Industrial machinery
+Imperial Wrench,15/16",Combination,Wrenches,Chrome Vanadium Steel,Extra large imperial wrench,Heavy equipment
+Imperial Wrench,1",Combination,Wrenches,Chrome Vanadium Steel,Large one-inch combination wrench,Heavy industrial applications
+Imperial Wrench,1-1/16",Combination,Wrenches,Chrome Vanadium Steel,Extra large imperial wrench,Heavy equipment maintenance
+Imperial Wrench,1-1/8",Combination,Wrenches,Chrome Vanadium Steel,Heavy duty large imperial wrench,Industrial equipment
+Imperial Wrench,1-1/4",Combination,Wrenches,Chrome Vanadium Steel,Industrial large imperial wrench,Heavy machinery
+Open End Wrench,6mm,Open End,Wrenches,Chrome Vanadium Steel,Small open end wrench,Tight space access
+Open End Wrench,8mm,Open End,Wrenches,Chrome Vanadium Steel,Standard small open end wrench,General access work
+Open End Wrench,10mm,Open End,Wrenches,Chrome Vanadium Steel,Medium open end wrench,Standard access applications
+Open End Wrench,12mm,Open End,Wrenches,Chrome Vanadium Steel,Large open end wrench,Heavy access work
+Open End Wrench,14mm,Open End,Wrenches,Chrome Vanadium Steel,Extra large open end wrench,Industrial access work
+Open End Wrench,17mm,Open End,Wrenches,Chrome Vanadium Steel,Heavy duty open end wrench,Heavy machinery access
+Open End Wrench,19mm,Open End,Wrenches,Chrome Vanadium Steel,Large industrial open end wrench,Industrial equipment access
+Open End Wrench,22mm,Open End,Wrenches,Chrome Vanadium Steel,Heavy industrial open end wrench,Heavy equipment access
+Adjustable Wrench,6",Adjustable,Wrenches,Chrome Vanadium Steel,Small adjustable wrench,General purpose work
+Adjustable Wrench,8",Adjustable,Wrenches,Chrome Vanadium Steel,Standard adjustable wrench,General maintenance
+Adjustable Wrench,10",Adjustable,Wrenches,Chrome Vanadium Steel,Medium adjustable wrench,Standard maintenance work
+Adjustable Wrench,12",Adjustable,Wrenches,Chrome Vanadium Steel,Large adjustable wrench,Heavy maintenance
+Adjustable Wrench,15",Adjustable,Wrenches,Chrome Vanadium Steel,Extra large adjustable wrench,Industrial maintenance
+Adjustable Wrench,18",Adjustable,Wrenches,Chrome Vanadium Steel,Heavy duty adjustable wrench,Heavy industrial work
+Adjustable Wrench,24",Adjustable,Wrenches,Chrome Vanadium Steel,Industrial adjustable wrench,Heavy equipment work
+Adjustable Wrench,30",Adjustable,Wrenches,Chrome Vanadium Steel,Extra heavy adjustable wrench,Heavy machinery
+Pipe Wrench,8",Pipe Wrench,Wrenches,Cast Iron,Small pipe wrench,Small pipe work
+Pipe Wrench,10",Pipe Wrench,Wrenches,Cast Iron,Standard pipe wrench,General pipe work
+Pipe Wrench,12",Pipe Wrench,Wrenches,Cast Iron,Medium pipe wrench,Standard plumbing
+Pipe Wrench,14",Pipe Wrench,Wrenches,Cast Iron,Large pipe wrench,Heavy pipe work
+Pipe Wrench,18",Pipe Wrench,Wrenches,Cast Iron,Extra large pipe wrench,Industrial piping
+Pipe Wrench,24",Pipe Wrench,Wrenches,Cast Iron,Heavy duty pipe wrench,Heavy industrial piping
+Pipe Wrench,36",Pipe Wrench,Wrenches,Cast Iron,Industrial pipe wrench,Large industrial piping
+Pipe Wrench,48",Pipe Wrench,Wrenches,Cast Iron,Extra heavy pipe wrench,Heavy equipment piping
+Long Nose Pliers,4",Long Nose,Pliers,Chrome Vanadium Steel,Small long nose pliers,Precision work
+Long Nose Pliers,5",Long Nose,Pliers,Chrome Vanadium Steel,Standard long nose pliers,Electronics/Fine work
+Long Nose Pliers,6",Long Nose,Pliers,Chrome Vanadium Steel,Medium long nose pliers,General precision work
+Long Nose Pliers,7",Long Nose,Pliers,Chrome Vanadium Steel,Large long nose pliers,Heavy precision work
+Long Nose Pliers,8",Long Nose,Pliers,Chrome Vanadium Steel,Extra large long nose pliers,Industrial precision work
+Long Nose Pliers,10",Long Nose,Pliers,Chrome Vanadium Steel,Heavy duty long nose pliers,Heavy industrial work
+Side Cutters,4",Side Cutters,Pliers,Chrome Vanadium Steel,Small side cutting pliers,Wire cutting/Electronics
+Side Cutters,5",Side Cutters,Pliers,Chrome Vanadium Steel,Standard side cutters,General wire work
+Side Cutters,6",Side Cutters,Pliers,Chrome Vanadium Steel,Medium side cutters,Standard electrical work
+Side Cutters,7",Side Cutters,Pliers,Chrome Vanadium Steel,Large side cutters,Heavy wire work
+Side Cutters,8",Side Cutters,Pliers,Chrome Vanadium Steel,Extra large side cutters,Industrial wire work
+Side Cutters,10",Side Cutters,Pliers,Chrome Vanadium Steel,Heavy duty side cutters,Heavy electrical work
+Locking Pliers,5",Locking,Pliers,Chrome Vanadium Steel,Small locking pliers,Small gripping work
+Locking Pliers,7",Locking,Pliers,Chrome Vanadium Steel,Standard locking pliers,General gripping
+Locking Pliers,10",Locking,Pliers,Chrome Vanadium Steel,Large locking pliers,Heavy gripping work
+Locking Pliers,12",Locking,Pliers,Chrome Vanadium Steel,Extra large locking pliers,Industrial gripping
+Wire Strippers,6",Wire Strippers,Pliers,Chrome Vanadium Steel,Small wire strippers,Fine wire stripping
+Wire Strippers,8",Wire Strippers,Pliers,Chrome Vanadium Steel,Standard wire strippers,General electrical work
+Wire Strippers,10",Wire Strippers,Pliers,Chrome Vanadium Steel,Large wire strippers,Heavy electrical work
+Ball Peen Hammer,4oz,Ball Peen,Hammers,Carbon Steel,Small ball peen hammer,Light metalworking
+Ball Peen Hammer,8oz,Ball Peen,Hammers,Carbon Steel,Standard ball peen hammer,General metalworking
+Ball Peen Hammer,12oz,Ball Peen,Hammers,Carbon Steel,Medium ball peen hammer,Standard metalwork
+Ball Peen Hammer,16oz,Ball Peen,Hammers,Carbon Steel,Large ball peen hammer,Heavy metalworking
+Ball Peen Hammer,24oz,Ball Peen,Hammers,Carbon Steel,Extra large ball peen hammer,Industrial metalwork
+Ball Peen Hammer,32oz,Ball Peen,Hammers,Carbon Steel,Heavy duty ball peen hammer,Heavy industrial metalwork
+Claw Hammer,8oz,Claw,Hammers,Carbon Steel,Small claw hammer,Light construction
+Claw Hammer,12oz,Claw,Hammers,Carbon Steel,Standard claw hammer,General construction
+Claw Hammer,16oz,Claw,Hammers,Carbon Steel,Medium claw hammer,Standard carpentry
+Claw Hammer,20oz,Claw,Hammers,Carbon Steel,Large claw hammer,Heavy construction
+Claw Hammer,24oz,Claw,Hammers,Carbon Steel,Extra large claw hammer,Heavy carpentry work
+Dead Blow Hammer,1lb,Dead Blow,Hammers,Steel/Polyurethane,Small dead blow hammer,Precision assembly
+Dead Blow Hammer,2lb,Dead Blow,Hammers,Steel/Polyurethane,Standard dead blow hammer,General assembly
+Dead Blow Hammer,3lb,Dead Blow,Hammers,Steel/Polyurethane,Medium dead blow hammer,Heavy assembly
+Dead Blow Hammer,4lb,Dead Blow,Hammers,Steel/Polyurethane,Large dead blow hammer,Industrial assembly
+Dead Blow Hammer,5lb,Dead Blow,Hammers,Steel/Polyurethane,Extra large dead blow hammer,Heavy industrial assembly
+Sledge Hammer,2lb,Sledge,Hammers,Carbon Steel,Small sledge hammer,Light demolition
+Sledge Hammer,3lb,Sledge,Hammers,Carbon Steel,Standard sledge hammer,General demolition
+Sledge Hammer,4lb,Sledge,Hammers,Carbon Steel,Medium sledge hammer,Standard heavy work
+Sledge Hammer,6lb,Sledge,Hammers,Carbon Steel,Large sledge hammer,Heavy demolition
+Sledge Hammer,8lb,Sledge,Hammers,Carbon Steel,Extra large sledge hammer,Heavy industrial demolition
+Sledge Hammer,10lb,Sledge,Hammers,Carbon Steel,Heavy duty sledge hammer,Industrial demolition
+Sledge Hammer,12lb,Sledge,Hammers,Carbon Steel,Industrial sledge hammer,Heavy equipment work
+Sledge Hammer,16lb,Sledge,Hammers,Carbon Steel,Extra heavy sledge hammer,Heavy industrial demolition
+Cold Chisel,1/4",Cold Chisel,Chisels,Carbon Steel,Small cold chisel,Light metal cutting
+Cold Chisel,3/8",Cold Chisel,Chisels,Carbon Steel,Standard cold chisel,General metal cutting
+Cold Chisel,1/2",Cold Chisel,Chisels,Carbon Steel,Medium cold chisel,Standard metalwork
+Cold Chisel,5/8",Cold Chisel,Chisels,Carbon Steel,Large cold chisel,Heavy metal cutting
+Cold Chisel,3/4",Cold Chisel,Chisels,Carbon Steel,Extra large cold chisel,Industrial metal cutting
+Cold Chisel,1",Cold Chisel,Chisels,Carbon Steel,Heavy duty cold chisel,Heavy industrial metalwork
+Center Punch,1/8",Center Punch,Punches,Carbon Steel,Small center punch,Light marking work
+Center Punch,3/16",Center Punch,Punches,Carbon Steel,Standard center punch,General marking
+Center Punch,1/4",Center Punch,Punches,Carbon Steel,Medium center punch,Standard metalwork
+Center Punch,5/16",Center Punch,Punches,Carbon Steel,Large center punch,Heavy marking work
+Center Punch,3/8",Center Punch,Punches,Carbon Steel,Extra large center punch,Industrial marking
+Pin Punch,1/16",Pin Punch,Punches,Carbon Steel,Small pin punch,Fine pin removal
+Pin Punch,3/32",Pin Punch,Punches,Carbon Steel,Standard small pin punch,General pin work
+Pin Punch,1/8",Pin Punch,Punches,Carbon Steel,Medium pin punch,Standard pin removal
+Pin Punch,5/32",Pin Punch,Punches,Carbon Steel,Large pin punch,Heavy pin work
+Pin Punch,3/16",Pin Punch,Punches,Carbon Steel,Extra large pin punch,Industrial pin removal
+Pin Punch,1/4",Pin Punch,Punches,Carbon Steel,Heavy duty pin punch,Heavy industrial pin work
+Drift Punch,1/8",Drift Punch,Punches,Carbon Steel,Small drift punch,Light alignment work
+Drift Punch,3/16",Drift Punch,Punches,Carbon Steel,Standard drift punch,General alignment
+Drift Punch,1/4",Drift Punch,Punches,Carbon Steel,Medium drift punch,Standard alignment work
+Drift Punch,5/16",Drift Punch,Punches,Carbon Steel,Large drift punch,Heavy alignment work
+Drift Punch,3/8",Drift Punch,Punches,Carbon Steel,Extra large drift punch,Industrial alignment
+Mill File,4",Mill File,Files,Carbon Steel,Small mill file,Fine metalworking
+Mill File,6",Mill File,Files,Carbon Steel,Standard mill file,General metalworking
+Mill File,8",Mill File,Files,Carbon Steel,Medium mill file,Standard metal finishing
+Mill File,10",Mill File,Files,Carbon Steel,Large mill file,Heavy metalworking
+Mill File,12",Mill File,Files,Carbon Steel,Extra large mill file,Industrial metalworking
+Mill File,14",Mill File,Files,Carbon Steel,Heavy duty mill file,Heavy industrial metalwork
+Flat File,4",Flat File,Files,Carbon Steel,Small flat file,Fine flat surfaces
+Flat File,6",Flat File,Files,Carbon Steel,Standard flat file,General flat work
+Flat File,8",Flat File,Files,Carbon Steel,Medium flat file,Standard flat finishing
+Flat File,10",Flat File,Files,Carbon Steel,Large flat file,Heavy flat work
+Flat File,12",Flat File,Files,Carbon Steel,Extra large flat file,Industrial flat work
+Round File,4",Round File,Files,Carbon Steel,Small round file,Fine round surfaces
+Round File,6",Round File,Files,Carbon Steel,Standard round file,General round work
+Round File,8",Round File,Files,Carbon Steel,Medium round file,Standard round finishing
+Round File,10",Round File,Files,Carbon Steel,Large round file,Heavy round work
+Half Round File,4",Half Round File,Files,Carbon Steel,Small half round file,Fine curved surfaces
+Half Round File,6",Half Round File,Files,Carbon Steel,Standard half round file,General curved work
+Half Round File,8",Half Round File,Files,Carbon Steel,Medium half round file,Standard curved finishing
+Half Round File,10",Half Round File,Files,Carbon Steel,Large half round file,Heavy curved work
+Square File,4",Square File,Files,Carbon Steel,Small square file,Fine square holes
+Square File,6",Square File,Files,Carbon Steel,Standard square file,General square work
+Square File,8",Square File,Files,Carbon Steel,Medium square file,Standard square finishing
+Triangular File,4",Triangular File,Files,Carbon Steel,Small triangular file,Fine angular work
+Triangular File,6",Triangular File,Files,Carbon Steel,Standard triangular file,General angular work
+Triangular File,8",Triangular File,Files,Carbon Steel,Medium triangular file,Standard angular finishing
+Needle Files,4",Needle Files,Files,Carbon Steel,Small needle file set,Precision fine work
+Needle Files,6",Needle Files,Files,Carbon Steel,Standard needle file set,General precision work
+Steel Rule,6",Steel Rule,Measuring,Stainless Steel,Small steel ruler,Precision measuring
+Steel Rule,12",Steel Rule,Measuring,Stainless Steel,Standard steel ruler,General measuring
+Steel Rule,18",Steel Rule,Measuring,Stainless Steel,Medium steel ruler,Standard measuring work
+Steel Rule,24",Steel Rule,Measuring,Stainless Steel,Large steel ruler,Heavy measuring work
+Steel Rule,36",Steel Rule,Measuring,Stainless Steel,Extra large steel ruler,Industrial measuring
+Steel Rule,48",Steel Rule,Measuring,Stainless Steel,Heavy duty steel ruler,Heavy industrial measuring
+Steel Rule,72",Steel Rule,Measuring,Stainless Steel,Industrial steel ruler,Large industrial measuring
+Folding Rule,6ft,Folding Rule,Measuring,Wood/Brass,Standard folding rule,Construction measuring
+Folding Rule,8ft,Folding Rule,Measuring,Wood/Brass,Large folding rule,Heavy construction measuring
+Tape Measure,12ft,Tape Measure,Measuring,Steel,Small tape measure,General measuring
+Tape Measure,16ft,Tape Measure,Measuring,Steel,Standard tape measure,Standard measuring work
+Tape Measure,25ft,Tape Measure,Measuring,Steel,Medium tape measure,General construction
+Tape Measure,30ft,Tape Measure,Measuring,Steel,Large tape measure,Heavy construction
+Tape Measure,50ft,Tape Measure,Measuring,Steel,Extra large tape measure,Industrial measuring
+Tape Measure,100ft,Tape Measure,Measuring,Steel,Heavy duty tape measure,Heavy industrial measuring
+Outside Calipers,4",Outside Calipers,Measuring,Stainless Steel,Small outside calipers,Precision external measuring
+Outside Calipers,6",Outside Calipers,Measuring,Stainless Steel,Standard outside calipers,General external measuring
+Outside Calipers,8",Outside Calipers,Measuring,Stainless Steel,Large outside calipers,Heavy external measuring
+Inside Calipers,4",Inside Calipers,Measuring,Stainless Steel,Small inside calipers,Precision internal measuring
+Inside Calipers,6",Inside Calipers,Measuring,Stainless Steel,Standard inside calipers,General internal measuring
+Inside Calipers,8",Inside Calipers,Measuring,Stainless Steel,Large inside calipers,Heavy internal measuring
+Dividers,4",Dividers,Measuring,Stainless Steel,Small dividers,Precision scribing
+Dividers,6",Dividers,Measuring,Stainless Steel,Standard dividers,General scribing work
+Dividers,8",Dividers,Measuring,Stainless Steel,Large dividers,Heavy scribing work
+Outside Micrometer,0-1",Outside Micrometer,Measuring,Stainless Steel,Small outside micrometer,Precision external measurement
+Outside Micrometer,1-2",Outside Micrometer,Measuring,Stainless Steel,Medium outside micrometer,Standard external measurement
+Outside Micrometer,2-3",Outside Micrometer,Measuring,Stainless Steel,Large outside micrometer,Heavy external measurement
+Outside Micrometer,3-4",Outside Micrometer,Measuring,Stainless Steel,Extra large outside micrometer,Industrial external measurement
+Outside Micrometer,4-5",Outside Micrometer,Measuring,Stainless Steel,Heavy duty outside micrometer,Heavy industrial measurement
+Outside Micrometer,5-6",Outside Micrometer,Measuring,Stainless Steel,Industrial outside micrometer,Large industrial measurement
+Dial Calipers,6",Dial Calipers,Measuring,Stainless Steel,Standard dial calipers,Precision measuring
+Dial Calipers,8",Dial Calipers,Measuring,Stainless Steel,Large dial calipers,Heavy precision measuring
+Digital Calipers,6",Digital Calipers,Measuring,Stainless Steel,Standard digital calipers,Digital precision measuring
+Digital Calipers,8",Digital Calipers,Measuring,Stainless Steel,Large digital calipers,Heavy digital measuring
+Depth Gauge,4",Depth Gauge,Measuring,Stainless Steel,Small depth gauge,Precision depth measuring
+Depth Gauge,6",Depth Gauge,Measuring,Stainless Steel,Standard depth gauge,General depth measuring
+Depth Gauge,8",Depth Gauge,Measuring,Stainless Steel,Large depth gauge,Heavy depth measuring
+Thread Gauge,Metric,Thread Gauge,Measuring,Stainless Steel,Metric thread gauge,Metric thread checking
+Thread Gauge,Imperial,Thread Gauge,Measuring,Stainless Steel,Imperial thread gauge,Imperial thread checking
+Feeler Gauge,0.002-0.025",Feeler Gauge,Measuring,Stainless Steel,Standard feeler gauge set,Gap measuring
+Thickness Gauge,0.001-0.1",Thickness Gauge,Measuring,Stainless Steel,Precision thickness gauge,Material thickness measuring
+Try Square,4",Try Square,Measuring,Steel,Small try square,Precision squareness checking
+Try Square,6",Try Square,Measuring,Steel,Standard try square,General squareness checking
+Try Square,8",Try Square,Measuring,Steel,Medium try square,Standard square checking
+Try Square,12",Try Square,Measuring,Steel,Large try square,Heavy square checking
+Combination Square,12",Combination Square,Measuring,Steel,Standard combination square,Multi-purpose measuring
+Combination Square,18",Combination Square,Measuring,Steel,Large combination square,Heavy multi-purpose measuring
+Utility Knife,Standard,Utility Knife,Cutting,Steel,Standard utility knife,General cutting work
+Box Cutter,Standard,Box Cutter,Cutting,Steel,Standard box cutter,Cardboard/Packaging cutting
+Snips,6",Snips,Cutting,Steel,Small snips,Light sheet metal cutting
+Snips,8",Snips,Cutting,Steel,Standard snips,General sheet metal cutting
+Snips,10",Snips,Cutting,Steel,Large snips,Heavy sheet metal cutting
+Aviation Snips,10",Aviation Snips,Cutting,Steel,Standard aviation snips,Precision sheet metal cutting
+Tin Snips,10",Tin Snips,Cutting,Steel,Standard tin snips,Tin sheet cutting
+Hacksaw,12",Hacksaw,Cutting,Steel,Standard hacksaw,General metal cutting
+Mini Hacksaw,6",Mini Hacksaw,Cutting,Steel,Small hacksaw,Precision metal cutting
+Coping Saw,6",Coping Saw,Cutting,Steel,Standard coping saw,Curved cutting work
+Jeweler's Saw,4",Jeweler's Saw,Cutting,Steel,Precision jeweler's saw,Fine precision cutting
+Awl,4",Awl,Marking,Carbon Steel,Small awl,Precision marking
+Awl,6",Awl,Marking,Carbon Steel,Standard awl,General marking work
+Awl,8",Awl,Marking,Carbon Steel,Large awl,Heavy marking work
+Scribe,4",Scribe,Marking,Carbon Steel,Small scribe,Precision scribing
+Scribe,6",Scribe,Marking,Carbon Steel,Standard scribe,General scribing work
+Pick Set,4pc,Pick Set,Specialty,Carbon Steel,Small pick set,Precision picking work
+Hook and Pick,6",Hook and Pick,Specialty,Carbon Steel,Standard hook and pick,General picking work
+Magnetic Pick-up,24",Magnetic Pick-up,Specialty,Steel/Magnet,Standard magnetic pick-up,Retrieving metal objects
+Magnetic Pick-up,36",Magnetic Pick-up,Specialty,Steel/Magnet,Large magnetic pick-up,Heavy metal object retrieval
+Inspection Mirror,3",Inspection Mirror,Specialty,Steel/Glass,Small inspection mirror,Tight space inspection
+Inspection Mirror,4",Inspection Mirror,Specialty,Steel/Glass,Standard inspection mirror,General inspection work
+Inspection Mirror,6",Inspection Mirror,Specialty,Steel/Glass,Large inspection mirror,Heavy inspection work
+Pry Bar,12",Pry Bar,Prying,Carbon Steel,Small pry bar,Light prying work
+Pry Bar,18",Pry Bar,Prying,Carbon Steel,Standard pry bar,General prying
+Pry Bar,24",Pry Bar,Prying,Carbon Steel,Medium pry bar,Standard prying work
+Pry Bar,36",Pry Bar,Prying,Carbon Steel,Large pry bar,Heavy prying work
+Crowbar,18",Crowbar,Prying,Carbon Steel,Standard crowbar,General demolition
+Crowbar,24",Crowbar,Prying,Carbon Steel,Medium crowbar,Standard demolition work
+Crowbar,36",Crowbar,Prying,Carbon Steel,Large crowbar,Heavy demolition work
+Wrecking Bar,24",Wrecking Bar,Prying,Carbon Steel,Standard wrecking bar,Demolition work
+Nail Puller,12",Nail Puller,Prying,Carbon Steel,Standard nail puller,Nail removal
+Cat's Paw,8",Cat's Paw,Prying,Carbon Steel,Standard cat's paw,Precision nail removal
+Oil Can,8oz,Oil Can,Lubrication,Steel,Small oil can,Light lubrication
+Grease Gun,Standard,Grease Gun,Lubrication,Steel,Standard grease gun,General lubrication
+Grease Gun,Heavy Duty,Grease Gun,Lubrication,Steel,Heavy duty grease gun,Industrial lubrication
+Cordless Drill,12V,Cordless,Power Tools,Steel/Plastic,Compact cordless drill,Light drilling/driving
+Cordless Drill,18V,Cordless,Power Tools,Steel/Plastic,Standard cordless drill,General drilling/driving
+Cordless Drill,20V,Cordless,Power Tools,Steel/Plastic,Heavy duty cordless drill,Heavy drilling/driving
+Cordless Drill,24V,Cordless,Power Tools,Steel/Plastic,Professional cordless drill,Professional drilling/driving
+Impact Driver,12V,Impact,Power Tools,Steel/Plastic,Compact impact driver,Light fastening
+Impact Driver,18V,Impact,Power Tools,Steel/Plastic,Standard impact driver,General fastening
+Impact Driver,20V,Impact,Power Tools,Steel/Plastic,Heavy duty impact driver,Heavy fastening
+Impact Driver,24V,Impact,Power Tools,Steel/Plastic,Professional impact driver,Professional fastening
+Angle Grinder,4.5",Angle Grinder,Power Tools,Steel/Plastic,Small angle grinder,Light grinding/cutting
+Angle Grinder,5",Angle Grinder,Power Tools,Steel/Plastic,Standard angle grinder,General grinding/cutting
+Angle Grinder,7",Angle Grinder,Power Tools,Steel/Plastic,Large angle grinder,Heavy grinding/cutting
+Angle Grinder,9",Angle Grinder,Power Tools,Steel/Plastic,Industrial angle grinder,Industrial grinding/cutting
+Circular Saw,6.5",Circular Saw,Power Tools,Steel/Plastic,Compact circular saw,Light wood cutting
+Circular Saw,7.25",Circular Saw,Power Tools,Steel/Plastic,Standard circular saw,General wood cutting
+Circular Saw,8.25",Circular Saw,Power Tools,Steel/Plastic,Large circular saw,Heavy wood cutting
+Circular Saw,10.25",Circular Saw,Power Tools,Steel/Plastic,Industrial circular saw,Industrial wood cutting
+Reciprocating Saw,Standard,Reciprocating Saw,Power Tools,Steel/Plastic,Standard reciprocating saw,Demolition cutting
+Jigsaw,Standard,Jigsaw,Power Tools,Steel/Plastic,Standard jigsaw,Curved cutting
+Band Saw,Portable,Band Saw,Power Tools,Steel/Plastic,Portable band saw,Metal cutting
+Rotary Hammer,1/2",Rotary Hammer,Power Tools,Steel/Plastic,Small rotary hammer,Light concrete drilling
+Rotary Hammer,3/4",Rotary Hammer,Power Tools,Steel/Plastic,Standard rotary hammer,General concrete drilling
+Rotary Hammer,1",Rotary Hammer,Power Tools,Steel/Plastic,Large rotary hammer,Heavy concrete drilling
+Rotary Hammer,1.5",Rotary Hammer,Power Tools,Steel/Plastic,Industrial rotary hammer,Industrial concrete drilling
+Demolition Hammer,35lb,Demolition Hammer,Power Tools,Steel,Standard demolition hammer,Concrete demolition
+Demolition Hammer,65lb,Demolition Hammer,Power Tools,Steel,Heavy demolition hammer,Heavy concrete demolition
+Heat Gun,1500W,Heat Gun,Power Tools,Steel/Plastic,Standard heat gun,Heat shrinking/paint removal
+Heat Gun,2000W,Heat Gun,Power Tools,Steel/Plastic,Heavy duty heat gun,Industrial heating applications
+Soldering Iron,25W,Soldering Iron,Power Tools,Steel/Plastic,Low power soldering iron,Electronics soldering
+Soldering Iron,40W,Soldering Iron,Power Tools,Steel/Plastic,Standard soldering iron,General soldering
+Soldering Iron,60W,Soldering Iron,Power Tools,Steel/Plastic,High power soldering iron,Heavy soldering
+Soldering Iron,100W,Soldering Iron,Power Tools,Steel/Plastic,Industrial soldering iron,Industrial soldering
+Router,1.25HP,Router,Power Tools,Steel/Plastic,Standard router,Wood shaping
+Router,2.25HP,Router,Power Tools,Steel/Plastic,Heavy duty router,Industrial wood shaping
+Planer,6",Planer,Power Tools,Steel/Plastic,Small planer,Light wood planing
+Planer,12",Planer,Power Tools,Steel/Plastic,Standard planer,General wood planing
+Orbital Sander,1/4 Sheet,Orbital Sander,Power Tools,Steel/Plastic,Standard orbital sander,Wood finishing
+Belt Sander,3x18,Belt Sander,Power Tools,Steel/Plastic,Standard belt sander,Heavy wood sanding
+Belt Sander,3x21,Belt Sander,Power Tools,Steel/Plastic,Large belt sander,Industrial wood sanding
+Random Orbit Sander,5",Random Orbit Sander,Power Tools,Steel/Plastic,Standard random orbit sander,Fine wood finishing
+Random Orbit Sander,6",Random Orbit Sander,Power Tools,Steel/Plastic,Large random orbit sander,Heavy wood finishing
+Oscillating Multi-Tool,Standard,Oscillating Tool,Power Tools,Steel/Plastic,Standard oscillating tool,Multi-purpose cutting/sanding
+Air Compressor,6 Gallon,Air Compressor,Pneumatic Tools,Steel,Small air compressor,Light pneumatic work
+Air Compressor,20 Gallon,Air Compressor,Pneumatic Tools,Steel,Standard air compressor,General pneumatic work
+Air Compressor,60 Gallon,Air Compressor,Pneumatic Tools,Steel,Large air compressor,Heavy pneumatic work
+Air Compressor,80 Gallon,Air Compressor,Pneumatic Tools,Steel,Industrial air compressor,Industrial pneumatic work
+Air Impact Wrench,1/2",Air Impact Wrench,Pneumatic Tools,Steel,Standard air impact wrench,Heavy fastening
+Air Impact Wrench,3/4",Air Impact Wrench,Pneumatic Tools,Steel,Large air impact wrench,Industrial fastening
+Air Impact Wrench,1",Air Impact Wrench,Pneumatic Tools,Steel,Heavy duty air impact wrench,Heavy industrial fastening
+Air Ratchet,3/8",Air Ratchet,Pneumatic Tools,Steel,Standard air ratchet,Tight space fastening
+Air Ratchet,1/2",Air Ratchet,Pneumatic Tools,Steel,Large air ratchet,Heavy tight space fastening
+Air Drill,3/8",Air Drill,Pneumatic Tools,Steel,Standard air drill,General drilling
+Air Drill,1/2",Air Drill,Pneumatic Tools,Steel,Large air drill,Heavy drilling
+Air Grinder,4",Air Grinder,Pneumatic Tools,Steel,Small air grinder,Light grinding
+Air Grinder,6",Air Grinder,Pneumatic Tools,Steel,Standard air grinder,General grinding
+Air Grinder,7",Air Grinder,Pneumatic Tools,Steel,Large air grinder,Heavy grinding
+Air Sander,5",Air Sander,Pneumatic Tools,Steel,Standard air sander,General sanding
+Air Sander,6",Air Sander,Pneumatic Tools,Steel,Large air sander,Heavy sanding
+Air Hammer,Standard,Air Hammer,Pneumatic Tools,Steel,Standard air hammer,General demolition
+Air Chisel,Standard,Air Chisel,Pneumatic Tools,Steel,Standard air chisel,Metal cutting/chipping
+Air File,Standard,Air File,Pneumatic Tools,Steel,Standard air file,Precision filing
+Air Needle Scaler,Standard,Air Needle Scaler,Pneumatic Tools,Steel,Standard needle scaler,Surface preparation
+Blow Gun,Standard,Blow Gun,Pneumatic Tools,Steel/Plastic,Standard blow gun,Cleaning/drying
+Hydraulic Jack,2 Ton,Hydraulic Jack,Hydraulic Tools,Steel,Small hydraulic jack,Light lifting
+Hydraulic Jack,4 Ton,Hydraulic Jack,Hydraulic Tools,Steel,Standard hydraulic jack,General lifting
+Hydraulic Jack,6 Ton,Hydraulic Jack,Hydraulic Tools,Steel,Medium hydraulic jack,Heavy lifting
+Hydraulic Jack,10 Ton,Hydraulic Jack,Hydraulic Tools,Steel,Large hydraulic jack,Industrial lifting
+Hydraulic Jack,20 Ton,Hydraulic Jack,Hydraulic Tools,Steel,Heavy duty hydraulic jack,Heavy industrial lifting
+Hydraulic Jack,50 Ton,Hydraulic Jack,Hydraulic Tools,Steel,Industrial hydraulic jack,Extreme heavy lifting
+Floor Jack,2 Ton,Floor Jack,Hydraulic Tools,Steel,Small floor jack,Light vehicle lifting
+Floor Jack,3 Ton,Floor Jack,Hydraulic Tools,Steel,Standard floor jack,General vehicle lifting
+Floor Jack,4 Ton,Floor Jack,Hydraulic Tools,Steel,Large floor jack,Heavy vehicle lifting
+Floor Jack,6 Ton,Floor Jack,Hydraulic Tools,Steel,Heavy duty floor jack,Industrial vehicle lifting
+Bottle Jack,2 Ton,Bottle Jack,Hydraulic Tools,Steel,Small bottle jack,Compact lifting
+Bottle Jack,4 Ton,Bottle Jack,Hydraulic Tools,Steel,Standard bottle jack,General compact lifting
+Bottle Jack,6 Ton,Bottle Jack,Hydraulic Tools,Steel,Large bottle jack,Heavy compact lifting
+Bottle Jack,12 Ton,Bottle Jack,Hydraulic Tools,Steel,Heavy duty bottle jack,Industrial compact lifting
+Hydraulic Press,10 Ton,Hydraulic Press,Hydraulic Tools,Steel,Small hydraulic press,Light pressing work
+Hydraulic Press,20 Ton,Hydraulic Press,Hydraulic Tools,Steel,Standard hydraulic press,General pressing
+Hydraulic Press,50 Ton,Hydraulic Press,Hydraulic Tools,Steel,Large hydraulic press,Heavy pressing
+Hydraulic Press,100 Ton,Hydraulic Press,Hydraulic Tools,Steel,Industrial hydraulic press,Industrial pressing
+Hydraulic Puller,3 Jaw,Hydraulic Puller,Hydraulic Tools,Steel,Standard hydraulic puller,Bearing/gear removal
+Hydraulic Puller,2 Jaw,Hydraulic Puller,Hydraulic Tools,Steel,Two jaw hydraulic puller,Tight space pulling
+Hydraulic Cylinder,2",Hydraulic Cylinder,Hydraulic Tools,Steel,Small hydraulic cylinder,Light hydraulic work
+Hydraulic Cylinder,4",Hydraulic Cylinder,Hydraulic Tools,Steel,Standard hydraulic cylinder,General hydraulic work
+Hydraulic Cylinder,6",Hydraulic Cylinder,Hydraulic Tools,Steel,Large hydraulic cylinder,Heavy hydraulic work
+Hydraulic Cylinder,8",Hydraulic Cylinder,Hydraulic Tools,Steel,Heavy duty hydraulic cylinder,Industrial hydraulic work
+Hydraulic Pump,Manual,Hydraulic Pump,Hydraulic Tools,Steel,Manual hydraulic pump,Portable hydraulic power
+Hydraulic Pump,Electric,Hydraulic Pump,Hydraulic Tools,Steel,Electric hydraulic pump,Stationary hydraulic power
+Hydraulic Hose,1/4",Hydraulic Hose,Hydraulic Tools,Rubber/Steel,Small hydraulic hose,Light hydraulic connections
+Hydraulic Hose,3/8",Hydraulic Hose,Hydraulic Tools,Rubber/Steel,Standard hydraulic hose,General hydraulic connections
+Hydraulic Hose,1/2",Hydraulic Hose,Hydraulic Tools,Rubber/Steel,Large hydraulic hose,Heavy hydraulic connections
+Hydraulic Hose,3/4",Hydraulic Hose,Hydraulic Tools,Rubber/Steel,Heavy duty hydraulic hose,Industrial hydraulic connections
+MIG Welder,110V,MIG Welder,Welding Equipment,Steel/Electronics,Small MIG welder,Light welding
+MIG Welder,220V,MIG Welder,Welding Equipment,Steel/Electronics,Standard MIG welder,General welding
+MIG Welder,440V,MIG Welder,Welding Equipment,Steel/Electronics,Industrial MIG welder,Industrial welding
+TIG Welder,110V,TIG Welder,Welding Equipment,Steel/Electronics,Small TIG welder,Precision welding
+TIG Welder,220V,TIG Welder,Welding Equipment,Steel/Electronics,Standard TIG welder,General precision welding
+TIG Welder,440V,TIG Welder,Welding Equipment,Steel/Electronics,Industrial TIG welder,Industrial precision welding
+Stick Welder,110V,Stick Welder,Welding Equipment,Steel/Electronics,Small stick welder,Light stick welding
+Stick Welder,220V,Stick Welder,Welding Equipment,Steel/Electronics,Standard stick welder,General stick welding
+Stick Welder,440V,Stick Welder,Welding Equipment,Steel/Electronics,Industrial stick welder,Industrial stick welding
+Plasma Cutter,40A,Plasma Cutter,Welding Equipment,Steel/Electronics,Small plasma cutter,Light metal cutting
+Plasma Cutter,80A,Plasma Cutter,Welding Equipment,Steel/Electronics,Standard plasma cutter,General metal cutting
+Plasma Cutter,120A,Plasma Cutter,Welding Equipment,Steel/Electronics,Large plasma cutter,Heavy metal cutting
+Plasma Cutter,200A,Plasma Cutter,Welding Equipment,Steel/Electronics,Industrial plasma cutter,Industrial metal cutting
+Oxy-Acetylene Torch,Standard,Oxy-Acetylene Torch,Welding Equipment,Steel/Brass,Standard cutting torch,Metal cutting/heating
+Propane Torch,Standard,Propane Torch,Welding Equipment,Steel/Brass,Standard propane torch,Light heating/soldering
+Welding Helmet,Auto-Darkening,Welding Helmet,Welding Equipment,Plastic/Electronics,Auto-darkening helmet,Welding protection
+Welding Helmet,Fixed Shade,Welding Helmet,Welding Equipment,Plastic,Fixed shade helmet,Basic welding protection
+Welding Gloves,Standard,Welding Gloves,Welding Equipment,Leather,Standard welding gloves,Hand protection
+Welding Gloves,Heavy Duty,Welding Gloves,Welding Equipment,Leather,Heavy duty welding gloves,Heavy welding protection
+Welding Rods,6010,Welding Rods,Welding Equipment,Steel,6010 welding electrodes,Deep penetration welding
+Welding Rods,6011,Welding Rods,Welding Equipment,Steel,6011 welding electrodes,All position welding
+Welding Rods,6013,Welding Rods,Welding Equipment,Steel,6013 welding electrodes,Light to medium welding
+Welding Rods,7018,Welding Rods,Welding Equipment,Steel,7018 welding electrodes,Structural welding
+Welding Wire,ER70S-6,Welding Wire,Welding Equipment,Steel,MIG welding wire,General MIG welding
+Welding Wire,ER308L,Welding Wire,Welding Equipment,Stainless Steel,Stainless MIG wire,Stainless steel welding
+Welding Wire,ER4043,Welding Wire,Welding Equipment,Aluminum,Aluminum MIG wire,Aluminum welding
+TIG Rods,ER70S-2,TIG Rods,Welding Equipment,Steel,Steel TIG rods,Steel TIG welding
+TIG Rods,ER308L,TIG Rods,Welding Equipment,Stainless Steel,Stainless TIG rods,Stainless steel TIG welding
+TIG Rods,ER4043,TIG Rods,Welding Equipment,Aluminum,Aluminum TIG rods,Aluminum TIG welding
+Welding Clamps,2",Welding Clamps,Welding Equipment,Steel,Small welding clamps,Light clamping
+Welding Clamps,4",Welding Clamps,Welding Equipment,Steel,Standard welding clamps,General clamping
+Welding Clamps,6",Welding Clamps,Welding Equipment,Steel,Large welding clamps,Heavy clamping
+Welding Table,2x3 ft,Welding Table,Welding Equipment,Steel,Small welding table,Light welding work
+Welding Table,3x5 ft,Welding Table,Welding Equipment,Steel,Standard welding table,General welding work
+Welding Table,4x8 ft,Welding Table,Welding Equipment,Steel,Large welding table,Heavy welding work
+Chipping Hammer,Standard,Chipping Hammer,Welding Equipment,Steel,Standard chipping hammer,Slag removal
+Wire Brush,Standard,Wire Brush,Welding Equipment,Steel,Standard wire brush,Cleaning/preparation
+Multimeter,Digital,Digital Multimeter,Testing Equipment,Plastic/Electronics,Digital multimeter,Electrical testing/troubleshooting
+Multimeter,Analog,Analog Multimeter,Testing Equipment,Plastic/Electronics,Analog multimeter,Basic electrical testing
+Clamp Meter,Standard,Clamp Meter,Testing Equipment,Plastic/Electronics,Standard clamp meter,Current measurement
+Clamp Meter,True RMS,True RMS Clamp Meter,Testing Equipment,Plastic/Electronics,True RMS clamp meter,Accurate AC measurement
+Oscilloscope,2 Channel,Oscilloscope,Testing Equipment,Plastic/Electronics,2 channel oscilloscope,Waveform analysis
+Oscilloscope,4 Channel,Oscilloscope,Testing Equipment,Plastic/Electronics,4 channel oscilloscope,Complex waveform analysis
+Function Generator,Standard,Function Generator,Testing Equipment,Plastic/Electronics,Standard function generator,Signal generation
+Power Supply,Variable,Variable Power Supply,Testing Equipment,Plastic/Electronics,Variable DC power supply,Circuit testing/powering
+Insulation Tester,1000V,Insulation Tester,Testing Equipment,Plastic/Electronics,1000V insulation tester,Insulation testing
+Insulation Tester,5000V,Insulation Tester,Testing Equipment,Plastic/Electronics,5000V insulation tester,High voltage insulation testing
+Ground Resistance Tester,Standard,Ground Resistance Tester,Testing Equipment,Plastic/Electronics,Ground resistance tester,Grounding system testing
+Phase Sequence Tester,Standard,Phase Sequence Tester,Testing Equipment,Plastic/Electronics,Phase sequence tester,3-phase system testing
+Voltage Tester,Non-Contact,Non-Contact Voltage Tester,Testing Equipment,Plastic/Electronics,Non-contact voltage tester,Safe voltage detection
+Voltage Tester,Contact,Contact Voltage Tester,Testing Equipment,Plastic/Electronics,Contact voltage tester,Direct voltage testing
+Circuit Breaker Finder,Standard,Circuit Breaker Finder,Testing Equipment,Plastic/Electronics,Circuit breaker finder,Circuit identification
+Wire Tracer,Standard,Wire Tracer,Testing Equipment,Plastic/Electronics,Standard wire tracer,Wire/cable tracing
+Cable Tester,Ethernet,Ethernet Cable Tester,Testing Equipment,Plastic/Electronics,Ethernet cable tester,Network cable testing
+Cable Tester,Coax,Coax Cable Tester,Testing Equipment,Plastic/Electronics,Coax cable tester,Coaxial cable testing
+LCR Meter,Standard,LCR Meter,Testing Equipment,Plastic/Electronics,LCR meter,Component testing
+Frequency Counter,Standard,Frequency Counter,Testing Equipment,Plastic/Electronics,Frequency counter,Frequency measurement
+Signal Tracer,Standard,Signal Tracer,Testing Equipment,Plastic/Electronics,Signal tracer,Signal path tracing
+Continuity Tester,Standard,Continuity Tester,Testing Equipment,Plastic/Electronics,Continuity tester,Circuit continuity testing
+Pressure Gauge,0-100 PSI,Pressure Gauge,Testing Equipment,Steel/Brass,Low pressure gauge,Low pressure measurement
+Pressure Gauge,0-300 PSI,Pressure Gauge,Testing Equipment,Steel/Brass,Medium pressure gauge,Medium pressure measurement
+Pressure Gauge,0-3000 PSI,Pressure Gauge,Testing Equipment,Steel/Brass,High pressure gauge,High pressure measurement
+Pressure Gauge,0-10000 PSI,Pressure Gauge,Testing Equipment,Steel/Brass,Ultra high pressure gauge,Ultra high pressure measurement
+Vacuum Gauge,-30-0 inHg,Vacuum Gauge,Testing Equipment,Steel/Brass,Standard vacuum gauge,Vacuum measurement
+Temperature Gauge,0-300°F,Temperature Gauge,Testing Equipment,Steel/Brass,Low temperature gauge,Low temperature measurement
+Temperature Gauge,0-600°F,Temperature Gauge,Testing Equipment,Steel/Brass,Medium temperature gauge,Medium temperature measurement
+Temperature Gauge,0-1200°F,Temperature Gauge,Testing Equipment,Steel/Brass,High temperature gauge,High temperature measurement
+Infrared Thermometer,Standard,Infrared Thermometer,Testing Equipment,Plastic/Electronics,Non-contact thermometer,Remote temperature measurement
+Infrared Thermometer,High Temp,High Temperature IR Thermometer,Testing Equipment,Plastic/Electronics,High temp IR thermometer,High temperature remote measurement
+Thermocouple,Type K,Type K Thermocouple,Testing Equipment,Metal/Ceramic,Type K thermocouple,General temperature sensing
+Thermocouple,Type J,Type J Thermocouple,Testing Equipment,Metal/Ceramic,Type J thermocouple,Iron-constantan temperature sensing
+Thermocouple,Type T,Type T Thermocouple,Testing Equipment,Metal/Ceramic,Type T thermocouple,Copper-constantan temperature sensing
+RTD Sensor,Pt100,Pt100 RTD Sensor,Testing Equipment,Platinum,Platinum RTD sensor,Precision temperature sensing
+Flow Meter,Ultrasonic,Ultrasonic Flow Meter,Testing Equipment,Plastic/Electronics,Ultrasonic flow meter,Non-invasive flow measurement
+Flow Meter,Turbine,Turbine Flow Meter,Testing Equipment,Steel,Turbine flow meter,Liquid flow measurement
+Flow Meter,Vortex,Vortex Flow Meter,Testing Equipment,Steel,Vortex flow meter,Steam/gas flow measurement
+pH Meter,Portable,Portable pH Meter,Testing Equipment,Plastic/Electronics,Portable pH meter,pH measurement
+Conductivity Meter,Standard,Conductivity Meter,Testing Equipment,Plastic/Electronics,Conductivity meter,Water conductivity measurement
+Dissolved Oxygen Meter,Standard,Dissolved Oxygen Meter,Testing Equipment,Plastic/Electronics,DO meter,Water oxygen measurement
+Turbidity Meter,Standard,Turbidity Meter,Testing Equipment,Plastic/Electronics,Turbidity meter,Water clarity measurement
+Sound Level Meter,Standard,Sound Level Meter,Testing Equipment,Plastic/Electronics,Sound level meter,Noise measurement
+Vibration Meter,Standard,Vibration Meter,Testing Equipment,Plastic/Electronics,Vibration meter,Mechanical vibration measurement
+Tachometer,Contact,Contact Tachometer,Testing Equipment,Plastic/Electronics,Contact tachometer,Rotational speed measurement
+Tachometer,Non-Contact,Non-Contact Tachometer,Testing Equipment,Plastic/Electronics,Non-contact tachometer,Remote speed measurement
+Stroboscope,Standard,Stroboscope,Testing Equipment,Plastic/Electronics,Stroboscope,Motion analysis/speed measurement
+Hardness Tester,Portable,Portable Hardness Tester,Testing Equipment,Steel/Electronics,Portable hardness tester,Material hardness testing
+Thickness Gauge,Ultrasonic,Ultrasonic Thickness Gauge,Testing Equipment,Plastic/Electronics,Ultrasonic thickness gauge,Material thickness measurement
+Coating Thickness Gauge,Standard,Coating Thickness Gauge,Testing Equipment,Plastic/Electronics,Coating thickness gauge,Paint/coating thickness measurement
+Gas Detector,Combustible,Combustible Gas Detector,Testing Equipment,Plastic/Electronics,Combustible gas detector,Flammable gas detection
+Gas Detector,Multi-Gas,Multi-Gas Detector,Testing Equipment,Plastic/Electronics,Multi-gas detector,Multiple gas detection
+Leak Detector,Ultrasonic,Ultrasonic Leak Detector,HVAC Tools,Electronics,Ultrasonic leak detector,Refrigerant leak detection
+Leak Detector,Halogen,Halogen Leak Detector,HVAC Tools,Electronics,Halogen leak detector,Halogen refrigerant detection
+Refrigerant Identifier,Standard,Refrigerant Identifier,HVAC Tools,Electronics,Refrigerant identifier,Refrigerant type identification
+Tubing Cutter,1/8-1.5",Tubing Cutter,HVAC Tools,Steel,1/8 to 1.5-inch tubing cutter,HVAC tubing cutting
+Tube Bender,1/4",Tube Bender,HVAC Tools,Steel,1/4-inch tube bender,Small HVAC tube bending
+Tube Bender,3/8",Tube Bender,HVAC Tools,Steel,3/8-inch tube bender,Medium HVAC tube bending
+Tube Bender,1/2",Tube Bender,HVAC Tools,Steel,1/2-inch tube bender,Large HVAC tube bending
+Flaring Tool,45°,45-Degree Flaring Tool,HVAC Tools,Steel,45-degree flaring tool,HVAC tube flaring
+Swaging Tool,HVAC,HVAC Swaging Tool,HVAC Tools,Steel,HVAC swaging tool,Tube end expanding
+Core Removal Tool,Standard,Valve Core Tool,HVAC Tools,Steel,Valve core removal tool,Schrader valve service
+Fin Comb,Standard,Fin Comb,HVAC Tools,Plastic,Condenser fin comb,Fin straightening
+Coil Cleaning Brush,Standard,Coil Cleaning Brush,HVAC Tools,Plastic/Nylon,Coil cleaning brush,Evaporator/condenser cleaning
+Thermometer,Dial,Dial Thermometer,HVAC Tools,Steel/Glass,Dial stem thermometer,Temperature measurement
+Thermometer,Digital,Digital Thermometer,HVAC Tools,Electronics,Digital thermometer,Accurate temperature measurement
+Psychrometer,Sling,Sling Psychrometer,HVAC Tools,Steel/Glass,Sling psychrometer,Humidity measurement
+Hygrometer,Digital,Digital Hygrometer,HVAC Tools,Electronics,Digital hygrometer,Humidity measurement
+Anemometer,Vane,Vane Anemometer,HVAC Tools,Electronics,Vane anemometer,Air velocity measurement
+Anemometer,Hot Wire,Hot Wire Anemometer,HVAC Tools,Electronics,Hot wire anemometer,Precise air velocity measurement
+Manometer,Digital,Digital Manometer,HVAC Tools,Electronics,Digital manometer,Pressure differential measurement
+Manometer,U-Tube,U-Tube Manometer,HVAC Tools,Glass/Plastic,U-tube manometer,Basic pressure measurement
+Combustion Analyzer,Standard,Combustion Analyzer,HVAC Tools,Electronics,Combustion analyzer,Combustion efficiency testing
+Gas Leak Detector,Combustible,Combustible Gas Detector,HVAC Tools,Electronics,Combustible gas detector,Gas leak detection
+Duct Blaster,Standard,Duct Blaster,HVAC Tools,Steel/Electronics,Duct blaster fan,Duct leakage testing
+Blower Door,Standard,Blower Door,HVAC Tools,Steel/Electronics,Blower door fan,Building envelope testing
+Refrigerant Charging Hose,60",60-Inch Charging Hose,HVAC Tools,Rubber/Fittings,60-inch charging hose,Refrigerant connections
+Refrigerant Charging Hose,96",96-Inch Charging Hose,HVAC Tools,Rubber/Fittings,96-inch charging hose,Extended refrigerant connections
+Ball Valve,1/4",1/4-Inch Ball Valve,HVAC Tools,Brass,1/4-inch ball valve,Service valve
+Ball Valve,3/8",3/8-Inch Ball Valve,HVAC Tools,Brass,3/8-inch ball valve,Service valve
+Service Valve,Low Side,Low Side Service Valve,HVAC Tools,Brass,Low side service valve,Low pressure service
+Service Valve,High Side,High Side Service Valve,HVAC Tools,Brass,High side service valve,High pressure service
+Quick Connect,R-134a,R-134a Quick Connect,HVAC Tools,Brass,R-134a quick connect,R-134a service connection
+Quick Connect,R-410A,R-410A Quick Connect,HVAC Tools,Brass,R-410A quick connect,R-410A service connection
+Torque Wrench,1/4",1/4-Inch Drive Torque Wrench,Torque Tools,Chrome Vanadium Steel,1/4-inch drive torque wrench,Precision fastening
+Torque Wrench,3/8",3/8-Inch Drive Torque Wrench,Torque Tools,Chrome Vanadium Steel,3/8-inch drive torque wrench,Medium torque applications
+Torque Wrench,1/2",1/2-Inch Drive Torque Wrench,Torque Tools,Chrome Vanadium Steel,1/2-inch drive torque wrench,Heavy torque applications
+Torque Wrench,3/4",3/4-Inch Drive Torque Wrench,Torque Tools,Chrome Vanadium Steel,3/4-inch drive torque wrench,Industrial torque applications
+Torque Wrench,1",1-Inch Drive Torque Wrench,Torque Tools,Chrome Vanadium Steel,1-inch drive torque wrench,Heavy industrial torque
+Digital Torque Wrench,1/4",1/4-Inch Digital Torque Wrench,Torque Tools,Chrome Vanadium Steel,1/4-inch digital torque wrench,Precise digital torque control
+Digital Torque Wrench,3/8",3/8-Inch Digital Torque Wrench,Torque Tools,Chrome Vanadium Steel,3/8-inch digital torque wrench,Medium digital torque
+Digital Torque Wrench,1/2",1/2-Inch Digital Torque Wrench,Torque Tools,Chrome Vanadium Steel,1/2-inch digital torque wrench,Heavy digital torque
+Angle Torque Wrench,1/2",1/2-Inch Angle Torque Wrench,Torque Tools,Chrome Vanadium Steel,1/2-inch angle torque wrench,Torque-to-yield fastening
+Preset Torque Wrench,3/8",3/8-Inch Preset Torque Wrench,Torque Tools,Chrome Vanadium Steel,3/8-inch preset torque wrench,Fixed torque applications
+Torque Multiplier,3:1,3:1 Torque Multiplier,Torque Tools,Chrome Vanadium Steel,3:1 torque multiplier,Torque amplification
+Torque Multiplier,5:1,5:1 Torque Multiplier,Torque Tools,Chrome Vanadium Steel,5:1 torque multiplier,High torque amplification
+Torque Multiplier,10:1,10:1 Torque Multiplier,Torque Tools,Chrome Vanadium Steel,10:1 torque multiplier,Maximum torque amplification
+Torque Meter,Digital,Digital Torque Meter,Torque Tools,Electronics,Digital torque meter,Torque measurement/calibration
+Socket Set,1/4" Drive,1/4-Inch Drive Socket Set,Socket Tools,Chrome Vanadium Steel,1/4-inch drive socket set,Light fastening work
+Socket Set,3/8" Drive,3/8-Inch Drive Socket Set,Socket Tools,Chrome Vanadium Steel,3/8-inch drive socket set,Medium fastening work
+Socket Set,1/2" Drive,1/2-Inch Drive Socket Set,Socket Tools,Chrome Vanadium Steel,1/2-inch drive socket set,Heavy fastening work
+Socket Set,3/4" Drive,3/4-Inch Drive Socket Set,Socket Tools,Chrome Vanadium Steel,3/4-inch drive socket set,Industrial fastening work
+Socket Set,1" Drive,1-Inch Drive Socket Set,Socket Tools,Chrome Vanadium Steel,1-inch drive socket set,Heavy industrial work
+Impact Socket Set,3/8",3/8-Inch Impact Socket Set,Socket Tools,Chrome Molybdenum Steel,3/8-inch impact socket set,Light impact work
+Impact Socket Set,1/2",1/2-Inch Impact Socket Set,Socket Tools,Chrome Molybdenum Steel,1/2-inch impact socket set,Heavy impact work
+Impact Socket Set,3/4",3/4-Inch Impact Socket Set,Socket Tools,Chrome Molybdenum Steel,3/4-inch impact socket set,Industrial impact work
+Impact Socket Set,1",1-Inch Impact Socket Set,Socket Tools,Chrome Molybdenum Steel,1-inch impact socket set,Heavy industrial impact
+Deep Socket Set,3/8",3/8-Inch Deep Socket Set,Socket Tools,Chrome Vanadium Steel,3/8-inch deep socket set,Extended reach fastening
+Deep Socket Set,1/2",1/2-Inch Deep Socket Set,Socket Tools,Chrome Vanadium Steel,1/2-inch deep socket set,Heavy extended reach
+Spark Plug Socket,5/8",5/8-Inch Spark Plug Socket,Socket Tools,Chrome Vanadium Steel,5/8-inch spark plug socket,Spark plug service
+Spark Plug Socket,13/16",13/16-Inch Spark Plug Socket,Socket Tools,Chrome Vanadium Steel,13/16-inch spark plug socket,Large spark plug service
+Universal Joint,1/4",1/4-Inch Universal Joint,Socket Tools,Chrome Vanadium Steel,1/4-inch universal joint,Angle access
+Universal Joint,3/8",3/8-Inch Universal Joint,Socket Tools,Chrome Vanadium Steel,3/8-inch universal joint,Medium angle access
+Universal Joint,1/2",1/2-Inch Universal Joint,Socket Tools,Chrome Vanadium Steel,1/2-inch universal joint,Heavy angle access
+Extension Bar,3",3-Inch Extension Bar,Socket Tools,Chrome Vanadium Steel,3-inch extension bar,Short reach extension
+Extension Bar,6",6-Inch Extension Bar,Socket Tools,Chrome Vanadium Steel,6-inch extension bar,Medium reach extension
+Extension Bar,12",12-Inch Extension Bar,Socket Tools,Chrome Vanadium Steel,12-inch extension bar,Long reach extension
+Extension Bar,18",18-Inch Extension Bar,Socket Tools,Chrome Vanadium Steel,18-inch extension bar,Extra long reach extension
+Speed Handle,1/4",1/4-Inch Speed Handle,Socket Tools,Chrome Vanadium Steel,1/4-inch speed handle,Quick fastening
+Speed Handle,3/8",3/8-Inch Speed Handle,Socket Tools,Chrome Vanadium Steel,3/8-inch speed handle,Medium quick fastening
+Speed Handle,1/2",1/2-Inch Speed Handle,Socket Tools,Chrome Vanadium Steel,1/2-inch speed handle,Heavy quick fastening
+Sliding T-Handle,1/4",1/4-Inch Sliding T-Handle,Socket Tools,Chrome Vanadium Steel,1/4-inch sliding T-handle,Variable leverage
+Sliding T-Handle,3/8",3/8-Inch Sliding T-Handle,Socket Tools,Chrome Vanadium Steel,3/8-inch sliding T-handle,Medium variable leverage
+Sliding T-Handle,1/2",1/2-Inch Sliding T-Handle,Socket Tools,Chrome Vanadium Steel,1/2-inch sliding T-handle,Heavy variable leverage
+Ratchet Handle,1/4" 72T,1/4-Inch 72-Tooth Ratchet,Socket Tools,Chrome Vanadium Steel,1/4-inch 72-tooth ratchet,Fine increment ratcheting
+Ratchet Handle,3/8" 72T,3/8-Inch 72-Tooth Ratchet,Socket Tools,Chrome Vanadium Steel,3/8-inch 72-tooth ratchet,Medium fine ratcheting
+Ratchet Handle,1/2" 72T,1/2-Inch 72-Tooth Ratchet,Socket Tools,Chrome Vanadium Steel,1/2-inch 72-tooth ratchet,Heavy fine ratcheting
+Flex Head Ratchet,3/8",3/8-Inch Flex Head Ratchet,Socket Tools,Chrome Vanadium Steel,3/8-inch flex head ratchet,Angled access ratcheting
+Flex Head Ratchet,1/2",1/2-Inch Flex Head Ratchet,Socket Tools,Chrome Vanadium Steel,1/2-inch flex head ratchet,Heavy angled access
+Breaker Bar,1/2",1/2-Inch Breaker Bar,Socket Tools,Chrome Vanadium Steel,1/2-inch breaker bar,High torque loosening
+Breaker Bar,3/4",3/4-Inch Breaker Bar,Socket Tools,Chrome Vanadium Steel,3/4-inch breaker bar,Industrial high torque
+Breaker Bar,1",1-Inch Breaker Bar,Socket Tools,Chrome Vanadium Steel,1-inch breaker bar,Heavy industrial torque
+Spinner Handle,1/4",1/4-Inch Spinner Handle,Socket Tools,Chrome Vanadium Steel,1/4-inch spinner handle,Free spinning operation
+Spinner Handle,3/8",3/8-Inch Spinner Handle,Socket Tools,Chrome Vanadium Steel,3/8-inch spinner handle,Medium free spinning
+Socket Adapter,1/4" to 3/8",1/4 to 3/8-Inch Adapter,Socket Tools,Chrome Vanadium Steel,1/4 to 3/8-inch adapter,Drive size conversion
+Socket Adapter,3/8" to 1/2",3/8 to 1/2-Inch Adapter,Socket Tools,Chrome Vanadium Steel,3/8 to 1/2-inch adapter,Medium drive conversion
+Socket Adapter,1/2" to 3/4",1/2 to 3/4-Inch Adapter,Socket Tools,Chrome Vanadium Steel,1/2 to 3/4-inch adapter,Heavy drive conversion
+Tap and Die Set,Metric,Metric Tap and Die Set,Threading Tools,Carbon Steel,Metric tap and die set,Metric thread cutting
+Tap and Die Set,Imperial,Imperial Tap and Die Set,Threading Tools,Carbon Steel,Imperial tap and die set,Imperial thread cutting
+Tap and Die Set,NPT,NPT Tap and Die Set,Threading Tools,Carbon Steel,NPT tap and die set,Pipe thread cutting
+Machine Tap,M6x1.0,M6x1.0 Machine Tap,Threading Tools,High Speed Steel,M6x1.0 machine tap,M6 thread cutting
+Machine Tap,M8x1.25,M8x1.25 Machine Tap,Threading Tools,High Speed Steel,M8x1.25 machine tap,M8 thread cutting
+Machine Tap,M10x1.5,M10x1.5 Machine Tap,Threading Tools,High Speed Steel,M10x1.5 machine tap,M10 thread cutting
+Machine Tap,M12x1.75,M12x1.75 Machine Tap,Threading Tools,High Speed Steel,M12x1.75 machine tap,M12 thread cutting
+Machine Tap,1/4-20,1/4-20 Machine Tap,Threading Tools,High Speed Steel,1/4-20 machine tap,1/4-20 thread cutting
+Machine Tap,5/16-18,5/16-18 Machine Tap,Threading Tools,High Speed Steel,5/16-18 machine tap,5/16-18 thread cutting
+Machine Tap,3/8-16,3/8-16 Machine Tap,Threading Tools,High Speed Steel,3/8-16 machine tap,3/8-16 thread cutting
+Machine Tap,1/2-13,1/2-13 Machine Tap,Threading Tools,High Speed Steel,1/2-13 machine tap,1/2-13 thread cutting
+Tap Handle,Small,Small Tap Handle,Threading Tools,Steel,Small tap handle,Light tapping work
+Tap Handle,Medium,Medium Tap Handle,Threading Tools,Steel,Medium tap handle,General tapping work
+Tap Handle,Large,Large Tap Handle,Threading Tools,Steel,Large tap handle,Heavy tapping work
+Die Handle,Small,Small Die Handle,Threading Tools,Steel,Small die handle,Light die cutting
+Die Handle,Large,Large Die Handle,Threading Tools,Steel,Large die handle,Heavy die cutting
+Thread Chaser,External,External Thread Chaser,Threading Tools,Carbon Steel,External thread chaser,Thread repair
+Thread Chaser,Internal,Internal Thread Chaser,Threading Tools,Carbon Steel,Internal thread chaser,Internal thread repair
+Thread File,Standard,Thread File,Threading Tools,Carbon Steel,Thread file,Thread restoration
+Thread Pitch Gauge,Metric,Metric Thread Pitch Gauge,Threading Tools,Steel,Metric thread pitch gauge,Metric thread identification
+Thread Pitch Gauge,Imperial,Imperial Thread Pitch Gauge,Threading Tools,Steel,Imperial thread pitch gauge,Imperial thread identification
+Screw Extractor Set,Standard,Screw Extractor Set,Threading Tools,Carbon Steel,Screw extractor set,Broken screw removal
+Easy Out Set,Standard,Easy Out Set,Threading Tools,Carbon Steel,Easy out extractor set,Stripped screw removal
+Left Hand Drill Set,Standard,Left Hand Drill Set,Threading Tools,High Speed Steel,Left hand drill bit set,Extraction drilling
+Drilling Machine,Portable,Portable Drilling Machine,Drilling Equipment,Steel/Electronics,Portable drilling machine,Field drilling operations
+Drilling Machine,Radial Arm,Radial Arm Drill,Drilling Equipment,Cast Iron/Steel,Radial arm drilling machine,Heavy drilling work
+Drilling Machine,Magnetic,Magnetic Drill,Drilling Equipment,Steel/Electronics,Magnetic base drill,Steel drilling
+Core Drilling Machine,Standard,Core Drilling Machine,Drilling Equipment,Steel/Electronics,Core drilling machine,Concrete core drilling
+Hammer Drill,1/2",1/2-Inch Hammer Drill,Drilling Equipment,Steel/Electronics,1/2-inch hammer drill,Masonry drilling
+Hammer Drill,3/4",3/4-Inch Hammer Drill,Drilling Equipment,Steel/Electronics,3/4-inch hammer drill,Heavy masonry drilling
+SDS Drill,Standard,SDS Rotary Hammer,Drilling Equipment,Steel/Electronics,SDS rotary hammer,SDS bit drilling
+SDS Max Drill,Standard,SDS Max Rotary Hammer,Drilling Equipment,Steel/Electronics,SDS Max rotary hammer,Heavy duty SDS drilling
+Drill Bit Set,HSS,HSS Drill Bit Set,Drilling Equipment,High Speed Steel,High speed steel drill set,General drilling
+Drill Bit Set,Cobalt,Cobalt Drill Bit Set,Drilling Equipment,Cobalt Steel,Cobalt drill bit set,Hard material drilling
+Drill Bit Set,Carbide,Carbide Drill Bit Set,Drilling Equipment,Carbide,Carbide drill bit set,Extremely hard drilling
+Drill Bit Set,Masonry,Masonry Drill Bit Set,Drilling Equipment,Carbide Tip,Masonry drill bit set,Concrete/brick drilling
+Step Drill Bit,3/16-1/2",3/16 to 1/2-Inch Step Bit,Drilling Equipment,HSS,3/16 to 1/2-inch step bit,Progressive hole drilling
+Step Drill Bit,1/4-3/4",1/4 to 3/4-Inch Step Bit,Drilling Equipment,HSS,1/4 to 3/4-inch step bit,Large progressive drilling
+Spade Bit Set,Standard,Spade Bit Set,Drilling Equipment,Carbon Steel,Spade bit set,Wood drilling
+Forstner Bit Set,Standard,Forstner Bit Set,Drilling Equipment,Carbon Steel,Forstner bit set,Clean hole drilling
+Hole Saw Set,Standard,Hole Saw Set,Drilling Equipment,Bi-Metal,Hole saw set,Large hole cutting
+Countersink Set,Standard,Countersink Set,Drilling Equipment,HSS,Countersink bit set,Screw head recessing
+Counterbore Set,Standard,Counterbore Set,Drilling Equipment,HSS,Counterbore set,Bolt head recessing
+Reamer Set,Standard,Reamer Set,Drilling Equipment,HSS,Reamer set,Hole sizing
+Drill Press Vise,4",4-Inch Drill Press Vise,Drilling Equipment,Cast Iron,4-inch drill press vise,Workpiece holding
+Drill Press Vise,6",6-Inch Drill Press Vise,Drilling Equipment,Cast Iron,6-inch drill press vise,Heavy workpiece holding
+Drill Guide,Portable,Portable Drill Guide,Drilling Equipment,Steel,Portable drill guide,Accurate angle drilling
+Angle Drill Attachment,Standard,Angle Drill Attachment,Drilling Equipment,Steel,Right angle drill attachment,Corner drilling
+Flexible Shaft,Standard,Flexible Shaft Extension,Drilling Equipment,Steel,Flexible shaft extension,Remote drilling
+Chuck Key,Standard,Drill Chuck Key,Drilling Equipment,Steel,Drill chuck key,Chuck tightening
+Lathe Tool Set,Carbide,Carbide Lathe Tool Set,Machining Tools,Carbide,Carbide lathe tool set,Lathe turning operations
+Lathe Tool Set,HSS,HSS Lathe Tool Set,Machining Tools,High Speed Steel,HSS lathe tool set,General lathe work
+Turning Tool,Right Hand,Right Hand Turning Tool,Machining Tools,Carbide,Right hand turning tool,External turning
+Turning Tool,Left Hand,Left Hand Turning Tool,Machining Tools,Carbide,Left hand turning tool,Left hand turning
+Boring Bar,Standard,Boring Bar,Machining Tools,Carbide,Carbide boring bar,Internal machining
+Boring Bar,Small,Small Boring Bar,Machining Tools,Carbide,Small carbide boring bar,Fine internal work
+Parting Tool,Standard,Parting Tool,Machining Tools,Carbide,Carbide parting tool,Cut-off operations
+Threading Tool,60°,60-Degree Threading Tool,Machining Tools,Carbide,60-degree threading tool,Thread cutting
+Face Mill,4",4-Inch Face Mill,Machining Tools,Carbide,4-inch face mill,Face milling
+Face Mill,6",6-Inch Face Mill,Machining Tools,Carbide,6-inch face mill,Large face milling
+End Mill,1/2",1/2-Inch End Mill,Machining Tools,Carbide,1/2-inch end mill,Slot milling
+End Mill,3/4",3/4-Inch End Mill,Machining Tools,Carbide,3/4-inch end mill,Heavy slot milling
+Ball End Mill,1/4",1/4-Inch Ball End Mill,Machining Tools,Carbide,1/4-inch ball end mill,3D contour milling
+Ball End Mill,1/2",1/2-Inch Ball End Mill,Machining Tools,Carbide,1/2-inch ball end mill,Large contour milling
+Fly Cutter,Standard,Fly Cutter,Machining Tools,Steel,Fly cutter,Large surface cutting
+Slitting Saw,4",4-Inch Slitting Saw,Machining Tools,HSS,4-inch slitting saw,Thin cutting
+Gear Cutter Set,Standard,Gear Cutter Set,Machining Tools,HSS,Gear cutter set,Gear tooth cutting
+Dovetail Cutter,60°,60-Degree Dovetail Cutter,Machining Tools,HSS,60-degree dovetail cutter,Dovetail cutting
+T-Slot Cutter,Standard,T-Slot Cutter,Machining Tools,HSS,T-slot cutter,T-slot machining
+Keyway Cutter,Standard,Keyway Cutter,Machining Tools,HSS,Keyway cutter,Keyway cutting
+Woodruff Key Cutter,Standard,Woodruff Key Cutter,Machining Tools,HSS,Woodruff key cutter,Woodruff key slot cutting
+Machine Vise,4",4-Inch Machine Vise,Machining Tools,Cast Iron,4-inch machine vise,Light workpiece holding
+Machine Vise,6",6-Inch Machine Vise,Machining Tools,Cast Iron,6-inch machine vise,Medium workpiece holding
+Machine Vise,8",8-Inch Machine Vise,Machining Tools,Cast Iron,8-inch machine vise,Heavy workpiece holding
+Rotary Table,6",6-Inch Rotary Table,Machining Tools,Cast Iron,6-inch rotary table,Circular machining
+Rotary Table,8",8-Inch Rotary Table,Machining Tools,Cast Iron,8-inch rotary table,Large circular machining
+Dividing Head,Standard,Dividing Head,Machining Tools,Cast Iron,Dividing head,Angular indexing
+Sine Bar,6",6-Inch Sine Bar,Machining Tools,Steel,6-inch sine bar,Angle setup
+Sine Bar,10",10-Inch Sine Bar,Machining Tools,Steel,10-inch sine bar,Large angle setup
+Angle Plate,6",6-Inch Angle Plate,Machining Tools,Cast Iron,6-inch angle plate,90-degree setup
+Angle Plate,8",8-Inch Angle Plate,Machining Tools,Cast Iron,8-inch angle plate,Large 90-degree setup
+Parallel Set,Standard,Parallel Set,Machining Tools,Steel,Parallel block set,Workpiece leveling
+V-Block Set,Standard,V-Block Set,Machining Tools,Cast Iron,V-block set,Round workpiece holding
+Magnetic Chuck,6x12",6x12-Inch Magnetic Chuck,Machining Tools,Steel/Magnet,6x12-inch magnetic chuck,Magnetic workholding
+Magnetic Chuck,8x16",8x16-Inch Magnetic Chuck,Machining Tools,Steel/Magnet,8x16-inch magnetic chuck,Large magnetic holding
+Collet Set,ER20,ER20 Collet Set,Machining Tools,Steel,ER20 collet set,Precision tool holding
+Collet Set,ER32,ER32 Collet Set,Machining Tools,Steel,ER32 collet set,Heavy precision holding
+Collet Chuck,ER20,ER20 Collet Chuck,Machining Tools,Steel,ER20 collet chuck,Precision chuck
+Collet Chuck,ER32,ER32 Collet Chuck,Machining Tools,Steel,ER32 collet chuck,Heavy precision chuck
+Tool Post,Quick Change,Quick Change Tool Post,Machining Tools,Steel,Quick change tool post,Rapid tool changing
+Tool Holders,Standard,Tool Holder Set,Machining Tools,Steel,Tool holder set,Cutting tool holding
+Grinding Wheel,6",6-Inch Grinding Wheel,Abrasive Tools,Aluminum Oxide,6-inch grinding wheel,General grinding
+Grinding Wheel,8",8-Inch Grinding Wheel,Abrasive Tools,Aluminum Oxide,8-inch grinding wheel,Heavy grinding
+Grinding Wheel,10",10-Inch Grinding Wheel,Abrasive Tools,Aluminum Oxide,10-inch grinding wheel,Industrial grinding
+Cut-Off Wheel,4.5",4.5-Inch Cut-Off Wheel,Abrasive Tools,Aluminum Oxide,4.5-inch cut-off wheel,Metal cutting
+Cut-Off Wheel,7",7-Inch Cut-Off Wheel,Abrasive Tools,Aluminum Oxide,7-inch cut-off wheel,Heavy metal cutting
+Cut-Off Wheel,9",9-Inch Cut-Off Wheel,Abrasive Tools,Aluminum Oxide,9-inch cut-off wheel,Industrial metal cutting
+Flap Disc,4.5",4.5-Inch Flap Disc,Abrasive Tools,Zirconia,4.5-inch flap disc,Finishing/blending
+Flap Disc,7",7-Inch Flap Disc,Abrasive Tools,Zirconia,7-inch flap disc,Heavy finishing
+Wire Brush Wheel,6",6-Inch Wire Brush Wheel,Abrasive Tools,Steel Wire,6-inch wire brush wheel,Surface cleaning
+Wire Brush Wheel,8",8-Inch Wire Brush Wheel,Abrasive Tools,Steel Wire,8-inch wire brush wheel,Heavy surface cleaning
+Sanding Disc,5",5-Inch Sanding Disc,Abrasive Tools,Aluminum Oxide,5-inch sanding disc,Wood finishing
+Sanding Disc,6",6-Inch Sanding Disc,Abrasive Tools,Aluminum Oxide,6-inch sanding disc,Large wood finishing
+Sanding Belt,3x18,3x18-Inch Sanding Belt,Abrasive Tools,Aluminum Oxide,3x18-inch sanding belt,Belt sander use
+Sanding Belt,3x21,3x21-Inch Sanding Belt,Abrasive Tools,Aluminum Oxide,3x21-inch sanding belt,Large belt sander
+Sanding Belt,4x24,4x24-Inch Sanding Belt,Abrasive Tools,Aluminum Oxide,4x24-inch sanding belt,Industrial belt sanding
+Emery Cloth,Standard,Emery Cloth Roll,Abrasive Tools,Emery,Emery cloth roll,Hand sanding
+Steel Wool,0000,0000 Steel Wool,Abrasive Tools,Steel,Extra fine steel wool,Fine finishing
+Steel Wool,00,00 Steel Wool,Abrasive Tools,Steel,Fine steel wool,General finishing
+Steel Wool,0,0 Steel Wool,Abrasive Tools,Steel,Medium steel wool,Medium finishing
+Scotch-Brite Pad,Fine,Fine Scotch-Brite Pad,Abrasive Tools,Synthetic,Fine abrasive pad,Non-woven finishing
+Scotch-Brite Pad,Medium,Medium Scotch-Brite Pad,Abrasive Tools,Synthetic,Medium abrasive pad,General cleaning
+Diamond Wheel,6",6-Inch Diamond Wheel,Abrasive Tools,Diamond,6-inch diamond wheel,Hard material grinding
+CBN Wheel,6",6-Inch CBN Wheel,Abrasive Tools,Cubic Boron Nitride,6-inch CBN wheel,Tool steel grinding
+Bench Grinder,6",6-Inch Bench Grinder,Power Tools,Cast Iron,6-inch bench grinder,General grinding
+Bench Grinder,8",8-Inch Bench Grinder,Power Tools,Cast Iron,8-inch bench grinder,Heavy grinding
+Bench Grinder,10",10-Inch Bench Grinder,Power Tools,Cast Iron,10-inch bench grinder,Industrial grinding
+Die Grinder,1/4",1/4-Inch Die Grinder,Power Tools,Steel,1/4-inch die grinder,Detail grinding
+Die Grinder,1/8",1/8-Inch Die Grinder,Power Tools,Steel,1/8-inch die grinder,Fine detail grinding
+Straight Grinder,Standard,Straight Grinder,Power Tools,Steel,Straight grinder,Precision grinding
+Belt Grinder,1x30,1x30-Inch Belt Grinder,Power Tools,Steel,1x30-inch belt grinder,Small belt grinding
+Belt Grinder,2x48,2x48-Inch Belt Grinder,Power Tools,Steel,2x48-inch belt grinder,Large belt grinding
+Surface Grinder,6x12,6x12-Inch Surface Grinder,Power Tools,Cast Iron,6x12-inch surface grinder,Precision surface grinding
+Tool Grinder,Standard,Tool and Cutter Grinder,Power Tools,Cast Iron,Tool and cutter grinder,Tool sharpening
+Centreless Grinder,Standard,Centreless Grinder,Power Tools,Cast Iron,Centreless grinder,Round grinding
+Internal Grinder,Standard,Internal Grinder,Power Tools,Cast Iron,Internal grinder,Internal surface grindingUltrasonic,Ultrasonic Leak Detector,Testing Equipment,Plastic/Electronics,Ultrasonic leak detector,Pressurized leak detection
+Smoke Detector Tester,Standard,Smoke Detector Tester,Testing Equipment,Plastic,Smoke detector tester,Smoke detector testing
+Lockout Tagout Kit,Standard,LOTO Kit,Safety Equipment,Plastic/Steel,Standard LOTO kit,Lockout/tagout procedures
+Lockout Padlock,Standard,Lockout Padlock,Safety Equipment,Steel/Plastic,Safety padlock,Equipment lockout
+Lockout Hasp,Multi-Lock,Multi-Lock Hasp,Safety Equipment,Steel,Multi-lock hasp,Multiple person lockout
+Circuit Breaker Lockout,Standard,Breaker Lockout,Safety Equipment,Plastic,Circuit breaker lockout,Electrical lockout
+Valve Lockout,Gate Valve,Gate Valve Lockout,Safety Equipment,Steel/Plastic,Gate valve lockout,Valve lockout
+Valve Lockout,Ball Valve,Ball Valve Lockout,Safety Equipment,Steel/Plastic,Ball valve lockout,Ball valve lockout
+Plug Lockout,Standard,Plug Lockout,Safety Equipment,Plastic,Electrical plug lockout,Plug lockout
+Cable Lockout,Standard,Cable Lockout,Safety Equipment,Steel/Plastic,Cable lockout device,Flexible lockout
+Group Lock Box,Standard,Group Lock Box,Safety Equipment,Steel,Group lockout box,Multiple key storage
+Safety Tags,Standard,Safety Tags,Safety Equipment,Cardboard/Plastic,Safety warning tags,Lockout identification
+Hard Hat,Type I,Type I Hard Hat,Safety Equipment,Plastic,Standard hard hat,Head protection
+Hard Hat,Type II,Type II Hard Hat,Safety Equipment,Plastic,Full brim hard hat,Enhanced head protection
+Safety Glasses,Clear,Safety Glasses,Safety Equipment,Plastic,Clear safety glasses,Eye protection
+Safety Glasses,Tinted,Tinted Safety Glasses,Safety Equipment,Plastic,Tinted safety glasses,Eye protection/glare reduction
+Safety Goggles,Chemical,Chemical Goggles,Safety Equipment,Plastic,Chemical splash goggles,Chemical eye protection
+Safety Goggles,Impact,Impact Goggles,Safety Equipment,Plastic,Impact safety goggles,Impact eye protection
+Face Shield,Standard,Face Shield,Safety Equipment,Plastic,Standard face shield,Face protection
+Face Shield,Arc Flash,Arc Flash Face Shield,Safety Equipment,Plastic,Arc flash face shield,Electrical arc protection
+Hearing Protection,Earplugs,Disposable Earplugs,Safety Equipment,Foam,Disposable earplugs,Hearing protection
+Hearing Protection,Earmuffs,Safety Earmuffs,Safety Equipment,Plastic/Foam,Safety earmuffs,Hearing protection
+Work Gloves,Leather,Leather Work Gloves,Safety Equipment,Leather,Leather work gloves,Hand protection
+Work Gloves,Cut Resistant,Cut Resistant Gloves,Safety Equipment,Synthetic,Cut resistant gloves,Cut protection
+Work Gloves,Chemical,Chemical Resistant Gloves,Safety Equipment,Rubber/Nitrile,Chemical resistant gloves,Chemical protection
+Work Gloves,Heat Resistant,Heat Resistant Gloves,Safety Equipment,Kevlar/Leather,Heat resistant gloves,Heat protection
+Safety Vest,Hi-Vis,Hi-Visibility Vest,Safety Equipment,Polyester,High visibility vest,Visibility/identification
+Safety Vest,Mesh,Mesh Safety Vest,Safety Equipment,Polyester Mesh,Mesh safety vest,Lightweight visibility
+Fall Protection Harness,Standard,Safety Harness,Safety Equipment,Nylon/Steel,Full body harness,Fall protection
+Fall Protection Lanyard,6ft,Safety Lanyard,Safety Equipment,Nylon/Steel,6-foot safety lanyard,Fall arrest
+Fall Protection Lanyard,Shock Absorbing,Shock Absorbing Lanyard,Safety Equipment,Nylon/Steel,Shock absorbing lanyard,Energy absorbing fall arrest
+Self-Retracting Lifeline,20ft,Self-Retracting Lifeline,Safety Equipment,Steel/Nylon,20-foot SRL,Automatic fall protection
+Anchor Point,Temporary,Temporary Anchor,Safety Equipment,Steel,Temporary anchor point,Fall protection anchor
+Anchor Point,Permanent,Permanent Anchor,Safety Equipment,Steel,Permanent anchor point,Fixed fall protection
+Safety Net,Standard,Safety Net,Safety Equipment,Nylon,Safety net system,Fall protection
+Guardrail System,Standard,Guardrail System,Safety Equipment,Steel,Standard guardrail,Fall protection barrier
+Respirator,N95,N95 Respirator,Safety Equipment,Non-woven fabric,N95 dust mask,Particle filtration
+Respirator,P100,P100 Respirator,Safety Equipment,Non-woven fabric,P100 filter mask,High efficiency filtration
+Respirator,Half Face,Half Face Respirator,Safety Equipment,Rubber/Plastic,Half face respirator,Reusable respiratory protection
+Respirator,Full Face,Full Face Respirator,Safety Equipment,Rubber/Plastic,Full face respirator,Complete respiratory/eye protection
+Air Purifying Respirator,Powered,Powered Air Respirator,Safety Equipment,Plastic/Electronics,Powered air purifying respirator,Positive pressure respiratory protection
+Emergency Eyewash,Portable,Portable Eyewash,Safety Equipment,Plastic,Portable eyewash station,Emergency eye flushing
+Emergency Shower,Standard,Emergency Shower,Safety Equipment,Stainless Steel,Emergency shower,Emergency body flushing
+First Aid Kit,Standard,First Aid Kit,Safety Equipment,Plastic/Medical Supplies,Standard first aid kit,Basic medical treatment
+Spill Kit,Oil,Oil Spill Kit,Safety Equipment,Absorbent Materials,Oil spill response kit,Oil spill cleanup
+Spill Kit,Chemical,Chemical Spill Kit,Safety Equipment,Absorbent Materials,Chemical spill response kit,Chemical spill cleanup
+Fire Extinguisher,ABC,ABC Fire Extinguisher,Safety Equipment,Steel/Chemical,Multi-purpose extinguisher,General fire suppression
+Fire Extinguisher,CO2,CO2 Fire Extinguisher,Safety Equipment,Steel/CO2,Carbon dioxide extinguisher,Electrical fire suppression
+Fire Extinguisher,Water,Water Fire Extinguisher,Safety Equipment,Steel/Water,Water-based extinguisher,Class A fire suppression
+Fire Blanket,Standard,Fire Blanket,Safety Equipment,Fiberglass,Fire suppression blanket,Small fire suppression
+Chain Hoist,1 Ton,Chain Hoist,Lifting Equipment,Steel,1-ton chain hoist,Light lifting
+Chain Hoist,2 Ton,Chain Hoist,Lifting Equipment,Steel,2-ton chain hoist,Medium lifting
+Chain Hoist,3 Ton,Chain Hoist,Lifting Equipment,Steel,3-ton chain hoist,Heavy lifting
+Chain Hoist,5 Ton,Chain Hoist,Lifting Equipment,Steel,5-ton chain hoist,Industrial lifting
+Chain Hoist,10 Ton,Chain Hoist,Lifting Equipment,Steel,10-ton chain hoist,Heavy industrial lifting
+Lever Hoist,1 Ton,Lever Hoist,Lifting Equipment,Steel,1-ton lever hoist,Portable lifting
+Lever Hoist,3 Ton,Lever Hoist,Lifting Equipment,Steel,3-ton lever hoist,Heavy portable lifting
+Lever Hoist,6 Ton,Lever Hoist,Lifting Equipment,Steel,6-ton lever hoist,Industrial portable lifting
+Electric Hoist,1 Ton,Electric Hoist,Lifting Equipment,Steel/Electronics,1-ton electric hoist,Powered lifting
+Electric Hoist,2 Ton,Electric Hoist,Lifting Equipment,Steel/Electronics,2-ton electric hoist,Heavy powered lifting
+Electric Hoist,5 Ton,Electric Hoist,Lifting Equipment,Steel/Electronics,5-ton electric hoist,Industrial powered lifting
+Electric Hoist,10 Ton,Electric Hoist,Lifting Equipment,Steel/Electronics,10-ton electric hoist,Heavy industrial powered lifting
+Wire Rope Hoist,1 Ton,Wire Rope Hoist,Lifting Equipment,Steel,1-ton wire rope hoist,Smooth lifting
+Wire Rope Hoist,3 Ton,Wire Rope Hoist,Lifting Equipment,Steel,3-ton wire rope hoist,Heavy smooth lifting
+Wire Rope Hoist,10 Ton,Wire Rope Hoist,Lifting Equipment,Steel,10-ton wire rope hoist,Industrial smooth lifting
+Lifting Chain,Grade 80,Grade 80 Chain,Lifting Equipment,Alloy Steel,Grade 80 lifting chain,High strength lifting
+Lifting Chain,Grade 100,Grade 100 Chain,Lifting Equipment,Alloy Steel,Grade 100 lifting chain,Ultra high strength lifting
+Wire Rope,1/4",Wire Rope,Lifting Equipment,Steel,1/4-inch wire rope,Light duty lifting cable
+Wire Rope,3/8",Wire Rope,Lifting Equipment,Steel,3/8-inch wire rope,Medium duty lifting cable
+Wire Rope,1/2",Wire Rope,Lifting Equipment,Steel,1/2-inch wire rope,Heavy duty lifting cable
+Wire Rope,5/8",Wire Rope,Lifting Equipment,Steel,5/8-inch wire rope,Industrial lifting cable
+Wire Rope,3/4",Wire Rope,Lifting Equipment,Steel,3/4-inch wire rope,Heavy industrial lifting cable
+Shackle,1/4",Shackle,Lifting Equipment,Stainless Steel,1/4-inch shackle,Light connection
+Shackle,3/8",Shackle,Lifting Equipment,Stainless Steel,3/8-inch shackle,Medium connection
+Shackle,1/2",Shackle,Lifting Equipment,Stainless Steel,1/2-inch shackle,Heavy connection
+Shackle,5/8",Shackle,Lifting Equipment,Stainless Steel,5/8-inch shackle,Industrial connection
+Shackle,3/4",Shackle,Lifting Equipment,Stainless Steel,3/4-inch shackle,Heavy industrial connection
+Lifting Sling,1 Ton,Lifting Sling,Lifting Equipment,Nylon,1-ton lifting sling,Light load lifting
+Lifting Sling,2 Ton,Lifting Sling,Lifting Equipment,Nylon,2-ton lifting sling,Medium load lifting
+Lifting Sling,3 Ton,Lifting Sling,Lifting Equipment,Nylon,3-ton lifting sling,Heavy load lifting
+Lifting Sling,5 Ton,Lifting Sling,Lifting Equipment,Nylon,5-ton lifting sling,Industrial load lifting
+Chain Sling,1 Ton,Chain Sling,Lifting Equipment,Alloy Steel,1-ton chain sling,Durable load lifting
+Chain Sling,3 Ton,Chain Sling,Lifting Equipment,Alloy Steel,3-ton chain sling,Heavy durable lifting
+Chain Sling,5 Ton,Chain Sling,Lifting Equipment,Alloy Steel,5-ton chain sling,Industrial durable lifting
+Wire Rope Sling,1 Ton,Wire Rope Sling,Lifting Equipment,Steel,1-ton wire rope sling,Flexible load lifting
+Wire Rope Sling,3 Ton,Wire Rope Sling,Lifting Equipment,Steel,3-ton wire rope sling,Heavy flexible lifting
+Wire Rope Sling,5 Ton,Wire Rope Sling,Lifting Equipment,Steel,5-ton wire rope sling,Industrial flexible lifting
+Spreader Beam,2 Ton,Spreader Beam,Lifting Equipment,Steel,2-ton spreader beam,Load distribution
+Spreader Beam,5 Ton,Spreader Beam,Lifting Equipment,Steel,5-ton spreader beam,Heavy load distribution
+Spreader Beam,10 Ton,Spreader Beam,Lifting Equipment,Steel,10-ton spreader beam,Industrial load distribution
+Lifting Beam,3 Ton,Lifting Beam,Lifting Equipment,Steel,3-ton lifting beam,Below-hook lifting
+Lifting Beam,10 Ton,Lifting Beam,Lifting Equipment,Steel,10-ton lifting beam,Heavy below-hook lifting
+Lifting Beam,20 Ton,Lifting Beam,Lifting Equipment,Steel,20-ton lifting beam,Industrial below-hook lifting
+Crane Scale,1 Ton,Crane Scale,Lifting Equipment,Steel/Electronics,1-ton crane scale,Load weighing during lifting
+Crane Scale,5 Ton,Crane Scale,Lifting Equipment,Steel/Electronics,5-ton crane scale,Heavy load weighing
+Crane Scale,10 Ton,Crane Scale,Lifting Equipment,Steel/Electronics,10-ton crane scale,Industrial load weighing
+Load Block,1 Ton,Load Block,Lifting Equipment,Steel,1-ton load block,Load attachment point
+Load Block,3 Ton,Load Block,Lifting Equipment,Steel,3-ton load block,Heavy load attachment
+Load Block,10 Ton,Load Block,Lifting Equipment,Steel,10-ton load block,Industrial load attachment
+Gantry Crane,1 Ton,Gantry Crane,Lifting Equipment,Steel,1-ton gantry crane,Portable overhead lifting
+Gantry Crane,2 Ton,Gantry Crane,Lifting Equipment,Steel,2-ton gantry crane,Medium portable lifting
+Gantry Crane,5 Ton,Gantry Crane,Lifting Equipment,Steel,5-ton gantry crane,Heavy portable lifting
+Jib Crane,1 Ton,Jib Crane,Lifting Equipment,Steel,1-ton jib crane,Rotating arm lifting
+Jib Crane,2 Ton,Jib Crane,Lifting Equipment,Steel,2-ton jib crane,Heavy rotating lifting
+Jib Crane,5 Ton,Jib Crane,Lifting Equipment,Steel,5-ton jib crane,Industrial rotating lifting
+Engine Hoist,1 Ton,Engine Hoist,Lifting Equipment,Steel,1-ton engine hoist,Engine removal/installation
+Engine Hoist,2 Ton,Engine Hoist,Lifting Equipment,Steel,2-ton engine hoist,Heavy engine work
+Transmission Jack,500lb,Transmission Jack,Lifting Equipment,Steel,500-pound transmission jack,Transmission work
+Transmission Jack,1000lb,Transmission Jack,Lifting Equipment,Steel,1000-pound transmission jack,Heavy transmission work
+Shop Crane,1 Ton,Shop Crane,Lifting Equipment,Steel,1-ton shop crane,General shop lifting
+Shop Crane,2 Ton,Shop Crane,Lifting Equipment,Steel,2-ton shop crane,Heavy shop lifting
+Bearing Puller,2 Jaw,2 Jaw Bearing Puller,Bearing Tools,Steel,2-jaw bearing puller,Bearing removal
+Bearing Puller,3 Jaw,3 Jaw Bearing Puller,Bearing Tools,Steel,3-jaw bearing puller,Centered bearing removal
+Bearing Puller,Slide Hammer,Slide Hammer Puller,Bearing Tools,Steel,Slide hammer puller,Impact bearing removal
+Bearing Puller,Hydraulic,Hydraulic Bearing Puller,Bearing Tools,Steel,Hydraulic bearing puller,High force bearing removal
+Bearing Installer,Standard,Bearing Installer,Bearing Tools,Steel,Standard bearing installer,Bearing installation
+Bearing Heater,Induction,Induction Bearing Heater,Bearing Tools,Steel/Electronics,Induction bearing heater,Even bearing heating
+Bearing Heater,Hot Plate,Hot Plate Bearing Heater,Bearing Tools,Steel/Electronics,Hot plate bearing heater,Simple bearing heating
+Gear Puller,2 Jaw,2 Jaw Gear Puller,Bearing Tools,Steel,2-jaw gear puller,Gear removal
+Gear Puller,3 Jaw,3 Jaw Gear Puller,Bearing Tools,Steel,3-jaw gear puller,Centered gear removal
+Gear Puller,Internal,Internal Gear Puller,Bearing Tools,Steel,Internal gear puller,Internal gear removal
+Arbor Press,1 Ton,Arbor Press,Bearing Tools,Cast Iron,1-ton arbor press,Light pressing work
+Arbor Press,3 Ton,Arbor Press,Bearing Tools,Cast Iron,3-ton arbor press,Medium pressing work
+Arbor Press,5 Ton,Arbor Press,Bearing Tools,Cast Iron,5-ton arbor press,Heavy pressing work
+Bushing Driver Set,Standard,Bushing Driver Set,Bearing Tools,Steel,Bushing driver set,Bushing installation/removal
+Seal Driver Set,Standard,Seal Driver Set,Bearing Tools,Steel,Seal driver set,Seal installation
+Pilot Bearing Puller,Standard,Pilot Bearing Puller,Bearing Tools,Steel,Pilot bearing puller,Pilot bearing removal
+Blind Hole Puller,Standard,Blind Hole Puller,Bearing Tools,Steel,Blind hole bearing puller,Blind hole bearing removal
+Press Plates,Standard,Press Plates,Bearing Tools,Steel,Press plate set,Pressing support
+Alignment Tools,Laser,Laser Alignment System,Bearing Tools,Steel/Electronics,Laser shaft alignment,Precision shaft alignment
+Alignment Tools,Dial Indicator,Dial Indicator Alignment,Bearing Tools,Steel,Dial indicator alignment,Traditional shaft alignment
+Coupling Alignment Tool,Standard,Coupling Alignment Tool,Bearing Tools,Steel,Coupling alignment tool,Coupling alignment
+Shaft Alignment Clamps,Standard,Shaft Alignment Clamps,Bearing Tools,Steel,Shaft alignment clamps,Shaft holding during alignment
+Feeler Gauge Set,Metric,Metric Feeler Gauge Set,Bearing Tools,Steel,Metric feeler gauge set,Gap measurement
+Feeler Gauge Set,Imperial,Imperial Feeler Gauge Set,Bearing Tools,Steel,Imperial feeler gauge set,Gap measurement (imperial)
+Straight Edge,24",Straight Edge,Bearing Tools,Steel,24-inch straight edge,Straightness checking
+Straight Edge,48",Straight Edge,Bearing Tools,Steel,48-inch straight edge,Long straightness checking
+Pipe Bender,1/2",Pipe Bender,Pipe Tools,Steel,1/2-inch pipe bender,Small pipe bending
+Pipe Bender,3/4",Pipe Bender,Pipe Tools,Steel,3/4-inch pipe bender,Medium pipe bending
+Pipe Bender,1",Pipe Bender,Pipe Tools,Steel,1-inch pipe bender,Large pipe bending
+Pipe Bender,1.5",Pipe Bender,Pipe Tools,Steel,1.5-inch pipe bender,Heavy pipe bending
+Tube Bender,1/4",Tube Bender,Pipe Tools,Steel,1/4-inch tube bender,Small tube bending
+Tube Bender,3/8",Tube Bender,Pipe Tools,Steel,3/8-inch tube bender,Medium tube bending
+Tube Bender,1/2",Tube Bender,Pipe Tools,Steel,1/2-inch tube bender,Large tube bending
+Conduit Bender,1/2",Conduit Bender,Pipe Tools,Steel,1/2-inch conduit bender,Small conduit bending
+Conduit Bender,3/4",Conduit Bender,Pipe Tools,Steel,3/4-inch conduit bender,Medium conduit bending
+Conduit Bender,1",Conduit Bender,Pipe Tools,Steel,1-inch conduit bender,Large conduit bending
+Pipe Cutter,1/4-2",Pipe Cutter,Pipe Tools,Steel,1/4 to 2-inch pipe cutter,Standard pipe cutting
+Pipe Cutter,1/8-1",Pipe Cutter,Pipe Tools,Steel,1/8 to 1-inch pipe cutter,Small pipe cutting
+Pipe Cutter,2-4",Pipe Cutter,Pipe Tools,Steel,2 to 4-inch pipe cutter,Large pipe cutting
+Tube Cutter,1/8-5/8",Tube Cutter,Pipe Tools,Steel,1/8 to 5/8-inch tube cutter,Small tube cutting
+Tube Cutter,1/4-1.5",Tube Cutter,Pipe Tools,Steel,1/4 to 1.5-inch tube cutter,Medium tube cutting
+PVC Pipe Cutter,Up to 2",PVC Pipe Cutter,Pipe Tools,Steel/Plastic,Up to 2-inch PVC cutter,PVC pipe cutting
+Plastic Pipe Cutter,Up to 1.5",Plastic Pipe Cutter,Pipe Tools,Steel/Plastic,Up to 1.5-inch plastic cutter,Plastic pipe cutting
+Chain Pipe Cutter,2-12",Chain Pipe Cutter,Pipe Tools,Steel,2 to 12-inch chain cutter,Large pipe cutting
+Soil Pipe Cutter,2-6",Soil Pipe Cutter,Pipe Tools,Steel,2 to 6-inch soil pipe cutter,Cast iron pipe cutting
+Reciprocating Saw Pipe Cutter,Standard,Reciprocating Saw Cutter,Pipe Tools,Steel,Reciprocating saw pipe cutter,Power pipe cutting
+Pipe Threading Machine,1/2-2",Pipe Threading Machine,Pipe Tools,Steel,1/2 to 2-inch threader,Pipe threading
+Pipe Threading Die,1/2",Pipe Threading Die,Pipe Tools,Steel,1/2-inch threading die,Manual pipe threading
+Pipe Threading Die,3/4",Pipe Threading Die,Pipe Tools,Steel,3/4-inch threading die,Manual pipe threading
+Pipe Threading Die,1",Pipe Threading Die,Pipe Tools,Steel,1-inch threading die,Manual pipe threading
+Pipe Die Stock,Standard,Pipe Die Stock,Pipe Tools,Steel,Standard pipe die stock,Die holding
+Pipe Tap,1/2",Pipe Tap,Pipe Tools,Steel,1/2-inch pipe tap,Internal pipe threading
+Pipe Tap,3/4",Pipe Tap,Pipe Tools,Steel,3/4-inch pipe tap,Internal pipe threading
+Pipe Tap,1",Pipe Tap,Pipe Tools,Steel,1-inch pipe tap,Internal pipe threading
+Pipe Reamer,1/2",Pipe Reamer,Pipe Tools,Steel,1/2-inch pipe reamer,Pipe end preparation
+Pipe Reamer,3/4",Pipe Reamer,Pipe Tools,Steel,3/4-inch pipe reamer,Pipe end preparation
+Pipe Reamer,1",Pipe Reamer,Pipe Tools,Steel,1-inch pipe reamer,Pipe end preparation
+Pipe Deburrer,Inside,Inside Pipe Deburrer,Pipe Tools,Steel,Inside pipe deburrer,Internal pipe deburring
+Pipe Deburrer,Outside,Outside Pipe Deburrer,Pipe Tools,Steel,Outside pipe deburrer,External pipe deburring
+Pipe Flaring Tool,Standard,Pipe Flaring Tool,Pipe Tools,Steel,Standard pipe flaring tool,Pipe end flaring
+Tube Flaring Tool,Double,Double Flaring Tool,Pipe Tools,Steel,Double flaring tool,Tube end double flaring
+Pipe Expander,1/2-2",Pipe Expander,Pipe Tools,Steel,1/2 to 2-inch expander,Pipe end expanding
+Tubing Expander,1/4-1",Tubing Expander,Pipe Tools,Steel,1/4 to 1-inch expander,Tubing end expanding
+Swaging Tool,Standard,Swaging Tool,Pipe Tools,Steel,Standard swaging tool,Tube end reducing
+Pipe Crimper,Standard,Pipe Crimper,Pipe Tools,Steel,Standard pipe crimper,Pipe fitting crimping
+Compression Fitting Tool,Standard,Compression Fitting Tool,Pipe Tools,Steel,Compression fitting tool,Compression fitting installation
+Pipe Joint Compound,Standard,Pipe Joint Compound,Pipe Tools,Chemical,Pipe joint compound,Pipe joint sealing
+Pipe Thread Sealant,Teflon Tape,Teflon Tape,Pipe Tools,PTFE,Teflon pipe tape,Pipe thread sealing
+Pipe Thread Sealant,Liquid,Liquid Thread Sealant,Pipe Tools,Chemical,Liquid thread sealant,Pipe thread sealing
+Pipe Locator,Electronic,Electronic Pipe Locator,Pipe Tools,Electronics,Electronic pipe locator,Underground pipe location
+Wire Stripper,10-22 AWG,Wire Stripper,Electrical Tools,Steel,10-22 AWG wire stripper,Wire insulation removal
+Wire Stripper,12-26 AWG,Wire Stripper,Electrical Tools,Steel,12-26 AWG wire stripper,Fine wire stripping
+Wire Stripper,Automatic,Automatic Wire Stripper,Electrical Tools,Steel,Automatic wire stripper,Quick wire stripping
+Wire Crimper,Standard,Wire Crimper,Electrical Tools,Steel,Standard wire crimper,Wire terminal crimping
+Wire Crimper,Ratcheting,Ratcheting Wire Crimper,Electrical Tools,Steel,Ratcheting wire crimper,Professional wire crimping
+Terminal Crimper,Insulated,Insulated Terminal Crimper,Electrical Tools,Steel,Insulated terminal crimper,Insulated terminal crimping
+Terminal Crimper,Non-Insulated,Non-Insulated Terminal Crimper,Electrical Tools,Steel,Non-insulated terminal crimper,Non-insulated terminal crimping
+Cable Lug Crimper,Standard,Cable Lug Crimper,Electrical Tools,Steel,Cable lug crimper,Heavy cable termination
+Coax Cable Crimper,Standard,Coax Cable Crimper,Electrical Tools,Steel,Coaxial cable crimper,Coax cable termination
+Wire Nut Driver,Standard,Wire Nut Driver,Electrical Tools,Plastic,Wire nut driver,Wire nut installation
+Wire Pulling System,Standard,Wire Pulling System,Electrical Tools,Fiberglass,Wire pulling system,Cable installation
+Fish Tape,50ft,Fish Tape,Electrical Tools,Steel,50-foot fish tape,Wire pulling
+Fish Tape,100ft,Fish Tape,Electrical Tools,Steel,100-foot fish tape,Long distance wire pulling
+Cable Puller,Manual,Manual Cable Puller,Electrical Tools,Steel,Manual cable puller,Heavy cable pulling
+Cable Puller,Electric,Electric Cable Puller,Electrical Tools,Steel/Electronics,Electric cable puller,Powered cable pulling
+Conduit Bender,1/2" EMT,EMT Conduit Bender,Electrical Tools,Steel,1/2-inch EMT bender,EMT conduit bending
+Conduit Bender,3/4" EMT,EMT Conduit Bender,Electrical Tools,Steel,3/4-inch EMT bender,EMT conduit bending
+Conduit Bender,1" EMT,EMT Conduit Bender,Electrical Tools,Steel,1-inch EMT bender,EMT conduit bending
+Rigid Conduit Bender,1/2",Rigid Conduit Bender,Electrical Tools,Steel,1/2-inch rigid bender,Rigid conduit bending
+Rigid Conduit Bender,3/4",Rigid Conduit Bender,Electrical Tools,Steel,3/4-inch rigid bender,Rigid conduit bending
+PVC Conduit Bender,Standard,PVC Conduit Bender,Electrical Tools,Steel,PVC conduit bender,PVC conduit bending
+Conduit Reamer,Standard,Conduit Reamer,Electrical Tools,Steel,Conduit reamer,Conduit end preparation
+Hole Saw,3/4",Hole Saw,Electrical Tools,Bi-Metal,3/4-inch hole saw,Electrical box holes
+Hole Saw,1",Hole Saw,Electrical Tools,Bi-Metal,1-inch hole saw,Conduit holes
+Hole Saw,1.5",Hole Saw,Electrical Tools,Bi-Metal,1.5-inch hole saw,Large conduit holes
+Hole Saw,2",Hole Saw,Electrical Tools,Bi-Metal,2-inch hole saw,Junction box holes
+Knockout Punch,1/2",Knockout Punch,Electrical Tools,Steel,1/2-inch knockout punch,Panel hole punching
+Knockout Punch,3/4",Knockout Punch,Electrical Tools,Steel,3/4-inch knockout punch,Panel hole punching
+Knockout Punch,1",Knockout Punch,Electrical Tools,Steel,1-inch knockout punch,Panel hole punching
+Step Drill Bit,1/4-3/4",Step Drill Bit,Electrical Tools,HSS,1/4 to 3/4-inch step bit,Progressive hole drilling
+Step Drill Bit,3/16-1/2",Step Drill Bit,Electrical Tools,HSS,3/16 to 1/2-inch step bit,Small progressive holes
+Cable Tray Cutter,Standard,Cable Tray Cutter,Electrical Tools,Steel,Cable tray cutter,Cable tray cutting
+MC Cable Cutter,Standard,MC Cable Cutter,Electrical Tools,Steel,MC cable cutter,Armored cable cutting
+BX Cable Cutter,Standard,BX Cable Cutter,Electrical Tools,Steel,BX cable cutter,BX cable cutting
+Romex Cable Ripper,Standard,Romex Cable Ripper,Electrical Tools,Steel,Romex cable ripper,Romex cable preparation
+Cable Jacket Stripper,Standard,Cable Jacket Stripper,Electrical Tools,Steel,Cable jacket stripper,Cable jacket removal
+Fiber Optic Stripper,Standard,Fiber Optic Stripper,Electrical Tools,Precision Steel,Fiber optic stripper,Fiber cable preparation
+Fiber Optic Cleaver,Standard,Fiber Optic Cleaver,Electrical Tools,Precision Steel,Fiber optic cleaver,Fiber end preparation
+Fusion Splicer,Standard,Fusion Splicer,Electrical Tools,Electronics,Fiber fusion splicer,Fiber optic splicing
+Cable Fault Locator,Standard,Cable Fault Locator,Electrical Tools,Electronics,Cable fault locator,Cable fault finding
+Insulation Resistance Tester,1000V,Insulation Resistance Tester,Electrical Tools,Electronics,1000V insulation tester,Insulation testing
+Insulation Resistance Tester,5000V,Insulation Resistance Tester,Electrical Tools,Electronics,5000V insulation tester,High voltage insulation testing
+Ground Fault Tester,Standard,Ground Fault Tester,Electrical Tools,Electronics,Ground fault tester,GFCI testing
+Arc Fault Tester,Standard,Arc Fault Tester,Electrical Tools,Electronics,Arc fault tester,AFCI testing
+Power Quality Analyzer,Standard,Power Quality Analyzer,Electrical Tools,Electronics,Power quality analyzer,Electrical system analysis
+Harmonic Analyzer,Standard,Harmonic Analyzer,Electrical Tools,Electronics,Harmonic analyzer,Power harmonic analysis
+Load Tester,Battery,Battery Load Tester,Electrical Tools,Electronics,Battery load tester,Battery testing
+Load Bank,Portable,Portable Load Bank,Electrical Tools,Electronics,Portable load bank,Generator/UPS testing
+Refrigerant Manifold,R-134a,R-134a Manifold,HVAC Tools,Brass/Steel,R-134a manifold gauge,R-134a system service
+Refrigerant Manifold,R-410A,R-410A Manifold,HVAC Tools,Brass/Steel,R-410A manifold gauge,R-410A system service
+Refrigerant Manifold,Universal,Universal Manifold,HVAC Tools,Brass/Steel,Universal manifold gauge,Multi-refrigerant service
+Digital Manifold,4-Way,4-Way Digital Manifold,HVAC Tools,Electronics,4-way digital manifold,Advanced refrigerant service
+Vacuum Pump,3 CFM,Vacuum Pump,HVAC Tools,Cast Iron,3 CFM vacuum pump,System evacuation
+Vacuum Pump,6 CFM,Vacuum Pump,HVAC Tools,Cast Iron,6 CFM vacuum pump,Large system evacuation
+Vacuum Pump,12 CFM,Vacuum Pump,HVAC Tools,Cast Iron,12 CFM vacuum pump,Commercial system evacuation
+Micron Gauge,Digital,Digital Micron Gauge,HVAC Tools,Electronics,Digital micron gauge,Vacuum measurement
+Refrigerant Recovery Unit,Standard,Refrigerant Recovery Unit,HVAC Tools,Steel/Electronics,Refrigerant recovery unit,Refrigerant recovery
+Refrigerant Scale,220lb,220lb Refrigerant Scale,HVAC Tools,Steel/Electronics,220-pound refrigerant scale,Refrigerant weighing
+Leak Detector,Electronic,Electronic Leak Detector,HVAC Tools,Electronics,Electronic refrigerant leak detector,Refrigerant leak detection

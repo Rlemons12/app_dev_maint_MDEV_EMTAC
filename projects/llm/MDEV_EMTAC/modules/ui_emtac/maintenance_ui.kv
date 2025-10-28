@@ -1,0 +1,194 @@
+#:kivy 2.3.0
+#:import get_color_from_hex kivy.utils.get_color_from_hex
+#:import Factory kivy.factory.Factory
+#:import dp kivy.metrics.dp
+
+<ResizableDraggableCard>:
+    elevation: 5
+    padding: dp(10)
+    orientation: "vertical"
+    radius: dp(10)
+    ripple_behavior: True
+
+    MDBoxLayout:
+        id: header
+        orientation: "horizontal"
+        size_hint_y: None
+        height: dp(40)
+        padding: [0, 0, 0, dp(5)]
+
+        MDLabel:
+            id: title
+            text: root.title
+            font_style: "H6"
+            halign: "left"
+            size_hint_x: 0.9
+            text_size: self.width, None
+            size_hint_y: None
+            height: self.texture_size[1]
+
+        MDIconButton:
+            icon: "arrow-expand" if not root.is_expanded else "arrow-collapse"
+            on_release: root.toggle_expand()
+
+    MDSeparator:
+        height: dp(1)
+        size_hint_y: None
+
+    ScrollView:
+        id: content_scroll
+        do_scroll_x: False
+        do_scroll_y: True
+        bar_width: dp(5)
+        bar_color: 0.7, 0.7, 0.7, 0.7
+        bar_inactive_color: 0.5, 0.5, 0.5, 0.5
+        effect_cls: "ScrollEffect"
+
+    Widget:
+        id: resize_handle
+        size_hint: None, None
+        size: dp(20), dp(20)
+        pos: root.right - dp(20), root.y
+        canvas:
+            Color:
+                rgba: 0.8, 0.8, 0.8, 0.7
+            Rectangle:
+                size: self.size
+                pos: self.pos
+
+<NavigationItem>:
+    IconLeftWidget:
+        icon: root.icon
+
+<MainLayout>:
+    FloatLayout:
+        canvas.before:
+            Color:
+                rgba: get_color_from_hex("#0d1117")
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        BoxLayout:
+            id: main_container
+            orientation: "vertical"
+            pos_hint: {"right": 1, "top": 1}
+            size_hint: 1, 1
+
+        BoxLayout:
+            id: overlay
+            orientation: "vertical"
+            size_hint: 1, 1
+            pos_hint: {"center_x": 0.5, "center_y": 0.5}
+            background_color: 0, 0, 0, 0
+            opacity: 0
+            canvas.before:
+                Color:
+                    rgba: 0, 0, 0, self.opacity
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+        ResizableDraggableCard:
+            id: problem_solution_panel
+            title: "Problem / Solution"
+            size_hint: None, None
+            size: dp(500), dp(300)
+            pos: dp(10), dp(10)
+            md_bg_color: get_color_from_hex("#1E1E1E")
+            line_color: get_color_from_hex("#FF5733")
+            min_width: dp(300)
+            min_height: dp(250)
+
+        ResizableDraggableCard:
+            id: documents_panel
+            title: "Documents"
+            size_hint: None, None
+            size: dp(300), dp(200)
+            pos: dp(520), dp(10)
+            md_bg_color: get_color_from_hex("#1E1E1E")
+            line_color: get_color_from_hex("#33FF57")
+            min_width: dp(300)
+            min_height: dp(250)
+
+        ResizableDraggableCard:
+            id: parts_panel
+            title: "Parts"
+            size_hint: None, None
+            size: dp(300), dp(200)
+            pos: dp(830), dp(10)
+            md_bg_color: get_color_from_hex("#1E1E1E")
+            line_color: get_color_from_hex("#3357FF")
+            min_width: dp(300)
+            min_height: dp(250)
+
+        ResizableDraggableCard:
+            id: images_panel
+            title: "Images"
+            size_hint: None, None
+            size: dp(300), dp(200)
+            pos: dp(520), dp(220)
+            md_bg_color: get_color_from_hex("#1E1E1E")
+            line_color: get_color_from_hex("#FF33A1")
+            min_width: dp(300)
+            min_height: dp(250)
+
+        # Drawings Panel - simplified without tabs for now
+        ResizableDraggableCard:
+            id: drawings_panel
+            title: "Drawings"
+            size_hint: None, None
+            size: dp(300), dp(200)
+            pos: dp(830), dp(220)
+            md_bg_color: get_color_from_hex("#1E1E1E")
+            line_color: get_color_from_hex("#FFD700")
+            min_width: dp(300)
+            min_height: dp(250)
+
+<MainScreen>:
+    MDNavigationLayout:
+        ScreenManager:
+            MDScreen:
+                name: "main_screen"
+                BoxLayout:
+                    orientation: "vertical"
+                    MDTopAppBar:
+                        id: top_app_bar
+                        title: root.get_welcome_message() if root.user else "Maintenance Troubleshooting UI"
+                        left_action_items: [["menu", lambda x: app.toggle_nav_drawer()]]
+                        right_action_items: [["logout", lambda x: app.logout()]]
+                        elevation: 10
+                    MainLayout:
+        MDNavigationDrawer:
+            id: nav_drawer
+            radius: 0, dp(16), dp(16), 0
+
+            MDNavigationDrawerMenu:
+                MDNavigationDrawerHeader:
+                    title: "Navigation"
+                    spacing: dp(10)
+                    padding: dp(12)
+
+                MDNavigationDrawerDivider:
+
+                MDBoxLayout:
+                    orientation: "vertical"
+                    adaptive_height: True
+                    padding: dp(10)
+                    spacing: dp(10)
+
+                    MDLabel:
+                        text: "Equipment Navigation"
+                        font_style: "Subtitle1"
+                        size_hint_y: None
+                        height: dp(30)
+
+                MDNavigationDrawerDivider:
+
+                MDNavigationDrawerLabel:
+                    text: "Functions"
+
+                NavigationItem:
+                    text: "Reset Layout"
+                    icon: "restore"
+                    on_release: app.apply_default_layout()

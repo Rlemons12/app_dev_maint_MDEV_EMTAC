@@ -1,0 +1,35 @@
+{% extends 'module_template_html/base_template.html' %}
+
+{% block title %}Sidebar Test{% endblock %}
+
+{% block extra_head %}
+    <!-- Additional styles or scripts can be included here -->
+{% endblock %}
+
+{% block content %}
+    <!-- Top Banner -->
+    <div class="banner">
+        THIS IS A TEST BANNER
+    </div>
+
+    <!-- Sidebar Toggle Button -->
+    <button id="sidebarCollapse" class="hamburger" aria-label="Toggle sidebar">&#9776;</button>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar Section -->
+        <div class="sidebar">
+            <p>Sidebar Content Here</p>
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="content">
+            <h1>Main Content Area</h1>
+            <p>This is a test of the sidebar. This is crazy.</p>
+        </main>
+    </div>
+{% endblock %}
+
+{% block extra_scripts %}
+    <!-- Include additional JavaScript scripts if needed -->
+{% endblock %}

@@ -1,0 +1,34 @@
+<div class="form-container">
+    <div style="color: white;">
+        <h2>Edit Troubleshooting Guide</h2>
+
+        <!-- Search Section -->
+        <label for="searchProblem" style="color:white;">Search for Problem:</label>
+        <input type="text" id="searchProblem" placeholder="Enter problem title or ID">
+        <button onclick="searchForProblem()">Search</button>
+
+        <!-- Search Results -->
+        <ul id="searchResults" style="color:white;">
+            <!-- Search results will be populated here -->
+        </ul>
+
+        <!-- Edit Form Section -->
+        <form id="editProblemSolutionForm" action="/update_problem_solution" method="post" enctype="multipart/form-data" style="display:none;">
+            <input type="hidden" name="problem_id" id="edit_problem_id">
+            <input type="hidden" name="solution_id" id="edit_solution_id">
+
+            <label for="edit_problem_name" style="color: white;">Problem Title:</label>
+            <input type="text" name="problem_name" id="edit_problem_name" placeholder="Problem"><br>
+
+            <!-- Add other fields similar to your creation form here -->
+
+            <label for="edit_problem_description" style="color: white;">Problem Description:</label><br>
+            <textarea name="problem_description" id="edit_problem_description" rows="4" cols="50"></textarea><br>
+
+            <label for="edit_solution_description" style="color: white;">Solution Description:</label><br>
+            <textarea name="solution_description" id="edit_solution_description" rows="4" cols="50"></textarea><br>
+
+            <button type="submit">Save Changes</button>
+        </form>
+    </div>
+</div>
