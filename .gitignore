@@ -109,10 +109,12 @@ runs/
 # --- GIT LFS / DVC / BUNDLES ---
 git_lfs_vault/
 *.bundle
-.dvc/
-.dvcignore
-*.dvc
-.DVC*
+
+# --- DVC Tracking ---
+!.dvc/
+!.dvcignore
+
+
 
 # --- PDF, PPT, IMAGE & OTHER GENERATED FILES ---
 PDF_FILES/
