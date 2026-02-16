@@ -25,7 +25,7 @@ try:
     )
     LOGGING_AVAILABLE = True
 except ImportError:
-    print("Warning: log_config.py not found. Using print statements.")
+    print("Warning: logging_config.py not found. Using print statements.")
     LOGGING_AVAILABLE = False
 
     def debug_id(msg, req_id=None): pass

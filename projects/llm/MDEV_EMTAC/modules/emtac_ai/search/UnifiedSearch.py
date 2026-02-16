@@ -1,38 +1,66 @@
-# UnifiedSearch.py (cleaned: regex backend removed)
+# UnifiedSearch.py
+# Clean, intent-first + resolver/expander + RAG-primary unified search hub.
+
 from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, Any, Optional, List, Callable, Tuple
+from typing import Dict, Any, Optional, List
+from modules.emtac_ai.search.rag_core.document_ui_payload import DocumentUIPayload
+from modules.configuration.log_config import (
+    logger,
+    with_request_id,
+    info_id,
+    warning_id,
+    error_id,
+    debug_id,
+    get_request_id,
+)
+from modules.configuration.config import FORCE_DEBUG_CHUNK, FORCE_DEBUG_CHUNK_ID
+from modules.emtac_ai.intent_ner.intent_orchestrator import (
+    IntentNEROrchestrator,
+)
+from modules.services.part_service import PartService
+from modules.services.image_service import ImageService
 
-from modules.configuration.log_config import logger, with_request_id, info_id, warning_id, error_id
-from modules.configuration.log_config import debug_id, get_request_id
-from modules.emtac_ai.adpators.base_search_adapter import PartsSearchAdapter, DrawingsSearchAdapter
-# ────────────────────────────────────────────────────────────────
-# Orchestrator
-# ────────────────────────────────────────────────────────────────
-try:
-    from modules.emtac_ai.query_expansion.orchestrator import EMTACQueryExpansionOrchestrator as Orchestrator
-except Exception:
-    Orchestrator = None
+# -------------------------------
+# Resolvers
+# -------------------------------
+from modules.emtac_ai.search.resolvers.parts_resolver import PartsResolver
+from modules.emtac_ai.search.resolvers.drawings_resolver import DrawingsResolver
+from modules.emtac_ai.search.resolvers.documents_resolver import DocumentResolver
 
-# Vector (AggregateSearch)
+# -------------------------------
+# Expanders
+# -------------------------------
+from modules.emtac_ai.search.expanders.parts_search_expander import PartsSearchExpander
+from modules.emtac_ai.search.expanders.drawings_search_expander import DrawingsSearchExpander
+from modules.emtac_ai.search.expanders.document_search_expander import DocumentSearchExpander
+
+# -------------------------------
+# Optional backends
+# -------------------------------
 try:
     from modules.emtac_ai import AggregateSearch
 except Exception:
     AggregateSearch = None
 
-# FTS
 try:
     from modules.emtacdb.emtacdb_fts import CompleteDocument
 except Exception:
     CompleteDocument = None
 
+from modules.emtac_ai.search.rag_core.rag_pipeline import get_default_rag
+from modules.emtacdb.emtacdb_fts import Document
 
-# ────────────────────────────────────────────────────────────────
+
+# config / feature flag
+RAG_ONLY_MODE = True
+
+# ----------------------------------------------------------------------
 # Tracking primitives
-# ────────────────────────────────────────────────────────────────
+# ----------------------------------------------------------------------
 @dataclass
 class SearchEvent:
     query: str
@@ -52,8 +80,20 @@ class SearchTracker:
     def __init__(self, db_session=None):
         self.db_session = db_session
 
-    def start(self, query: str, user_id: Optional[str], method: str, request_id: Optional[str]) -> SearchEvent:
-        return SearchEvent(query=query, user_id=user_id, method=method, started_at=time.time(), request_id=request_id)
+    def start(
+        self,
+        query: str,
+        user_id: Optional[str],
+        method: str,
+        request_id: Optional[str],
+    ) -> SearchEvent:
+        return SearchEvent(
+            query=query,
+            user_id=user_id,
+            method=method,
+            started_at=time.time(),
+            request_id=request_id,
+        )
 
     def finish(
         self,
@@ -71,6 +111,7 @@ class SearchTracker:
         ev.backend = backend
         ev.entities = entities or {}
         ev.error = error
+
         return {
             "query": ev.query,
             "user_id": ev.user_id or "anonymous",
@@ -87,228 +128,365 @@ class SearchTracker:
         }
 
 
-def _fmt_kvs(**kvs):
-    return " ".join(f"{k}={v}" for k, v in kvs.items() if v not in (None, {}, [], ""))
-
-
-# ────────────────────────────────────────────────────────────────
-# UnifiedSearch Hub
-# ────────────────────────────────────────────────────────────────
+# ----------------------------------------------------------------------
+# UnifiedSearch
+# ----------------------------------------------------------------------
 class UnifiedSearch:
     """
-    Hub for:
-      - Tracking searches
-      - Routing to orchestrator / vector / FTS
-      - Organizing results for the UI
+    Unified search pipeline:
+
+      1) Intent + Entity extraction (IntentNEROrchestrator)
+      2) Resolver (IDs only)
+      3) Expander (graph traversal)
+      4) RAG (primary narrative answer)
+      5) Vector / FTS fallback if nothing found
     """
 
     def __init__(
-        self,
-        db_session=None,
-        enable_vector: bool = True,
-        enable_fts: bool = True,
-        enable_orchestrator: bool = True,
-        intent_model_dir: Optional[str] = None,
-        ner_model_dirs: Optional[Dict[str, str]] = None,
-        ai_model=None,
-        domain: str = "maintenance",
+            self,
+            db_session=None,
+            *,
+            enable_rag: bool = True,
+            enable_vector: bool = True,
+            enable_fts: bool = True,
+            enable_intent: bool = False,  # 🔒 HARD DEFAULT OFF
     ):
-        self.db_session = getattr(self, "db_session", None) or db_session
+        self.db_session = db_session
         self.tracker = SearchTracker(self.db_session)
 
-        self.backends: Dict[str, Callable[[str], Dict[str, Any]]] = {}
-        self.orchestrator = None
+        # --------------------------------------------------
+        # Core components (explicit, predictable)
+        # --------------------------------------------------
+        self.intent_orchestrator = None  # 🔒 gated
         self.vector_engine = None
         self.fts_enabled = False
+        self.rag_pipeline = None
 
-        # Init backends
-        self._init_orchestrator(enable_orchestrator, intent_model_dir, ner_model_dirs, ai_model, domain)
-        self._init_vector(enable_vector)
-        self._init_fts(enable_fts)
+        logger.info(
+            "[UnifiedSearch] Initializing (RAG-first, intent gated)"
+        )
 
-        logger.info("UnifiedSearch hub initialized.")
+        # --------------------------------------------------
+        # Enrichment services (REQUIRED for UI enrichment)
+        # --------------------------------------------------
+        self.image_assoc_service = None
+        self.position_service = None
+        self.parts_position_image_service = None
 
-    # ---------- Initialization helpers ----------
-    def _init_orchestrator(self, enable: bool, intent_dir, ner_dirs, ai_model=None, domain="maintenance"):
-        if not enable or Orchestrator is None:
-            return
-        try:
-            self.orchestrator = Orchestrator(
-                ai_model=ai_model,
-                intent_model_dir=intent_dir,
-                ner_model_dir=ner_dirs.get("default") if isinstance(ner_dirs, dict) else None,
-                domain=domain,
+        logger.info("[UnifiedSearch] Initializing (RAG-first, intent gated)")
+
+        # --------------------------------------------------
+        # INTENT / NER — HARD DISABLED
+        # --------------------------------------------------
+        if enable_intent:
+            logger.warning(
+                "[UnifiedSearch] Intent/NER explicitly enabled — this is NOT default"
             )
-            self.register_backend("orchestrator",
-                                  lambda q, request_id=None: self._call_orchestrator(q, request_id=request_id))
-            logger.info("Orchestrator backend registered.")
-        except Exception as e:
-            logger.error(f"Failed to init orchestrator: {e}", exc_info=True)
+            from modules.emtac_ai.intent.intent_ner_orchestrator import (
+                IntentNEROrchestrator,
+            )
+            self.intent_orchestrator = IntentNEROrchestrator()
+        else:
+            logger.info(
+                "[UnifiedSearch] Intent/NER disabled (RAG-only mode)"
+            )
 
-    def _init_vector(self, enable: bool):
-        if not enable or not AggregateSearch:
-            return
-        try:
+        # --------------------------------------------------
+        # VECTOR BACKEND (feeds RAG, never controls flow)
+        # --------------------------------------------------
+        if enable_vector:
             try:
-                self.vector_engine = AggregateSearch()
-            except TypeError:
+                from modules.emtac_ai.search.aggregate_search import AggregateSearch
+
                 self.vector_engine = AggregateSearch(self.db_session)
-            self.register_backend("vector", self._call_vector_search)
-            logger.info("Vector backend registered.")
-        except Exception as e:
-            logger.warning(f"Vector backend unavailable: {e}", exc_info=True)
-
-    def _init_fts(self, enable: bool):
-        if not enable or not CompleteDocument:
-            return
-        self.fts_enabled = True
-        self.register_backend("fts", self._call_fts_search)
-        logger.info("FTS backend registered.")
-
-    # ---------- Public Entry ----------
-    @with_request_id
-    def execute_unified_search(self, question: str, user_id: Optional[str] = None, request_id: Optional[str] = None) -> Dict[str, Any]:
-        q = (question or "").strip()
-        if len(q) < 2:
-            return self._bad_request_response("Please provide a more detailed question.")
-
-        order = [b for b in ["orchestrator", "vector", "fts"] if b in self.backends]
-        for method_name in order:
-            ev = self.tracker.start(query=q, user_id=user_id, method=method_name, request_id=request_id)
-            try:
-                raw = self.backends[method_name](q)
-                results = self._extract_results(raw)
-                intent, entities = self._extract_intent_entities(raw)
-                success = len(results) > 0
-                self.tracker.finish(ev, len(results), success, intent, method_name, entities, None)
-                if success:
-                    return self._enhance_unified_response(q, method_name, intent, entities, self._organize_results_by_type(results), raw)
+                logger.info("[UnifiedSearch] Vector backend enabled")
             except Exception as e:
-                self.tracker.finish(ev, 0, False, None, method_name, {}, str(e))
-        return self._no_unified_results_response(q)
+                self.vector_engine = None
+                logger.warning(
+                    f"[UnifiedSearch] Vector backend unavailable: {e}"
+                )
 
-    # ---------- Backend registration ----------
-    def register_backend(self, name: str, fn: Callable[[str], Dict[str, Any]]):
-        self.backends[name] = fn
+        # --------------------------------------------------
+        # FULL TEXT SEARCH (feeds RAG)
+        # --------------------------------------------------
+        if enable_fts:
+            try:
+                from modules.emtacdb.models import CompleteDocument
 
-    # ---------- Backend callers ----------
+                self.fts_enabled = True
+                logger.info("[UnifiedSearch] FTS backend enabled")
+            except Exception as e:
+                self.fts_enabled = False
+                logger.warning(
+                    f"[UnifiedSearch] FTS backend unavailable: {e}"
+                )
+
+        # --------------------------------------------------
+        # RAG PIPELINE — REQUIRED
+        # --------------------------------------------------
+        if enable_rag:
+            try:
+                logger.info("[UnifiedSearch] Initializing RAG pipeline")
+
+                self.rag_pipeline = get_default_rag()
+
+                if not self.rag_pipeline:
+                    logger.critical("[UnifiedSearch] get_default_rag() returned None/False")
+                    raise RuntimeError("RAG pipeline initialization failed")
+
+                logger.info(
+                    "[UnifiedSearch] RAG pipeline initialized: %s",
+                    type(self.rag_pipeline).__name__,
+                )
+
+            except Exception as e:
+                self.rag_pipeline = None
+                logger.error(
+                    f"[UnifiedSearch] RAG initialization FAILED: {e}",
+                    exc_info=True,
+                )
+
+        # --------------------------------------------------
+        # FINAL SAFETY CHECK
+        # --------------------------------------------------
+        if not self.rag_pipeline:
+            logger.critical(
+                "[UnifiedSearch] RAG pipeline NOT AVAILABLE — system cannot answer questions"
+            )
+
+        logger.info("[UnifiedSearch] Initialization complete")
+
+    # ------------------------------------------------------------------
+    # Public entry point
+    # ------------------------------------------------------------------
     @with_request_id
-    def _call_orchestrator(self, question: str, request_id: Optional[str] = None) -> Dict[str, Any]:
-        if not self.orchestrator:
-            return {"method": "orchestrator", "results": [], "intent": "unknown", "total_results": 0}
+    def execute_unified_search(
+            self,question: str,
+            user_id: str, request_id: Optional[str] = None,
+            session=None,
+    ) -> Dict[str, Any]:
+        if FORCE_DEBUG_CHUNK and session is None:
+            raise RuntimeError("Forced chunk requires an active DB session")
 
         rid = request_id or get_request_id()
-        debug_id(f"[UnifiedSearch] _call_orchestrator called with question='{question}'", rid)
 
-        try:
-            info_id(f"[UnifiedSearch] Running orchestrator.process_query_complete_pipeline...", rid)
-            payload = self.orchestrator.process_query_complete_pipeline(
-                query=question, enable_ai=True
-            ) or {}
+        logger.debug(
+            f"[UnifiedSearch] query={question!r}",
+            extra={"request_id": rid},
+        )
 
-            intent = payload.get("intent")
-            entities = payload.get("entities") or []
-            results = []
+        # -------------------------------------------------
+        # Force Debug (CORRECT)
+        # -------------------------------------------------
+        if FORCE_DEBUG_CHUNK:
+            debug_id(
+                f"[DEBUG] Forcing chunk id={FORCE_DEBUG_CHUNK_ID}",
+                request_id,
+            )
 
-            # 🔄 normalize entities into a dict for adapters
-            ent_map = {}
-            for ent in entities:
-                lbl = ent.get("label")
-                if lbl:
-                    ent_map.setdefault(lbl, []).append(ent.get("entity"))
+            chunk = (
+                session.query(Document)
+                .filter(Document.id == FORCE_DEBUG_CHUNK_ID)
+                .one()
+            )
 
-            if intent == "parts":
-                adapter = PartsSearchAdapter(session=self.db_session, request_id=rid)
-                results = adapter.search(query=question, entities=ent_map)  # ✅ dict not list
+            return self._run_forced_chunk_pipeline(
+                forced_chunk=chunk,
+                request_id=request_id,
+                session=session,
+            )
 
-            elif intent == "drawings":
-                adapter = DrawingsSearchAdapter(session=self.db_session, request_id=rid)
-                results = adapter.search(query=question, entities=ent_map)  # ✅ use dict here too
-
-            # extend with documents/images if needed
-
-            payload.setdefault("method", "orchestrator")
-            payload.setdefault("intent", intent or "unknown")
-            payload["results"] = results
-            payload["total_results"] = len(results)
-
-            debug_id(f"[UnifiedSearch] Final orchestrator payload keys={list(payload.keys())}", rid)
-            return payload
-
-        except Exception as e:
-            error_id(f"[UnifiedSearch] Error in _call_orchestrator: {e}", rid, exc_info=True)
+        # -------------------------------------------------
+        # 0) Safety: ensure RAG exists
+        # -------------------------------------------------
+        if not self.rag_pipeline:
+            logger.error(
+                "[UnifiedSearch] RAG pipeline missing at execution time",
+                extra={"request_id": rid},
+            )
             return {
-                "method": "orchestrator",
-                "intent": "error",
-                "results": [],
-                "total_results": 0,
-                "error": str(e),
+                "strategy": "rag_unavailable",
+                "answer": "The AI assistant is temporarily unavailable.",
+                "context": None,
+                "chunks": [],
+                "documents": [],
+                "entities": {},
+                "intent": None,
             }
 
-    def _call_vector_search(self, question: str) -> Dict[str, Any]:
-        if not self.vector_engine:
-            return {"method": "vector", "results": []}
-        for cand in ["execute_aggregated_search", "search", "execute_search", "__call__"]:
-            fn = getattr(self.vector_engine, cand, None)
-            if fn:
-                try:
-                    out = fn(question)
-                    break
-                except Exception:
+        # -------------------------------------------------
+        # 1) ALWAYS run RAG first
+        # -------------------------------------------------
+        rag_result = self.rag_pipeline.run(
+            question=question,
+            request_id=rid,
+        )
+
+        # -------------------------------------------------
+        # 2) HARD STOP: RAG-only mode
+        # -------------------------------------------------
+        if RAG_ONLY_MODE:
+            logger.info(
+                "[UnifiedSearch] RAG_ONLY_MODE enabled — skipping Intent & NER",
+                extra={"request_id": rid},
+            )
+            return {
+                "strategy": "rag_only",
+                "answer": rag_result.get("answer"),
+                "context": rag_result.get("context"),
+                "chunks": rag_result.get("chunks", []),
+                "documents": rag_result.get("documents", []),
+                "entities": {},
+                "intent": None,
+            }
+
+        # -------------------------------------------------
+        # 3) Intent/NER path not implemented yet
+        # -------------------------------------------------
+        logger.warning(
+            "[UnifiedSearch] Intent/NER path not implemented — returning RAG result",
+            extra={"request_id": rid},
+        )
+        return {
+            "strategy": "rag_fallback",
+            "answer": rag_result.get("answer"),
+            "context": rag_result.get("context"),
+            "chunks": rag_result.get("chunks", []),
+            "documents": rag_result.get("documents", []),
+            "entities": {},
+            "intent": None,
+        }
+
+    def _run_forced_chunk_pipeline(
+            self,
+            *,
+            forced_chunk,
+            request_id,
+            session,
+    ):
+        """
+        Debug path: bypass retrieval and force a known chunk.
+
+        IMPORTANT:
+        - aggregate_from_chunks() is called EXACTLY ONCE
+        - all enrichment happens AFTER aggregation
+        - NO re-aggregation after enrichment (prevents data loss)
+        """
+
+        # --------------------------------------------------
+        # Normalize forced chunk into search-like structure
+        # --------------------------------------------------
+        chunks = [{
+            "id": forced_chunk.id,
+            "chunk_id": forced_chunk.id,
+            "document_id": forced_chunk.id,
+            "complete_document_id": forced_chunk.complete_document_id,
+            "content": forced_chunk.content,
+            "distance": 0.0,
+            "document_title": forced_chunk.name,
+        }]
+
+        # --------------------------------------------------
+        # SINGLE aggregation + FULL enrichment chain
+        # --------------------------------------------------
+        payload_builder = (
+            DocumentUIPayload()
+            .aggregate_from_chunks(chunks, request_id=request_id)
+            .enrich_with_images(
+                self.image_assoc_service,
+                request_id=request_id,
+            )
+            .enrich_with_positions(
+                self.position_service,
+                session=session,
+                request_id=request_id,
+            )
+            .enrich_with_parts(
+                self.parts_position_image_service,
+                session=session,
+                request_id=request_id,
+            )
+            .enrich_with_drawings(
+                session=session,
+                request_id=request_id,
+            )
+        )
+
+        # 🔑 FINALIZE ONCE
+        documents = payload_builder.build()
+
+        # --------------------------------------------------
+        # PROMOTE IMAGES TO TOP-LEVEL (UI CONTRACT)
+        # --------------------------------------------------
+        images = []
+        seen = set()
+
+        for doc in documents:
+            if not isinstance(doc, dict):
+                continue
+
+            for img in doc.get("images", []):
+                if not isinstance(img, dict):
                     continue
-        else:
-            return {"method": "vector", "results": []}
-        if isinstance(out, dict):
-            out.setdefault("method", "vector")
-            out.setdefault("results", out.get("results") or [])
-            return out
-        return {"method": "vector", "results": out or []}
 
-    def _call_fts_search(self, question: str) -> Dict[str, Any]:
-        docs = CompleteDocument.search_by_text(question, limit=25, session=self.db_session)
-        results = [{"id": getattr(d, "id", None), "title": getattr(d, "title", ""), "snippet": (getattr(d, "content", "") or "")[:400]} for d in (docs or [])]
-        return {"status": "success", "search_method": "fts", "total_results": len(results), "results": results}
+                img_id = img.get("id")
+                if img_id and img_id not in seen:
+                    seen.add(img_id)
+                    images.append(img)
 
-    # ---------- Helpers ----------
-    def _extract_results(self, raw: Dict[str, Any]) -> List[Dict[str, Any]]:
-        return raw.get("results", []) if isinstance(raw, dict) else []
+        debug_id(
+            f"[FORCED CHUNK] docs={len(documents)} imgs={len(images)}",
+            request_id,
+        )
 
-    def _extract_intent_entities(self, raw: Dict[str, Any]) -> Tuple[Optional[str], Dict[str, Any]]:
-        if not isinstance(raw, dict):
-            return None, {}
-        return raw.get("intent") or raw.get("detected_intent"), raw.get("entities") or raw.get("nlp_analysis", {}).get("entities", {})
+        # --------------------------------------------------
+        # FINAL UI-NORMALIZED RESPONSE
+        # --------------------------------------------------
+        return {
+            "answer": "DEBUG MODE: Forced chunk used.",
+            "documents": documents,
+            "thumbnails": images,  # UI expects thumbnails/images here
+            "parts": [],  # can be promoted later if needed
+            "method": "forced_chunk",
+        }
 
-    def _organize_results_by_type(self, results: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
-        buckets = {"parts": [], "drawings": [], "images": [], "positions": [], "other": []}
-        for r in results or []:
-            t = (r.get("type") or r.get("entity_type") or "other").lower()
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+    def _organize_results_by_type(
+        self, results: List[Dict[str, Any]]
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        buckets = {
+            "parts": [],
+            "drawings": [],
+            "images": [],
+            "documents": [],
+            "positions": [],
+            "other": [],
+        }
+
+        for r in results:
+            t = (r.get("type") or "").lower()
             if t.startswith("part"):
                 buckets["parts"].append(r)
             elif "drawing" in t:
                 buckets["drawings"].append(r)
             elif "image" in t:
                 buckets["images"].append(r)
-            elif "position" in t or "location" in t:
+            elif "document" in t:
+                buckets["documents"].append(r)
+            elif "position" in t:
                 buckets["positions"].append(r)
             else:
                 buckets["other"].append(r)
+
         return buckets
 
-    def _enhance_unified_response(self, question, method, intent, entities, organized, raw) -> Dict[str, Any]:
+    def _bad_request_response(self, msg: str) -> Dict[str, Any]:
         return {
             "search_type": "unified",
-            "status": "success",
-            "query": question,
+            "status": "error",
+            "message": msg,
+            "results_by_type": {},
             "timestamp": datetime.utcnow().isoformat(),
-            "detected_intent": intent or "UNKNOWN",
-            "entities": entities or {},
-            "results_by_type": organized,
-            "total_results": sum(len(v) for v in organized.values()),
-            "search_method": method,
         }
-
-    def _no_unified_results_response(self, question: str) -> Dict[str, Any]:
-        return {"search_type": "unified", "status": "no_results", "query": question, "results_by_type": {"parts": [], "drawings": [], "images": [], "positions": [], "other": []}, "timestamp": datetime.utcnow().isoformat(), "search_method": "none"}
-
-    def _bad_request_response(self, msg: str) -> Dict[str, Any]:
-        return {"search_type": "unified", "status": "error", "message": msg, "results_by_type": {}, "timestamp": datetime.utcnow().isoformat()}

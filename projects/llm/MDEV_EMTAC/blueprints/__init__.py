@@ -17,6 +17,8 @@ from flask import Flask
 logger.info("Starting the Flask application")
 
 # Import blueprints
+from blueprints.chatbot.panel_parts import panel_parts_bp
+from blueprints.media_routes import media_bp
 from blueprints.upload_search_db.upload_document_list_data import get_upload_document_list_data_bp
 from blueprints.assembly_routes import assembly_model_bp
 from blueprints.tool_routes import tool_blueprint_bp
@@ -140,6 +142,9 @@ def register_blueprints(app):
 
     app.register_blueprint(position_data_assignment_data_add_dependencies_bp)
 
+    app.register_blueprint(media_bp)
+
+    app.register_blueprint(panel_parts_bp)
 
 
 app = Flask(__name__)

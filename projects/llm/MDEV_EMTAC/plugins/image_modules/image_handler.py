@@ -4,8 +4,8 @@ import os
 import imghdr
 from PIL import Image, UnidentifiedImageError
 from plugins.image_modules import CLIPModelHandler, NoImageModel
-from modules.emtacdb.emtacdb_fts import Session, load_image_model_config_from_db, ImageEmbedding
 from modules.configuration.log_config import logger
+from modules.configuration.config_env import DatabaseConfig
 
 class ImageHandler:
     """
@@ -13,6 +13,14 @@ class ImageHandler:
     """
 
     def __init__(self):
+        # lazy import
+        from modules.emtacdb.emtacdb_fts import load_image_model_config_from_db
+        self.current_model = load_image_model_config_from_db()
+
+        # keep Session lazy too
+        from modules.emtacdb.emtacdb_fts import Session
+        self.Session = Session
+
         self.model_handlers = {
             "clip": CLIPModelHandler(),
             "no_model": NoImageModel()

@@ -1,4 +1,4 @@
-# modules/configuration/log_config.py
+# modules/configuration/logging_config.py
 import logging
 import sys
 import os
@@ -57,7 +57,7 @@ formatter = logging.Formatter(
 file_handler.setFormatter(formatter)
 console_handler.setFormatter(formatter)
 
-# Force UTF-8 encoding for console output (add at top of log_config.py)
+# Force UTF-8 encoding for console output (add at top of logging_config.py)
 if sys.platform.startswith('win'):
     # Try to set console to UTF-8 on Windows
     try:
@@ -142,7 +142,7 @@ def clear_request_id():
         delattr(_local, 'request_id')
 
 
-# Replace your log_with_id function in log_config.py with this bulletproof version
+# Replace your log_with_id function in logging_config.py with this bulletproof version
 
 def log_with_id(level, message, request_id=None, *args, **kwargs):
     """Log message with request ID, bulletproof against Unicode/console encoding issues."""

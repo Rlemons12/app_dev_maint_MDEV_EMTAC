@@ -44,6 +44,8 @@ from .search.db_search_repo.complete_document_repository import CompleteDocument
 from .search.db_search_repo.aggregate_search import PositionFilters, PartSearchParams
 
 
+from .training_scripts import *
+
 # --- NLP (Intent/NER) ---
 from .emtac_intent_entity import IntentEntityPlugin
 

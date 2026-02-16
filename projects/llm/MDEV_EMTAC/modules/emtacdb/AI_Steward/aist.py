@@ -246,23 +246,30 @@ class AistManager(UnifiedSearch):
         self.current_session_id: Optional[str] = None
         self.query_tracker = None
 
-        logger.info("=== AIST MANAGER INITIALIZATION (UnifiedSearch hub) ===")
-        # Initialize the unified search hub
+        logger.info("=== AIST MANAGER INITIALIZATION (RAG-FIRST MODE) ===")
+
+        # --------------------------------------------------
+        # Initialize UnifiedSearch (RAG ONLY)
+        # --------------------------------------------------
         try:
             UnifiedSearch.__init__(
                 self,
                 db_session=self.db_session,
-                enable_orchestrator=True,  # Orchestrator (NER + intent + adapters)
-                enable_vector=True,        # Vector / hybrid (AggregateSearch)
-                enable_fts=True,           # TSVECTOR FTS
-                enable_regex=False         # Legacy regex fallback disabled by default
+                enable_rag=True,       # ✅ REQUIRED
+                enable_vector=True,    # feeds RAG
+                enable_fts=True,       # feeds RAG
+                enable_intent=False,   # 🔒 HARD DISABLED
             )
-            logger.info("UnifiedSearch hub initialized.")
+            logger.info("UnifiedSearch initialized in RAG-first mode.")
         except Exception as e:
-            logger.error(f"UnifiedSearch initialization failed: {e}")
+            logger.critical(f"UnifiedSearch initialization failed: {e}", exc_info=True)
+            raise RuntimeError("AistManager cannot start without RAG") from e
 
-        # Initialize tracking (optional, DB-backed)
+        # --------------------------------------------------
+        # Optional tracking (DB-backed)
+        # --------------------------------------------------
         self._init_tracking()
+
         logger.info("=== AIST MANAGER INITIALIZATION COMPLETE ===")
 
     # ---------- Tracking ----------

@@ -138,3 +138,14 @@ class ImageService:
             except SQLAlchemyError as e:
                 error_id(f"ImageService.similarity failed: {e}", None)
                 raise
+
+    def serialize(self, image: Image) -> Dict[str, Any]:
+        return {
+            "id": image.id,
+            "title": image.title,
+            "description": image.description,
+            # 🔑 ALWAYS use the serving endpoint
+            "url": f"/serve_image/{image.id}",
+        }
+
+

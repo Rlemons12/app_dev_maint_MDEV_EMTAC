@@ -212,3 +212,81 @@ def get_available_models():
             'status': 'error',
             'message': str(e)
         }), 500
+
+@admin_bp.route('/register_model', methods=['POST'])
+def register_model():
+    if session.get('user_level') != UserLevel.ADMIN.name:
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    data = request.json
+
+    required = {"model_type", "name", "label", "backend"}
+    if not required.issubset(data):
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    success = ModelsConfig.register_available_model(
+        model_type=data["model_type"],
+        model_info={
+            "name": data["name"],
+            "label": data.get("label", data["name"]),
+            "backend": data.get("backend", "gpu_service"),
+            "enabled": data.get("enabled", True),
+            "context_window": data.get("context_window"),
+        },
+    )
+
+    return jsonify({"success": success})
+
+@admin_bp.route("/add_model", methods=["POST"])
+def add_model():
+    logger.debug("Add model requested by user: %s", session.get("user_id"))
+
+    if session.get("user_level") != UserLevel.ADMIN.name:
+        logger.warning("Unauthorized attempt to add model by user: %s", session.get("user_id"))
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+    data = request.get_json(silent=True) or {}
+
+    model_type = (data.get("model_type") or "").strip()
+    name = (data.get("name") or "").strip()
+    label = (data.get("label") or name).strip()
+    path = (data.get("path") or "").strip()
+    backend = (data.get("backend") or "gpu_service").strip()
+    gpu_key = (data.get("gpu_key") or "").strip()
+    enabled = bool(data.get("enabled", True))
+
+    if not model_type or not name:
+        return jsonify({"status": "error", "message": "model_type and name are required"}), 400
+
+    try:
+        models = ModelsConfig.get_available_models(model_type)
+
+        # Prevent duplicates
+        for m in models:
+            if isinstance(m, dict) and m.get("name") == name:
+                return jsonify({"status": "error", "message": f"Model '{name}' already exists"}), 409
+
+        entry = {
+            "name": name,
+            "label": label,
+            "enabled": enabled,
+            "backend": backend,
+        }
+
+        # optional fields
+        if path:
+            entry["path"] = path
+        if gpu_key:
+            entry["gpu_key"] = gpu_key
+
+        models.append(entry)
+
+        ModelsConfig.set_config_value(model_type, "available_models", json.dumps(models))
+
+        return jsonify({"status": "success", "added": entry, "total": len(models)})
+
+    except Exception as e:
+        logger.error("Error adding model: %s", e, exc_info=True)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+

@@ -14,15 +14,20 @@
     }*/
     </style>
     <!-- Add these to your extra_head block -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/6.0.0/introjs.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/6.0.0/introjs-rtl.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<!-- ORIGINAL CDN: <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/6.0.0/introjs.min.css"> -->
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/introjs/introjs.min.css') }}"/>
+<!-- ORIGINAL CDN: <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/6.0.0/introjs-rtl.min.css"> -->
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/introjs/introjs-rtl.min.css') }}"/>
+<!-- ORIGINAL CDN: <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> -->
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/all.min.css') }}"/>
     <!-- Bootstrap CSS -->
-    <link href="https://gcore.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- ORIGINAL CDN: <link href="https://gcore.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> -->
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}"/>
     <!-- IntroJS CSS -->
 
     <!-- Select2 CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet" />
+<!-- ORIGINAL CDN: <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet" /> -->
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/select2/select2.min.css') }}"/>
 
     <!-- Page-specific CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/module_template/base.css') }}">
@@ -88,13 +93,17 @@
 
 {% block extra_scripts %}
 <!-- Add this to your extra_scripts block -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/6.0.0/intro.min.js"></script>
+<!-- ORIGINAL CDN: <script src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/6.0.0/intro.min.js"></script> -->
+<script src="{{ url_for('static', filename='vendor/introjs/intro.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/pst_troubleshooting/tour.js') }}"></script>
 <!-- Bootstrap JS Bundle (Includes Popper) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<!-- ORIGINAL CDN: <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script> -->
+<script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
 <!-- jQuery and Select2 JS -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script>
+<!-- ORIGINAL CDN: <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script> -->
+<script src="{{ url_for('static', filename='vendor/jquery/jquery-3.6.0.min.js') }}"></script>
+<!-- ORIGINAL CDN: <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script> -->
+<script src="{{ url_for('static', filename='vendor/select2/select2.min.js') }}"></script>
 
 <!-- Custom JS Files -->
 <script src="{{ url_for('static', filename='js/pst_troubleshooting/role_base_button_acc_ctrl.js') }}"></script>

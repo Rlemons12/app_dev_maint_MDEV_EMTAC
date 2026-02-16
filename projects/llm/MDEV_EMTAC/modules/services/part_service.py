@@ -1,10 +1,15 @@
 # services/part_service.py
 from typing import Optional, List, Dict, Any
 from sqlalchemy.exc import SQLAlchemyError
-
+from sqlalchemy import select
 from modules.emtacdb.emtacdb_fts import Part
 from modules.configuration.config_env import DatabaseConfig
 from modules.configuration.log_config import info_id, error_id, with_request_id
+from sqlalchemy.orm import Session
+from modules.emtacdb.emtacdb_fts import (
+    Part,
+    PartsPositionImageAssociation,   # ← THIS WAS MISSING
+)
 
 
 class PartService:
@@ -40,31 +45,68 @@ class PartService:
                   type_: Optional[str] = None,
                   notes: Optional[str] = None,
                   documentation: Optional[str] = None) -> int:
-        """Wrapper for Part.add_part_to_db (get-or-create, returns ID)."""
         with self.db_config.main_session() as session:
             try:
-                return Part.add_part_to_db(session,
-                                           part_number=part_number,
-                                           name=name,
-                                           oem_mfg=oem_mfg,
-                                           model=model,
-                                           class_flag=class_flag,
-                                           ud6=ud6,
-                                           type_=type_,
-                                           notes=notes,
-                                           documentation=documentation)
+                return Part.add_part_to_db(
+                    session,
+                    part_number=part_number,
+                    name=name,
+                    oem_mfg=oem_mfg,
+                    model=model,
+                    class_flag=class_flag,
+                    ud6=ud6,
+                    type_=type_,
+                    notes=notes,
+                    documentation=documentation,
+                )
             except SQLAlchemyError as e:
                 error_id(f"PartService.add_to_db failed: {e}", None)
                 raise
 
     @with_request_id
     def find(self, **filters) -> List[Part]:
-        """Search for Parts using Part.search()."""
         try:
-            return Part.search(**filters)
+            return Part.search(**filters, session=None)
         except SQLAlchemyError as e:
             error_id(f"PartService.find failed: {e}", None)
             raise
+
+    @with_request_id
+    def get(self, part_id: int) -> Optional[Part]:
+        try:
+            return Part.get_by_id(part_id)
+        except SQLAlchemyError as e:
+            error_id(f"PartService.get failed: {e}", None)
+            raise
+
+    # ------------------------
+    # ASSOCIATION QUERY (KEY FIX)
+    # ------------------------
+
+    def get_parts_for_positions(
+            self,
+            position_ids: List[int],
+            session: Session,
+    ) -> List[Part]:
+        """
+        Return all Parts associated with the given Position IDs.
+        Service-backed (NO ORM traversal).
+        """
+
+        if not position_ids:
+            return []
+
+        stmt = (
+            select(Part)
+            .join(
+                PartsPositionImageAssociation,
+                PartsPositionImageAssociation.part_id == Part.id,
+            )
+            .where(PartsPositionImageAssociation.position_id.in_(position_ids))
+            .distinct()
+        )
+
+        return session.execute(stmt).scalars().all()
 
     @with_request_id
     def fts_search(self, search_text: str, limit: int = 100) -> List[tuple]:
@@ -203,3 +245,4 @@ class PartService:
             except SQLAlchemyError as e:
                 error_id(f"PartService.find_related failed: {e}", None)
                 raise
+

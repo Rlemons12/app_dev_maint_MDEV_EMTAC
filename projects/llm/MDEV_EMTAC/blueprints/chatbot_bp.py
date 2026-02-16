@@ -173,30 +173,37 @@ def update_qanda(request_id=None):
 def ask(request_id=None):
     """Process questions and return answers using AistManager with detailed performance monitoring."""
 
-    # Ensure all responses include the 4 block containers
+    # --------------------------------------------------
+    # Ensure all responses include the 4 UI block containers
+    # --------------------------------------------------
     def _ensure_blocks(response: dict) -> dict:
         if "blocks" not in response or not isinstance(response["blocks"], dict):
             response["blocks"] = {}
-        for key in ("parts-container", "images-container", "documents-container", "drawings-container"):
+        for key in (
+            "parts-container",
+            "images-container",
+            "documents-container",
+            "drawings-container",
+        ):
             response["blocks"].setdefault(key, [])
         return response
 
     performance_metrics = {
-        'request_start': time.time(),
-        'steps': {},
-        'total_time': 0,
-        'step_count': 0
+        "request_start": time.time(),
+        "steps": {},
+        "total_time": 0,
+        "step_count": 0,
     }
 
     def track_step(step_name, step_start_time, end_time=None):
         if end_time is None:
             end_time = time.time()
         duration = end_time - step_start_time
-        performance_metrics['steps'][step_name] = {
-            'duration': duration,
-            'start_offset': step_start_time - performance_metrics['request_start']
+        performance_metrics["steps"][step_name] = {
+            "duration": duration,
+            "start_offset": step_start_time - performance_metrics["request_start"],
         }
-        performance_metrics['step_count'] += 1
+        performance_metrics["step_count"] += 1
 
         if duration > 1.0:
             warning_id(f"Slow step '{step_name}': {duration:.3f}s", request_id)
@@ -213,191 +220,171 @@ def ask(request_id=None):
     info_id("New chat request received", request_id)
 
     try:
-        # --- Step 1: Input parsing ---
+        # --------------------------------------------------
+        # Step 1: Input parsing
+        # --------------------------------------------------
         step_start = time.time()
         data = request.json or {}
         debug_id(f"Request data keys: {list(data.keys()) if data else 'None'}", request_id)
 
-        user_id = data.get('userId', 'anonymous')
-        question = data.get('question', '').strip()
-        client_type = data.get('clientType', 'web')
-        rating = data.get('rating')
-        comment = data.get('comment')
-        track_step('input_parsing', step_start)
+        user_id = data.get("userId", "anonymous")
+        question = data.get("question", "").strip()
+        client_type = data.get("clientType", "web")
+        rating = data.get("rating")
+        comment = data.get("comment")
 
-        info_id(f"Processing question from user {user_id}: '{question[:100]}{'...' if len(question) > 100 else ''}'", request_id)
-        debug_id(f"Client type: {client_type}, Rating: {rating}, Comment present: {bool(comment)}", request_id)
+        track_step("input_parsing", step_start)
+
+        info_id(
+            f"Processing question from user {user_id}: "
+            f"'{question[:100]}{'...' if len(question) > 100 else ''}'",
+            request_id,
+        )
 
         if not question or len(question) < 3:
-            warning_id(f"Question too short: '{question}'", request_id)
-            performance_metrics['total_time'] = time.time() - performance_metrics['request_start']
-            return jsonify(_ensure_blocks({
-                'answer': "Please provide a more detailed question so I can help you better.",
-                'status': 'invalid_input',
-                'performance': performance_metrics
-            }))
+            performance_metrics["total_time"] = time.time() - performance_metrics["request_start"]
+            return jsonify(
+                _ensure_blocks({
+                    "answer": "Please provide a more detailed question so I can help you better.",
+                    "status": "invalid_input",
+                    "performance": performance_metrics,
+                })
+            )
 
         if question.lower() == "end session please":
-            info_id(f"User {user_id} requested to end the session", request_id)
-            performance_metrics['total_time'] = time.time() - performance_metrics['request_start']
-            return jsonify(_ensure_blocks({
-                'answer': "Session ended. Thank you for using the chatbot!",
-                'status': 'session_ended',
-                'redirect': url_for('logout_bp.logout'),
-                'performance': performance_metrics
-            }))
-
-        # --- Step 2: Init AistManager ---
-        step_start = time.time()
-        try:
-            aist_manager = get_or_create_aist_manager()
-            debug_id("AistManager obtained", request_id)
-            track_step('aist_manager_init', step_start)
-        except Exception as manager_err:
-            track_step('aist_manager_init_failed', step_start)
-            error_id(f"Failed to get AistManager: {manager_err}", request_id, exc_info=True)
-            performance_metrics['total_time'] = time.time() - performance_metrics['request_start']
-            return jsonify(_ensure_blocks({
-                'answer': "I'm having trouble initializing the AI system. Please try again.",
-                'status': 'manager_error',
-                'performance': performance_metrics
-            })), 500
-
-        # --- Step 3: Database session ---
-        step_start = time.time()
-        try:
-            db_config = DatabaseConfig()
-            local_session = db_config.get_main_session()
-            debug_id("Database session created", request_id)
-            aist_manager.db_session = local_session
-            track_step('database_session_creation', step_start)
-        except Exception as db_err:
-            track_step('database_session_creation_failed', step_start)
-            error_id(f"Failed to create database session: {db_err}", request_id, exc_info=True)
-            performance_metrics['total_time'] = time.time() - performance_metrics['request_start']
-            return jsonify(_ensure_blocks({
-                'answer': "I'm having trouble accessing the database. Please try again.",
-                'status': 'database_error',
-                'performance': performance_metrics
-            })), 500
-
-        # --- Step 4: Process with AistManager ---
-        try:
-            step_start = time.time()
-            aist_manager.begin_request(request_id)
-            track_step('aist_manager_begin_request', step_start)
-
-            step_start = time.time()
-            info_id("Sending question to AistManager for processing", request_id)
-            result = aist_manager.answer_question(
-                question=question,
-                user_id=user_id,
-                request_id=request_id,
-                client_type=client_type
+            performance_metrics["total_time"] = time.time() - performance_metrics["request_start"]
+            return jsonify(
+                _ensure_blocks({
+                    "answer": "Session ended. Thank you for using the chatbot!",
+                    "status": "session_ended",
+                    "redirect": url_for("logout_bp.logout"),
+                    "performance": performance_metrics,
+                })
             )
-            processing_time = track_step('aist_manager_processing', step_start)
 
-            if not isinstance(result, dict):
-                error_id(f"AistManager returned invalid format: {type(result)}", request_id)
-                result = {'status': 'error', 'answer': 'Invalid response format', 'method': 'error_recovery'}
+        # --------------------------------------------------
+        # Step 2: Init AistManager
+        # --------------------------------------------------
+        step_start = time.time()
+        aist_manager = get_or_create_aist_manager()
+        track_step("aist_manager_init", step_start)
 
-            status = result.get('status')
+        # --------------------------------------------------
+        # Step 3: Database session
+        # --------------------------------------------------
+        step_start = time.time()
+        db_config = DatabaseConfig()
+        local_session = db_config.get_main_session()
+        aist_manager.db_session = local_session
+        track_step("database_session_creation", step_start)
 
-            # --- Step 5: Format outputs ---
-            step_start = time.time()
+        # --------------------------------------------------
+        # Step 4: Process with AistManager
+        # --------------------------------------------------
+        step_start = time.time()
+        aist_manager.begin_request(request_id)
+        track_step("aist_manager_begin_request", step_start)
 
-            if status == 'end_session':
-                info_id("AistManager requested session end", request_id)
-                performance_metrics['total_time'] = time.time() - performance_metrics['request_start']
-                return jsonify(_ensure_blocks({
-                    'answer': "Session ended as requested.",
-                    'status': 'session_ended',
-                    'redirect': url_for('logout_bp.logout'),
-                    'performance': performance_metrics
-                }))
+        step_start = time.time()
+        result = aist_manager.answer_question(
+            question=question,
+            user_id=user_id,
+            request_id=request_id,
+            client_type=client_type,
+        )
+        processing_time = track_step("aist_manager_processing", step_start)
 
-            elif status == 'success':
-                answer = result.get('answer', 'No answer provided')
-                method = result.get('method', 'unknown')
-                total_time = time.time() - performance_metrics['request_start']
-                performance_metrics['total_time'] = total_time
+        if not isinstance(result, dict):
+            error_id("AistManager returned non-dict response", request_id)
+            result = {"status": "error", "answer": "Invalid response format"}
 
-                info_id(f"Question answered using '{method}' strategy, answer length: {len(answer)}", request_id)
+        status = result.get("status")
 
-                response_data = {
-                    'answer': answer,
-                    'status': 'success',
-                    'method': method,
-                    'response_time': total_time,
-                    'performance': performance_metrics if client_type == 'debug' else {
-                        'total_time': total_time,
-                        'processing_time': processing_time,
-                        'method': method
+        # --------------------------------------------------
+        # Step 5: Response formatting (FIXED)
+        # --------------------------------------------------
+        if status == "success":
+            answer = result.get("answer", "No answer provided")
+            method = result.get("method", "unknown")
+
+            total_time = time.time() - performance_metrics["request_start"]
+            performance_metrics["total_time"] = total_time
+
+            # ✅ PASS THROUGH BLOCKS — DO NOT REBUILD
+            blocks = result.get("blocks") or {
+                "documents-container": result.get("documents", []),
+                "images-container": result.get("images", []),
+                "parts-container": result.get("parts", []),
+                "drawings-container": result.get("drawings", []),
+            }
+
+            debug_id(
+                f"[UI BLOCKS FINAL] docs={len(blocks.get('documents-container', []))} "
+                f"imgs={len(blocks.get('images-container', []))} "
+                f"parts={len(blocks.get('parts-container', []))}",
+                request_id,
+            )
+
+            response_payload = {
+                **result,  # preserve all AistManager output
+                "answer": answer,
+                "status": "success",
+                "method": method,
+                "response_time": total_time,
+                "performance": (
+                    performance_metrics
+                    if client_type == "debug"
+                    else {
+                        "total_time": total_time,
+                        "processing_time": processing_time,
+                        "method": method,
                     }
-                }
-                return jsonify(_ensure_blocks({**result, **response_data}))
+                ),
+                "blocks": blocks,
+            }
 
-            elif status == 'error':
-                error_msg = result.get('answer', "I encountered an issue.")
-                error_id(f"AistManager returned error: {error_msg}", request_id)
-                performance_metrics['total_time'] = time.time() - performance_metrics['request_start']
-                return jsonify(_ensure_blocks({
-                    'answer': error_msg,
-                    'status': 'error',
-                    'performance': performance_metrics
-                })), 500
+            return jsonify(_ensure_blocks(response_payload))
 
-            else:
-                warning_id(f"Unknown status from AistManager: {status}", request_id)
-                performance_metrics['total_time'] = time.time() - performance_metrics['request_start']
-                return jsonify(_ensure_blocks({
-                    'answer': result.get('answer', "Unexpected response format."),
-                    'status': status or 'unknown',
-                    'method': result.get('method', 'unknown'),
-                    'performance': performance_metrics
-                })), 200
+        elif status == "error":
+            performance_metrics["total_time"] = time.time() - performance_metrics["request_start"]
+            return jsonify(
+                _ensure_blocks({
+                    "answer": result.get("answer", "I encountered an issue."),
+                    "status": "error",
+                    "performance": performance_metrics,
+                })
+            ), 500
 
-        except Exception as processing_err:
-            if local_session:
-                try:
-                    local_session.rollback()
-                except:
-                    pass
-            error_id(f"Error during AistManager processing: {processing_err}", request_id, exc_info=True)
-            performance_metrics['total_time'] = time.time() - performance_metrics['request_start']
-            return jsonify(_ensure_blocks({
-                'answer': "I encountered an unexpected issue while processing your question.",
-                'status': 'processing_error',
-                'error_type': type(processing_err).__name__,
-                'performance': performance_metrics
-            })), 500
-
-        finally:
-            if local_session:
-                try:
-                    local_session.close()
-                    debug_id("Database session closed", request_id)
-                except Exception as cleanup_err:
-                    error_id(f"Error during cleanup: {cleanup_err}", request_id)
-            track_step('cleanup', time.time())
-
-    except SQLAlchemyError as e:
-        error_id(f"Database error: {e}", request_id, exc_info=True)
-        performance_metrics['total_time'] = time.time() - performance_metrics['request_start']
-        return jsonify(_ensure_blocks({
-            'answer': "I'm having trouble accessing the information you need right now. Please try again later.",
-            'status': 'database_error',
-            'performance': performance_metrics
-        })), 500
+        else:
+            performance_metrics["total_time"] = time.time() - performance_metrics["request_start"]
+            return jsonify(
+                _ensure_blocks({
+                    "answer": result.get("answer", "Unexpected response."),
+                    "status": status or "unknown",
+                    "method": result.get("method", "unknown"),
+                    "performance": performance_metrics,
+                })
+            )
 
     except Exception as e:
         error_id(f"Unexpected error in ask route: {e}", request_id, exc_info=True)
-        performance_metrics['total_time'] = time.time() - performance_metrics['request_start']
-        return jsonify(_ensure_blocks({
-            'answer': "I encountered an unexpected issue. Please try rephrasing your question.",
-            'status': 'unexpected_error',
-            'performance': performance_metrics
-        })), 500
+        performance_metrics["total_time"] = time.time() - performance_metrics["request_start"]
+        return jsonify(
+            _ensure_blocks({
+                "answer": "I encountered an unexpected issue. Please try again.",
+                "status": "unexpected_error",
+                "performance": performance_metrics,
+            })
+        ), 500
+
+    finally:
+        if local_session:
+            try:
+                local_session.close()
+                debug_id("Database session closed", request_id)
+            except Exception:
+                pass
+
 
 @chatbot_bp.route('/health', methods=['GET'])
 @with_request_id

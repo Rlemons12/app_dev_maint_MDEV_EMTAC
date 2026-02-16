@@ -1,127 +1,166 @@
-# services/equipment_group_service.py
-from typing import Optional, List, Union, Dict, Any
+# modules/services/equipment_group_service.py
+
+from typing import Optional, List
 from sqlalchemy.exc import SQLAlchemyError
 from modules.emtacdb.emtacdb_fts import EquipmentGroup
 from modules.configuration.config_env import DatabaseConfig
-from modules.configuration.log_config import info_id, error_id, with_request_id
+from modules.configuration.log_config import (
+    info_id, error_id, with_request_id
+)
 
 
 class EquipmentGroupService:
-    """Service layer for managing EquipmentGroup entities with a slim API."""
+    """Service layer for managing EquipmentGroup entities."""
 
-    def __init__(self, db_config: DatabaseConfig = None):
-        # Initialize with a DatabaseConfig (fallback to default if not provided)
+    def __init__(self, db_config: Optional[DatabaseConfig] = None):
         self.db_config = db_config or DatabaseConfig()
 
+    # ------------------------------------------------------------
+    # FIND / SEARCH
+    # ------------------------------------------------------------
     @with_request_id
-    def find(self, name: Optional[str] = None, area_id: Optional[int] = None) -> List[EquipmentGroup]:
+    def find(self,
+             name: Optional[str] = None,
+             area_id: Optional[int] = None,
+             request_id: Optional[str] = None) -> List[EquipmentGroup]:
         """
-        Search for EquipmentGroups with flexible filters.
-        - If `name` is provided → returns groups whose name contains it (case-insensitive).
-        - If `area_id` is provided → returns groups belonging to that area.
-        Returns a list of matching EquipmentGroup objects.
+        Search for EquipmentGroups by name and/or area_id.
+        Model remains unchanged.
         """
         with self.db_config.main_session() as session:
             try:
                 query = session.query(EquipmentGroup)
+
                 if name:
                     query = query.filter(EquipmentGroup.name.ilike(f"%{name}%"))
+
                 if area_id:
-                    query = query.filter_by(area_id=area_id)
+                    query = query.filter(EquipmentGroup.area_id == area_id)
+
                 results = query.all()
-                info_id(f"Found {len(results)} EquipmentGroups", None)
+                info_id(f"EquipmentGroupService.find → {len(results)} results", request_id)
                 return results
+
             except SQLAlchemyError as e:
-                error_id(f"EquipmentGroupService.find failed: {e}", None)
+                error_id(f"EquipmentGroupService.find failed: {e}", request_id)
                 raise
 
+    # ------------------------------------------------------------
+    # GET BY ID
+    # ------------------------------------------------------------
     @with_request_id
-    def get(self, equipment_group_id: int) -> Optional[EquipmentGroup]:
-        """
-        Retrieve a single EquipmentGroup by its ID.
-        Returns the EquipmentGroup object if found, otherwise None.
-        """
+    def get(self, equipment_group_id: int,
+            request_id: Optional[str] = None) -> Optional[EquipmentGroup]:
+
         with self.db_config.main_session() as session:
             try:
-                return session.query(EquipmentGroup).filter_by(id=equipment_group_id).first()
+                return (
+                    session.query(EquipmentGroup)
+                    .filter_by(id=equipment_group_id)
+                    .first()
+                )
             except SQLAlchemyError as e:
-                error_id(f"EquipmentGroupService.get failed: {e}", None)
+                error_id(f"EquipmentGroupService.get failed: {e}", request_id)
                 raise
 
+    # ------------------------------------------------------------
+    # CREATE / UPDATE
+    # ------------------------------------------------------------
     @with_request_id
-    def save(self, name: str, area_id: int, description: Optional[str] = None,
-             equipment_group_id: Optional[int] = None) -> EquipmentGroup:
+    def save(self,
+             name: str,
+             area_id: int,
+             description: Optional[str] = None,
+             equipment_group_id: Optional[int] = None,
+             request_id: Optional[str] = None) -> EquipmentGroup:
         """
-        Create or update an EquipmentGroup.
-        - If `equipment_group_id` is given → updates that group with new values.
-        - If not → creates a new EquipmentGroup with the given name, area_id, and description.
-        Returns the created or updated EquipmentGroup object.
+        Save or update WITHOUT editing the model.
+        Uses raw SQLAlchemy session operations only.
         """
         with self.db_config.main_session() as session:
             try:
                 if equipment_group_id:
-                    group = session.query(EquipmentGroup).filter_by(id=equipment_group_id).first()
+                    # Update existing
+                    group = (
+                        session.query(EquipmentGroup)
+                        .filter_by(id=equipment_group_id)
+                        .first()
+                    )
                     if not group:
-                        raise ValueError(f"EquipmentGroup with id {equipment_group_id} not found")
+                        raise ValueError(f"EquipmentGroup id={equipment_group_id} not found")
+
                     group.name = name
                     group.area_id = area_id
                     group.description = description
-                    info_id(f"Updated EquipmentGroup id={equipment_group_id}", None)
-                else:
-                    group = EquipmentGroup(name=name, area_id=area_id, description=description)
-                    session.add(group)
-                    info_id(f"Created EquipmentGroup '{name}'", None)
+                    session.commit()
+
+                    info_id(f"Updated EquipmentGroup id={equipment_group_id}", request_id)
+                    return group
+
+                # Create new
+                group = EquipmentGroup(
+                    name=name,
+                    area_id=area_id,
+                    description=description
+                )
+                session.add(group)
+                session.commit()
+
+                info_id(f"Created EquipmentGroup '{name}'", request_id)
                 return group
+
             except SQLAlchemyError as e:
-                error_id(f"EquipmentGroupService.save failed: {e}", None)
+                session.rollback()
+                error_id(f"EquipmentGroupService.save failed: {e}", request_id)
                 raise
 
+    # ------------------------------------------------------------
+    # DELETE
+    # ------------------------------------------------------------
     @with_request_id
-    def remove(self, equipment_group_id: int) -> bool:
-        """
-        Delete an EquipmentGroup by its ID.
-        Returns True if deletion succeeded, False if no such group exists.
-        """
-        with self.db_config.main_session() as session:
-            try:
-                group = session.query(EquipmentGroup).filter_by(id=equipment_group_id).first()
-                if group:
-                    session.delete(group)
-                    info_id(f"Deleted EquipmentGroup id={equipment_group_id}", None)
-                    return True
-                return False
-            except SQLAlchemyError as e:
-                error_id(f"EquipmentGroupService.remove failed: {e}", None)
-                raise
+    def remove(self,
+               equipment_group_id: int,
+               request_id: Optional[str] = None) -> bool:
 
-    @with_request_id
-    def find_or_create(self, name: str, area_id: int, description: Optional[str] = None) -> EquipmentGroup:
-        """
-        Find an EquipmentGroup by name + area, or create it if missing.
-
-        Args:
-            name (str): Name of the equipment group.
-            area_id (int): ID of the area this group belongs to.
-            description (str, optional): Description of the group.
-
-        Returns:
-            EquipmentGroup: Existing or newly created equipment group.
-        """
         with self.db_config.main_session() as session:
             try:
                 group = (
                     session.query(EquipmentGroup)
-                    .filter_by(name=name, area_id=area_id)
+                    .filter_by(id=equipment_group_id)
                     .first()
                 )
-                if group:
-                    info_id(f"Found existing EquipmentGroup '{name}' in area_id={area_id}", None)
-                else:
-                    group = EquipmentGroup(name=name, area_id=area_id, description=description)
-                    session.add(group)
-                    session.commit()
-                    info_id(f"Created new EquipmentGroup '{name}' in area_id={area_id}", None)
-                return group
+                if not group:
+                    return False
+
+                session.delete(group)
+                session.commit()
+                info_id(f"Deleted EquipmentGroup id={equipment_group_id}", request_id)
+                return True
+
             except SQLAlchemyError as e:
-                error_id(f"EquipmentGroupService.find_or_create failed: {e}", None)
+                session.rollback()
+                error_id(f"EquipmentGroupService.remove failed: {e}", request_id)
+                raise
+
+    # ------------------------------------------------------------
+    # RELATIONSHIP TRAVERSAL
+    # ------------------------------------------------------------
+    @with_request_id
+    def find_related(self,
+                     identifier,
+                     is_id: bool = True,
+                     request_id: Optional[str] = None):
+        """
+        Calls the EXISTING model method without modifications.
+        """
+        with self.db_config.main_session() as session:
+            try:
+                return EquipmentGroup.find_related_entities(
+                    session=session,
+                    identifier=identifier,
+                    is_id=is_id,
+                    request_id=request_id
+                )
+            except SQLAlchemyError as e:
+                error_id(f"EquipmentGroupService.find_related failed: {e}", request_id)
                 raise

@@ -9,7 +9,7 @@ import json
 from typing import Dict, List, Tuple, Optional
 # Import custom logging configuration
 from modules.configuration.log_config import debug_id, info_id, error_id, warning_id, with_request_id, set_request_id
-
+from modules.configuration.config import ORC_DRAWINGS_TRAIN_DATA_DIR, ORC_DRAWINGS_MODEL_DIR
 print("Starting comprehensive drawings test script...")
 print(f"Python path: {sys.path}")
 print(f"Current working directory: {os.getcwd()}")

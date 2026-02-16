@@ -14,7 +14,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/partials/position_data_assignment/position_data_assignment_tool_management.css') }}">
 
     <!-- Toastr CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+<!-- ORIGINAL CDN: <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" /> -->
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/toastr/toastr.min.css') }}"/>
 {% endblock %}
 
 {% block title %}Position Data Assignment{% endblock %}
@@ -99,15 +100,19 @@
 
 {% block extra_scripts %}
 <!-- Include Select2 CSS -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<!-- ORIGINAL CDN: <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" /> -->
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/select2/select2.min.css') }}"/>
 
 <!-- Include jQuery from a CDN -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- ORIGINAL CDN: <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> -->
+<script src="{{ url_for('static', filename='vendor/jquery/jquery-3.6.0.min.js') }}"></script>
 
 <!-- Toastr JS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<!-- ORIGINAL CDN: <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script> -->
+<script src="{{ url_for('static', filename='vendor/toastr/toastr.min.js') }}"></script>
 <!-- Include Select2 JS -->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- ORIGINAL CDN: <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> -->
+<script src="{{ url_for('static', filename='vendor/select2/select2.min.js') }}"></script>
 
 <!-- Your custom scripts -->
 <script src="{{ url_for('static', filename='js/position_data_assignment/position_data_assignment_data_add_dependencies.js') }}"></script>

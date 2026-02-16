@@ -73,7 +73,7 @@ CHUNK_SIZE = 8000
 MODEL_NAME = "text-embedding-ada-002"
 
 
-# Update your engine configuration
+
 engine = create_engine(
     DATABASE_URL,
     pool_size=10,
@@ -107,102 +107,254 @@ class VersionInfo(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     description = Column(String, nullable=True)
 
-"""
-ACADEMIC CONTENT MAPPING SYSTEM
-===============================
+class Campus(Base):
+    """A campus/site that contains buildings."""
+    __tablename__ = 'campus'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False, unique=False)
+    description = Column(String)
+    city = Column(String)
+    state = Column(String)
+    country = Column(String)
 
-This module repurposes our equipment management database schema to create an academic content 
-organization system. The hierarchical nature of our equipment schema maps perfectly to the 
-hierarchical organization of academic knowledge.
+    building = relationship(
+        "Building",
+        back_populates="campus",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    position = relationship(
+        "Position",
+        back_populates="campus",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
-MAPPING OVERVIEW:
-----------------
-Our equipment hierarchy tables are mapped to academic concepts as follows:
+    @classmethod
+    @with_request_id
+    def add_campus(cls, session, name, description=None, city=None,
+                   state=None, country=None, request_id=None):
+        """Add a new Campus to the database."""
+        campus = cls(
+            name=name,
+            description=description,
+            city=city,
+            state=state,
+            country=country
+        )
+        session.add(campus)
+        session.commit()
+        logger.info(f"Created new campus: '{name}'")
+        return campus
 
-1. Area → Academic Field
-   Represents broad academic disciplines like Physics, Mathematics, Chemistry, etc.
-   Example: "Physics" as an Area
+    @classmethod
+    @with_request_id
+    def delete_campus(cls, session, campus_id, request_id=None):
+        """Delete a campus from the database."""
+        campus = session.query(cls).filter(cls.id == campus_id).first()
+        if campus:
+            session.delete(campus)
+            session.commit()
+            logger.info(f"Deleted campus ID {campus_id}")
+            return True
+        logger.warning(f"Failed to delete campus ID {campus_id} - not found")
+        return False
 
-2. EquipmentGroup → Subject
-   Represents major subjects within an academic field.
-   Example: "Mechanics" as an EquipmentGroup within "Physics" Area
+    @classmethod
+    @with_request_id
+    def search(cls, session, name=None, city=None, state=None, country=None):
+        """Search for campuses by various criteria."""
+        query = session.query(cls)
+        if name:
+            query = query.filter(cls.name.ilike(f"%{name}%"))
+        if city:
+            query = query.filter(cls.city.ilike(f"%{city}%"))
+        if state:
+            query = query.filter(cls.state.ilike(f"%{state}%"))
+        if country:
+            query = query.filter(cls.country.ilike(f"%{country}%"))
+        return query.all()
 
-3. Model → Branch/Subdiscipline
-   Represents specialized branches or subdisciplines within a subject.
-   Example: "Classical Mechanics" as a Model within "Mechanics" EquipmentGroup
+    @classmethod
+    @with_request_id
+    def find_or_create(cls, session, name, description=None, city=None,
+                       state=None, country=None, request_id=None):
+        """Find a Campus by name, or create it if it doesn't exist."""
+        campus = session.query(cls).filter_by(name=name).first()
+        if campus:
+            logger.info(f"Found existing campus '{name}'", extra={'request_id': request_id})
+        else:
+            campus = cls(
+                name=name,
+                description=description,
+                city=city,
+                state=state,
+                country=country
+            )
+            session.add(campus)
+            session.commit()
+            logger.info(f"Created new campus '{name}'", extra={'request_id': request_id})
+        return campus
 
-4. AssetNumber → Specific Book/Resource
-   Represents individual academic resources like textbooks or reference materials.
-   Example: "Feynman Lectures Vol. 1" as an AssetNumber within "Classical Mechanics" Model
+    @classmethod
+    @with_request_id
+    def find_related_entities(cls, session, identifier, is_id=True, request_id=None):
+        """Find all related entities for a campus."""
+        if is_id:
+            campus = session.query(cls).filter(cls.id == identifier).first()
+        else:
+            campus = session.query(cls).filter(cls.name == identifier).first()
 
-5. Location → Chapter
-   Represents main divisions within a book or resource.
-   Example: "Chapter 1: Atoms in Motion" as a Location within a book
+        if not campus:
+            logger.warning(f"Campus not found for identifier: {identifier}")
+            return None
 
-6. Subassembly → Section
-   Represents major sections within a chapter.
-   Example: "1.1 Introduction to Atomic Theory" as a Subassembly within Chapter 1
+        downward = {
+            'building': campus.building,
+            'position': campus.position
+        }
 
-7. ComponentAssembly → Subsection/Topic
-   Represents specific topics or subsections within a section.
-   Example: "1.1.1 Dalton's Atomic Theory" as a ComponentAssembly within Section 1.1
+        logger.info(f"Found related entities for campus ID {campus.id}")
+        return {
+            'campus': campus,
+            'downward': downward
+        }
 
-8. AssemblyView → Specific Concept/Figure/Example
-   Represents individual concepts, illustrations, or examples within a topic.
-   Example: "Figure 1: Dalton's Atomic Symbols" as an AssemblyView within Topic 1.1.1
+    def __repr__(self):
+        return f"<Campus id={self.id} name={self.name!r}>"
 
-INTEGRATION WITH POSITION TABLE:
-------------------------------
-The Position table serves as the central connection point, linking entities across all levels
-of the academic hierarchy. This enables navigation through the knowledge structure and allows
-for querying relationships between academic concepts at different levels.
+class Building(Base):
+    """A building that belongs to a campus."""
+    __tablename__ = 'building'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    description = Column(String)
+    address = Column(String)
+    campus_id = Column(Integer, ForeignKey('campus.id', ondelete="CASCADE"),
+                       nullable=False, index=True)
 
-USAGE EXAMPLES:
---------------
-1. Creating a physics textbook with chapters and sections:
-   - Create an Area for "Physics"
-   - Create an EquipmentGroup for "Mechanics" within Physics
-   - Create a Model for "Classical Mechanics" within Mechanics
-   - Create an AssetNumber for "Principles of Physics" textbook
-   - Create Locations for each chapter
-   - Create Subassemblies for sections within chapters
-   - Create ComponentAssemblies for subsections
-   - Create AssemblyViews for specific examples or figures
-   - Use Position to connect all these entities together
+    campus = relationship("Campus", back_populates="building")
+    site_location = relationship(
+        "SiteLocation",
+        back_populates="building",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    position = relationship(
+        "Position",
+        back_populates="building",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
-2. Finding all chapters in a specific book:
-   - Use Position.get_dependent_items(session, 'model', model_id, child_type='location')
+    @classmethod
+    @with_request_id
+    def add_building(cls, session, name, campus_id, description=None,
+                     address=None, request_id=None):
+        """Add a new Building to the database."""
+        building = cls(
+            name=name,
+            campus_id=campus_id,
+            description=description,
+            address=address
+        )
+        session.add(building)
+        session.commit()
+        logger.info(f"Created new building: '{name}' in campus {campus_id}")
+        return building
 
-3. Finding all topics within a specific chapter section:
-   - Use Subassembly.find_related_entities(session, section_id).get('downward', {}).get('component_assemblies', [])
+    @classmethod
+    @with_request_id
+    def delete_building(cls, session, building_id, request_id=None):
+        """Delete a building from the database."""
+        building = session.query(cls).filter(cls.id == building_id).first()
+        if building:
+            session.delete(building)
+            session.commit()
+            logger.info(f"Deleted building ID {building_id}")
+            return True
+        logger.warning(f"Failed to delete building ID {building_id} - not found")
+        return False
 
-BENEFITS:
---------
-- Reuses existing database schema and navigation logic
-- Maintains consistent hierarchical organization
-- Allows for flexible academic content modeling
-- Supports complex queries across the knowledge hierarchy
-- Integrates with existing application infrastructure
+    @classmethod
+    @with_request_id
+    def search(cls, session, name=None, campus_id=None):
+        """Search for buildings by name or campus."""
+        query = session.query(cls)
+        if name:
+            query = query.filter(cls.name.ilike(f"%{name}%"))
+        if campus_id:
+            query = query.filter(cls.campus_id == campus_id)
+        return query.all()
 
-NOTE:
-----
-While we're repurposing equipment tables for academic content, the underlying logic
-of hierarchical navigation remains the same. This approach allows us to leverage our
-existing codebase while expanding its functionality to new domains.
-"""
-# Main Tables
+    @classmethod
+    @with_request_id
+    def find_or_create(cls, session, name, campus_id, description=None,
+                       address=None, request_id=None):
+        """Find a Building by name and campus, or create it if it doesn't exist."""
+        building = session.query(cls).filter_by(name=name, campus_id=campus_id).first()
+        if building:
+            logger.info(f"Found existing building '{name}'", extra={'request_id': request_id})
+        else:
+            building = cls(
+                name=name,
+                campus_id=campus_id,
+                description=description,
+                address=address
+            )
+            session.add(building)
+            session.commit()
+            logger.info(f"Created new building '{name}' in campus {campus_id}",
+                        extra={'request_id': request_id})
+        return building
+
+    @classmethod
+    @with_request_id
+    def find_related_entities(cls, session, identifier, is_id=True, request_id=None):
+        """Find all related entities for a building."""
+        if is_id:
+            building = session.query(cls).filter(cls.id == identifier).first()
+        else:
+            building = session.query(cls).filter(cls.name == identifier).first()
+
+        if not building:
+            logger.warning(f"Building not found for identifier: {identifier}")
+            return None
+
+        upward = {
+            'campus': building.campus
+        }
+
+        downward = {
+            'site_location': building.site_location,
+            'position': building.position
+        }
+
+        logger.info(f"Found related entities for building ID {building.id}")
+        return {
+            'building': building,
+            'upward': upward,
+            'downward': downward
+        }
+
+    def __repr__(self):
+        return f"<Building id={self.id} name={self.name!r} campus_id={self.campus_id}>"
+
 class SiteLocation(Base):
     __tablename__ = 'site_location'
     id = Column(Integer, primary_key=True)
     title = Column(String, nullable=False)
     room_number = Column(String, nullable=False)
-    site_area = Column(String, nullable=False)
-    
+    site_area = Column(String, nullable=True) # site locations/rooms can be loosely grouped togther
+    building_id = Column(Integer, ForeignKey('building.id', ondelete="CASCADE"),
+                         nullable=True, index=True)
+
     position = relationship('Position', back_populates="site_location")
+    building = relationship("Building", back_populates="site_location")
 
     @classmethod
     @with_request_id
-    def add_site_location(cls, session, title, room_number, site_area, request_id=None):
+    def add_site_location(cls, session, title, room_number, site_area, building_id=None, request_id=None):
         """
         Add a new site location to the database.
 
@@ -211,6 +363,7 @@ class SiteLocation(Base):
             title (str): Title of the site location
             room_number (str): Room number of the site location
             site_area (str): Site area of the site location
+            building_id (int, optional): ID of the building this site location belongs to
             request_id (str, optional): Unique identifier for the request
 
         Returns:
@@ -219,7 +372,8 @@ class SiteLocation(Base):
         new_site_location = cls(
             title=title,
             room_number=room_number,
-            site_area=site_area
+            site_area=site_area,
+            building_id=building_id
         )
 
         session.add(new_site_location)
@@ -268,6 +422,7 @@ class SiteLocation(Base):
         Returns:
             dict: Dictionary containing:
                 - 'site_location': The found site location object
+                - 'upward': Dictionary containing 'building' and 'campus'
                 - 'downward': Dictionary containing:
                     - 'positions': List of all positions at this site location
         """
@@ -281,20 +436,28 @@ class SiteLocation(Base):
             logger.warning(f"Site location not found for identifier: {identifier}")
             return None
 
+        # Going upward in the hierarchy
+        upward = {
+            'building': site_location.building,
+            'campus': site_location.building.campus if site_location.building else None
+        }
+
         # Going downward in the hierarchy
         downward = {
-            'positions': site_location.position
+            'position': site_location.position
         }
 
         logger.info(f"Found related entities for site location ID {site_location.id}")
         return {
             'site_location': site_location,
+            'upward': upward,
             'downward': downward
         }
 
     @classmethod
     @with_request_id
-    def find_or_create(cls, session, title, room_number="Unknown", site_area="General", request_id=None):
+    def find_or_create(cls, session, title, room_number="Unknown", site_area="General",
+                       building_id=None, request_id=None):
         """
         Find a SiteLocation by title, or create it if it doesn't exist.
 
@@ -303,6 +466,7 @@ class SiteLocation(Base):
             title (str): Title of the site location
             room_number (str): Room number (default "Unknown")
             site_area (str): Site area (default "General")
+            building_id (int, optional): ID of the building
             request_id (str, optional): Unique identifier for the request
 
         Returns:
@@ -316,7 +480,8 @@ class SiteLocation(Base):
             site_location = cls(
                 title=title,
                 room_number=room_number,
-                site_area=site_area
+                site_area=site_area,
+                building_id=building_id
             )
             session.add(site_location)
             session.commit()
@@ -337,6 +502,10 @@ class Position(Base):
     component_assembly_id = Column(Integer, ForeignKey('component_assembly.id'), nullable=True)
     assembly_view_id = Column(Integer, ForeignKey('assembly_view.id'), nullable=True)
     site_location_id = Column(Integer, ForeignKey('site_location.id'), nullable=True)
+    campus_id = Column(Integer, ForeignKey('campus.id', ondelete="CASCADE"),
+                       nullable=True, index=True)
+    building_id = Column(Integer, ForeignKey('building.id', ondelete="CASCADE"),
+                         nullable=True, index=True)
 
     area = relationship("Area", back_populates="position")
     equipment_group = relationship("EquipmentGroup", back_populates="position")
@@ -348,31 +517,74 @@ class Position(Base):
     image_position_association = relationship("ImagePositionAssociation", back_populates="position")
     drawing_position = relationship("DrawingPositionAssociation", back_populates="position")
     problem_position = relationship("ProblemPositionAssociation", back_populates="position")
-    completed_document_position_association = relationship("CompletedDocumentPositionAssociation", back_populates="position")
+    completed_document_position_association = relationship("CompletedDocumentPositionAssociation",
+                                                           back_populates="position")
     site_location = relationship("SiteLocation", back_populates="position")
     position_tasks = relationship("TaskPositionAssociation", back_populates="position", cascade="all, delete-orphan")
     tool_position_association = relationship("ToolPositionAssociation", back_populates="position")
     subassembly = relationship("Subassembly", back_populates="position")
     component_assembly = relationship("ComponentAssembly", back_populates="position")
     assembly_view = relationship("AssemblyView", back_populates="position")
+    campus = relationship("Campus", back_populates="position")
+    building = relationship("Building", back_populates="position")
 
     # Hierarchy definition
     # Define HIERARCHY using string names instead of direct class references
     HIERARCHY = {
+        # -------------------------
+        # CAMPUS → BUILDING
+        # -------------------------
+        'campus': {
+            'model': 'Building',
+            'filter_field': 'campus_id',
+            'order_field': 'name',
+            'next_level': 'building'
+        },
+
+        # -------------------------
+        # BUILDING → SITE LOCATION
+        # -------------------------
+        'building': {
+            'model': 'SiteLocation',
+            'filter_field': 'building_id',
+            'order_field': 'title',
+            'next_level': 'site_location'
+        },
+
+        # -------------------------
+        # SITE LOCATION → AREA
+        # -------------------------
+        'site_location': {
+            'model': 'Area',
+            'filter_field': 'site_location_id',
+            'order_field': 'name',
+            'next_level': 'area'
+        },
+
+        # -------------------------
+        # AREA → EQUIPMENT GROUP
+        # -------------------------
         'area': {
             'model': 'EquipmentGroup',
             'filter_field': 'area_id',
             'order_field': 'name',
             'next_level': 'equipment_group'
         },
+
+        # -------------------------
+        # EQUIPMENT GROUP → MODEL
+        # -------------------------
         'equipment_group': {
             'model': 'Model',
             'filter_field': 'equipment_group_id',
             'order_field': 'name',
             'next_level': 'model'
         },
+
+        # -------------------------
+        # MODEL → (AssetNumber OR Location)
+        # -------------------------
         'model': {
-            # Models have two potential child types - asset_number and location
             'child_types': [
                 {
                     'model': 'AssetNumber',
@@ -388,23 +600,56 @@ class Position(Base):
                 }
             ]
         },
+
+        # -------------------------
+        # ASSET NUMBER → LOCATION
+        # (Asset-specific variation)
+        # -------------------------
+        'asset_number': {
+            'model': 'Location',
+            'filter_field': 'asset_number_id',
+            'order_field': 'name',
+            'next_level': 'location'
+        },
+
+        # -------------------------
+        # LOCATION → SUBASSEMBLY
+        # -------------------------
         'location': {
             'model': 'Subassembly',
             'filter_field': 'location_id',
             'order_field': 'name',
             'next_level': 'subassembly'
         },
+
+        # -------------------------
+        # SUBASSEMBLY → COMPONENT
+        # -------------------------
         'subassembly': {
             'model': 'ComponentAssembly',
             'filter_field': 'subassembly_id',
             'order_field': 'name',
             'next_level': 'component_assembly'
         },
+
+        # -------------------------
+        # COMPONENT → ASSEMBLY VIEW
+        # -------------------------
         'component_assembly': {
             'model': 'AssemblyView',
             'filter_field': 'component_assembly_id',
             'order_field': 'name',
             'next_level': 'assembly_view'
+        },
+
+        # -------------------------
+        # ASSEMBLY VIEW = bottom
+        # -------------------------
+        'assembly_view': {
+            'model': None,
+            'filter_field': None,
+            'order_field': None,
+            'next_level': None
         }
     }
 
@@ -419,7 +664,7 @@ class Position(Base):
 
         Args:
             session: SQLAlchemy session
-            parent_type: The type of the parent (e.g., 'area', 'equipment_group')
+            parent_type: The type of the parent (e.g., 'area', 'equipment_group', 'campus', 'building')
             parent_id: The ID of the parent
             child_type: Optional, to specify which child type to return when parent has multiple child types
 
@@ -483,7 +728,9 @@ class Position(Base):
                     'Subassembly': Subassembly,
                     'ComponentAssembly': ComponentAssembly,
                     'AssemblyView': AssemblyView,
-                    'SiteLocation': SiteLocation
+                    'SiteLocation': SiteLocation,
+                    'Campus': Campus,
+                    'Building': Building
                 }
                 model = models_map.get(model_name)
                 if not model:
@@ -517,7 +764,7 @@ class Position(Base):
     @with_request_id
     def add_to_db(cls, session=None, area_id=None, equipment_group_id=None, model_id=None, asset_number_id=None,
                   location_id=None, subassembly_id=None, component_assembly_id=None, assembly_view_id=None,
-                  site_location_id=None):
+                  site_location_id=None, campus_id=None, building_id=None):
         """
         Get-or-create a Position with exactly these FK values.
         If `session` is None, uses DatabaseConfig().get_main_session().
@@ -527,12 +774,13 @@ class Position(Base):
         if session is None:
             session = DatabaseConfig().get_main_session()
 
-        # 2) log input parameters - FIXED
+        # 2) log input parameters
         debug_id(
             f"add_to_db called with area_id={area_id}, equipment_group_id={equipment_group_id}, "
             f"model_id={model_id}, asset_number_id={asset_number_id}, location_id={location_id}, "
             f"subassembly_id={subassembly_id}, component_assembly_id={component_assembly_id}, "
-            f"assembly_view_id={assembly_view_id}, site_location_id={site_location_id}"
+            f"assembly_view_id={assembly_view_id}, site_location_id={site_location_id}, "
+            f"campus_id={campus_id}, building_id={building_id}"
         )
 
         # 3) build filter dict
@@ -546,6 +794,8 @@ class Position(Base):
             "component_assembly_id": component_assembly_id,
             "assembly_view_id": assembly_view_id,
             "site_location_id": site_location_id,
+            "campus_id": campus_id,
+            "building_id": building_id,
         }
 
         try:
@@ -571,6 +821,7 @@ class Position(Base):
     @with_request_id
     def get_corresponding_position_ids(cls, session=None, area_id=None, equipment_group_id=None,
                                        model_id=None, asset_number_id=None, location_id=None,
+                                       campus_id=None, building_id=None, site_location_id=None,
                                        request_id='no_request_id'):
         """
         Search for corresponding Position IDs based on the provided filters with request ID logging.
@@ -582,6 +833,9 @@ class Position(Base):
             model_id: ID of the model (optional)
             asset_number_id: ID of the asset number (optional)
             location_id: ID of the location (optional)
+            campus_id: ID of the campus (optional)
+            building_id: ID of the building (optional)
+            site_location_id: ID of the site location (optional)
             request_id: Unique identifier for the request
 
         Returns:
@@ -596,7 +850,8 @@ class Position(Base):
             f"[{request_id}] get_corresponding_position_ids called with "
             f"area_id={area_id}, equipment_group_id={equipment_group_id}, "
             f"model_id={model_id}, asset_number_id={asset_number_id}, "
-            f"location_id={location_id}"
+            f"location_id={location_id}, campus_id={campus_id}, "
+            f"building_id={building_id}, site_location_id={site_location_id}"
         )
 
         try:
@@ -608,6 +863,9 @@ class Position(Base):
                 model_id=model_id,
                 asset_number_id=asset_number_id,
                 location_id=location_id,
+                campus_id=campus_id,
+                building_id=building_id,
+                site_location_id=site_location_id,
                 request_id=request_id
             )
 
@@ -629,13 +887,15 @@ class Position(Base):
     @classmethod
     @with_request_id
     def _get_positions_by_hierarchy(cls, session, area_id=None, equipment_group_id=None, model_id=None,
-                                    asset_number_id=None, location_id=None):
+                                    asset_number_id=None, location_id=None, campus_id=None,
+                                    building_id=None, site_location_id=None):
         """
         Helper method to fetch positions based on hierarchical filters.
 
         Args:
             session: SQLAlchemy session
             area_id, equipment_group_id, model_id, asset_number_id, location_id: IDs for filtering
+            campus_id, building_id, site_location_id: Additional location IDs for filtering
 
         Returns:
             List of Position objects that match the criteria
@@ -652,6 +912,12 @@ class Position(Base):
             filters['asset_number_id'] = asset_number_id
         if location_id:
             filters['location_id'] = location_id
+        if campus_id:
+            filters['campus_id'] = campus_id
+        if building_id:
+            filters['building_id'] = building_id
+        if site_location_id:
+            filters['site_location_id'] = site_location_id
 
         # Log the filter parameters
         debug_id(f"Filtering Positions with filters: {filters}", request_id=g.request_id)
@@ -1540,116 +1806,120 @@ class Location(Base):
     __tablename__ = 'location'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)    
+    name = Column(String, nullable=False)
+
+    # Foreign Keys
     model_id = Column(Integer, ForeignKey('model.id'))
+    asset_number_id = Column(Integer, ForeignKey('asset_number.id'), nullable=True)
+
     description = Column(String, nullable=True)
-    
+
+    # Relationships
     model = relationship("Model", back_populates="location")
+    asset_number = relationship("AssetNumber")     # NEW
+
+    # Downstream relationships
     position = relationship("Position", back_populates="location")
     subassembly = relationship("Subassembly", back_populates="location")
 
     @classmethod
     @with_request_id
-    def add_location(cls, session, name, model_id, description=None, request_id=None):
+    def add_location(cls, session, name, model_id,
+                     asset_number_id=None, description=None, request_id=None):
         """
-        Add a new location to the database.
-
-        Args:
-            session: SQLAlchemy database session
-            name (str): Name of the location
-            model_id (int): ID of the model this location belongs to
-            description (str, optional): Description of the location
-            request_id (str, optional): Unique identifier for the request
-
-        Returns:
-            Location: The newly created location object
+        Add a new Location to the database.
         """
         new_location = cls(
             name=name,
             model_id=model_id,
+            asset_number_id=asset_number_id,
             description=description
         )
 
         session.add(new_location)
         session.commit()
 
-        logger.info(f"Created new location: {name} for model ID {model_id}")
+        logger.info(
+            f"Created new location: {name} for model {model_id}"
+            + (f" (asset {asset_number_id})" if asset_number_id else "")
+        )
+
         return new_location
 
     @classmethod
     @with_request_id
-    def delete_location(cls, session, location_id, request_id=None):
+    def search(cls, session, name=None, model_id=None, asset_number_id=None):
         """
-        Delete a location from the database.
-
-        Args:
-            session: SQLAlchemy database session
-            location_id (int): ID of the location to delete
-            request_id (str, optional): Unique identifier for the request
-
-        Returns:
-            bool: True if deletion was successful, False if location not found
+        Search locations by name, model, or asset_number.
         """
-        location = session.query(cls).filter(cls.id == location_id).first()
+        query = session.query(cls)
 
-        if location:
-            session.delete(location)
-            session.commit()
-            logger.info(f"Deleted location ID {location_id}")
-            return True
-        else:
-            logger.warning(f"Failed to delete location ID {location_id} - not found")
-            return False
+        if name:
+            query = query.filter(cls.name.ilike(f"%{name}%"))
+
+        if model_id:
+            query = query.filter(cls.model_id == model_id)
+
+        if asset_number_id:
+            query = query.filter(cls.asset_number_id == asset_number_id)
+
+        return query.all()
 
     @classmethod
     @with_request_id
-    def find_related_entities(cls, session, identifier, is_id=True, request_id=None):
+    def find_or_create(cls, session, name, model_id,
+                       asset_number_id=None, description=None, request_id=None):
         """
-        Find all related entities for a location, traversing both up and down
-        the hierarchy: Area → EquipmentGroup → Model → Location → (Position, Subassembly).
-
-        Args:
-            session: SQLAlchemy database session
-            identifier: Either location ID (int) or name (str)
-            is_id (bool): If True, identifier is an ID, otherwise it's a name
-            request_id (str, optional): Unique identifier for the request
-
-        Returns:
-            dict: Dictionary containing:
-                - 'location': The found location object
-                - 'upward': Dictionary containing 'model', 'equipment_group', and 'area'
-                - 'downward': Dictionary containing:
-                    - 'positions': List of all positions related to this location
-                    - 'subassemblies': List of all subassemblies related to this location
+        Find an existing Location or create a new one.
         """
-        # Find the location
-        if is_id:
-            location = session.query(cls).filter(cls.id == identifier).first()
-        else:
-            location = session.query(cls).filter(cls.name == identifier).first()
+        filters = {"name": name, "model_id": model_id}
 
+        if asset_number_id is not None:
+            filters["asset_number_id"] = asset_number_id
+
+        loc = session.query(cls).filter_by(**filters).first()
+
+        if loc:
+            return loc
+
+        loc = cls(
+            name=name,
+            model_id=model_id,
+            asset_number_id=asset_number_id,
+            description=description
+        )
+
+        session.add(loc)
+        session.commit()
+        return loc
+
+    @classmethod
+    @with_request_id
+    def find_related_entities(cls, session, location_id, request_id=None):
+        """
+        Traverse up (model/equipment_group/area)
+        and down (positions/subassemblies).
+        """
+        location = session.query(cls).filter_by(id=location_id).first()
         if not location:
-            logger.warning(f"Location not found for identifier: {identifier}")
             return None
 
-        # Going upward in the hierarchy
         upward = {
-            'model': location.model,
-            'equipment_group': location.model.equipment_group if location.model else None,
-            'area': location.model.equipment_group.area if location.model and location.model.equipment_group else None
+            "model": location.model,
+            "equipment_group": location.model.equipment_group if location.model else None,
+            "area": location.model.equipment_group.area
+                    if location.model and location.model.equipment_group else None
         }
 
-        # Going downward in the hierarchy
         downward = {
-            'positions': location.position,
-            'subassemblies': location.subassembly
+            "positions": location.position,
+            "subassemblies": location.subassembly
         }
 
-        logger.info(f"Found related entities for location ID {location.id}")
         return {
-            'location': location,
-            'upward': upward,
-            'downward': downward
+            "location": location,
+            "upward": upward,
+            "downward": downward
         }
 
 #class's dealing with machine subassemblies.
@@ -1659,21 +1929,32 @@ class Subassembly(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=True)
     location_id = Column(Integer, ForeignKey('location.id'))
+    asset_number_id = Column(Integer, ForeignKey('asset_number.id'), nullable=True)
     description = Column(String, nullable=True)
 
     # Relationships
     location = relationship("Location", back_populates="subassembly")
+    asset_number = relationship("AssetNumber")
     component_assembly = relationship("ComponentAssembly", back_populates="subassembly")
     position = relationship("Position", back_populates="subassembly")
 
     @classmethod
     @with_request_id
-    def add_subassembly(cls, session, name, location_id, description=None, request_id=None):
+    def add_subassembly(cls, session, name, location_id, asset_number_id=None,description=None, request_id=None):
         """Add a new Subassembly to the database."""
-        new_sub = cls(name=name, location_id=location_id, description=description)
+        new_sub = cls(
+            name=name,
+            location_id=location_id,
+            asset_number_id=asset_number_id,
+            description=description
+        )
         session.add(new_sub)
         session.commit()
-        logger.info(f"Created Subassembly '{name}' under Location {location_id}")
+
+        logger.info(
+            f"Created Subassembly '{name}' under Location {location_id}"
+            + (f" for Asset {asset_number_id}" if asset_number_id else "")
+        )
         return new_sub
 
     @classmethod
@@ -1690,23 +1971,37 @@ class Subassembly(Base):
 
     @classmethod
     @with_request_id
-    def search(cls, session, name=None, location_id=None):
-        """Search Subassemblies by name or location_id."""
+    def search(cls, session, name=None, location_id=None, asset_number_id=None):
+        """Search Subassemblies by name, location, or asset_number."""
         query = session.query(cls)
         if name:
             query = query.filter(cls.name.ilike(f"%{name}%"))
         if location_id:
             query = query.filter(cls.location_id == location_id)
+        if asset_number_id:
+            query = query.filter(cls.asset_number_id == asset_number_id)
         return query.all()
 
     @classmethod
     @with_request_id
-    def find_or_create(cls, session, name, location_id, description=None, request_id=None):
-        """Find Subassembly by name + location, or create it."""
-        sub = session.query(cls).filter_by(name=name, location_id=location_id).first()
+    def find_or_create(cls, session, name, location_id, asset_number_id=None,description=None, request_id=None):
+        """Find Subassembly by name + location + asset, or create it."""
+        filters = {'name': name, 'location_id': location_id}
+
+        # Include the asset number in uniqueness logic
+        if asset_number_id is not None:
+            filters['asset_number_id'] = asset_number_id
+
+        sub = session.query(cls).filter_by(**filters).first()
         if sub:
             return sub
-        sub = cls(name=name, location_id=location_id, description=description)
+
+        sub = cls(
+            name=name,
+            location_id=location_id,
+            asset_number_id=asset_number_id,
+            description=description
+        )
         session.add(sub)
         session.commit()
         return sub
@@ -1714,14 +2009,20 @@ class Subassembly(Base):
     @classmethod
     @with_request_id
     def find_related_entities(cls, session, subassembly_id, request_id=None):
-        """Traverse relationships: upward (location), downward (component assemblies, positions)."""
         sub = session.query(cls).filter_by(id=subassembly_id).first()
         if not sub:
             return None
+
         return {
             "subassembly": sub,
-            "upward": {"location": sub.location},
-            "downward": {"component_assemblies": sub.component_assembly, "positions": sub.position}
+            "upward": {
+                "location": sub.location,
+                "asset_number": sub.asset_number
+            },
+            "downward": {
+                "component_assemblies": sub.component_assembly,
+                "positions": sub.position
+            }
         }
 
 class ComponentAssembly(Base):
@@ -1730,22 +2031,31 @@ class ComponentAssembly(Base):
     name = Column(String, nullable=True)
     description = Column(String, nullable=True)
     subassembly_id = Column(Integer, ForeignKey('subassembly.id'), nullable=False)
+    asset_number_id = Column(Integer, ForeignKey('asset_number.id'), nullable=True)
 
     # Relationships
     subassembly = relationship("Subassembly", back_populates="component_assembly")
+    asset_number = relationship("AssetNumber")
     assembly_view = relationship("AssemblyView", back_populates="component_assembly")
     position = relationship("Position", back_populates="component_assembly")
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
-    def add_component(cls, session, name, subassembly_id, description=None, request_id=None):
+    def add_component(cls, session, name, subassembly_id, asset_number_id=None, description=None, request_id=None):
         """Add a new ComponentAssembly."""
-        comp = cls(name=name, subassembly_id=subassembly_id, description=description)
+        comp = cls(name=name,
+            subassembly_id=subassembly_id, asset_number_id=asset_number_id,description=description )
         session.add(comp)
         session.commit()
-        logger.info(f"Created ComponentAssembly '{name}' under Subassembly {subassembly_id}")
+
+        logger.info(
+            f"Created ComponentAssembly '{name}' under Subassembly {subassembly_id}"
+            + (f" for Asset {asset_number_id}" if asset_number_id is not None else "")
+        )
         return comp
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
     def delete_component(cls, session, component_id, request_id=None):
@@ -1758,40 +2068,68 @@ class ComponentAssembly(Base):
             return True
         return False
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
-    def search(cls, session, name=None, subassembly_id=None):
-        """Search ComponentAssemblies by name or subassembly_id."""
+    def search(cls, session, name=None, subassembly_id=None, asset_number_id=None):
+        """Search ComponentAssemblies by name, subassembly, or asset_number."""
         query = session.query(cls)
+
         if name:
             query = query.filter(cls.name.ilike(f"%{name}%"))
         if subassembly_id:
             query = query.filter(cls.subassembly_id == subassembly_id)
+        if asset_number_id:
+            query = query.filter(cls.asset_number_id == asset_number_id)
+
         return query.all()
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
-    def find_or_create(cls, session, name, subassembly_id, description=None, request_id=None):
-        """Find a ComponentAssembly or create it if missing."""
-        comp = session.query(cls).filter_by(name=name, subassembly_id=subassembly_id).first()
+    def find_or_create(cls, session, name, subassembly_id, asset_number_id=None, description=None, request_id=None):
+        """
+        Find a ComponentAssembly (uniquely identified by name + subassembly + asset)
+        OR create it.
+        """
+        filters = {
+            'name': name,
+            'subassembly_id': subassembly_id
+        }
+
+        if asset_number_id is not None:
+            filters['asset_number_id'] = asset_number_id
+
+        comp = session.query(cls).filter_by(**filters).first()
         if comp:
             return comp
-        comp = cls(name=name, subassembly_id=subassembly_id, description=description)
+
+        comp = cls(
+            name=name,
+            subassembly_id=subassembly_id,asset_number_id=asset_number_id,description=description)
         session.add(comp)
         session.commit()
         return comp
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
     def find_related_entities(cls, session, component_id, request_id=None):
-        """Traverse relationships: upward (subassembly), downward (assembly views, positions)."""
+        """Upward (subassembly, asset), downward (views, positions)."""
         comp = session.query(cls).filter_by(id=component_id).first()
         if not comp:
             return None
+
         return {
             "component_assembly": comp,
-            "upward": {"subassembly": comp.subassembly},
-            "downward": {"assembly_views": comp.assembly_view, "positions": comp.position}
+            "upward": {
+                "subassembly": comp.subassembly,
+                "asset_number": comp.asset_number
+            },
+            "downward": {
+                "assembly_views": comp.assembly_view,
+                "positions": comp.position
+            }
         }
 
 class AssemblyView(Base):  # TODO rename to ComponentView
@@ -1800,21 +2138,35 @@ class AssemblyView(Base):  # TODO rename to ComponentView
     name = Column(String, nullable=True)
     description = Column(String, nullable=True)
     component_assembly_id = Column(Integer, ForeignKey('component_assembly.id'), nullable=False)
+    asset_number_id = Column(Integer, ForeignKey('asset_number.id'), nullable=True)
 
     # Relationships
     component_assembly = relationship("ComponentAssembly", back_populates="assembly_view")
+    asset_number = relationship("AssetNumber")
     position = relationship("Position", back_populates="assembly_view")
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
-    def add_view(cls, session, name, component_assembly_id, description=None, request_id=None):
+    def add_view(cls, session, name, component_assembly_id,
+                 asset_number_id=None, description=None, request_id=None):
         """Add a new AssemblyView (ComponentView)."""
-        view = cls(name=name, component_assembly_id=component_assembly_id, description=description)
+        view = cls(
+            name=name,
+            component_assembly_id=component_assembly_id,
+            asset_number_id=asset_number_id,
+            description=description
+        )
         session.add(view)
         session.commit()
-        logger.info(f"Created AssemblyView '{name}' under ComponentAssembly {component_assembly_id}")
+
+        logger.info(
+            f"Created AssemblyView '{name}' under ComponentAssembly {component_assembly_id}"
+            + (f" for Asset {asset_number_id}" if asset_number_id else "")
+        )
         return view
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
     def delete_view(cls, session, view_id, request_id=None):
@@ -1827,40 +2179,73 @@ class AssemblyView(Base):  # TODO rename to ComponentView
             return True
         return False
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
-    def search(cls, session, name=None, component_assembly_id=None):
-        """Search AssemblyViews by name or component_assembly_id."""
+    def search(cls, session, name=None, component_assembly_id=None, asset_number_id=None):
+        """Search AssemblyViews by name, component assembly, or asset number."""
         query = session.query(cls)
+
         if name:
             query = query.filter(cls.name.ilike(f"%{name}%"))
         if component_assembly_id:
             query = query.filter(cls.component_assembly_id == component_assembly_id)
+        if asset_number_id:
+            query = query.filter(cls.asset_number_id == asset_number_id)
+
         return query.all()
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
-    def find_or_create(cls, session, name, component_assembly_id, description=None, request_id=None):
-        """Find an AssemblyView by name + component_assembly, or create it."""
-        view = session.query(cls).filter_by(name=name, component_assembly_id=component_assembly_id).first()
+    def find_or_create(cls, session, name, component_assembly_id,
+                       asset_number_id=None, description=None, request_id=None):
+        """
+        Find an AssemblyView uniquely by:
+            name + component_assembly + asset_number
+        OR create it.
+        """
+
+        filters = {
+            'name': name,
+            'component_assembly_id': component_assembly_id
+        }
+
+        if asset_number_id is not None:
+            filters['asset_number_id'] = asset_number_id
+
+        view = session.query(cls).filter_by(**filters).first()
         if view:
             return view
-        view = cls(name=name, component_assembly_id=component_assembly_id, description=description)
+
+        view = cls(
+            name=name,
+            component_assembly_id=component_assembly_id,
+            asset_number_id=asset_number_id,
+            description=description
+        )
         session.add(view)
         session.commit()
         return view
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
     def find_related_entities(cls, session, view_id, request_id=None):
-        """Traverse relationships: upward (component assembly), downward (positions)."""
+        """Upward (component assembly, asset), downward (positions)."""
         view = session.query(cls).filter_by(id=view_id).first()
         if not view:
             return None
+
         return {
             "assembly_view": view,
-            "upward": {"component_assembly": view.component_assembly},
-            "downward": {"positions": view.position}
+            "upward": {
+                "component_assembly": view.component_assembly,
+                "asset_number": view.asset_number
+            },
+            "downward": {
+                "positions": view.position
+            }
         }
 
 class Part(Base):
@@ -2691,84 +3076,6 @@ class Image(Base):
 
     @classmethod
     @with_request_id
-    def get_images_with_chunk_context(cls, session, complete_document_id, request_id=None):
-        """
-        Get all images for a document with their associated chunk context.
-        This method supports the new structure-guided associations.
-        """
-        try:
-            from modules.emtacdb.emtacdb_fts import Document
-
-            # Query images with their associations and chunk context
-            result = session.query(
-                cls.id.label('image_id'),
-                cls.title.label('image_title'),
-                cls.file_path.label('image_path'),
-                cls.description.label('image_description'),
-                cls.img_metadata.label('image_metadata'),
-                Document.id.label('chunk_id'),
-                Document.name.label('chunk_name'),
-                Document.content.label('chunk_content'),
-                ImageCompletedDocumentAssociation.page_number,
-                ImageCompletedDocumentAssociation.chunk_index,
-                ImageCompletedDocumentAssociation.confidence_score,
-                ImageCompletedDocumentAssociation.association_method,
-                ImageCompletedDocumentAssociation.context_metadata
-            ).select_from(cls).join(
-                ImageCompletedDocumentAssociation,
-                cls.id == ImageCompletedDocumentAssociation.image_id
-            ).outerjoin(
-                Document,
-                ImageCompletedDocumentAssociation.document_id == Document.id
-            ).filter(
-                ImageCompletedDocumentAssociation.complete_document_id == complete_document_id
-            ).order_by(
-                ImageCompletedDocumentAssociation.page_number,
-                ImageCompletedDocumentAssociation.chunk_index
-            ).all()
-
-            images_with_context = []
-            for row in result:
-                # Parse context metadata
-                context_metadata = {}
-                if row.context_metadata:
-                    try:
-                        context_metadata = json.loads(row.context_metadata)
-                    except:
-                        pass
-
-                image_context = {
-                    'image_id': row.image_id,
-                    'image_title': row.image_title,
-                    'image_path': row.image_path,
-                    'image_description': row.image_description,
-                    'image_metadata': row.image_metadata,
-                    'chunk_id': row.chunk_id,
-                    'chunk_name': row.chunk_name,
-                    'chunk_content': row.chunk_content,
-                    'page_number': row.page_number,
-                    'chunk_index': row.chunk_index,
-                    'confidence_score': row.confidence_score,
-                    'association_method': row.association_method,
-                    'context_metadata': context_metadata,
-                    'view_url': f'/add_document/image/{row.image_id}',
-                    'has_chunk_association': row.chunk_id is not None,
-                    'structure_guided': context_metadata.get('structure_guided', False),
-                    'content_type': context_metadata.get('content_type', 'image'),
-                    'chunk_preview': row.chunk_content[:200] + "..." if row.chunk_content and len(
-                        row.chunk_content) > 200 else row.chunk_content
-                }
-                images_with_context.append(image_context)
-
-            info_id(f"Retrieved {len(images_with_context)} images with chunk context", request_id)
-            return images_with_context
-
-        except Exception as e:
-            error_id(f"Failed to get images with chunk context: {e}", request_id)
-            return []
-
-    @classmethod
-    @with_request_id
     def search_by_chunk_text(cls, session, search_text, complete_document_id=None,
                              confidence_threshold=0.5, request_id=None):
         """
@@ -2844,100 +3151,6 @@ class Image(Base):
             error_id(f"Failed to search images by chunk text: {e}", request_id)
             return []
 
-    @classmethod
-    @with_request_id
-    def get_association_statistics(cls, session, complete_document_id=None, request_id=None):
-        """
-        Get statistics about image-chunk associations, especially structure-guided ones.
-        Useful for monitoring and debugging the new association system.
-        """
-        try:
-            from sqlalchemy import func
-
-            # Base query for associations
-            base_query = session.query(ImageCompletedDocumentAssociation)
-
-            if complete_document_id:
-                base_query = base_query.filter(
-                    ImageCompletedDocumentAssociation.complete_document_id == complete_document_id
-                )
-
-            # Total associations
-            total_associations = base_query.count()
-
-            # Structure-guided associations
-            structure_guided = base_query.filter(
-                ImageCompletedDocumentAssociation.association_method == 'structure_guided'
-            ).count()
-
-            # High confidence associations
-            high_confidence = base_query.filter(
-                ImageCompletedDocumentAssociation.confidence_score >= 0.8
-            ).count()
-
-            # Average confidence score
-            avg_confidence = session.query(
-                func.avg(ImageCompletedDocumentAssociation.confidence_score)
-            ).filter(
-                ImageCompletedDocumentAssociation.complete_document_id == complete_document_id
-                if complete_document_id else True
-            ).scalar() or 0
-
-            # Associations by method
-            method_stats = session.query(
-                ImageCompletedDocumentAssociation.association_method,
-                func.count(ImageCompletedDocumentAssociation.id)
-            ).filter(
-                ImageCompletedDocumentAssociation.complete_document_id == complete_document_id
-                if complete_document_id else True
-            ).group_by(
-                ImageCompletedDocumentAssociation.association_method
-            ).all()
-
-            # Associations by page
-            page_stats = session.query(
-                ImageCompletedDocumentAssociation.page_number,
-                func.count(ImageCompletedDocumentAssociation.id)
-            ).filter(
-                ImageCompletedDocumentAssociation.complete_document_id == complete_document_id
-                if complete_document_id else True
-            ).group_by(
-                ImageCompletedDocumentAssociation.page_number
-            ).order_by(
-                ImageCompletedDocumentAssociation.page_number
-            ).all()
-
-            stats = {
-                'total_associations': total_associations,
-                'structure_guided_count': structure_guided,
-                'high_confidence_count': high_confidence,
-                'average_confidence': float(avg_confidence),
-                'structure_guided_percentage': (
-                            structure_guided / total_associations * 100) if total_associations > 0 else 0,
-                'high_confidence_percentage': (
-                            high_confidence / total_associations * 100) if total_associations > 0 else 0,
-                'associations_by_method': dict(method_stats),
-                'associations_by_page': dict(page_stats)
-            }
-
-            info_id(f"Association statistics: {stats['total_associations']} total, "
-                    f"{stats['structure_guided_percentage']:.1f}% structure-guided, "
-                    f"{stats['high_confidence_percentage']:.1f}% high-confidence", request_id)
-
-            return stats
-
-        except Exception as e:
-            error_id(f"Failed to get association statistics: {e}", request_id)
-            return {
-                'total_associations': 0,
-                'structure_guided_count': 0,
-                'high_confidence_count': 0,
-                'average_confidence': 0,
-                'structure_guided_percentage': 0,
-                'high_confidence_percentage': 0,
-                'associations_by_method': {},
-                'associations_by_page': {}
-            }
 
     @classmethod
     def _highlight_search_term(cls, content, search_term):
@@ -5150,6 +5363,58 @@ class Document(Base):
                 print(f"❌ Failed to create enhanced FTS table: {e}")
                 return False
 
+    @classmethod
+    @with_request_id
+    def search_fts(
+            cls,
+            query_text: str,
+            limit: int = 25,
+            request_id: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Run PostgreSQL Full-Text Search (FTS) against documents_fts and return
+        ranked chunks suitable for RAG retrieval.
+
+        Returns:
+            List[Dict] where each dict contains:
+                - id (fts row id)
+                - title
+                - content
+                - file_path
+                - chunk_id
+                - complete_document_id
+                - has_images (bool)
+                - rank (float)
+        """
+        from sqlalchemy import text
+        db_config = DatabaseConfig()
+
+        sql = text("""
+                   SELECT id,
+                          title,
+                          content,
+                          file_path,
+                          chunk_id,
+                          complete_document_id,
+                          has_images,
+                          ts_rank(search_vector, plainto_tsquery(:q)) AS rank
+                   FROM documents_fts
+                   WHERE search_vector @@ plainto_tsquery(:q)
+                   ORDER BY rank DESC
+                       LIMIT :limit
+                   """)
+
+        with db_config.main_session() as session:
+            try:
+                rows = session.execute(
+                    sql, {"q": query_text, "limit": limit}
+                ).fetchall()
+
+                return [dict(row._mapping) for row in rows]
+
+            except Exception as e:
+                error_id(f"Document.search_fts failed: {e}", request_id)
+                return []
 
 class DocumentEmbedding(Base):
     """
@@ -6603,71 +6868,6 @@ class CompleteDocument(Base):
     # ADDITIONAL ALIGNED METHODS
     # =====================================================
 
-    @classmethod
-    @with_request_id
-    def get_images_with_chunk_context(cls, document_id, request_id=None):
-        """
-        ALIGNED: Get all images for a document with their associated chunk context.
-        Uses the Image class's enhanced query methods.
-        """
-        try:
-            ImageClass = cls._get_image_class()
-            if not ImageClass:
-                error_id("Image class not available", request_id)
-                return []
-
-            db_config = DatabaseConfig()
-            with db_config.main_session() as session:
-                return ImageClass.get_images_with_chunk_context(session, document_id, request_id)
-
-        except Exception as e:
-            error_id(f"Failed to get images with chunk context: {e}", request_id)
-            return []
-
-    @classmethod
-    @with_request_id
-    def search_images_by_chunk_text(cls, search_text, document_id=None, confidence_threshold=0.5, request_id=None):
-        """
-        ALIGNED: Search for images by their associated chunk text content.
-        Uses the Image class's enhanced search methods.
-        """
-        try:
-            ImageClass = cls._get_image_class()
-            if not ImageClass:
-                error_id("Image class not available", request_id)
-                return []
-
-            db_config = DatabaseConfig()
-            with db_config.main_session() as session:
-                return ImageClass.search_by_chunk_text(
-                    session, search_text, document_id, confidence_threshold, request_id
-                )
-
-        except Exception as e:
-            error_id(f"Failed to search images by chunk text: {e}", request_id)
-            return []
-
-    @classmethod
-    @with_request_id
-    def get_association_statistics(cls, document_id, request_id=None):
-        """
-        ALIGNED: Get statistics about image-chunk associations.
-        Uses the Image class's enhanced statistics methods.
-        """
-        try:
-            ImageClass = cls._get_image_class()
-            if not ImageClass:
-                error_id("Image class not available", request_id)
-                return {}
-
-            db_config = DatabaseConfig()
-            with db_config.main_session() as session:
-                return ImageClass.get_association_statistics(session, document_id, request_id)
-
-        except Exception as e:
-            error_id(f"Failed to get association statistics: {e}", request_id)
-            return {}
-
     # =====================================================
     # EXISTING METHODS (FIXED)
     # =====================================================
@@ -6759,19 +6959,34 @@ class CompleteDocument(Base):
     @classmethod
     @with_request_id
     def _create_chunks(cls, session, document_id, title, content, file_path=None, request_id=None):
+        """
+        Create document chunks using the PDF source for page-aware chunking.
+        """
         debug_id("Starting _create_chunks", request_id)
-        DocumentClass = cls._get_document_class()
 
+        DocumentClass = cls._get_document_class()
         if DocumentClass is None:
             debug_id("Document class not available, skipping chunk creation", request_id)
             return
 
         try:
-            if not file_path:
-                parent_doc = session.query(cls).filter_by(id=document_id).first()
-                file_path = parent_doc.file_path if parent_doc else "unknown"
+            # Resolve PDF source path
+            pdf_path = None
 
-            doc = fitz.open(file_path)
+            if file_path and file_path.lower().endswith(".pdf"):
+                pdf_path = file_path
+            else:
+                # Try to locate a PDF sibling (DOC/DOCX converted earlier)
+                base, _ = os.path.splitext(file_path or "")
+                candidate = f"{base}.pdf"
+                if os.path.exists(candidate):
+                    pdf_path = candidate
+
+            if not pdf_path or not os.path.exists(pdf_path):
+                debug_id("No PDF source available for chunk creation; skipping", request_id)
+                return
+
+            doc = fitz.open(pdf_path)
             chunk_objects = []
             chunk_counter = 0
 
@@ -6779,7 +6994,6 @@ class CompleteDocument(Base):
                 page = doc[page_num]
                 page_text = page.get_text()
 
-                # Split the page text into smaller chunks of 150 words
                 page_chunks = cls._split_text(page_text, 150)
 
                 for page_chunk in page_chunks:
@@ -6787,15 +7001,16 @@ class CompleteDocument(Base):
                         continue
 
                     chunk_counter += 1
-                    doc_chunk = DocumentClass(
-                        name=f"{title} - Chunk {chunk_counter}",
-                        file_path=file_path,
-                        content=page_chunk.strip(),
-                        complete_document_id=document_id,
-                        rev="R0",
-                        doc_metadata={"page_number": page_num}
+                    chunk_objects.append(
+                        DocumentClass(
+                            name=f"{title} - Chunk {chunk_counter}",
+                            file_path=pdf_path,
+                            content=page_chunk.strip(),
+                            complete_document_id=document_id,
+                            rev="R0",
+                            doc_metadata={"page_number": page_num}
+                        )
                     )
-                    chunk_objects.append(doc_chunk)
 
             doc.close()
 
@@ -7308,27 +7523,73 @@ class CompleteDocument(Base):
     @classmethod
     @with_request_id
     def _extract_content(cls, file_path, request_id):
-        """Extract text content from file - convert DOCX to PDF first if needed."""
+        """
+        Extract text content from file.
+        Supports:
+          - PDF (direct)
+          - TXT (direct)
+          - DOCX (DOCX → PDF → text)
+          - DOC  (DOC → DOCX → PDF → text)
+        """
         ext = os.path.splitext(file_path)[1].lower()
 
         try:
+            # -------------------------
+            # PDF
+            # -------------------------
             if ext == '.pdf':
                 return cls._extract_pdf_text(file_path, request_id)
+
+            # -------------------------
+            # TXT
+            # -------------------------
             elif ext == '.txt':
                 return cls._extract_txt_text(file_path, request_id)
+
+            # -------------------------
+            # DOCX
+            # -------------------------
             elif ext == '.docx':
-                # Convert DOCX to PDF first, then use existing PDF processing
                 info_id("Converting DOCX to PDF for processing", request_id)
+
                 pdf_path = cls._convert_docx_to_pdf(file_path, request_id)
-                if pdf_path:
-                    # Use existing PDF text extraction
-                    text = cls._extract_pdf_text(pdf_path, request_id)
-                    # Clean up temporary PDF
-                    cls._cleanup_temp_file(pdf_path, request_id)
-                    return text
-                else:
-                    error_id("DOCX to PDF conversion failed", request_id)
+                if not pdf_path:
+                    error_id("DOCX → PDF conversion failed", request_id)
                     return None
+
+                text = cls._extract_pdf_text(pdf_path, request_id)
+                cls._cleanup_temp_file(pdf_path, request_id)
+                return text
+
+            # -------------------------
+            # DOC (LEGACY WORD)
+            # -------------------------
+            elif ext == '.doc':
+                info_id("Converting DOC to DOCX for processing", request_id)
+
+                docx_path = cls._convert_doc_to_docx(file_path, request_id)
+                if not docx_path:
+                    error_id("DOC → DOCX conversion failed", request_id)
+                    return None
+
+                info_id("Converting DOCX (from DOC) to PDF for processing", request_id)
+                pdf_path = cls._convert_docx_to_pdf(docx_path, request_id)
+                if not pdf_path:
+                    error_id("DOCX → PDF conversion failed", request_id)
+                    cls._cleanup_temp_file(docx_path, request_id)
+                    return None
+
+                text = cls._extract_pdf_text(pdf_path, request_id)
+
+                # Cleanup temp artifacts
+                cls._cleanup_temp_file(pdf_path, request_id)
+                cls._cleanup_temp_file(docx_path, request_id)
+
+                return text
+
+            # -------------------------
+            # UNSUPPORTED
+            # -------------------------
             else:
                 warning_id(f"Unsupported file type: {ext}", request_id)
                 return None
@@ -7810,6 +8071,51 @@ class CompleteDocument(Base):
             error_id(f"Error in fallback text search: {e}", request_id, exc_info=True)
             return [] if not with_links else "No documents found"
 
+    @classmethod
+    @with_request_id
+    def _convert_doc_to_docx(cls, doc_path, request_id):
+        """
+        Convert legacy .doc → .docx using LibreOffice (headless).
+        Required before DOCX → PDF conversion.
+        """
+        try:
+            import subprocess
+
+            temp_dir = tempfile.mkdtemp()
+            output_path = os.path.join(
+                temp_dir,
+                os.path.splitext(os.path.basename(doc_path))[0] + ".docx"
+            )
+
+            debug_id(f"Converting DOC to DOCX: {doc_path}", request_id)
+
+            subprocess.run(
+                [
+                    "soffice",
+                    "--headless",
+                    "--convert-to", "docx",
+                    doc_path,
+                    "--outdir", temp_dir
+                ],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+
+            if os.path.exists(output_path):
+                info_id(f"DOC → DOCX conversion successful: {output_path}", request_id)
+                return output_path
+
+            error_id("DOC → DOCX conversion failed (no output file)", request_id)
+            return None
+
+        except FileNotFoundError:
+            error_id("LibreOffice (soffice) not found in PATH", request_id)
+            return None
+        except Exception as e:
+            error_id(f"DOC → DOCX conversion failed: {e}", request_id)
+            return None
+
 class Problem(Base):
     __tablename__ = 'problem'
 
@@ -8182,7 +8488,19 @@ class DrawingPartAssociation(Base):
 
 
                 # Start with a query that joins Part and DrawingPartAssociation
-                query = session.query(Part).join(DrawingPartAssociation).join(cls)
+                query = (
+                    session.query(Part)
+                    .select_from(Part)
+                    .join(
+                        DrawingPartAssociation,
+                        DrawingPartAssociation.part_id == Part.id
+                    )
+                    .join(
+                        Drawing,
+                        Drawing.id == DrawingPartAssociation.drawing_id
+                    )
+
+                )
 
                 # Apply drawing filters
                 if drawing_id is not None:
@@ -13434,6 +13752,111 @@ class ImageCompletedDocumentAssociation(Base):
         except Exception as e:
             error_id(f"Error in chunk distribution analysis: {e}", request_id)
             return {}
+
+    @classmethod
+    def resolve_related_orm(
+            cls,
+            session,
+            *,
+            image_id: int | None = None,
+            document_id: int | None = None,
+            complete_document_id: int | None = None,
+    ):
+        """
+        ORM-only resolver.
+
+        Resolves related ORM objects starting from EXACTLY ONE anchor:
+          - image_id
+          - document_id
+          - complete_document_id
+
+        Returns:
+            images: List[Image]
+            documents: List[Document]
+            complete_document: CompleteDocument | None
+            associations: List[ImageCompletedDocumentAssociation]
+        """
+
+        # --------------------------------------------------
+        # Validate anchor
+        # --------------------------------------------------
+        provided = [
+            image_id is not None,
+            document_id is not None,
+            complete_document_id is not None,
+        ]
+
+        if sum(provided) != 1:
+            raise ValueError(
+                "Provide exactly ONE of: image_id, document_id, complete_document_id"
+            )
+
+        # --------------------------------------------------
+        # Anchor selection
+        # --------------------------------------------------
+        query = session.query(cls)
+
+        if image_id is not None:
+            query = query.filter(cls.image_id == image_id)
+
+        elif document_id is not None:
+            query = query.filter(cls.document_id == document_id)
+
+        else:  # complete_document_id
+            query = query.filter(cls.complete_document_id == complete_document_id)
+
+        associations = query.all()
+
+        if not associations:
+            return [], [], None, []
+
+        # --------------------------------------------------
+        # Collect foreign keys
+        # --------------------------------------------------
+        image_ids: set[int] = set()
+        document_ids: set[int] = set()
+
+        complete_document_id = None
+
+        for assoc in associations:
+            if assoc.image_id:
+                image_ids.add(assoc.image_id)
+            if assoc.document_id:
+                document_ids.add(assoc.document_id)
+            if assoc.complete_document_id:
+                complete_document_id = assoc.complete_document_id
+
+        # --------------------------------------------------
+        # Resolve ORM models
+        # --------------------------------------------------
+        ImageClass = cls._get_image_class()
+        DocumentClass = cls._get_document_class()
+        CompleteDocumentClass = cls._get_complete_document_class()
+
+        images = (
+            session.query(ImageClass)
+            .filter(ImageClass.id.in_(image_ids))
+            .all()
+            if ImageClass and image_ids
+            else []
+        )
+
+        documents = (
+            session.query(DocumentClass)
+            .filter(DocumentClass.id.in_(document_ids))
+            .all()
+            if DocumentClass and document_ids
+            else []
+        )
+
+        complete_document = (
+            session.get(CompleteDocumentClass, complete_document_id)
+            if CompleteDocumentClass and complete_document_id
+            else None
+        )
+
+        return images, documents, complete_document, associations
+
 
 # Process Classes
 class FileLog(Base):

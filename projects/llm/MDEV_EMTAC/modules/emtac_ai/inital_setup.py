@@ -5,7 +5,7 @@ Complete project initialization that:
 1. Creates all directories defined in config.py
 2. Downloads and saves all base models (intent classifier + NER models)
 
-Uses custom logging from log_config.py for consistent logging across the application.
+Uses custom logging from logging_config.py for consistent logging across the application.
 """
 
 import os
@@ -60,7 +60,7 @@ try:
 
     LOGGING_AVAILABLE = True
 except ImportError:
-    print("Warning: log_config.py not found. Falling back to print statements.")
+    print("Warning: logging_config.py not found. Falling back to print statements.")
     LOGGING_AVAILABLE = False
 
 

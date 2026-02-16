@@ -19,7 +19,8 @@ from modules.configuration.log_config import (
     info_id, debug_id, warning_id, error_id, log_timed_operation
 )
 from modules.configuration.config_env import DatabaseConfig
-from modules.configuration.config import DATABASE_DIR, DATABASE_URL, DATABASE_PATH_IMAGES_FOLDER, ALLOWED_EXTENSIONS
+from modules.configuration.config import (DATABASE_DIR, DATABASE_URL,TEMPORARY_UPLOAD,
+                                          DATABASE_PATH_IMAGES_FOLDER, ALLOWED_EXTENSIONS)
 from plugins.ai_modules.ai_models import ModelsConfig
 from modules.emtacdb.utlity.revision_database.auditlog import commit_audit_logs
 
@@ -153,7 +154,7 @@ def upload_image(request_id=None):
                 info_id(f"Using position ID: {position_id}", request_id)
 
                 # Save file temporarily and let Image.add_to_db handle the final copying
-                temp_file_path = os.path.join(DATABASE_PATH_IMAGES_FOLDER, filename)
+                temp_file_path = os.path.join(TEMPORARY_UPLOAD, filename)
                 image_file.save(temp_file_path)
                 debug_id(f"Saved temporary file: {temp_file_path}", request_id)
 
@@ -264,7 +265,7 @@ def add_image(request_id=None):
                 info_id(f"Processing file: {filename} with title: '{clean_title}'", request_id)
 
                 # Save file temporarily - let Image.add_to_db handle the rest
-                temp_file_path = os.path.join(DATABASE_PATH_IMAGES_FOLDER, filename)
+                temp_file_path = os.path.join(TEMPORARY_UPLOAD, filename)
                 file.save(temp_file_path)
                 debug_id(f"Saved temporary file: {temp_file_path}", request_id)
 

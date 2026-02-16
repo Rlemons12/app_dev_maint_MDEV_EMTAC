@@ -88,11 +88,22 @@ function submitQuestion() {
             if (answerEl) answerEl.innerHTML = data.answer || "";
 
             if (data.blocks) {
-                if (data.blocks["parts-container"]) renderParts(data.blocks["parts-container"]);
-                if (data.blocks["images-container"]) displayThumbnails(data.blocks["images-container"]);
-                if (data.blocks["documents-container"]) displayDocuments(data.blocks["documents-container"]);
-                if (data.blocks["drawings-container"]) displayDrawings(data.blocks["drawings-container"]);
+                console.log("[EMTAC] documents:", data.blocks.documents);
+                console.log("[EMTAC] documents length:", data.blocks.documents?.length);
+
+                if (Array.isArray(data.blocks.parts)) {
+                    renderParts(data.blocks.parts);
+                }
+
+                if (Array.isArray(data.blocks.thumbnails)) {
+                    displayThumbnails(data.blocks.thumbnails);
+                }
+
+                if (Array.isArray(data.blocks.documents)) {
+                    displayDocuments(data.blocks.documents);
+                }
             }
+
 
             if (answerEl) {
                 const links = answerEl.querySelectorAll('a');

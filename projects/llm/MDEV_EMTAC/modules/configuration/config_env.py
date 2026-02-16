@@ -46,7 +46,6 @@ def _is_postgresql_url(database_url: str) -> bool:
     )
 
 
-
 def with_connection_limiting(func):
     """
     Decorator to apply connection limiting to a function that creates a database session.
@@ -503,3 +502,110 @@ class DatabaseConfig:
         )
 
         return engine
+
+class TrainingDatabaseConfig:
+    """
+    STRICT training-only database configuration.
+
+    - PostgreSQL ONLY (no SQLite fallback)
+    - Explicit database: emtac_training
+    - Explicit schema: intent_training
+    - Fail-fast behavior
+    """
+
+    def __init__(self):
+        # -------------------------------------------------
+        # Required environment variables
+        # -------------------------------------------------
+        self.db_name = os.getenv("POSTGRES_TRAIN_DB")
+        self.db_user = os.getenv("POSTGRES_TRAIN_USER")
+        self.db_pass = os.getenv("POSTGRES_TRAIN_PASSWORD")
+        self.db_host = os.getenv("POSTGRES_TRAIN_HOST", "localhost")
+        self.db_port = os.getenv("POSTGRES_TRAIN_PORT", "5432")
+        self.schema  = os.getenv("POSTGRES_TRAIN_SCHEMA", "intent_training")
+
+        missing = [
+            k for k, v in {
+                "POSTGRES_TRAIN_DB": self.db_name,
+                "POSTGRES_TRAIN_USER": self.db_user,
+                "POSTGRES_TRAIN_PASSWORD": self.db_pass,
+            }.items()
+            if not v
+        ]
+        if missing:
+            raise RuntimeError(f"Missing required training DB env vars: {missing}")
+
+        self.database_url = (
+            f"postgresql+psycopg2://{self.db_user}:{self.db_pass}"
+            f"@{self.db_host}:{self.db_port}/{self.db_name}"
+        )
+
+        logger.info("[TRAINING-DB] Using database URL: %s", self.database_url)
+
+        # -------------------------------------------------
+        # Engine (NO fallback allowed)
+        # -------------------------------------------------
+        self.engine = create_engine(
+            self.database_url,
+            pool_pre_ping=True,
+            pool_size=5,
+            max_overflow=10,
+            echo=False,
+            connect_args={
+                "application_name": "emtac_training",
+                "options": f"-c search_path={self.schema},public"
+            }
+        )
+
+        # Fail fast: test connection + schema existence
+        with self.engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+            exists = conn.execute(
+                text("""
+                    SELECT schema_name
+                    FROM information_schema.schemata
+                    WHERE schema_name = :schema
+                """),
+                {"schema": self.schema},
+            ).scalar()
+
+            if not exists:
+                raise RuntimeError(
+                    f"Training schema '{self.schema}' does not exist "
+                    f"in database '{self.db_name}'"
+                )
+
+        logger.info("[TRAINING-DB] Connection verified, schema '%s' active", self.schema)
+
+        # -------------------------------------------------
+        # ORM setup
+        # -------------------------------------------------
+        self.Base = declarative_base(metadata=None)
+        self.SessionMaker = sessionmaker(bind=self.engine)
+
+        # -------------------------------------------------
+        # Session-level defaults
+        # -------------------------------------------------
+        event.listen(self.engine, "connect", self._set_postgres_session_settings)
+
+    # -------------------------------------------------
+    # Session helpers
+    # -------------------------------------------------
+    def get_session(self):
+        return self.SessionMaker()
+
+    def get_engine(self):
+        return self.engine
+
+    def get_base(self):
+        return self.Base
+
+    # -------------------------------------------------
+    # PostgreSQL tuning (training-safe)
+    # -------------------------------------------------
+    @staticmethod
+    def _set_postgres_session_settings(dbapi_connection, connection_record):
+        with dbapi_connection.cursor() as cur:
+            cur.execute("SET timezone = 'UTC'")
+            cur.execute("SET statement_timeout = '0'")  # long-running training ok
+            cur.execute("SET idle_in_transaction_session_timeout = '60s'")

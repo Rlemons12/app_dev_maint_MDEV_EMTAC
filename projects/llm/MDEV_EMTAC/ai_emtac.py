@@ -3,6 +3,11 @@
 AI-Enhanced EMTAC Application
 Enhanced with model preloading and offline optimization
 """
+# ========================================
+# LOAD .ENV FIRST — BEFORE ANY OTHER IMPORTS
+# ========================================
+from dotenv import load_dotenv
+load_dotenv()     # <-- MUST be the first thing you do
 
 # ========================================
 # OFFLINE MODE CONFIGURATION - Must be FIRST!
@@ -146,6 +151,7 @@ _model_preload_status = {
     'completion_time': None,
     'request_id': None
 }
+
 
 
 @with_request_id
@@ -364,25 +370,62 @@ def create_app(request_id=None):
         request_id_middleware(app)
         info_id("Request ID middleware registered", request_id)
 
-        # ========== MODEL PRELOADING OPTIMIZATION ==========
+        # ============================================================
+        # MODEL INITIALIZATION & PRELOADING PIPELINE
+        #
+        # Responsibilities:
+        #   1) Force offline mode (no network model checks)
+        #   2) Ensure ModelsConfig DB table exists with safe defaults
+        #   3) Sync available AI models from disk → database (Admin UI)
+        #   4) Warm critical models in background for fast first-use
+        # ============================================================
 
-        # Configure offline mode for faster model loading
+        # ------------------------------------------------------------
+        # 1) Enforce OFFLINE MODE (critical for startup speed & safety)
+        # ------------------------------------------------------------
         configure_offline_mode(request_id)
+        info_id("[STARTUP] Offline mode configured for model loading", request_id)
 
-        # Initialize models configuration
+        # ------------------------------------------------------------
+        # 2) Initialize ModelsConfig table (SAFE DEFAULTS ONLY)
+        #    - Ensures CURRENT_MODEL keys exist
+        #    - Does NOT load any models
+        # ------------------------------------------------------------
         from plugins.ai_modules import ModelsConfig
-        ModelsConfig.initialize_models_config_table()
-        info_id("Models configuration initialized during app startup", request_id)
-        print("Models configuration initialized during app startup")
 
-        # Start AI model preloading in background
-        info_id("Starting AI model preloading for faster image processing...", request_id)
-        print("Starting AI model preloading for faster image processing...")
+        ModelsConfig.initialize_models_config_table()
+        info_id("[STARTUP] ModelsConfig table initialized", request_id)
+
+        # ------------------------------------------------------------
+        # 3) Sync models from disk → DB (Admin dropdown population)
+        #    - Scans MODEL_PATH_LLM
+        #    - Adds new models (e.g. Mistral) if found
+        #    - Non-destructive (never deletes DB entries)
+        # ------------------------------------------------------------
+        from modules.runtime.model_registry import sync_ai_models_from_disk
+        from modules.runtime.embedding_model_registry import (
+            sync_embedding_models_from_disk
+        )
+
+        sync_result = sync_ai_models_from_disk()
+        info_id(
+            f"[STARTUP] Model registry sync complete: {sync_result}",
+            request_id,
+        )
+        sync_embedding_models_from_disk()
+        # ------------------------------------------------------------
+        # 4) Start background model preloading (NON-BLOCKING)
+        #    - Image model
+        #    - Embedding model
+        #    - Generation models are loaded on demand by GPU service
+        # ------------------------------------------------------------
+        info_id(
+            "[STARTUP] Launching background model preloading thread",
+            request_id,
+        )
         preload_thread = preload_models_async(request_id)
 
-        # ========== END MODEL PRELOADING SECTION ==========
-
-
+        # ===================== END MODEL INIT =======================
 
         # Register blueprints and event listeners
         register_blueprints(app)

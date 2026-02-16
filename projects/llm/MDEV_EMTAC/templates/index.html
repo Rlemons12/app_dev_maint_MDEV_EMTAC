@@ -8,12 +8,17 @@
 
 {% block extra_scripts %}
 
-<script src="{{ url_for('static', filename='js/index/chatbot.js') }}"></script>
-<script src="{{ url_for('static', filename='js/update_qanda_table.js') }}"></script>
-    <!-- Container-specific renderers -->
+<!-- Container-specific renderers (DEFINE functions) -->
 <script src="{{ url_for('static', filename='js/index/partials/chatbot_display_parts.js') }}"></script>
 <script src="{{ url_for('static', filename='js/index/partials/chatbot_display_thumbnails.js') }}"></script>
 <script src="{{ url_for('static', filename='js/index/partials/chatbot_display_documents.js') }}"></script>
 <script src="{{ url_for('static', filename='js/index/partials/chatbot_display_drawings.js') }}"></script>
 
+<!-- Orchestrator LAST (CALLS functions) -->
+<script src="{{ url_for('static', filename='js/index/chatbot.js') }}"></script>
+
+<!-- Optional utilities -->
+<script src="{{ url_for('static', filename='js/update_qanda_table.js') }}"></script>
+
 {% endblock %}
+

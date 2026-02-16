@@ -7,69 +7,67 @@ from dataclasses import dataclass
 
 import pandas as pd
 from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
+from sqlalchemy import text
 
 # Project imports
 from modules.emtac_ai.training_scripts.performance_tst_model.performance_tracker import (
     PerformanceTracker, QueryResult, EntityMatch
 )
 from modules.configuration.config import (
-    ORC_PARTS_MODEL_DIR,            # …/modules/emtac_ai/models/parts
-    ORC_TRAINING_DATA_PARTS_LOADSHEET_PATH,  # …/training_data/loadsheet/parts_loadsheet.xlsx
+    ORC_PARTS_MODEL_DIR,                       # …/modules/emtac_ai/models/parts
+    ORC_TRAINING_DATA_PARTS_LOADSHEET_PATH,    # …/training_data/loadsheet/parts_loadsheet.xlsx
+)
+from modules.configuration.config_env import DatabaseConfig
+from modules.configuration.log_config import (
+    TrainingLogManager, set_request_id, info_id, warning_id, error_id
 )
 
-# ----------------------------- Query templates ------------------------------
-ENHANCED_QUERY_TEMPLATES = [
-    # Single entity (15)
-    "I need part number {itemnum}",
-    "Do you have {description}?",
-    "I'm looking for something from {manufacturer}",
-    "Can I get model {model}?",
-    "Do you stock part {itemnum}?",
-    "I need some {description}",
-    "Looking for {manufacturer} parts",
-    "Can you find model {model}?",
-    "Do you carry the {itemnum} part?",
-    "I'm searching for {description}",
-    "Need anything from {manufacturer}",
-    "Any model {model} available?",
-    "I require part number {itemnum}",
-    "Show me {description}",
-    "Find {manufacturer} items",
+# Try to use ORM helper if present; otherwise fallback to raw SQL
+try:
+    # If your models expose QueryTemplate.get_active_texts(session, intent_name)
+    from modules.emtac_ai.emtac_ai_db_models import QueryTemplate  # noqa: F401
+    _HAS_QT_MODEL = True
+except Exception:
+    _HAS_QT_MODEL = False
 
-    # Two entities (15)
-    "I need {description} from {manufacturer}",
-    "Do you have {description} by {manufacturer}?",
-    "I'm looking for {manufacturer} {description}",
-    "Can I get {description} model {model}?",
-    "Do you stock {itemnum} from {manufacturer}?",
-    "I need {manufacturer} {description}",
-    "Looking for {description} made by {manufacturer}",
-    "Can you find {model} by {manufacturer}?",
-    "Do you carry {description}, {manufacturer} brand?",
-    "I'm searching for {itemnum} or model {model}",
-    "Need {description} from {manufacturer}",
-    "Any {manufacturer} {description} available?",
-    "I require model {model} from {manufacturer}",
-    "Show me {description}, model {model}",
-    "Find {itemnum} made by {manufacturer}",
 
-    # Three entities (15)
-    "I need {description} from {manufacturer}, model {model}",
-    "Do you have {manufacturer} {description} model {model}?",
-    "I'm looking for {itemnum}, {description} from {manufacturer}",
-    "Can I get {description} by {manufacturer}, model {model}?",
-    "Do you stock {itemnum} which is {description} from {manufacturer}?",
-    "I need {manufacturer} {description}, part number {itemnum}",
-    "Looking for {description} made by {manufacturer}, model {model}",
-    "Can you find {itemnum}, that's the {description} from {manufacturer}?",
-    "Do you carry {manufacturer} part {itemnum}, the {description}?",
-    "I'm searching for {model} by {manufacturer}, it's a {description}",
-    "Need {description} from {manufacturer}, model {model}",
-    "Any {manufacturer} {description} model {model} available?",
-    "I require {itemnum}, {description} manufactured by {manufacturer}",
-    "Show me {manufacturer} model {model}, the {description}",
-    "Find {description} part {itemnum} from {manufacturer}"
-]
+# ------------------------------ DB templates -------------------------------
+def load_templates_from_db(intent_name: str = "parts") -> List[str]:
+    """
+    Fetch active query templates for the given intent from DB.
+    Returns a de-duplicated, stripped list. Empty list if none / error.
+    """
+    templates: List[str] = []
+    try:
+        db = DatabaseConfig()
+        with db.main_session() as s:
+            if _HAS_QT_MODEL:
+                # Preferred: use your model helper
+                templates = QueryTemplate.get_active_texts(s, intent_name)  # type: ignore[attr-defined]
+            else:
+                # Fallback: raw SQL
+                sql = text("""
+                    SELECT qt.template_text
+                    FROM query_template qt
+                    JOIN intent i ON qt.intent_id = i.id
+                    WHERE i.name = :intent
+                      AND qt.is_active = TRUE
+                    ORDER BY COALESCE(qt.display_order, qt.id)
+                """)
+                templates = [r[0] for r in s.execute(sql, {"intent": intent_name}).fetchall()]
+    except Exception as e:
+        warning_id(f"[Templates] DB load failed for intent='{intent_name}': {e}")
+
+    # normalize/dedupe
+    clean: List[str] = []
+    seen = set()
+    for t in templates or []:
+        t2 = (t or "").strip()
+        if t2 and t2 not in seen:
+            seen.add(t2)
+            clean.append(t2)
+    return clean
+
 
 # ------------------------------ Model resolving -----------------------------
 RUN_RE = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}_run-\d{3}$")
@@ -117,6 +115,7 @@ def resolve_model_dir(base_dir: Path, prefer_deployed: bool = True) -> Path:
 
     # 5) last resort
     return base_dir
+
 
 # ----------------------------- Data structures ------------------------------
 @dataclass
@@ -166,6 +165,7 @@ class EntitySpan:
         overlap_length = overlap_end - overlap_start
         total_length = max(self.end - self.start, other.end - other.start)
         return overlap_length / total_length if total_length > 0 else 0.0
+
 
 # ------------------------------ Evaluator -----------------------------------
 class ImprovedNEREvaluator:
@@ -311,20 +311,33 @@ class ImprovedNEREvaluator:
             'false_negatives': false_negatives
         }
 
+
 # ------------------------------ Tester --------------------------------------
 class ComprehensiveNERTester:
     """Main class for running comprehensive NER tests."""
 
-    def __init__(self, excel_path: str, model_path: str):
+    def __init__(self, excel_path: str, model_path: str, intent_name: str = "parts"):
         self.excel_path = excel_path
         self.model_path = model_path
+        self.intent_name = intent_name
+
+        # logging (training logger)
+        self.req_id = set_request_id()
+        self.tlogm = TrainingLogManager(run_dir=None, run_name=f"comprehensive_test_{intent_name}")
+        self.logger = self.tlogm.logger
+        info_id(f"[ComprehensiveTest] Initialized for intent='{intent_name}'", self.req_id)
+
         self.nlp = None
         self.tracker = PerformanceTracker()
         self.evaluator = ImprovedNEREvaluator()
+        self.bad_templates = []   # <--- ADD THIS: collects (row_idx, template_idx, template, error)
+
+        # DB-backed templates
+        self.templates = load_templates_from_db(intent_name=self.intent_name)
 
     def load_model(self):
         """Load the trained NER model."""
-        print(f"Loading NER model from checkpoint: {self.model_path}")  # <-- ADDED
+        info_id(f"Loading NER model from checkpoint: {self.model_path}", self.req_id)
         try:
             tokenizer = AutoTokenizer.from_pretrained(self.model_path)
             model = AutoModelForTokenClassification.from_pretrained(self.model_path)
@@ -335,28 +348,29 @@ class ComprehensiveNERTester:
                 aggregation_strategy="simple",
                 device=-1  # CPU
             )
-            print("Model loaded successfully!")
+            info_id("Model loaded successfully!", self.req_id)
             return True
         except Exception as e:
-            print(f"Failed to load model: {e}")
+            error_id(f"Failed to load model: {e}", self.req_id)
             return False
 
     def load_inventory_data(self, max_rows: int = None) -> Optional[pd.DataFrame]:
         """Load inventory data from Excel."""
-        print(f"Loading inventory data from {self.excel_path}")
+        info_id(f"Loading inventory data from {self.excel_path}", self.req_id)
         try:
             df = pd.read_excel(self.excel_path)
             df.columns = [str(c).strip() for c in df.columns]
             if max_rows and len(df) > max_rows:
                 df = df.head(max_rows)
-                print(f"Limited to first {max_rows} rows for testing")
-            print(f"Loaded {len(df)} inventory rows")
+                info_id(f"Limited to first {max_rows} rows for testing", self.req_id)
+            info_id(f"Loaded {len(df)} inventory rows", self.req_id)
             return df
         except Exception as e:
-            print(f"Failed to load inventory data: {e}")
+            error_id(f"Failed to load inventory data: {e}", self.req_id)
             return None
 
-    def normalize_text(self, text: str) -> str:
+    @staticmethod
+    def normalize_text(text: str) -> str:
         if not text or pd.isna(text):
             return ""
         return str(text).strip()
@@ -426,7 +440,28 @@ class ComprehensiveNERTester:
         return query, expected, category, style
 
     def test_single_query(self, row_idx: int, template_idx: int, row: pd.Series, template: str) -> QueryResult:
-        query, expected, category, style = self.generate_test_query(row, template)
+        # Try to build the query from the template. If it fails (bad braces/keys), record and skip gracefully.
+        try:
+            query, expected, category, style = self.generate_test_query(row, template)
+        except Exception as e:
+            error_id(f"Template format failed for row={row_idx}, template_idx={template_idx}: {e}", self.req_id)
+            # keep a copy for end-of-run summary
+            self.bad_templates.append((row_idx, template_idx, template, str(e)))
+            # Return a minimal "skipped" result so the tracker can continue
+            return QueryResult(
+                query_id=f"row_{row_idx}_template_{template_idx}",
+                row_index=row_idx,
+                template_index=template_idx,
+                query_text=f"[SKIPPED due to template error] {template}",
+                query_category="n/a",
+                language_style="skipped",
+                total_entities_expected=0,
+                total_entities_found=0,
+                overall_success=False,
+                execution_time_ms=0.0
+            )
+
+        # Normal path
         query_id = f"row_{row_idx}_template_{template_idx}"
         start_time = time.time()
         try:
@@ -472,6 +507,7 @@ class ComprehensiveNERTester:
             return result
         except Exception as e:
             execution_time = (time.time() - start_time) * 1000
+            error_id(f"Query failed for {query_id}: {e}", self.req_id)
             return QueryResult(
                 query_id=query_id, row_index=row_idx, template_index=template_idx,
                 query_text=query, query_category=category, language_style=style,
@@ -480,36 +516,74 @@ class ComprehensiveNERTester:
             )
 
     def run_comprehensive_test(self, max_rows: int = 50):
-        print("=" * 80)
-        print("STARTING COMPREHENSIVE NER MODEL TEST")
-        print("=" * 80)
+        info_id("=" * 80, self.req_id)
+        info_id("STARTING COMPREHENSIVE NER MODEL TEST", self.req_id)
+        info_id("=" * 80, self.req_id)
+
         if not self.load_model():
             return None
         df = self.load_inventory_data(max_rows)
         if df is None:
             return None
-        total_tests = len(df) * len(ENHANCED_QUERY_TEMPLATES)
-        print(f"Will run {total_tests} total tests ({len(df)} rows × {len(ENHANCED_QUERY_TEMPLATES)} templates)")
+
+        if not self.templates:
+            warning_id("No templates available; aborting test.", self.req_id)
+            return None
+
+        total_tests = len(df) * len(self.templates)
+        info_id(f"Will run {total_tests} total tests ({len(df)} rows × {len(self.templates)} templates)", self.req_id)
         completed_tests = 0
+
         for row_idx, row in df.iterrows():
             itemnum = row.get('ITEMNUM', 'Unknown')
-            print(f"Testing row {row_idx + 1}/{len(df)}: {itemnum}")
-            for template_idx, template in enumerate(ENHANCED_QUERY_TEMPLATES):
+            info_id(f"Testing row {row_idx + 1}/{len(df)}: {itemnum}", self.req_id)
+            for template_idx, template in enumerate(self.templates):
                 result = self.test_single_query(row_idx, template_idx, row, template)
                 self.tracker.add_result(result)
                 completed_tests += 1
                 if completed_tests % 100 == 0:
-                    print(f"  Progress: {completed_tests}/{total_tests} tests completed")
-        print(f"Completed all {completed_tests} tests!")
+                    info_id(f"  Progress: {completed_tests}/{total_tests} tests completed", self.req_id)
+
+        info_id(f"Completed all {completed_tests} tests!", self.req_id)
         return self.tracker
 
     def save_and_report(self, output_file: str = None):
-        print("\n" + "=" * 80)
-        print("GENERATING PERFORMANCE REPORT")
-        print("=" * 80)
+        info_id("=" * 80, self.req_id)
+        info_id("GENERATING PERFORMANCE REPORT", self.req_id)
+        info_id("=" * 80, self.req_id)
+
         self.tracker.print_summary_report()
         saved_file = self.tracker.save_results(output_file)
+
+        # ---- NEW: End-of-run bad-template summary ----
+        if self.bad_templates:
+            info_id(f"Bad templates encountered: {len(self.bad_templates)}", self.req_id)
+            # De-duplicate identical (template, error) pairs to avoid noise
+            seen = set()
+            condensed = []
+            for row_idx, tpl_idx, tpl, err in self.bad_templates:
+                key = (tpl, err)
+                if key not in seen:
+                    seen.add(key)
+                    condensed.append((row_idx, tpl_idx, tpl, err))
+
+            # Log a concise list
+            info_id("Listing unique bad templates (first 50 shown):", self.req_id)
+            for i, (row_idx, tpl_idx, tpl, err) in enumerate(condensed[:50], 1):
+                warning_id(f"[#{i}] row={row_idx} template_idx={tpl_idx} | error={err} | template={tpl}", self.req_id)
+
+            # Also print to console so you see it immediately
+            print("\n=== Bad Templates Summary ===")
+            print(f"Total bad instances: {len(self.bad_templates)} | Unique: {len(condensed)}")
+            for i, (row_idx, tpl_idx, tpl, err) in enumerate(condensed[:50], 1):
+                print(f"[#{i}] row={row_idx} template_idx={tpl_idx}")
+                print(f"      error: {err}")
+                print(f"      template: {tpl}\n")
+            if len(condensed) > 50:
+                print(f"... and {len(condensed) - 50} more")
+
         return saved_file
+
 
 # --------------------------------- Main -------------------------------------
 def main():
@@ -520,31 +594,43 @@ def main():
     # Resolve current model dir (DEPLOYED → LATEST → newest → best → base)
     model_dir = resolve_model_dir(base_parts_dir, prefer_deployed=True)
 
-    print("Comprehensive NER Model Testing")
-    print(f"Excel file: {excel_path}")
-    print(f"Model path: {model_dir}")
-    print(f"Resolved checkpoint directory: {model_dir}")  # <-- ADDED
+    # Run with training logger context for clean open/close
+    req_id = set_request_id()
+    with TrainingLogManager(run_dir=None, run_name="comprehensive_parts_test") as _tlog:
+        info_id("Comprehensive NER Model Testing", req_id)
+        info_id(f"Excel file: {excel_path}", req_id)
+        info_id(f"Model path: {model_dir}", req_id)
+        info_id(f"Resolved checkpoint directory: {model_dir}", req_id)
 
-    # Get user input
-    try:
-        max_rows = int(input("How many inventory rows to test? (default 50): ") or "50")
-    except ValueError:
-        max_rows = 50
-        print("Using default of 50 rows")
+        # Get user input
+        try:
+            max_rows = int(input("How many inventory rows to test? (default 50): ") or "50")
+        except ValueError:
+            max_rows = 50
+            warning_id("Invalid input. Using default of 50 rows.", req_id)
 
-    tester = ComprehensiveNERTester(excel_path=str(excel_path), model_path=str(model_dir))
-    tracker = tester.run_comprehensive_test(max_rows)
+        tester = ComprehensiveNERTester(
+            excel_path=str(excel_path),
+            model_path=str(model_dir),
+            intent_name="parts"
+        )
+        tracker = tester.run_comprehensive_test(max_rows)
 
-    if tracker:
-        output_file = f"ner_comprehensive_test_{max_rows}rows.json"
-        tester.save_and_report(output_file)
-        print(f"\nTesting complete! Results saved to {output_file}")
-        print(f"Total tests run: {len(tracker.results)}")
-        successful = sum(1 for r in tracker.results if r.overall_success)
-        success_rate = successful / len(tracker.results) if tracker.results else 0
-        print(f"Overall success rate: {success_rate:.2%}")
-    else:
-        print("Testing failed")
+        if tracker:
+            output_file = f"ner_comprehensive_test_{max_rows}rows.json"
+            saved_path = tester.save_and_report(output_file)
+            info_id(f"Testing complete! Results saved to {saved_path}", req_id)
+            info_id(f"Total tests run: {len(tracker.results)}", req_id)
+            successful = sum(1 for r in tracker.results if r.overall_success)
+            success_rate = successful / len(tracker.results) if tracker.results else 0
+            info_id(f"Overall success rate: {success_rate:.2%}", req_id)
+            print(f"\nTesting complete! Results saved to {saved_path}")
+            print(f"Total tests run: {len(tracker.results)}")
+            print(f"Overall success rate: {success_rate:.2%}")
+        else:
+            error_id("Testing failed", req_id)
+            print("Testing failed")
+
 
 if __name__ == "__main__":
     main()

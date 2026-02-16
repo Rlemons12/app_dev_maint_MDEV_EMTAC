@@ -1,64 +1,90 @@
 # services/assembly_view_service.py
+
 from typing import List, Optional, Dict, Any
 from sqlalchemy.exc import SQLAlchemyError
 
-from modules.configuration.log_config import info_id, error_id, with_request_id
-from modules.database.emtacdb_fts import AssemblyView, ComponentAssembly
+from modules.configuration.log_config import info_id, error_id, warning_id, with_request_id
+from modules.emtacdb.emtacdb_fts import AssemblyView, ComponentAssembly
 from modules.configuration.config_env import DatabaseConfig
 
 
 class AssemblyViewService:
     """
-    Service layer for managing AssemblyView (also called ComponentView) entities.
+    Service layer for managing AssemblyView (ComponentView) entities.
 
-    Provides CRUD and helpers:
-      - `find`          → Search for AssemblyViews with optional filters.
-      - `get`           → Retrieve a single AssemblyView by ID.
-      - `save`          → Create a new AssemblyView or update an existing one.
-      - `remove`        → Delete an AssemblyView by ID.
-      - `find_or_create`→ Find by name+parent or create new if not found.
-      - `find_related`  → Traverse relationships (parent ComponentAssembly, child Positions).
+    Responsibilities:
+    ------------------
+    CRUD OPERATIONS
+      - find:
+            Search AssemblyViews by name, component_assembly_id, or asset_number_id.
+      - get:
+            Retrieve a single AssemblyView by ID.
+      - save:
+            Create or update an AssemblyView,
+            including:
+                • name
+                • description
+                • component_assembly_id
+                • asset_number_id
+      - remove:
+            Delete an AssemblyView IF it has no dependent Position records.
+
+    CREATION HELPERS
+      - find_or_create:
+            Uniqueness is defined by:
+                (name, component_assembly_id, asset_number_id)
+            Creates a new view only if one does not already exist.
+
+    RELATIONSHIP TRAVERSAL
+      - find_related:
+            Returns upward and downward hierarchy:
+                upward:
+                    • component_assembly
+                    • asset_number
+                downward:
+                    • positions mapped to this AssemblyView
     """
 
     def __init__(self, db_config: DatabaseConfig = None):
         self.db_config = db_config or DatabaseConfig()
 
-    # ---------- Basic Queries ----------
-
+    # ----------------------------------------------------------------------
+    # FIND
+    # ----------------------------------------------------------------------
     @with_request_id
-    def find(self, name: Optional[str] = None,
-             component_assembly_id: Optional[int] = None,
-             limit: int = 100) -> List[AssemblyView]:
-        """
-        Search for AssemblyViews with optional filters.
+    def find(
+        self,
+        name: Optional[str] = None,
+        component_assembly_id: Optional[int] = None,
+        asset_number_id: Optional[int] = None,
+        limit: int = 100
+    ) -> List[AssemblyView]:
 
-        Args:
-            name (str, optional): Filter by name (partial match).
-            component_assembly_id (int, optional): Filter by parent ComponentAssembly ID.
-            limit (int): Max results (default 100).
-
-        Returns:
-            List[AssemblyView]: Matching records.
-        """
         with self.db_config.main_session() as session:
             try:
                 query = session.query(AssemblyView)
+
                 if name:
                     query = query.filter(AssemblyView.name.ilike(f"%{name}%"))
                 if component_assembly_id:
-                    query = query.filter_by(component_assembly_id=component_assembly_id)
+                    query = query.filter(AssemblyView.component_assembly_id == component_assembly_id)
+                if asset_number_id:
+                    query = query.filter(AssemblyView.asset_number_id == asset_number_id)
+
                 results = query.limit(limit).all()
                 info_id(f"Found {len(results)} AssemblyViews", None)
                 return results
+
             except SQLAlchemyError as e:
                 error_id(f"AssemblyViewService.find failed: {e}", None)
                 raise
 
+    # ----------------------------------------------------------------------
+    # GET
+    # ----------------------------------------------------------------------
     @with_request_id
     def get(self, assembly_view_id: int) -> Optional[AssemblyView]:
-        """
-        Retrieve a single AssemblyView by ID.
-        """
+
         with self.db_config.main_session() as session:
             try:
                 return session.query(AssemblyView).filter_by(id=assembly_view_id).first()
@@ -66,112 +92,130 @@ class AssemblyViewService:
                 error_id(f"AssemblyViewService.get failed: {e}", None)
                 raise
 
-    # ---------- Create / Update ----------
-
+    # ----------------------------------------------------------------------
+    # SAVE (create or update)
+    # ----------------------------------------------------------------------
     @with_request_id
-    def save(self, name: str, component_assembly_id: int,
-             description: Optional[str] = None,
-             assembly_view_id: Optional[int] = None) -> AssemblyView:
-        """
-        Create or update an AssemblyView.
+    def save(
+        self,
+        name: str,
+        component_assembly_id: int,
+        description: Optional[str] = None,
+        asset_number_id: Optional[int] = None,
+        assembly_view_id: Optional[int] = None
+    ) -> AssemblyView:
 
-        Args:
-            name (str): Name of the AssemblyView.
-            component_assembly_id (int): Parent ComponentAssembly ID.
-            description (str, optional): Description text.
-            assembly_view_id (int, optional): If provided, updates that record.
-
-        Returns:
-            AssemblyView: Created or updated object.
-        """
         with self.db_config.main_session() as session:
             try:
                 if assembly_view_id:
                     av = session.query(AssemblyView).filter_by(id=assembly_view_id).first()
                     if not av:
                         raise ValueError(f"AssemblyView with id {assembly_view_id} not found")
+
                     av.name = name
                     av.description = description
                     av.component_assembly_id = component_assembly_id
+                    av.asset_number_id = asset_number_id
+
                     info_id(f"Updated AssemblyView id={assembly_view_id}", None)
+
                 else:
                     av = AssemblyView(
                         name=name,
                         description=description,
-                        component_assembly_id=component_assembly_id
+                        component_assembly_id=component_assembly_id,
+                        asset_number_id=asset_number_id
                     )
                     session.add(av)
                     info_id(f"Created AssemblyView '{name}'", None)
+
                 return av
+
             except SQLAlchemyError as e:
                 error_id(f"AssemblyViewService.save failed: {e}", None)
                 raise
 
+    # ----------------------------------------------------------------------
+    # REMOVE (safe delete)
+    # ----------------------------------------------------------------------
     @with_request_id
     def remove(self, assembly_view_id: int) -> bool:
-        """
-        Delete an AssemblyView by ID.
 
-        Returns:
-            bool: True if deleted, False if not found.
-        """
         with self.db_config.main_session() as session:
             try:
                 av = session.query(AssemblyView).filter_by(id=assembly_view_id).first()
-                if av:
-                    session.delete(av)
-                    info_id(f"Deleted AssemblyView id={assembly_view_id}", None)
-                    return True
-                return False
+                if not av:
+                    return False
+
+                # Prevent deleting assembly views that still have positions
+                if av.position and len(av.position) > 0:
+                    warning_id(
+                        f"Cannot delete AssemblyView id={assembly_view_id} "
+                        f"because {len(av.position)} Positions depend on it",
+                        None
+                    )
+                    return False
+
+                session.delete(av)
+                info_id(f"Deleted AssemblyView id={assembly_view_id}", None)
+                return True
+
             except SQLAlchemyError as e:
                 error_id(f"AssemblyViewService.remove failed: {e}", None)
                 raise
 
-    # ---------- Helpers ----------
-
+    # ----------------------------------------------------------------------
+    # FIND_OR_CREATE (matches ORM uniqueness)
+    # ----------------------------------------------------------------------
     @with_request_id
-    def find_or_create(self, name: str, component_assembly_id: int,
-                       description: Optional[str] = None) -> AssemblyView:
-        """
-        Find by (name, component_assembly_id) or create a new AssemblyView.
+    def find_or_create(
+        self,
+        name: str,
+        component_assembly_id: int,
+        asset_number_id: Optional[int] = None,
+        description: Optional[str] = None
+    ) -> AssemblyView:
 
-        Returns:
-            AssemblyView: Found or newly created object.
-        """
         with self.db_config.main_session() as session:
-            av = (session.query(AssemblyView)
-                        .filter_by(name=name, component_assembly_id=component_assembly_id)
-                        .first())
+            filters = {
+                "name": name,
+                "component_assembly_id": component_assembly_id,
+                "asset_number_id": asset_number_id
+            }
+
+            av = session.query(AssemblyView).filter_by(**filters).first()
             if av:
                 info_id(f"Found existing AssemblyView '{name}'", None)
                 return av
-            av = AssemblyView(name=name, description=description, component_assembly_id=component_assembly_id)
+
+            av = AssemblyView(
+                name=name,
+                description=description,
+                component_assembly_id=component_assembly_id,
+                asset_number_id=asset_number_id
+            )
             session.add(av)
             info_id(f"Created new AssemblyView '{name}'", None)
             return av
 
+    # ----------------------------------------------------------------------
+    # FIND_RELATED
+    # ----------------------------------------------------------------------
     @with_request_id
     def find_related(self, assembly_view_id: int) -> Optional[Dict[str, Any]]:
-        """
-        Get related entities for an AssemblyView.
 
-        Traverses:
-          - Upward: parent ComponentAssembly
-          - Downward: positions
-
-        Returns:
-            dict | None: {
-                "assembly_view": AssemblyView,
-                "upward": {"component_assembly": ...},
-                "downward": {"positions": [...]}
-            }
-        """
         with self.db_config.main_session() as session:
             av = session.query(AssemblyView).filter_by(id=assembly_view_id).first()
             if not av:
                 return None
 
-            upward = {"component_assembly": av.component_assembly}
-            downward = {"positions": av.position}
-            return {"assembly_view": av, "upward": upward, "downward": downward}
-
+            return {
+                "assembly_view": av,
+                "upward": {
+                    "component_assembly": av.component_assembly,
+                    "asset_number": av.asset_number,
+                },
+                "downward": {
+                    "positions": av.position
+                }
+            }

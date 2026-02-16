@@ -3,7 +3,7 @@ from typing import List, Optional, Dict, Any, Union
 from sqlalchemy.exc import SQLAlchemyError
 
 from modules.emtacdb.emtacdb_fts import ComponentAssembly, Subassembly, AssemblyView, Position
-from modules.configuration.database_config import DatabaseConfig
+from modules.configuration.config_env import DatabaseConfig
 from modules.configuration.log_config import info_id, error_id, with_request_id
 
 

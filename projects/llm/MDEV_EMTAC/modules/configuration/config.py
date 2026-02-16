@@ -1,7 +1,10 @@
 """
+E:\emtac\projects\llm\MDEV_EMTAC\modules\configuration\config.py
+
 Project configuration file
 modules/configuration/config.py
 """
+from sympy import false
 
 import os
 import sys
@@ -322,3 +325,14 @@ LOG_FILE  = os.getenv("LOG_FILE", os.path.join(LOGS_DIR, "emtac_app.log"))
 # --------------------------------------------------------
 SMOKE_TESTS_DIR = os.getenv("SMOKE_TESTS", os.path.join(LOGS_DIR, "smoke_tests"))
 os.makedirs(SMOKE_TESTS_DIR, exist_ok=True)
+
+# TEMPORARY UPLOAD DIRECTORY
+TEMPORARY_UPLOAD = os.path.join("E:\\emtac\\Database", "tempory_upload")
+os.makedirs(TEMPORARY_UPLOAD, exist_ok=True)
+
+
+# DEBUG FLAGS
+FORCE_DEBUG_CHUNK = True
+FORCE_DEBUG_CHUNK_ID = 1
+
+

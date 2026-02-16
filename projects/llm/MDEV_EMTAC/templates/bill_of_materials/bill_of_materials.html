@@ -4,9 +4,11 @@
 
 {% block extra_head %}
     <!-- 1. External Libraries - jQuery and Select2 -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- ORIGINAL CDN: <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> -->
+<script src="{{ url_for('static', filename='vendor/jquery/jquery-3.6.0.min.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<!-- ORIGINAL CDN: <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" /> -->
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/select2/select2.min.css') }}"/>
 
     <!-- 2. Custom Stylesheets -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/search_bill_of_material.css') }}">
@@ -94,7 +96,8 @@
     </style>
 
     <!-- 4. Load Select2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- ORIGINAL CDN: <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> -->
+<script src="{{ url_for('static', filename='vendor/select2/select2.min.js') }}"></script>
 {% endblock %}
 
 {% block content %}

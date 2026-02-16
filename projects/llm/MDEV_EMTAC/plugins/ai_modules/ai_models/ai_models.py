@@ -1,4 +1,3 @@
-
 """
 AI Models Module - Unified Import Block
 Aligned with E:\emtac\models architecture
@@ -7,6 +6,28 @@ Aligned with E:\emtac\models architecture
 # -------------------------------------------------------
 # Standard Library Imports
 # -------------------------------------------------------
+from dotenv import load_dotenv
+from pathlib import Path
+import os
+
+# 1) Central dev env
+DEV_ENV = Path(r"E:\emtac\dev_env\.env")
+if DEV_ENV.exists():
+    load_dotenv(DEV_ENV)
+    print(f"Loaded environment from {DEV_ENV}")
+else:
+    print(f"WARNING: Dev env file not found: {DEV_ENV}")
+
+# 2) Project-level .env override (optional but nice)
+PROJECT_ENV = Path(__file__).parent / ".env"
+if PROJECT_ENV.exists():
+    load_dotenv(PROJECT_ENV)
+    print(f"Loaded project overrides from {PROJECT_ENV}")
+
+print("MODEL_PATH_CLIP =", os.getenv("MODEL_PATH_CLIP"))
+print("MODELS_CLIP_DIR =", os.getenv("MODELS_CLIP_DIR"))
+
+
 import os
 import sys
 import time
@@ -32,9 +53,8 @@ import numpy
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import (
     Column, String, Integer, DateTime, Enum,
-    UniqueConstraint, create_engine, inspect
+    UniqueConstraint, create_engine,inspect
 )
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 
 # -------------------------------------------------------
@@ -48,15 +68,21 @@ from modules.configuration.config import (
 )
 from modules.configuration.log_config import logger, with_request_id
 from modules.configuration.base import Base
+from plugins.image_modules import CLIPModelHandler
+from modules.configuration.config_env import DatabaseConfig
 
+
+engine = create_engine(DATABASE_URL, echo=False)
 
 # Feature flags - explicit since dependencies are installed and verified
 QUANTIZATION_AVAILABLE = True       # BitsAndBytes quantization supported
 TORCH_COMPILE_AVAILABLE = hasattr(torch, "compile")
 TRANSFORMERS_AVAILABLE = True
+MODEL_MINILM_DIR_ENV = os.getenv("MODEL_MINILM_DIR")
 
-
-# Safe imports with fallbacks
+# -------------------------------------------------------
+# Safe logging wrappers (fallback if log_config extras unavailable)
+# -------------------------------------------------------
 try:
     from modules.configuration.log_config import (
         with_request_id, debug_id, info_id, warning_id, error_id,
@@ -64,14 +90,15 @@ try:
     )
     LOGGING_AVAILABLE = True
 except ImportError:
-    # Fallback if logging imports fail
     LOGGING_AVAILABLE = False
+
     def with_request_id(func): return func
     def debug_id(msg, req_id=None): pass
     def info_id(msg, req_id=None): pass
     def warning_id(msg, req_id=None): pass
     def error_id(msg, req_id=None): pass
     def get_request_id(): return "unknown"
+
     def log_timed_operation(name, req_id=None):
         class DummyContext:
             def __enter__(self): return self
@@ -81,9 +108,29 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-# Database setup
-engine = create_engine(DATABASE_URL)
-Session = scoped_session(sessionmaker(bind=engine))
+# -------------------------------------------------------
+# Database setup (reuse global DatabaseConfig)
+# -------------------------------------------------------
+try:
+    # Preferred: use the centralized DatabaseConfig so we share
+    # engines, connection limiting, pragmas, etc.
+    from modules.configuration.config_env import DatabaseConfig
+
+    _db_config = DatabaseConfig()
+    # This is the scoped_session registry managed by DatabaseConfig
+    Session = _db_config.get_main_session_registry()
+
+    logger.info("ai_models: using DatabaseConfig session registry for ModelsConfig")
+
+except Exception as e:
+    # Fallback: only used if config_env is not available
+    logger.warning(
+        "ai_models: DatabaseConfig not available, "
+        f"falling back to direct engine/session. Error: {e}"
+    )
+    engine = create_engine(DATABASE_URL)
+    Session = scoped_session(sessionmaker(bind=engine))
+    logger.info("ai_models: fallback Session created with direct engine")
 
 
 class ModelsConfig(Base):
@@ -97,298 +144,320 @@ class ModelsConfig(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
-        # Composite unique constraint on model_type and key
         UniqueConstraint('model_type', 'key', name='unique_model_type_key'),
     )
 
     def __repr__(self):
         return f"<ModelsConfig(model_type='{self.model_type}', key='{self.key}')>"
 
+    # ---------------------------------------------------
+    # Internal session helper
+    # ---------------------------------------------------
+    @staticmethod
+    def _get_session():
+        return Session()
+
+    # ---------------------------------------------------
+    # Config loading helpers (LEGACY SAFE)
+    # ---------------------------------------------------
     @staticmethod
     def load_config_from_db():
-        """
-        Load AI model configuration from the database using DatabaseConfig.
-
-        Returns:
-            Tuple of (current_ai_model, current_embedding_model)
-        """
+        session = ModelsConfig._get_session()
         try:
-            from modules.configuration.config_env import DatabaseConfig
-            db_config = DatabaseConfig()
-            session = db_config.get_main_session()
-        except ImportError:
-            logger.warning("DatabaseConfig not available, using fallback session")
-            session = Session()
-
-        try:
-            ai_model_config = session.query(ModelsConfig).filter_by(
-                model_type='ai',
-                key="CURRENT_MODEL"
+            ai = session.query(ModelsConfig).filter_by(
+                model_type='ai', key='CURRENT_MODEL'
+            ).first()
+            emb = session.query(ModelsConfig).filter_by(
+                model_type='embedding', key='CURRENT_MODEL'
             ).first()
 
-            embedding_model_config = session.query(ModelsConfig).filter_by(
-                model_type='embedding',
-                key="CURRENT_MODEL"
-            ).first()
-
-            current_ai_model = ai_model_config.value if ai_model_config else "NoAIModel"
-            current_embedding_model = embedding_model_config.value if embedding_model_config else "NoEmbeddingModel"
-
-            return current_ai_model, current_embedding_model
+            return (
+                ai.value if ai else "NoAIModel",
+                emb.value if emb else "NoEmbeddingModel",
+            )
         finally:
             session.close()
 
     @staticmethod
     def load_image_model_config_from_db():
-        """
-        Load image model configuration from the database using DatabaseConfig.
-
-        Returns:
-            String representing the current image model
-        """
+        session = ModelsConfig._get_session()
         try:
-            from modules.configuration.config_env import DatabaseConfig
-            db_config = DatabaseConfig()
-            session = db_config.get_main_session()
-        except ImportError:
-            logger.warning("DatabaseConfig not available, using fallback session")
-            session = Session()
-
-        try:
-            image_model_config = session.query(ModelsConfig).filter_by(
-                model_type='image',
-                key="CURRENT_MODEL"
+            img = session.query(ModelsConfig).filter_by(
+                model_type='image', key='CURRENT_MODEL'
             ).first()
-
-            current_image_model = image_model_config.value if image_model_config else "no_model"
-
-            return current_image_model
+            return img.value if img else "NoImageModel"
         finally:
             session.close()
 
+    # ---------------------------------------------------
+    # Generic config access
+    # ---------------------------------------------------
     @classmethod
     def set_config_value(cls, model_type, key, value):
-        """
-        Set a configuration value in the database using DatabaseConfig.
-
-        Args:
-            model_type: Type of model ('ai', 'image', 'embedding')
-            key: Configuration key
-            value: Configuration value
-
-        Returns:
-            Boolean indicating success
-        """
+        session = cls._get_session()
         try:
-            from modules.configuration.config_env import DatabaseConfig
-            db_config = DatabaseConfig()
-            session = db_config.get_main_session()
-        except ImportError:
-            logger.warning("DatabaseConfig not available, using fallback session")
-            session = Session()
-
-        try:
-            # Check if config already exists
             config = session.query(cls).filter_by(
-                model_type=model_type,
-                key=key
+                model_type=model_type, key=key
             ).first()
 
             if config:
-                # Update existing config
                 config.value = value
                 config.updated_at = datetime.utcnow()
             else:
-                # Create new config
-                config = cls(
+                session.add(cls(
                     model_type=model_type,
                     key=key,
-                    value=value
-                )
-                session.add(config)
+                    value=value,
+                ))
 
             session.commit()
-            logger.info(f"Successfully set config {model_type}.{key} = {value}")
+            logger.info(f"[ModelsConfig] Set {model_type}.{key} = {value}")
             return True
         except Exception as e:
             session.rollback()
-            logger.error(f"Error setting config {model_type}.{key}: {e}")
+            logger.error(f"[ModelsConfig] Error setting {model_type}.{key}: {e}")
             return False
         finally:
             session.close()
 
     @classmethod
     def get_config_value(cls, model_type, key, default=None):
-        """
-        Get a configuration value from the database using DatabaseConfig.
-
-        Args:
-            model_type: Type of model ('ai', 'image', 'embedding')
-            key: Configuration key
-            default: Default value if not found
-
-        Returns:
-            Configuration value or default if not found
-        """
-        try:
-            from modules.configuration.config_env import DatabaseConfig
-            db_config = DatabaseConfig()
-            session = db_config.get_main_session()
-        except ImportError:
-            logger.warning("DatabaseConfig not available, using fallback session")
-            session = Session()
-
+        session = cls._get_session()
         try:
             config = session.query(cls).filter_by(
-                model_type=model_type,
-                key=key
+                model_type=model_type, key=key
             ).first()
-
-            if config:
-                return config.value
-            return default
+            return config.value if config else default
         except Exception as e:
-            logger.error(f"Error getting config {model_type}.{key}: {e}")
+            logger.error(f"[ModelsConfig] Error reading {model_type}.{key}: {e}")
             return default
         finally:
             session.close()
 
+    # ---------------------------------------------------
+    # Convenience setters
+    # ---------------------------------------------------
     @classmethod
     def set_current_ai_model(cls, model_name):
-        """Set the current AI model to use."""
         return cls.set_config_value('ai', 'CURRENT_MODEL', model_name)
 
     @classmethod
     def set_current_embedding_model(cls, model_name):
-        """Set the current embedding model to use."""
         return cls.set_config_value('embedding', 'CURRENT_MODEL', model_name)
 
     @classmethod
     def set_current_image_model(cls, model_name):
-        """Set the current image model to use."""
         return cls.set_config_value('image', 'CURRENT_MODEL', model_name)
 
+    # ---------------------------------------------------
+    # Initialization (SAFE DEFAULTS)
+    # ---------------------------------------------------
     @classmethod
     def initialize_models_config_table(cls):
-        """Initialize the model configurations with default values if they don't exist."""
-        # Set default AI model if not set
+        """
+        Initialize model configuration with safe, explicit defaults.
+
+        - Does NOT overwrite existing DB values
+        - Uses registry-based embedding model names
+        - Explicitly sets execution backend where required
+        """
+
+        # -------------------------------
+        # AI (LLM)
+        # -------------------------------
         if not cls.get_config_value('ai', 'CURRENT_MODEL'):
-            cls.set_current_ai_model('OpenAIModel')
+            cls.set_current_ai_model('TinyLlamaModel')
 
-        # Set default embedding model if not set
+        if not cls.get_config_value('ai', 'EXECUTION_BACKEND'):
+            cls.set_config_value('ai', 'EXECUTION_BACKEND', 'gpu_service')
+
+        # -------------------------------
+        # EMBEDDING
+        # -------------------------------
         if not cls.get_config_value('embedding', 'CURRENT_MODEL'):
-            cls.set_current_embedding_model('OpenAIEmbeddingModel')
+            cls.set_current_embedding_model('all-MiniLM-L6-v2')
 
-        # Set default image model if not set
+        if not cls.get_config_value('embedding', 'EXECUTION_BACKEND'):
+            cls.set_config_value('embedding', 'EXECUTION_BACKEND', 'gpu_service')
+
+        # -------------------------------
+        # IMAGE
+        # -------------------------------
         if not cls.get_config_value('image', 'CURRENT_MODEL'):
             cls.set_current_image_model('CLIPModelHandler')
 
-        logger.info("Model configurations initialized")
+        if not cls.get_config_value('image', 'EXECUTION_BACKEND'):
+            cls.set_config_value('image', 'EXECUTION_BACKEND', 'local')
 
+        logger.info("[ModelsConfig] Model configuration initialized")
+
+    # ---------------------------------------------------
+    # Model lists / metadata
+    # ---------------------------------------------------
     @classmethod
     def get_available_models(cls, model_type):
-        """Get list of available models for a specific type with their details."""
-        models_json = cls.get_config_value(model_type, "available_models", "[]")
+        raw = cls.get_config_value(model_type, "available_models", "[]")
         try:
-            return json.loads(models_json)
-        except json.JSONDecodeError:
-            logger.error(f"Error parsing available models for {model_type}")
+            return json.loads(raw)
+        except Exception:
+            logger.error(f"[ModelsConfig] Invalid available_models for {model_type}")
             return []
 
     @classmethod
     def get_enabled_models(cls, model_type):
-        """Get list of enabled models for a specific type."""
-        models = cls.get_available_models(model_type)
-        return [model for model in models if model.get("enabled", True)]
+        return [m for m in cls.get_available_models(model_type) if m.get("enabled", True)]
 
     @classmethod
     def get_current_model_info(cls, model_type):
-        """Get detailed information about the current model of a specific type."""
-        current_model = cls.get_config_value(model_type, "CURRENT_MODEL")
-        if not current_model:
+        name = cls.get_config_value(model_type, "CURRENT_MODEL")
+        if not name:
             return None
-
-        models = cls.get_available_models(model_type)
-        for model in models:
-            if model["name"] == current_model:
+        for model in cls.get_available_models(model_type):
+            if model.get("name") == name:
                 return model
-
         return None
 
+    # ---------------------------------------------------
+    # ⚠️ DEPRECATED: AI model loading (NO LONGER USED)
+    # ---------------------------------------------------
     @classmethod
     def load_ai_model(cls, model_name=None):
-        """Load an AI model from E:\\emtac\\models by name."""
-        if model_name is None:
-            model_name = cls.get_config_value('ai', 'CURRENT_MODEL', 'NoAIModel')
-        try:
-            module = importlib.import_module('models')
-            model_class = getattr(module, model_name)
-            logger.info(f"Loaded AI model: {model_name}")
-            return model_class()
-        except Exception as e:
-            logger.error(f"Error loading AI model {model_name}: {e}")
-            return cls._fallback_ai_model()
+        """
+        DEPRECATED.
 
+        AI models are executed via GPU service.
+        This method exists ONLY to prevent crashes in legacy paths.
+        """
+        logger.warning(
+            "[ModelsConfig] load_ai_model() is deprecated. "
+            "AI execution must go through AIModelsService + GPU service."
+        )
+        return cls._fallback_ai_model()
+
+    # ---------------------------------------------------
+    # Embedding models (STILL LOCAL)
+    # ---------------------------------------------------
     @classmethod
-    def load_embedding_model(cls, model_name=None):
-        """Load an embedding model from E:\\emtac\\models by name."""
-        if model_name is None:
-            model_name = cls.get_config_value('embedding', 'CURRENT_MODEL', 'NoEmbeddingModel')
-        try:
-            module = importlib.import_module('models')
-            model_class = getattr(module, model_name)
-            logger.info(f"Loaded embedding model: {model_name}")
-            return model_class()
-        except Exception as e:
-            logger.error(f"Error loading embedding model {model_name}: {e}")
-            return cls._fallback_embedding_model()
+    def load_embedding_model(cls, model_name: str):
+        """
+        Load embedding model using registry metadata only.
+        No global backend switch.
+        """
 
+        model_info = cls.get_current_model_info("embedding")
+        if not model_info:
+            raise RuntimeError(
+                f"[ModelsConfig] Embedding model '{model_name}' not registered"
+            )
+
+        backend = model_info.get("backend")
+        path = model_info.get("path")
+
+        logger.info(
+            "[ModelsConfig] Loading embedding model: name=%s backend=%s path=%s",
+            model_name, backend, path
+        )
+
+        # -------------------------------------------------
+        # GPU SERVICE EMBEDDINGS
+        # -------------------------------------------------
+        if backend == "gpu_service":
+            raise RuntimeError(
+                "GPU embedding models are loaded by AIModelsEmbeddingService "
+                "via GPUServerAdapter — not locally"
+            )
+
+        # -------------------------------------------------
+        # LOCAL EMBEDDINGS (SentenceTransformers)
+        # -------------------------------------------------
+        if backend == "local":
+            if not path:
+                raise RuntimeError(
+                    f"Embedding model '{model_name}' missing path"
+                )
+
+            from sentence_transformers import SentenceTransformer
+
+            logger.info(
+                "[ModelsConfig] Loading SentenceTransformer from: %s",
+                path
+            )
+
+            st_model = SentenceTransformer(path)
+
+            class _SentenceTransformerAdapter:
+                def __init__(self, model):
+                    self.model = model
+
+                def get_embeddings(self, text: str):
+                    if not isinstance(text, str) or not text.strip():
+                        raise RuntimeError("Embedding text must be non-empty")
+
+                    vec = self.model.encode(text)
+
+                    if vec is None or len(vec) == 0:
+                        raise RuntimeError("SentenceTransformer returned empty vector")
+
+                    return vec.tolist()
+
+            return _SentenceTransformerAdapter(st_model)
+
+        raise RuntimeError(
+            f"Unknown embedding backend '{backend}' for model '{model_name}'"
+        )
+
+    # ---------------------------------------------------
+    # Image models (STILL LOCAL)
+    # ---------------------------------------------------
     @classmethod
     def load_image_model(cls, model_name=None):
-        """Load an image model from E:\\emtac\\models\\image_models."""
         if model_name is None:
-            model_name = cls.get_config_value('image', 'CURRENT_MODEL', 'NoImageModel')
-        try:
-            module = importlib.import_module('models.image_models')
-            model_class = getattr(module, model_name)
-            logger.info(f"Loaded image model: {model_name}")
-            return model_class()
-        except Exception as e:
-            logger.error(f"Error loading image model {model_name}: {e}")
+            model_name = cls.get_config_value("image", "CURRENT_MODEL", "NoImageModel")
+
+        registry = {
+            "CLIPModelHandler": ("plugins.image_modules.image_models", "CLIPModelHandler"),
+            "NoImageModel": ("plugins.image_modules.image_models", "NoImageModel"),
+        }
+
+        entry = registry.get(model_name)
+        if not entry:
             return cls._fallback_image_model()
 
-    # -------------------------------------------------------
-    # Fallback Implementations
-    # -------------------------------------------------------
+        try:
+            module = importlib.import_module(entry[0])
+            return getattr(module, entry[1])()
+        except Exception as e:
+            logger.error(f"[ModelsConfig] Image model load failed: {e}")
+            return cls._fallback_image_model()
+
+    # ---------------------------------------------------
+    # Fallback implementations
+    # ---------------------------------------------------
     @staticmethod
     def _fallback_ai_model():
         class FallbackAI:
             def get_response(self, prompt): return "AI service unavailable."
-
             def generate_description(self, image_path): return "Unavailable."
-
-        logger.warning("Using fallback AI model")
         return FallbackAI()
 
     @staticmethod
     def _fallback_embedding_model():
         class FallbackEmbedding:
             def get_embeddings(self, text): return []
-
-        logger.warning("Using fallback embedding model")
         return FallbackEmbedding()
 
     @staticmethod
     def _fallback_image_model():
         class FallbackImage:
-            def process_image(self, image_path): return "Image processing unavailable."
-
-            def compare_images(self, a, b): return {"similarity": 0.0}
-
             def generate_description(self, image_path): return "Unavailable."
-
-        logger.warning("Using fallback image model")
         return FallbackImage()
+
+    # ---------------------------------------------------
+    # Execution backend
+    # ---------------------------------------------------
+    @classmethod
+    def get_execution_backend(cls, model_type, default="gpu_service"):
+        return cls.get_config_value(model_type, "EXECUTION_BACKEND", default)
 
 
 # Define the AIModel interface
@@ -400,6 +469,40 @@ class AIModel(ABC):
     @abstractmethod
     def generate_description(self, image_path: str) -> str:
         pass
+
+    @classmethod
+    def register_available_model(cls, model_type: str, model_info: dict):
+        session = cls._get_session()
+        try:
+            raw = cls.get_config_value(model_type, "available_models", "[]")
+            models = json.loads(raw)
+
+            # Prevent duplicates
+            if any(m.get("name") == model_info.get("name") for m in models):
+                logger.warning(
+                    f"[ModelsConfig] Model '{model_info['name']}' already registered"
+                )
+                return False
+
+            models.append(model_info)
+
+            cls.set_config_value(
+                model_type,
+                "available_models",
+                json.dumps(models),
+            )
+
+            logger.info(
+                f"[ModelsConfig] Registered new {model_type} model: {model_info['name']}"
+            )
+            return True
+
+        except Exception as e:
+            session.rollback()
+            logger.error(f"[ModelsConfig] Failed to register model: {e}")
+            return False
+        finally:
+            session.close()
 
 
 # Define the EmbeddingModel interface
@@ -423,7 +526,6 @@ class ImageModel(ABC):
     def generate_description(self, image_path: str) -> str:
         pass
 
-
 # Implementations of the AI model classes
 class NoAIModel(AIModel):
     def get_response(self, prompt: str) -> str:
@@ -431,7 +533,6 @@ class NoAIModel(AIModel):
 
     def generate_description(self, image_path: str) -> str:
         return "AI description generation is currently disabled."
-
 
 class AnthropicModel(AIModel):
     def __init__(self):
@@ -532,7 +633,6 @@ class AnthropicModel(AIModel):
             base64_encoded = base64.b64encode(image_file.read()).decode('utf-8')
             return base64_encoded
 
-
 class OpenAIModel(AIModel):
     def __init__(self):
         openai.api_key = OPENAI_API_KEY
@@ -600,7 +700,6 @@ class OpenAIModel(AIModel):
             base64_encoded = base64.b64encode(image_file.read()).decode('utf-8')
             return base64_encoded
 
-
 class Llama3Model(AIModel):
     def __init__(self):
         self.model_id = "meta-llama/Meta-Llama-3-8B-Instruct"
@@ -662,12 +761,10 @@ class Llama3Model(AIModel):
     def generate_description(self, image_path: str) -> str:
         return "Image description not supported for Llama model."
 
-
 # Implementation of the embedding model classes
 class NoEmbeddingModel(EmbeddingModel):
     def get_embeddings(self, text: str) -> list:
         return []
-
 
 class OpenAIEmbeddingModel(EmbeddingModel):
     def __init__(self):
@@ -688,7 +785,6 @@ class OpenAIEmbeddingModel(EmbeddingModel):
             logger.error(f"Error generating embeddings with OpenAI: {e}")
             return []
 
-
 # Implementation of the image model classes
 class NoImageModel(ImageModel):
     def __init__(self):
@@ -707,8 +803,8 @@ class NoImageModel(ImageModel):
     def generate_description(self, image_path: str) -> str:
         return "Image description is currently disabled."
 
-class CLIPModelHandler:  # Add (ImageModel) if you have a base class
-    """Optimized CLIP model handler with offline mode and intelligent caching"""
+class CLIPModelHandler:
+    """Optimized CLIP model handler with offline mode and intelligent caching."""
 
     # Class-level cache to avoid reloading models across instances
     _model_cache = {}
@@ -717,124 +813,101 @@ class CLIPModelHandler:  # Add (ImageModel) if you have a base class
 
     def __init__(self):
         self.model_name = "CLIPModelHandler"
-        self.clip_model_name = "openai/clip-vit-base-patch32"
+
+        # Get local CLIP model path from .env
+        self.clip_model_dir = os.getenv("MODEL_PATH_CLIP")
+        if not self.clip_model_dir:
+            raise ValueError("MODEL_PATH_CLIP is not set in your .env file.")
 
         # Configure offline mode FIRST to prevent network checks
         if not self._cache_initialized:
             self._configure_offline_mode()
             CLIPModelHandler._cache_initialized = True
 
-        logger.info("Initializing optimized CLIP model handler")
+        logger.info(f"Initializing CLIP model handler using path: {self.clip_model_dir}")
 
         # Load model and processor with intelligent caching
         self.model, self.processor = self._load_or_get_cached_model()
 
         # Set device (GPU if available, otherwise CPU)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        if hasattr(self.model, 'to'):
+        if hasattr(self.model, "to"):
             self.model.to(self.device)
 
         logger.info(f"CLIP model ready on {self.device}")
 
+    # ---------------------------------------------
+    # OFFLINE MODE CONFIG
+    # ---------------------------------------------
     def _configure_offline_mode(self):
-        """Configure environment to disable online checks - MAJOR SPEEDUP!"""
-        # Set environment variables to force offline mode
+        """Configure environment to disable HF online checks."""
         offline_env_vars = {
             "TRANSFORMERS_OFFLINE": "1",
             "HF_HUB_OFFLINE": "1",
             "HF_DATASETS_OFFLINE": "1",
-            "TOKENIZERS_PARALLELISM": "false"  # Disable warnings
+            "TOKENIZERS_PARALLELISM": "false",
         }
 
         for key, value in offline_env_vars.items():
             os.environ[key] = value
 
-        logger.info("Configured offline mode - network checks disabled")
+        logger.info("Offline mode enabled for CLIP model")
 
+    # ---------------------------------------------
+    # MODEL LOADING (LOCAL ONLY)
+    # ---------------------------------------------
     def _load_or_get_cached_model(self):
-        """Load model with intelligent caching - avoids repeated loading"""
-        cache_key = self.clip_model_name
+        """Load model with intelligent caching (local-only)."""
+        cache_key = self.clip_model_dir  # The real unique model identifier
 
         # Return cached model if available
         if cache_key in self._model_cache:
-            logger.info("detected_intent_id = intent_classification['intent_id']Using cached CLIP model (instant load)")
+            logger.info("Using cached CLIP model (instant load)")
             return self._model_cache[cache_key], self._processor_cache[cache_key]
 
-        logger.info("Loading CLIP model for first time...")
+        logger.info(f"Loading CLIP model (first time) from: {self.clip_model_dir}")
         start_time = time.time()
 
         try:
-            # ATTEMPT 1: Try offline loading first (fastest - no network)
             processor = CLIPProcessor.from_pretrained(
-                self.clip_model_name,
+                self.clip_model_dir,
                 local_files_only=True,
-                cache_dir="./model_cache"
             )
+
             model = CLIPModel.from_pretrained(
-                self.clip_model_name,
+                self.clip_model_dir,
                 local_files_only=True,
-                cache_dir="./model_cache"
             )
-            logger.info("Loaded CLIP model from local cache (offline)")
 
-        except Exception as offline_error:
-            logger.warning(f"Offline loading failed: {offline_error}")
-            logger.info("📥 Downloading model from HuggingFace (first time only)...")
+        except Exception as e:
+            logger.error(f"FAILED to load local CLIP model from {self.clip_model_dir}")
+            logger.error(f"Error: {e}")
+            raise RuntimeError(
+                f"CLIP model not found or invalid at: {self.clip_model_dir}. "
+                f"Please verify your .env MODEL_PATH_CLIP path."
+            )
 
-            # ATTEMPT 2: Download if not cached (temporarily allow network)
-            # Temporarily disable offline mode for download
-            temp_offline_vars = {}
-            for key in ["TRANSFORMERS_OFFLINE", "HF_HUB_OFFLINE"]:
-                if key in os.environ:
-                    temp_offline_vars[key] = os.environ.pop(key)
-
-            try:
-                processor = CLIPProcessor.from_pretrained(
-                    self.clip_model_name,
-                    cache_dir="./model_cache"
-                )
-                model = CLIPModel.from_pretrained(
-                    self.clip_model_name,
-                    cache_dir="./model_cache"
-                )
-                logger.info("📥 Successfully downloaded and cached CLIP model")
-
-            except Exception as download_error:
-                logger.error(f"Failed to download model: {download_error}")
-                raise
-
-            finally:
-                # Restore offline mode
-                for key, value in temp_offline_vars.items():
-                    os.environ[key] = value
-
-        # Cache the loaded models in memory
+        # Store in class-level cache
         self._model_cache[cache_key] = model
         self._processor_cache[cache_key] = processor
 
         load_time = time.time() - start_time
-        logger.info(f"CLIP model loaded and cached in {load_time:.2f}s")
+        logger.info(f"CLIP model loaded & cached in {load_time:.2f}s")
 
         return model, processor
 
+    # ---------------------------------------------
+    # IMAGE VALIDATION
+    # ---------------------------------------------
     def is_valid_image(self, image):
-        """Check if image meets requirements for CLIP processing"""
         try:
             if not isinstance(image, PILImage.Image):
                 return False
 
-            # Check minimum dimensions (CLIP is quite flexible)
             width, height = image.size
-            min_size = 32  # CLIP can handle small images
-            max_size = 2048  # Reasonable upper limit
-
-            if width < min_size or height < min_size:
+            if width < 32 or height < 32:
                 logger.debug(f"Image too small: {width}x{height}")
                 return False
-
-            if width > max_size or height > max_size:
-                logger.debug(f"Image very large: {width}x{height} (will resize)")
-                # CLIP preprocessor will handle resizing
 
             return True
 
@@ -842,82 +915,64 @@ class CLIPModelHandler:  # Add (ImageModel) if you have a base class
             logger.error(f"Error validating image: {e}")
             return False
 
+    # ---------------------------------------------
+    # EMBEDDING GENERATION
+    # ---------------------------------------------
     def get_image_embedding(self, image):
-        """Generate CLIP embedding for an image - CORE FUNCTIONALITY"""
         try:
             if not self.is_valid_image(image):
-                logger.warning("Invalid image for embedding generation")
+                logger.warning("Invalid image for embedding")
                 return None
 
-            # Preprocess image using CLIP processor
             inputs = self.processor(images=image, return_tensors="pt", padding=True)
-
-            # Move inputs to correct device
             inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
-            # Generate embedding with no gradient computation (faster)
             with torch.no_grad():
                 image_features = self.model.get_image_features(**inputs)
 
-            # Normalize the embedding (important for similarity comparisons)
             embedding = image_features / image_features.norm(dim=-1, keepdim=True)
-
-            # Convert to numpy array for storage/compatibility
-            embedding_np = embedding.cpu().numpy().flatten()
-
-            logger.debug(f"Generated embedding with shape: {embedding_np.shape}")
-            return embedding_np
+            return embedding.cpu().numpy().flatten()
 
         except Exception as e:
             logger.error(f"Error generating image embedding: {e}")
             return None
 
+    # ---------------------------------------------
+    # PROCESS ONE IMAGE
+    # ---------------------------------------------
     def process_image(self, image_path: str) -> str:
-        """Process image and return status info"""
         try:
-            logger.info(f"Processing image with CLIP: {image_path}")
-
-            # Load and validate image
+            logger.info(f"Processing image: {image_path}")
             image = PILImage.open(image_path).convert("RGB")
 
-            if not self.is_valid_image(image):
-                return f"Invalid image: {image_path}"
-
-            # Generate embedding
             embedding = self.get_image_embedding(image)
-
-            if embedding is not None:
-                return f"Successfully processed: {image_path} (embedding: {embedding.shape})"
-            else:
+            if embedding is None:
                 return f"Failed to generate embedding: {image_path}"
 
+            return f"Successfully processed: {image_path} (embedding_len={len(embedding)})"
+
         except Exception as e:
-            logger.error(f"Error processing image with CLIP: {e}")
-            return f"Error processing image: {str(e)}"
+            logger.error(f"Error processing image: {e}")
+            return f"Error: {str(e)}"
 
+    # ---------------------------------------------
+    # COMPARE IMAGES
+    # ---------------------------------------------
     def compare_images(self, image1_path: str, image2_path: str) -> dict:
-        """Compare two images using CLIP embeddings with cosine similarity"""
         try:
-            logger.info(f"Comparing images: {image1_path} vs {image2_path}")
+            logger.info(f"Comparing: {image1_path} vs {image2_path}")
 
-            # Load both images
-            image1 = PILImage.open(image1_path).convert("RGB")
-            image2 = PILImage.open(image2_path).convert("RGB")
+            img1 = PILImage.open(image1_path).convert("RGB")
+            img2 = PILImage.open(image2_path).convert("RGB")
 
-            # Generate embeddings
-            embedding1 = self.get_image_embedding(image1)
-            embedding2 = self.get_image_embedding(image2)
+            emb1 = self.get_image_embedding(img1)
+            emb2 = self.get_image_embedding(img2)
 
-            if embedding1 is None or embedding2 is None:
-                raise ValueError("Failed to generate embeddings for one or both images")
+            if emb1 is None or emb2 is None:
+                raise ValueError("Missing embedding for comparison")
 
-            # Calculate cosine similarity
-            similarity = cosine_similarity([embedding1], [embedding2])[0][0]
+            similarity = float(cosine_similarity([emb1], [emb2])[0][0])
 
-            # Convert numpy types to Python types for JSON serialization
-            similarity = float(similarity)
-
-            # Interpret similarity score
             if similarity > 0.9:
                 interpretation = "Very similar"
             elif similarity > 0.7:
@@ -933,88 +988,60 @@ class CLIPModelHandler:  # Add (ImageModel) if you have a base class
                 "image1": image1_path,
                 "image2": image2_path,
                 "model": self.model_name,
-                "message": "Comparison completed successfully"
             }
 
         except Exception as e:
-            logger.error(f"Error comparing images with CLIP: {e}")
-            return {
-                "similarity": 0.0,
-                "image1": image1_path,
-                "image2": image2_path,
-                "model": self.model_name,
-                "error": str(e),
-                "message": "Comparison failed"
-            }
+            logger.error(f"Compare failed: {e}")
+            return {"error": str(e)}
 
+    # ---------------------------------------------
+    # DESCRIPTION
+    # ---------------------------------------------
     def generate_description(self, image_path: str) -> str:
-        """Generate basic image description"""
         try:
-            logger.info(f"Generating description for: {image_path}")
-
-            # Load image
             image = PILImage.open(image_path).convert("RGB")
-
-            if not self.is_valid_image(image):
-                return f"Invalid image for description: {image_path}"
-
-            # Get basic image properties
             width, height = image.size
-            aspect_ratio = width / height
+            mp = (width * height) / 1_000_000
 
-            # Determine orientation
-            if aspect_ratio > 1.3:
-                orientation = "landscape"
-            elif aspect_ratio < 0.77:
-                orientation = "portrait"
+            if width > height:
+                orient = "landscape"
+            elif height > width:
+                orient = "portrait"
             else:
-                orientation = "square"
+                orient = "square"
 
-            # Calculate megapixels
-            megapixels = (width * height) / 1_000_000
+            size_kb = os.path.getsize(image_path) / 1024
+            size_str = f"{size_kb/1024:.1f}MB" if size_kb > 1024 else f"{size_kb:.0f}KB"
 
-            # Generate description
-            description = f"A {orientation} image with {width}×{height} pixels ({megapixels:.1f}MP)"
-
-            # Add file info
-            import os
-            file_size = os.path.getsize(image_path) / 1024  # KB
-            if file_size > 1024:
-                size_str = f"{file_size / 1024:.1f}MB"
-            else:
-                size_str = f"{file_size:.0f}KB"
-
-            description += f", file size: {size_str}"
-
-            return description
+            return f"{orient} image {width}×{height}px ({mp:.1f}MP), size {size_str}"
 
         except Exception as e:
-            logger.error(f"Error generating description: {e}")
-            return f"Error generating description: {str(e)}"
+            logger.error(f"Description error: {e}")
+            return f"Error: {str(e)}"
 
+    # ---------------------------------------------
+    # CACHE MANAGEMENT
+    # ---------------------------------------------
     @classmethod
     def get_cache_stats(cls):
-        """Get information about model cache status"""
         return {
             "models_cached": len(cls._model_cache),
             "cache_initialized": cls._cache_initialized,
-            "cached_model_names": list(cls._model_cache.keys())
+            "cached_model_paths": list(cls._model_cache.keys()),
         }
 
     @classmethod
     def clear_cache(cls):
-        """Clear the model cache to free memory"""
         cls._model_cache.clear()
         cls._processor_cache.clear()
         cls._cache_initialized = False
-        logger.info("🗑Cleared CLIP model cache")
+        logger.info("CLIP cache cleared")
 
     @classmethod
-    def preload_model(cls, model_name="openai/clip-vit-base-patch32"):
-        """Preload model at application startup for fastest first access"""
+    def preload_model(cls):
         logger.info("Preloading CLIP model...")
-        handler = cls()  # This will load and cache the model
-        logger.info("CLIP model preloaded and cached")
+        handler = cls()
+        logger.info("CLIP preloaded")
         return handler
 
 class GPT4AllModel(AIModel):
@@ -1376,7 +1403,6 @@ class GPT4AllEmbeddingModel(EmbeddingModel):
                 "status": "not_available"
             }
 
-
 class TinyLlamaModel(AIModel):  # NOW INHERITS FROM AIModel!
     """
     TinyLlama model implementation integrated with your AI framework.
@@ -1428,36 +1454,50 @@ class TinyLlamaModel(AIModel):  # NOW INHERITS FROM AIModel!
         self._initialize_model()
 
     def _load_configuration(self, model_path=None):
-        """Load configuration using your framework's ModelsConfig system."""
+        """
+        Load TinyLlama configuration using strict rules:
+            1. Constructor override (highest priority)
+            2. .env → MODELS_TINY_LLAMA_DIR (required)
+        No database usage.
+        No fallback path.
+        If .env is missing → raise error.
+        """
         try:
-            # Use ModelsConfig to get configuration values from database
-            config_model_path = ModelsConfig.get_config_value(
-                'ai', 'TINYLLAMA_MODEL_PATH',
-                r"C:\Users\10169062\PycharmProjects\MDEV_EMTAC\plugins\ai_modules\TinyLlama_1_1B"
-            )
+            # 1. If model_path provided in constructor → use it
+            if model_path:
+                final_path = model_path
+            else:
+                # 2. Load from .env (this MUST exist)
+                env_path = os.getenv("MODELS_TINY_LLAMA_DIR")
+
+                if not env_path:
+                    raise ValueError(
+                        "TinyLlamaModel: Missing required environment variable "
+                        "'MODELS_TINY_LLAMA_DIR'. Cannot load model."
+                    )
+
+                final_path = env_path
+
+            # Load timeout + tokens from DB (still useful and not path-related)
             config_timeout = int(ModelsConfig.get_config_value('ai', 'TINYLLAMA_TIMEOUT', '120'))
             config_max_tokens = int(ModelsConfig.get_config_value('ai', 'TINYLLAMA_MAX_TOKENS', '256'))
 
-            # Disable quantization on CPU automatically
+            # Auto-enable quantization only if GPU + bitsandbytes available
             enable_quantization = torch.cuda.is_available() and QUANTIZATION_AVAILABLE
 
+            logger.info(f"[TinyLlama] Using model_path = {final_path}")
+
             return {
-                'model_path': model_path or config_model_path,
+                'model_path': final_path,
                 'timeout': config_timeout,
                 'max_tokens': config_max_tokens,
-                'enable_quantization': enable_quantization,  # Auto-detect
+                'enable_quantization': enable_quantization,
                 'enable_compile': True
             }
+
         except Exception as e:
-            logger.error(f"Error loading TinyLlama configuration: {e}")
-            # Fallback configuration
-            return {
-                'model_path': model_path or r"C:\Users\10169062\PycharmProjects\MDEV_EMTAC\plugins\ai_modules\TinyLlama_1_1B",
-                'timeout': 120,
-                'max_tokens': 256,
-                'enable_quantization': False,  # Safe default for CPU
-                'enable_compile': True
-            }
+            logger.error(f"TinyLlama configuration error: {e}")
+            raise  # Re-throw — absolutely no silent fallback
 
     def _configure_environment(self):
         """Configure environment for optimal offline performance."""
@@ -1904,6 +1944,189 @@ def register_default_models_with_tinyllama_updated():
         session.close()
 
 
+class TinyLlamaEmbeddingModel(EmbeddingModel):
+    """
+    Embedding model used alongside TinyLlama, backed by a local
+    SentenceTransformer MiniLM model stored at MODEL_MINILM_DIR.
+
+    - Loads once, cached as a singleton
+    - Uses filesystem path (offline-safe)
+    - Respects your HF_* cache env vars but does not require internet
+    """
+
+    _instance = None
+    _model_loaded = False
+    _cached_model = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
+        """
+        model_name is kept only for logging / compatibility.
+        Actual load is done via MODEL_MINILM_DIR env var.
+        """
+        if self.__class__._model_loaded:
+            # Already initialized, just reuse
+            logger.info(f"Using cached TinyLlama embedding model: {getattr(self, 'model_path', 'unknown path')}")
+            return
+
+        self.model_name = model_name           # logical name
+        self.model_path = self._resolve_model_path(model_name)
+        self.model = None
+        self.is_loaded = False
+
+        self._initialize_model()
+        self.__class__._model_loaded = self.is_loaded
+
+    # --------------------------
+    # Path resolution
+    # --------------------------
+    def _resolve_model_path(self, model_name: str) -> str:
+        """
+        REQUIRED:
+        - Must load ONLY from MODEL_MINILM_DIR.
+        - No fallback. No HF hub. No internet.
+        """
+
+        env_path = os.getenv("MODEL_MINILM_DIR")
+
+        if not env_path:
+            raise RuntimeError(
+                "MODEL_MINILM_DIR is not set in the environment. "
+                "Embedding model cannot be loaded."
+            )
+
+        if not os.path.isdir(env_path):
+            raise RuntimeError(
+                f"MODEL_MINILM_DIR points to a non-existent directory:\n{env_path}"
+            )
+
+        logger.info(f"TinyLlamaEmbeddingModel using embedding path: {env_path}")
+        return env_path
+
+    # --------------------------
+    # Initialization
+    # --------------------------
+    def _initialize_model(self):
+        """Initialize the TinyLlama embedding model from a local path."""
+        # If one is already cached at class level, reuse it
+        if self.__class__._cached_model is not None:
+            logger.info("Using existing cached TinyLlama embedding model instance")
+            self.model = self.__class__._cached_model
+            self.is_loaded = True
+            return
+
+        logger.info(f"Loading TinyLlama embedding model from: {self.model_path}")
+
+        try:
+            # Keep HF/tokenizer behavior quiet & deterministic
+            os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+            # IMPORTANT: Use filesystem path, not just model id
+            self.model = SentenceTransformer(self.model_path)
+
+            # Quick smoke test
+            logger.info("Testing TinyLlama embedding model with a sample sentence...")
+            test_embedding = self.model.encode(["TinyLlama embedding test"], show_progress_bar=False)
+
+            if len(test_embedding) > 0 and len(test_embedding[0]) > 0:
+                dim = len(test_embedding[0])
+                logger.info(
+                    f"TinyLlama embedding model loaded successfully! "
+                    f"Path: {self.model_path} | Dim: {dim}"
+                )
+                self.is_loaded = True
+                self.__class__._cached_model = self.model
+            else:
+                logger.error(
+                    "TinyLlama embedding model loaded but produced empty test embedding. "
+                    "Embeddings may not be usable."
+                )
+                self.model = None
+                self.is_loaded = False
+
+        except Exception as e:
+            logger.error(f"Failed to load TinyLlama embedding model from '{self.model_path}': {e}")
+            self.model = None
+            self.is_loaded = False
+
+    # --------------------------
+    # Public API
+    # --------------------------
+    def get_embeddings(self, text):
+        """
+        Generate embeddings for text.
+
+        Accepts:
+        - str -> returns a 1D list[float]
+        - list[str] -> returns list[list[float]]
+        """
+        if not self.is_loaded or self.model is None:
+            logger.warning("TinyLlama embedding model not loaded, attempting reinitialization...")
+            self._initialize_model()
+
+        if not self.is_loaded or self.model is None:
+            logger.error("TinyLlama embedding model unavailable after reinitialization attempt.")
+            return []  # keep interface consistent with other embedding models
+
+        try:
+            logger.debug(f"Generating TinyLlama embeddings with model path: {self.model_path}")
+
+            if isinstance(text, str):
+                emb = self.model.encode([text], show_progress_bar=False)[0]
+                return emb.tolist() if hasattr(emb, "tolist") else emb
+
+            elif isinstance(text, list):
+                embs = self.model.encode(text, show_progress_bar=False)
+                # Convert each row to a Python list
+                return [
+                    row.tolist() if hasattr(row, "tolist") else row
+                    for row in embs
+                ]
+
+            else:
+                logger.error(f"Invalid input type for get_embeddings: {type(text)}")
+                return []
+
+        except Exception as e:
+            logger.error(f"Error generating TinyLlama embeddings: {e}")
+            return []
+
+    def is_available(self):
+        """Check if the TinyLlama embedding model is available and loaded."""
+        return self.model is not None and self.is_loaded
+
+    def get_model_info(self):
+        """Return information about the loaded TinyLlama embedding model."""
+        info = {
+            "model_name": self.model_name,
+            "model_path": self.model_path,
+            "status": "available" if self.is_available() else "not_available",
+            "optimized_for": "TinyLlama local workflow",
+        }
+
+        if self.is_available():
+            try:
+                test_embedding = self.model.encode(["info probe"], show_progress_bar=False)
+                info["embedding_dim"] = len(test_embedding[0])
+            except Exception as e:
+                info["embedding_dim"] = f"error: {e}"
+
+            # Try to get cache location if provided by SentenceTransformer
+            cache_info = None
+            if hasattr(self.model, "cache_folder"):
+                cache_info = self.model.cache_folder
+            elif hasattr(self.model, "_cache_folder"):
+                cache_info = self.model._cache_folder
+
+            if cache_info:
+                info["cache_location"] = cache_info
+
+        return info
+
 # Test function for TinyLlama integration
 def test_tinyllama_framework_integration():
     """Test TinyLlama integration with your framework."""
@@ -1933,248 +2156,83 @@ def test_tinyllama_framework_integration():
         return False
 
 
-class TinyLlamaEmbeddingModel(EmbeddingModel):
-    _instance = None
-    _model_loaded = False
-    _cached_model = None
-
-    def __new__(cls, model_name="all-MiniLM-L6-v2"):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-    def __init__(self, model_name="all-MiniLM-L6-v2"):
-        # Only initialize once
-        if self._model_loaded:
-            logger.info(f"Using cached TinyLlama embedding model: {model_name}")
-            return
-
-        logger.info(f"Loading TinyLlama embedding model: {model_name}")
-        self.model_name = model_name
-        self.model = None
-        self.is_loaded = False
-        self._initialize_model()
-        TinyLlamaEmbeddingModel._model_loaded = True
-
-    def _initialize_model(self):
-        """Initialize the model only if not already cached"""
-        if TinyLlamaEmbeddingModel._cached_model is not None:
-            logger.info("Using existing cached TinyLlama model")
-            self.model = TinyLlamaEmbeddingModel._cached_model
-            self.is_loaded = True
-            return
-
-        try:
-            logger.info(f"Attempting to load TinyLlama embedding model: {self.model_name}")
-            from sentence_transformers import SentenceTransformer
-
-            self.model = SentenceTransformer(self.model_name)
-            TinyLlamaEmbeddingModel._cached_model = self.model  # Cache it
-            self.is_loaded = True
-
-            # Test the model
-            logger.info("Testing TinyLlama embedding model...")
-            test_embedding = self.model.encode("test")
-            logger.info("TinyLlama embedding model test successful!")
-            logger.info(f"   - Model: {self.model_name}")
-            logger.info(f"   - Embedding dimensions: {len(test_embedding)}")
-            logger.info(f"   - Optimized for: Fast local inference")
-            logger.info(f"Successfully loaded TinyLlama embedding model: {self.model_name}")
-
-        except Exception as e:
-            logger.error(f"Failed to load TinyLlama embedding model: {e}")
-            self.model = None
-            self.is_loaded = False
-            raise
-
-    def preload_embedding_model_properly():
-        """Ensure embedding model is properly preloaded and cached"""
-        try:
-            logger.info("Force-preloading TinyLlama embedding model...")
-
-            # Force creation of singleton instance
-            embedding_model = TinyLlamaEmbeddingModel()
-
-            # Force initialization if not already done
-            if not embedding_model.is_loaded:
-                embedding_model._initialize_model()
-
-            # Test it works
-            test_result = embedding_model.get_embeddings("preload test")
-
-            if test_result and len(test_result) > 0:
-                logger.info(f"Embedding model preloaded successfully! Dimensions: {len(test_result)}")
-                return True
-            else:
-                logger.error("Embedding model preload failed - no test result")
-                return False
-
-        except Exception as e:
-            logger.error(f"Failed to preload embedding model: {e}")
-            return False
-
-    def _initialize_model(self):
-        """Initialize the TinyLlama-optimized embedding model"""
-        logger.info(f"Loading TinyLlama embedding model: {self.model_name}")
-
-        try:
-            from sentence_transformers import SentenceTransformer
-
-            # Set performance settings for TinyLlama workflow
-            os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
-            # Try the specified model first
-            if self._try_load_model(self.model_name):
-                logger.info(f"Successfully loaded TinyLlama embedding model: {self.model_name}")
-                return
-
-            # If specified model fails, try TinyLlama-compatible models
-            logger.warning(f"Primary model {self.model_name} failed, trying TinyLlama-compatible alternatives...")
-
-            for model_name in self.tinyllama_compatible_models:
-                if self._try_load_model(model_name):
-                    logger.info(f"Successfully loaded fallback TinyLlama embedding model: {self.model_name}")
-                    return
-
-            # If all models fail
-            logger.warning("All TinyLlama embedding models failed to load")
-            logger.warning("   Vector search will not be available for TinyLlama")
-            self.model = None
-            self.is_loaded = False
-
-        except ImportError:
-            logger.error("SentenceTransformers not installed. Install with: pip install sentence-transformers")
-            self.model = None
-            self.is_loaded = False
-        except Exception as e:
-            logger.error(f"Unexpected error initializing TinyLlama embedding model: {e}")
-            self.model = None
-            self.is_loaded = False
-
-    def _try_load_model(self, model_name):
-        """Try to load a specific embedding model optimized for TinyLlama"""
-        try:
-            from sentence_transformers import SentenceTransformer
-
-            logger.info(f"Attempting to load TinyLlama embedding model: {model_name}")
-
-            # Load model with TinyLlama-optimized settings
-            self.model = SentenceTransformer(model_name)
-
-            # Test the model
-            logger.info("Testing TinyLlama embedding model...")
-            test_embedding = self.model.encode(["TinyLlama test sentence"], show_progress_bar=False)
-
-            if len(test_embedding) > 0 and len(test_embedding[0]) > 0:
-                logger.info(f"TinyLlama embedding model test successful!")
-                logger.info(f"   - Model: {model_name}")
-                logger.info(f"   - Embedding dimensions: {len(test_embedding[0])}")
-                logger.info(f"   - Optimized for: Fast local inference")
-
-                # Get cache location if available
-                if hasattr(self.model, 'cache_folder'):
-                    logger.info(f"   - Cache location: {self.model.cache_folder}")
-
-                self.model_name = model_name
-                self.is_loaded = True
-                return True
-            else:
-                logger.warning(f"TinyLlama embedding model {model_name} loaded but failed test")
-                return False
-
-        except Exception as e:
-            logger.debug(f"Failed to load TinyLlama embedding model {model_name}: {e}")
-            return False
-
-    def get_embeddings(self, text):
-        """Get embeddings using cached model"""
-        if not self.is_loaded or self.model is None:
-            logger.warning("TinyLlama embedding model not loaded, attempting to initialize...")
-            self._initialize_model()
-
-        if not self.is_loaded:
-            logger.error("Failed to load TinyLlama embedding model")
-            return None
-
-        try:
-            logger.debug(f"Generating TinyLlama embeddings with model: {self.model_name}")
-            embedding = self.model.encode(text)
-            logger.debug(f"Generated TinyLlama embeddings: {len(embedding)} dimensions")
-            return embedding.tolist()
-        except Exception as e:
-            logger.error(f"Error generating TinyLlama embeddings: {e}")
-            return None
-
-    def is_available(self):
-        """Check if the TinyLlama embedding model is available and loaded"""
-        return self.model is not None and self.is_loaded
-
-    def get_model_info(self):
-        """Get information about the loaded TinyLlama embedding model"""
-        if self.is_available():
-            try:
-                test_embedding = self.model.encode(["test"], show_progress_bar=False)
-
-                # Try to get cache info
-                cache_info = "automatic"
-                if hasattr(self.model, 'cache_folder'):
-                    cache_info = self.model.cache_folder
-                elif hasattr(self.model, '_cache_folder'):
-                    cache_info = self.model._cache_folder
-
-                return {
-                    "model_name": self.model_name,
-                    "embedding_dim": len(test_embedding[0]),
-                    "cache_location": cache_info,
-                    "status": "available",
-                    "optimized_for": "TinyLlama local workflow",
-                    "compatible_models": self.tinyllama_compatible_models
-                }
-            except Exception as e:
-                return {
-                    "model_name": self.model_name,
-                    "status": f"error: {e}",
-                    "optimized_for": "TinyLlama local workflow"
-                }
-        else:
-            return {
-                "model_name": self.model_name,
-                "status": "not_available",
-                "optimized_for": "TinyLlama local workflow",
-                "compatible_models": self.tinyllama_compatible_models
-            }
-
-
 def test_tinyllama_embedding_functionality():
-    """Test function to verify TinyLlama embedding generation is working properly"""
+    """
+    Test function to verify TinyLlama embedding generation is working properly.
+
+    Returns:
+        bool: True if the model loads and returns a non-empty embedding, False otherwise.
+    """
     logger.info("Testing TinyLlama embedding functionality...")
 
     try:
-        # Test model loading
+        # -------------------------------------------------
+        # 1) Model construction / load
+        # -------------------------------------------------
         tinyllama_embedding = TinyLlamaEmbeddingModel()
 
+        # Optional: log basic model info if available
+        if hasattr(tinyllama_embedding, "get_model_info"):
+            try:
+                info = tinyllama_embedding.get_model_info()
+                logger.info(f"TinyLlama embedding model info: {info}")
+            except Exception as info_err:
+                logger.warning(f"Could not retrieve TinyLlama embedding model info: {info_err}")
+
         if not tinyllama_embedding.is_available():
-            logger.error("TinyLlama embedding model loading test failed")
+            logger.error("TinyLlama embedding model loading test FAILED (is_available() = False)")
+
+            # Extra debug: show MODEL_MINILM_DIR and whether it exists on disk
+            model_minilm_dir = os.getenv("MODEL_MINILM_DIR")
+            logger.error(f"MODEL_MINILM_DIR env var: {model_minilm_dir!r}")
+            if model_minilm_dir:
+                logger.error(f"MODEL_MINILM_DIR exists on disk: {os.path.isdir(model_minilm_dir)}")
+
             return False
 
-        logger.info("TinyLlama embedding model loading test passed")
+        logger.info("TinyLlama embedding model loading test PASSED")
 
-        # Test embedding generation
+        # -------------------------------------------------
+        # 2) Embedding generation
+        # -------------------------------------------------
         test_text = "TinyLlama embedding test sentence"
+        logger.info(f"Requesting embeddings for test text: {test_text!r}")
+
         embeddings = tinyllama_embedding.get_embeddings(test_text)
 
-        if embeddings and len(embeddings) > 0:
-            logger.info(f"TinyLlama embedding generation test passed: {len(embeddings)} dimensions")
+        # -------------------------------------------------
+        # 3) Validate returned embedding structure
+        # -------------------------------------------------
+        dim = None
+
+        if isinstance(embeddings, list) and embeddings:
+            # Case A: 1D list[float]
+            if isinstance(embeddings[0], (float, int)):
+                dim = len(embeddings)
+            # Case B: list[list[float]] (batch)
+            elif isinstance(embeddings[0], list) and embeddings[0]:
+                dim = len(embeddings[0])
+            else:
+                logger.error(
+                    "TinyLlama embedding generation returned a list, "
+                    f"but its element type is unexpected: {type(embeddings[0])}"
+                )
+        else:
+            logger.error(
+                "TinyLlama embedding generation returned an unexpected type "
+                f"or empty value: type={type(embeddings)}, value={embeddings!r}"
+            )
+
+        if dim is not None and dim > 0:
+            logger.info(f"TinyLlama embedding generation test PASSED: {dim} dimensions")
             return True
         else:
-            logger.error("TinyLlama embedding generation test failed")
+            logger.error("TinyLlama embedding generation test FAILED (no valid dimensions detected)")
             return False
 
     except Exception as e:
-        logger.error(f"TinyLlama embedding functionality test failed: {e}")
+        logger.error(f"TinyLlama embedding functionality test FAILED with exception: {e}", exc_info=True)
         return False
-
-
 
 # Update the register_default_models function to include TinyLlama
 def register_default_models_with_tinyllama():
@@ -2531,6 +2589,7 @@ def initialize_models_config():
     Create the models configuration table if it doesn't exist and register default models.
     This function uses DatabaseConfig for proper session management.
     """
+
     try:
         logger.info("Initializing models configuration table...")
 
@@ -3196,16 +3255,45 @@ def load_ai_model(model_name=None):
     """Legacy function - use ModelsConfig.load_ai_model instead."""
     return ModelsConfig.load_ai_model(model_name)
 
+@classmethod
+def load_embedding_model(cls, model_name: str):
+    model_info = cls.get_current_model_info("embedding")
+    if not model_info:
+        raise RuntimeError(
+            f"[ModelsConfig] Embedding model '{model_name}' not registered"
+        )
 
-def load_embedding_model(model_name=None):
-    """Legacy function - use ModelsConfig.load_embedding_model instead."""
-    return ModelsConfig.load_embedding_model(model_name)
+    execution_backend = cls.get_execution_backend("embedding")
+
+    # 🔒 HARD BLOCK
+    if execution_backend == "gpu_service":
+        raise RuntimeError(
+            "[ModelsConfig] Local embedding load blocked because "
+            "EXECUTION_BACKEND is set to 'gpu_service'"
+        )
+
+    backend = model_info.get("backend", "local")
+    path = model_info.get("path")
+
+    logger.info(
+        "[ModelsConfig] Loading embedding model: "
+        "name=%s backend=%s path=%s",
+        model_name,
+        backend,
+        path,
+    )
+
+    if backend != "local":
+        raise RuntimeError(
+            f"[ModelsConfig] Unsupported embedding backend '{backend}'"
+        )
+
+    # SentenceTransformer load continues here
 
 
 def load_image_model(model_name=None):
     """Legacy function - use ModelsConfig.load_image_model instead."""
     return ModelsConfig.load_image_model(model_name)
-
 
 # Initialize models config on import
 try:
