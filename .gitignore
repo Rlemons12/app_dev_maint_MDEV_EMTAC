@@ -6,6 +6,8 @@
 .venv/
 .venv_old/
 venv/
+.venv*/
+
 __pycache__/
 *.py[cod]
 *.pyo
@@ -372,3 +374,6 @@ projects/llm/MDEV_EMTAC/desktop.ini
 !projects/llm/MDEV_EMTAC/**/.gitkeep
 projects/llm/MDEV_EMTAC/static/**/*.webp
 projects/llm/MDEV_EMTAC/static/background_images/**/*.webp
+
+*.db-shm
+*.db-wal
