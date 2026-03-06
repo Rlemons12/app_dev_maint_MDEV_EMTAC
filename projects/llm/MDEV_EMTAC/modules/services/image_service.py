@@ -1,151 +1,187 @@
-# services/image_service.py
+# modules/services/image_service.py
+
+from __future__ import annotations
+
 from typing import Optional, List, Dict, Any
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from modules.emtacdb.emtacdb_fts import Image
-from modules.configuration.config_env import DatabaseConfig
-from modules.configuration.log_config import info_id, error_id, with_request_id
+from modules.configuration.log_config import (
+    info_id,
+    warning_id,
+    debug_id,
+    with_request_id,
+)
 
 
 class ImageService:
     """
-    Service layer for managing Image entities.
+    Pure domain service for Image.
 
-    Provides:
-      - `add_to_db`       → Wrapper for Image.add_to_db
-      - `find`            → Wraps Image.search
-      - `get`             → Retrieve an Image by ID
-      - `remove`          → Delete an Image by ID
-      - `find_related`    → Collect associations for an Image
-      - `search_images`   → Wrapper for Image.search_images with pgvector support
-      - `similarity`      → Embedding-based similarity search
+    HARD RULES:
+    - NEVER open sessions
+    - NEVER close sessions
+    - NEVER commit
+    - NEVER rollback
+    - Orchestrator owns transactions
     """
 
-    def __init__(self, db_config: DatabaseConfig = None):
-        self.db_config = db_config or DatabaseConfig()
-
-    # ------------------------
-    # CORE WRAPPERS
-    # ------------------------
+    # ---------------------------------------------------------
+    # CREATE
+    # ---------------------------------------------------------
 
     @with_request_id
-    def add_to_db(self,
-                  title: str,
-                  file_path: str,
-                  description: str,
-                  position_id: Optional[int] = None,
-                  complete_document_id: Optional[int] = None,
-                  metadata: Optional[Dict[str, Any]] = None) -> Optional[int]:
-        """Wrapper for Image.add_to_db → returns new image ID or None on failure."""
-        with self.db_config.main_session() as session:
-            try:
-                return Image.add_to_db(session,
-                                       title=title,
-                                       file_path=file_path,
-                                       description=description,
-                                       position_id=position_id,
-                                       complete_document_id=complete_document_id,
-                                       metadata=metadata)
-            except SQLAlchemyError as e:
-                error_id(f"ImageService.add_to_db failed: {e}", None)
-                raise
+    def create(
+        self,
+        session: Session,
+        *,
+        title: str,
+        file_path: str,
+        description: Optional[str] = None,
+        img_metadata: Optional[Dict[str, Any]] = None,
+        request_id: Optional[str] = None,
+    ) -> Image:
+        if session is None:
+            raise RuntimeError("Session required for ImageService.create")
+
+        if not title:
+            raise ValueError("title is required")
+
+        if not file_path:
+            raise ValueError("file_path is required")
+
+        image = Image(
+            title=title,
+            file_path=file_path,
+            description=description or "",
+            img_metadata=img_metadata or {},
+        )
+
+        session.add(image)
+        session.flush()
+
+        debug_id(f"[ImageService] Image staged id={image.id}, title='{title}'", request_id)
+        return image
+
+    # ---------------------------------------------------------
+    # READ
+    # ---------------------------------------------------------
 
     @with_request_id
-    def find(self, **filters) -> List[Image]:
-        """Search images using Image.search."""
-        try:
-            return Image.search(**filters)
-        except SQLAlchemyError as e:
-            error_id(f"ImageService.find failed: {e}", None)
-            raise
+    def get(
+        self,
+        session: Session,
+        *,
+        image_id: int,
+        request_id: Optional[str] = None,
+    ) -> Optional[Image]:
+        if session is None:
+            raise RuntimeError("Session required for ImageService.get")
+        return session.get(Image, image_id)
 
     @with_request_id
-    def get(self, image_id: int) -> Optional[Image]:
-        """Retrieve an Image by ID."""
-        with self.db_config.main_session() as session:
-            try:
-                return session.query(Image).filter_by(id=image_id).first()
-            except SQLAlchemyError as e:
-                error_id(f"ImageService.get failed: {e}", None)
-                raise
+    def find(
+        self,
+        session: Session,
+        *,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        file_path: Optional[str] = None,
+        limit: int = 100,
+        request_id: Optional[str] = None,
+    ) -> List[Image]:
+        if session is None:
+            raise RuntimeError("Session required for ImageService.find")
+
+        limit = max(1, min(int(limit or 100), 1000))
+
+        query = session.query(Image)
+
+        if title:
+            query = query.filter(Image.title.ilike(f"%{title}%"))
+
+        if description:
+            query = query.filter(Image.description.ilike(f"%{description}%"))
+
+        if file_path:
+            query = query.filter(Image.file_path.ilike(f"%{file_path}%"))
+
+        return query.limit(limit).all()
+
+    # ---------------------------------------------------------
+    # UPDATE
+    # ---------------------------------------------------------
 
     @with_request_id
-    def remove(self, image_id: int) -> bool:
-        """Delete an Image by ID."""
-        with self.db_config.main_session() as session:
-            try:
-                image = session.query(Image).filter_by(id=image_id).first()
-                if image:
-                    session.delete(image)
-                    info_id(f"Deleted Image id={image_id}", None)
-                    return True
-                return False
-            except SQLAlchemyError as e:
-                error_id(f"ImageService.remove failed: {e}", None)
-                raise
+    def update(
+        self,
+        session: Session,
+        *,
+        image_id: int,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        img_metadata: Optional[Dict[str, Any]] = None,
+        request_id: Optional[str] = None,
+    ) -> Optional[Image]:
+        if session is None:
+            raise RuntimeError("Session required for ImageService.update")
 
-    # ------------------------
-    # ADVANCED HELPERS
-    # ------------------------
+        image = session.get(Image, image_id)
 
-    @with_request_id
-    def find_related(self, image_id: int) -> Optional[Dict[str, Any]]:
-        """Return related associations for an image."""
-        with self.db_config.main_session() as session:
-            try:
-                image = session.query(Image).filter_by(id=image_id).first()
-                if not image:
-                    return None
-                return {
-                    "image": image,
-                    "downward": {
-                        "parts_positions": image.parts_position_image,
-                        "problems": image.image_problem,
-                        "tasks": image.image_task,
-                        "completed_documents": image.image_completed_document_association,
-                        "embeddings": image.image_embedding,
-                        "positions": image.image_position_association,
-                        "tools": image.tool_image_association,
-                    }
-                }
-            except SQLAlchemyError as e:
-                error_id(f"ImageService.find_related failed: {e}", None)
-                raise
+        if not image:
+            warning_id(f"[ImageService] Image id={image_id} not found", request_id)
+            return None
+
+        if title is not None:
+            image.title = title
+
+        if description is not None:
+            image.description = description
+
+        if img_metadata is not None:
+            image.img_metadata = img_metadata
+
+        session.flush()
+        debug_id(f"[ImageService] Image updated id={image_id}", request_id)
+        return image
+
+    # ---------------------------------------------------------
+    # DELETE
+    # ---------------------------------------------------------
 
     @with_request_id
-    def search_images(self, **kwargs) -> List[Dict[str, Any]]:
-        """Wrapper for Image.search_images (with pgvector/hybrid ranking support)."""
-        with self.db_config.main_session() as session:
-            try:
-                return Image.search_images(session=session, **kwargs)
-            except SQLAlchemyError as e:
-                error_id(f"ImageService.search_images failed: {e}", None)
-                raise
+    def remove(
+        self,
+        session: Session,
+        *,
+        image_id: int,
+        request_id: Optional[str] = None,
+    ) -> bool:
+        if session is None:
+            raise RuntimeError("Session required for ImageService.remove")
 
-    @with_request_id
-    def similarity(self, query_embedding, model_name="CLIPModelHandler",
-                   limit: int = 10, threshold: float = 0.7) -> List[Dict[str, Any]]:
-        """Find similar images via pgvector embedding search."""
-        with self.db_config.main_session() as session:
-            try:
-                return Image.search_similar_images_by_embedding(
-                    session=session,
-                    query_embedding=query_embedding,
-                    model_name=model_name,
-                    limit=limit,
-                    similarity_threshold=threshold
-                )
-            except SQLAlchemyError as e:
-                error_id(f"ImageService.similarity failed: {e}", None)
-                raise
+        image = session.get(Image, image_id)
+
+        if not image:
+            warning_id(f"[ImageService] Image id={image_id} not found", request_id)
+            return False
+
+        session.delete(image)
+        session.flush()
+
+        info_id(f"[ImageService] Image staged for deletion id={image_id}", request_id)
+        return True
+
+    # ---------------------------------------------------------
+    # SERIALIZATION (Optional Helper)
+    # ---------------------------------------------------------
 
     def serialize(self, image: Image) -> Dict[str, Any]:
         return {
             "id": image.id,
             "title": image.title,
             "description": image.description,
-            # 🔑 ALWAYS use the serving endpoint
+            "file_path": image.file_path,
+            "img_metadata": image.img_metadata,
             "url": f"/serve_image/{image.id}",
         }
-
-
