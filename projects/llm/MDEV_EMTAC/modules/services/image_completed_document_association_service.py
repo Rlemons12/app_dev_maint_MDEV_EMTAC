@@ -1,348 +1,421 @@
 # modules/services/image_completed_document_association_service.py
 
-from typing import Optional, List, Dict, Any, Tuple
+from __future__ import annotations
 
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session as SASession
+from typing import Optional, List, Dict, Any, Iterable
+import json
 
-from modules.configuration.config_env import DatabaseConfig
+from sqlalchemy.orm import Session
+
 from modules.configuration.log_config import (
     info_id,
-    error_id,
     warning_id,
     debug_id,
     with_request_id,
-    log_timed_operation,
-    get_request_id,
 )
 
 from modules.emtacdb.emtacdb_fts import (
     ImageCompletedDocumentAssociation,
     Image,
     Document,
-    CompleteDocument,
 )
 
 
 class ImageCompletedDocumentAssociationService:
     """
-    Service layer for ImageCompletedDocumentAssociation.
+    Pure domain service for ImageCompletedDocumentAssociation.
 
-    Responsibilities:
-    - Expose guided extraction as a clean API
-    - Provide basic/fallback extraction entry points
-    - Query images + chunk context
-    - Search by chunk text
-    - Bulk update association metadata
-    - Provide statistics for dashboards
+    HARD RULES:
+    - NEVER open sessions
+    - NEVER close sessions
+    - NEVER commit
+    - NEVER rollback
+    - Orchestrator owns transactions
     """
 
-    def __init__(self, db_config: Optional[DatabaseConfig] = None):
-        self.db_config = db_config or DatabaseConfig()
-
-    def _get_session(self, session: Optional[SASession]) -> Tuple[SASession, bool]:
-        if session is not None:
-            return session, False
-        return self.db_config.get_main_session(), True
-
     # ---------------------------------------------------------
-    # Guided extraction entry point
+    # CREATE (WRITE SIDE)
     # ---------------------------------------------------------
+
     @with_request_id
-    def guided_extraction_with_mapping(
+    def create_association(
         self,
-        file_path: str,
-        metadata: Dict[str, Any],
-    ) -> Tuple[bool, Dict[str, Any], int]:
-        """
-        High-level wrapper for ImageCompletedDocumentAssociation.guided_extraction_with_mapping.
+        session: Session,
+        *,
+        complete_document_id: int,
+        image_id: int,
+        document_id: Optional[int] = None,
+        page_number: Optional[int] = None,
+        chunk_index: Optional[int] = None,
+        association_method: str = "page",
+        confidence_score: Optional[float] = None,
+        context_metadata: Optional[Dict[str, Any]] = None,
+        request_id: Optional[str] = None,
+    ) -> ImageCompletedDocumentAssociation:
+        if session is None:
+            raise RuntimeError("Session required for create_association")
 
-        Returns:
-            (success, payload_dict, http_status_code)
-        """
-        rid = get_request_id()
-        debug_id(
-            f"[ImageCompletedDocumentAssociationService.guided_extraction_with_mapping] "
-            f"file_path={file_path}, metadata_keys={list(metadata.keys())}",
-            rid,
+        assoc = ImageCompletedDocumentAssociation(
+            complete_document_id=complete_document_id,
+            image_id=image_id,
+            document_id=document_id,
+            page_number=page_number,
+            chunk_index=chunk_index,
+            association_method=association_method,
+            confidence_score=confidence_score,
+            context_metadata=context_metadata,
         )
 
-        with log_timed_operation(
-            "ImageCompletedDocumentAssociationService.guided_extraction_with_mapping", rid
-        ):
-            # The model method creates its own sessions; we just call it.
-            success, payload, status = ImageCompletedDocumentAssociation.guided_extraction_with_mapping(
-                file_path=file_path,
-                metadata=metadata,
-                request_id=rid,
-            )
-            return success, payload, status
+        session.add(assoc)
+        session.flush()
 
-    # ---------------------------------------------------------
-    # Fallback extraction wrapper
-    # ---------------------------------------------------------
-    @with_request_id
-    def fallback_basic_extraction(
-        self,
-        file_path: str,
-        metadata: Dict[str, Any],
-    ) -> Tuple[bool, Dict[str, Any], int]:
-        """
-        Explicit wrapper invoking the fallback basic extraction.
-
-        Useful if you want to bypass structure-guided path and just do basic image extraction.
-        """
-        rid = get_request_id()
         debug_id(
-            f"[ImageCompletedDocumentAssociationService.fallback_basic_extraction] "
-            f"file_path={file_path}, metadata_keys={list(metadata.keys())}",
-            rid,
+            f"[ImgAssocService] Association staged id={assoc.id} "
+            f"doc={complete_document_id} img={image_id} page={page_number} chunk={document_id}",
+            request_id,
         )
-
-        with log_timed_operation(
-            "ImageCompletedDocumentAssociationService.fallback_basic_extraction", rid
-        ):
-            success, payload, status = ImageCompletedDocumentAssociation._fallback_basic_extraction(
-                file_path=file_path,
-                metadata=metadata,
-                request_id=rid,
-            )
-            return success, payload, status
+        return assoc
 
     # ---------------------------------------------------------
-    # Chunk-context and searches
+    # READ OPERATIONS
     # ---------------------------------------------------------
+
     @with_request_id
     def get_images_with_chunk_context(
         self,
+        session: Session,
+        *,
         complete_document_id: int,
+        request_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        """
-        Get images plus their chunk context as a list of dicts for UI / API use.
-        Delegates to ImageCompletedDocumentAssociation.get_images_with_chunk_context.
-        """
-        rid = get_request_id()
-        debug_id(
-            f"[ImageCompletedDocumentAssociationService.get_images_with_chunk_context] cd_id={complete_document_id}",
-            rid,
+        return ImageCompletedDocumentAssociation.get_images_with_chunk_context(
+            session=session,
+            complete_document_id=complete_document_id,
         )
-
-        with log_timed_operation(
-            "ImageCompletedDocumentAssociationService.get_images_with_chunk_context", rid
-        ):
-            results = ImageCompletedDocumentAssociation.get_images_with_chunk_context(
-                complete_document_id=complete_document_id,
-                request_id=rid,
-            )
-            return results
 
     @with_request_id
     def search_by_chunk_text(
         self,
+        session: Session,
+        *,
         search_text: str,
         complete_document_id: Optional[int] = None,
         confidence_threshold: float = 0.5,
+        request_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        """
-        Search images via their associated chunk text.
-        """
-        rid = get_request_id()
-        debug_id(
-            f"[ImageCompletedDocumentAssociationService.search_by_chunk_text] "
-            f"text='{search_text[:40]}...', cd_id={complete_document_id}, "
-            f"threshold={confidence_threshold}",
-            rid,
+        return ImageCompletedDocumentAssociation.search_by_chunk_text(
+            session=session,
+            search_text=search_text,
+            complete_document_id=complete_document_id,
+            confidence_threshold=confidence_threshold,
         )
-
-        with log_timed_operation(
-            "ImageCompletedDocumentAssociationService.search_by_chunk_text", rid
-        ):
-            return ImageCompletedDocumentAssociation.search_by_chunk_text(
-                search_text=search_text,
-                complete_document_id=complete_document_id,
-                confidence_threshold=confidence_threshold,
-                request_id=rid,
-            )
 
     @with_request_id
     def get_association_statistics(
         self,
+        session: Session,
+        *,
         complete_document_id: Optional[int] = None,
+        request_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """
-        Get aggregate statistics for associations (for dashboards / debugging).
-        """
-        rid = get_request_id()
-        debug_id(
-            f"[ImageCompletedDocumentAssociationService.get_association_statistics] cd_id={complete_document_id}",
-            rid,
+        return ImageCompletedDocumentAssociation.get_association_statistics(
+            session=session,
+            complete_document_id=complete_document_id,
         )
 
-        with log_timed_operation(
-            "ImageCompletedDocumentAssociationService.get_association_statistics", rid
-        ):
-            return ImageCompletedDocumentAssociation.get_association_statistics(
-                complete_document_id=complete_document_id,
-                request_id=rid,
-            )
+    # ---------------------------------------------------------
+    # UPDATE OPERATIONS
+    # ---------------------------------------------------------
 
-    # ---------------------------------------------------------
-    # Update operations
-    # ---------------------------------------------------------
     @with_request_id
     def update_association_confidence(
         self,
+        session: Session,
+        *,
         association_id: int,
         new_confidence: float,
+        request_id: Optional[str] = None,
     ) -> bool:
-        """
-        Update confidence_score for a single association.
-        """
-        rid = get_request_id()
-        debug_id(
-            f"[ImageCompletedDocumentAssociationService.update_association_confidence] "
-            f"assoc_id={association_id}, confidence={new_confidence}",
-            rid,
-        )
+        assoc = session.get(ImageCompletedDocumentAssociation, association_id)
 
-        with log_timed_operation(
-            "ImageCompletedDocumentAssociationService.update_association_confidence", rid
-        ):
-            return ImageCompletedDocumentAssociation.update_association_confidence(
-                association_id=association_id,
-                new_confidence=new_confidence,
-                request_id=rid,
-            )
+        if not assoc:
+            warning_id(f"[ImgAssocService] Association id={association_id} not found", request_id)
+            return False
+
+        assoc.confidence_score = new_confidence
+        session.flush()
+
+        debug_id(f"[ImgAssocService] Updated confidence id={association_id} -> {new_confidence}", request_id)
+        return True
 
     @with_request_id
     def bulk_update_associations(
         self,
+        session: Session,
+        *,
         complete_document_id: int,
         association_method: str = "bulk_update",
         confidence_score: float = 0.7,
+        request_id: Optional[str] = None,
+    ) -> int:
+        associations = (
+            session.query(ImageCompletedDocumentAssociation)
+            .filter(ImageCompletedDocumentAssociation.complete_document_id == complete_document_id)
+            .all()
+        )
+
+        count = 0
+        for assoc in associations:
+            assoc.association_method = association_method
+            assoc.confidence_score = confidence_score
+            count += 1
+
+        session.flush()
+
+        info_id(
+            f"[ImgAssocService] Bulk updated {count} associations for complete_document_id={complete_document_id}",
+            request_id,
+        )
+        return count
+
+    # ---------------------------------------------------------
+    # PAGE-FIRST ASSOCIATION HELPERS
+    # ---------------------------------------------------------
+
+    @with_request_id
+    def associate_images_by_page(
+        self,
+        session: Session,
+        *,
+        complete_document_id: int,
+        images: Iterable[Image],
+        request_id: Optional[str] = None,
+        association_method: str = "page",
+        default_confidence: float = 0.85,
     ) -> int:
         """
-        Bulk-update method and confidence across all associations for a document.
-        """
-        rid = get_request_id()
-        debug_id(
-            f"[ImageCompletedDocumentAssociationService.bulk_update_associations] "
-            f"cd_id={complete_document_id}, method={association_method}, "
-            f"confidence={confidence_score}",
-            rid,
-        )
+        Creates/ensures associations that at minimum link:
+            complete_document_id + image_id + page_number
 
-        with log_timed_operation(
-            "ImageCompletedDocumentAssociationService.bulk_update_associations", rid
-        ):
-            return ImageCompletedDocumentAssociation.bulk_update_associations(
-                document_id=complete_document_id,
-                association_method=association_method,
-                confidence_score=confidence_score,
-                request_id=rid,
+        It does NOT invent page numbers.
+        It uses image.img_metadata['page_number'] if present.
+
+        Returns count of created associations.
+        """
+        created = 0
+
+        for img in images:
+            page_number = None
+            try:
+                md = img.img_metadata or {}
+                page_number = md.get("page_number")
+            except Exception:
+                page_number = None
+
+            if page_number is None:
+                warning_id(
+                    f"[ImgAssocService] image_id={img.id} missing img_metadata.page_number; skipping page association",
+                    request_id,
+                )
+                continue
+
+            existing = (
+                session.query(ImageCompletedDocumentAssociation)
+                .filter(
+                    ImageCompletedDocumentAssociation.complete_document_id == complete_document_id,
+                    ImageCompletedDocumentAssociation.image_id == img.id,
+                )
+                .first()
             )
 
-    # ---------------------------------------------------------
-    # Debug helpers
-    # ---------------------------------------------------------
-    @with_request_id
-    def debug_chunk_distribution(
-        self,
-        complete_document_id: int,
-    ) -> Dict[int, Any]:
-        """
-        Expose the debug_chunk_distribution as a service call so you can hit it from a route.
-        """
-        rid = get_request_id()
-        debug_id(
-            f"[ImageCompletedDocumentAssociationService.debug_chunk_distribution] cd_id={complete_document_id}",
-            rid,
-        )
+            if existing:
+                # keep existing; optionally fill in page_number if missing
+                if existing.page_number is None:
+                    existing.page_number = int(page_number)
+                    existing.association_method = existing.association_method or association_method
+                    if existing.confidence_score is None:
+                        existing.confidence_score = float(default_confidence)
+                    session.flush()
+                    debug_id(
+                        f"[ImgAssocService] Filled page_number for existing assoc id={existing.id} page={page_number}",
+                        request_id,
+                    )
+                continue
 
-        with log_timed_operation(
-            "ImageCompletedDocumentAssociationService.debug_chunk_distribution", rid
-        ):
-            return ImageCompletedDocumentAssociation.debug_chunk_distribution(
+            self.create_association(
+                session,
                 complete_document_id=complete_document_id,
-                request_id=rid,
+                image_id=img.id,
+                document_id=None,
+                page_number=int(page_number),
+                chunk_index=None,
+                association_method=association_method,
+                confidence_score=float(default_confidence),
+                context_metadata={
+                    "strategy": "page_first",
+                    "source": "image.img_metadata.page_number",
+                },
+                request_id=request_id,
             )
+            created += 1
 
+        info_id(
+            f"[ImgAssocService] Page-first associations created={created} complete_document_id={complete_document_id}",
+            request_id,
+        )
+        return created
+
+    @with_request_id
+    def associate_images_to_chunks_by_page(
+        self,
+        session: Session,
+        *,
+        complete_document_id: int,
+        request_id: Optional[str] = None,
+        association_method: str = "page_chunk",
+        default_confidence: float = 0.8,
+    ) -> int:
+        """
+        Optional enrichment step:
+
+        For each image association with a page_number, try to find a chunk (Document)
+        whose metadata/doc_metadata has the same page_number, then set document_id.
+
+        This is deterministic and does NOT distribute chunks or guess.
+        """
+        # Build page -> first_chunk_id map (deterministic)
+        chunks: List[Document] = (
+            session.query(Document)
+            .filter(Document.complete_document_id == complete_document_id)
+            .order_by(Document.id.asc())
+            .all()
+        )
+
+        page_to_chunk_id: Dict[int, int] = {}
+        for ch in chunks:
+            p = self._extract_chunk_page_number(ch)
+            if p is None:
+                continue
+            # keep first chunk for that page (deterministic)
+            if int(p) not in page_to_chunk_id:
+                page_to_chunk_id[int(p)] = ch.id
+
+        if not page_to_chunk_id:
+            warning_id(
+                f"[ImgAssocService] No chunks with page_number metadata for complete_document_id={complete_document_id}",
+                request_id,
+            )
+            return 0
+
+        assocs: List[ImageCompletedDocumentAssociation] = (
+            session.query(ImageCompletedDocumentAssociation)
+            .filter(ImageCompletedDocumentAssociation.complete_document_id == complete_document_id)
+            .all()
+        )
+
+        updated = 0
+
+        for assoc in assocs:
+            if assoc.document_id is not None:
+                continue
+            if assoc.page_number is None:
+                continue
+
+            chunk_id = page_to_chunk_id.get(int(assoc.page_number))
+            if not chunk_id:
+                continue
+
+            assoc.document_id = chunk_id
+            assoc.association_method = association_method
+            if assoc.confidence_score is None:
+                assoc.confidence_score = float(default_confidence)
+
+            # You can track why/what happened:
+            ctx = assoc.context_metadata or {}
+            if isinstance(ctx, str):
+                try:
+                    ctx = json.loads(ctx)
+                except Exception:
+                    ctx = {"raw": ctx}
+            ctx.update({"linked_by": "page_number", "page_number": int(assoc.page_number)})
+            assoc.context_metadata = ctx
+
+            updated += 1
+
+        if updated:
+            session.flush()
+
+        info_id(
+            f"[ImgAssocService] Page->chunk enrichment updated={updated} complete_document_id={complete_document_id}",
+            request_id,
+        )
+        return updated
 
     # ---------------------------------------------------------
-    # Unified resolver (NEW)
+    # RESOLVER
     # ---------------------------------------------------------
+
     @with_request_id
     def resolve_related_entities(
-            self,
-            *,
-            image_id: Optional[int] = None,
-            document_id: Optional[int] = None,
-            complete_document_id: Optional[int] = None,
-            session: Optional[SASession] = None,
+        self,
+        session: Session,
+        *,
+        image_id: Optional[int] = None,
+        document_id: Optional[int] = None,
+        complete_document_id: Optional[int] = None,
+        request_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """
-        Service-layer resolver.
-
-        Responsibilities:
-        - session management
-        - logging & timing
-        - delegation to ORM resolver
-
-        Returns ORM objects only.
-        NO serialization.
-        """
-
-        rid = get_request_id()
-
-        debug_id(
-            "[ImageCompletedDocumentAssociationService.resolve_related_entities] "
-            f"image_id={image_id}, document_id={document_id}, "
-            f"complete_document_id={complete_document_id}",
-            rid,
+        images, documents, complete_document, associations = (
+            ImageCompletedDocumentAssociation.resolve_related_orm(
+                session=session,
+                image_id=image_id,
+                document_id=document_id,
+                complete_document_id=complete_document_id,
+            )
         )
 
-        sess, should_close = self._get_session(session)
+        debug_id(
+            f"[ImgAssocService] Resolved entities: images={len(images)}, "
+            f"documents={len(documents)}, associations={len(associations)}",
+            request_id,
+        )
 
-        try:
-            with log_timed_operation(
-                    "ImageCompletedDocumentAssociationService.resolve_related_entities",
-                    rid,
-            ):
+        return {
+            "images": images,
+            "documents": documents,
+            "complete_document": complete_document,
+            "associations": associations,
+        }
 
-                images, documents, complete_document, associations = (
-                    ImageCompletedDocumentAssociation.resolve_related_orm(
-                        sess,
-                        image_id=image_id,
-                        document_id=document_id,
-                        complete_document_id=complete_document_id,
-                    )
-                )
+    # ---------------------------------------------------------
+    # INTERNAL: extract page_number from chunk metadata
+    # ---------------------------------------------------------
 
-                debug_id(
-                    f"[resolve_related_entities] "
-                    f"images={len(images)} "
-                    f"documents={len(documents)} "
-                    f"associations={len(associations)}",
-                    rid,
-                )
+    @staticmethod
+    def _extract_chunk_page_number(chunk: Document) -> Optional[int]:
+        """
+        Looks for page_number in chunk.doc_metadata or chunk.metadata.
+        Supports dict or JSON string.
+        """
+        for attr in ("doc_metadata", "metadata"):
+            if not hasattr(chunk, attr):
+                continue
+            raw = getattr(chunk, attr)
+            if not raw:
+                continue
 
-                return {
-                    "images": images,
-                    "documents": documents,
-                    "complete_document": complete_document,
-                    "associations": associations,
-                }
+            if isinstance(raw, dict):
+                pn = raw.get("page_number")
+                if pn is not None:
+                    return int(pn)
 
-        except SQLAlchemyError as e:
-            error_id(
-                f"[resolve_related_entities] Database error: {e}",
-                rid,
-                exc_info=True,
-            )
-            raise
+            if isinstance(raw, str):
+                try:
+                    data = json.loads(raw)
+                    pn = data.get("page_number")
+                    if pn is not None:
+                        return int(pn)
+                except Exception:
+                    continue
 
-        finally:
-            if should_close:
-                sess.close()
-
-
+        return None
