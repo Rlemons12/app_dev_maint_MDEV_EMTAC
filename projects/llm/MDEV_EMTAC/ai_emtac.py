@@ -103,9 +103,7 @@ from blueprints import register_blueprints
 from modules.emtacdb.utlity.revision_database.event_listeners import register_event_listeners
 from modules.configuration.config import UPLOAD_FOLDER, DATABASE_URL
 from utilities.auth_utils import requires_roles
-from modules.configuration.config_env import DatabaseConfig
-
-
+from modules.configuration.config_env import DatabaseConfig, get_db_config
 
 # ========================================
 # ENHANCED DATABASE ENGINE WITH UNICODE SUPPORT
@@ -361,7 +359,8 @@ def create_app(request_id=None):
         app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
         # Initialize and set db_config
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
+
         app.config['db_config'] = db_config
 
         # ========== REQUEST ID MIDDLEWARE ==========
