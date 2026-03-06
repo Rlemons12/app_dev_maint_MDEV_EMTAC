@@ -289,4 +289,33 @@ def add_model():
         logger.error("Error adding model: %s", e, exc_info=True)
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@admin_bp.route("/promote_latest_trained_model", methods=["POST"])
+def promote_latest_trained_model():
+    logger.debug("Promote latest trained model requested by user: %s", session.get("user_id"))
+
+    if session.get("user_level") != UserLevel.ADMIN.name:
+        logger.warning("Unauthorized promote attempt by user: %s", session.get("user_id"))
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+    try:
+        success = ModelsConfig.auto_promote_latest_trained_model()
+
+        if success:
+            return jsonify({
+                "status": "success",
+                "message": "Latest trained model promoted successfully."
+            })
+
+        return jsonify({
+            "status": "error",
+            "message": "Failed to promote latest trained model."
+        }), 500
+
+    except Exception as e:
+        logger.error("Error promoting latest trained model: %s", e, exc_info=True)
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
 
