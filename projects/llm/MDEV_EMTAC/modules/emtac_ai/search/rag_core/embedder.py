@@ -51,7 +51,8 @@ class DBConfiguredEmbedder(BaseEmbedder):
 
         # Resolve backend & model name
         self.backend = ModelsConfig.get_execution_backend("embedding")
-        self.model_name = AIModelsEmbeddingService.get_current_model_name(request_id=rid)
+        service = AIModelsEmbeddingService()
+        self.model_name = service.get_current_model_name(request_id=rid)
 
         self._model = None  # only used for local backend
 
@@ -104,7 +105,8 @@ class DBConfiguredEmbedder(BaseEmbedder):
         # --------------------------------------------------
         if self.backend == "gpu_service":
             try:
-                vec = AIModelsEmbeddingService.get_embeddings(text, request_id=rid)
+                service = AIModelsEmbeddingService()
+                vec = service.get_embeddings(text=text, request_id=rid)
                 return list(vec) if vec else []
             except Exception as e:
                 error_id(f"[Embedder] GPU embedding failed: {e}", rid)
