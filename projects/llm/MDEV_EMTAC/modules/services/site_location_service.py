@@ -1,31 +1,28 @@
 # services/site_location_service.py
 
 from typing import Optional, List, Dict, Any, Union
+from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from modules.emtacdb.emtacdb_fts import SiteLocation
 from modules.configuration.config_env import DatabaseConfig
-from modules.configuration.log_config import info_id, error_id, debug_id, with_request_id
+from modules.configuration.log_config import with_request_id
 
 
 class SiteLocationService:
     """
-    Service layer for managing SiteLocation entities.
+    Transaction-aware SiteLocation service.
 
-    Supports CRUD operations PLUS hierarchical lookups:
-        - find()                → search by title/room/area or building
-        - get()                 → retrieve a site location by ID
-        - save()                → create or update a site location
-        - remove()              → safe delete, checks for child entities
-        - find_related()        → return upward/downward relationships
-        - find_or_create()      → convenience helper
+    RULE:
+    - If session provided → NEVER commit
+    - If session not provided → standalone mode allowed
     """
 
     def __init__(self, db_config: DatabaseConfig = None):
         self.db_config = db_config or DatabaseConfig()
 
     # -------------------------------------------------------------------------
-    # FIND (SEARCH)
+    # FIND
     # -------------------------------------------------------------------------
 
     @with_request_id
@@ -36,47 +33,58 @@ class SiteLocationService:
         site_area: Optional[str] = None,
         building_id: Optional[int] = None,
         limit: int = 100,
-        request_id=None
+        session: Optional[Session] = None,
     ) -> List[SiteLocation]:
 
-        with self.db_config.main_session() as session:
-            try:
-                query = session.query(SiteLocation)
+        if session:
+            return self._find_internal(
+                session, title, room_number, site_area, building_id, limit
+            )
 
-                if title:
-                    query = query.filter(SiteLocation.title.ilike(f"%{title}%"))
-                if room_number:
-                    query = query.filter(SiteLocation.room_number.ilike(f"%{room_number}%"))
-                if site_area:
-                    query = query.filter(SiteLocation.site_area.ilike(f"%{site_area}%"))
-                if building_id:
-                    query = query.filter(SiteLocation.building_id == building_id)
+        with self.db_config.main_session() as s:
+            return self._find_internal(
+                s, title, room_number, site_area, building_id, limit
+            )
 
-                results = query.limit(limit).all()
-                info_id(f"Found {len(results)} SiteLocations", request_id)
-                return results
+    def _find_internal(
+        self, session, title, room_number, site_area, building_id, limit
+    ):
 
-            except SQLAlchemyError as e:
-                error_id(f"SiteLocationService.find failed: {e}", request_id)
-                raise
+        query = session.query(SiteLocation)
+
+        if title:
+            query = query.filter(SiteLocation.title.ilike(f"%{title}%"))
+
+        if room_number:
+            query = query.filter(SiteLocation.room_number.ilike(f"%{room_number}%"))
+
+        if site_area:
+            query = query.filter(SiteLocation.site_area.ilike(f"%{site_area}%"))
+
+        if building_id:
+            query = query.filter(SiteLocation.building_id == building_id)
+
+        return query.limit(limit).all()
 
     # -------------------------------------------------------------------------
     # GET
     # -------------------------------------------------------------------------
 
     @with_request_id
-    def get(self, site_location_id: int, request_id=None) -> Optional[SiteLocation]:
-        with self.db_config.main_session() as session:
-            try:
-                sl = session.query(SiteLocation).get(site_location_id)
-                debug_id(f"Retrieved SiteLocation id={site_location_id}", request_id)
-                return sl
-            except SQLAlchemyError as e:
-                error_id(f"SiteLocationService.get failed: {e}", request_id)
-                raise
+    def get(
+        self,
+        site_location_id: int,
+        session: Optional[Session] = None,
+    ) -> Optional[SiteLocation]:
+
+        if session:
+            return session.get(SiteLocation, site_location_id)
+
+        with self.db_config.main_session() as s:
+            return s.get(SiteLocation, site_location_id)
 
     # -------------------------------------------------------------------------
-    # SAVE (CREATE OR UPDATE)
+    # SAVE
     # -------------------------------------------------------------------------
 
     @with_request_id
@@ -87,74 +95,87 @@ class SiteLocationService:
         site_area: str,
         building_id: int,
         site_location_id: Optional[int] = None,
-        request_id=None
+        session: Optional[Session] = None,
     ) -> SiteLocation:
 
-        with self.db_config.main_session() as session:
+        if session:
+            return self._save_internal(
+                session, title, room_number, site_area, building_id, site_location_id
+            )
+
+        with self.db_config.main_session() as s:
             try:
-                if site_location_id:
-                    sl = session.query(SiteLocation).get(site_location_id)
-                    if not sl:
-                        raise ValueError(f"SiteLocation id={site_location_id} not found")
-
-                    sl.title = title
-                    sl.room_number = room_number
-                    sl.site_area = site_area
-                    sl.building_id = building_id
-
-                    info_id(f"Updated SiteLocation id={site_location_id}", request_id)
-
-                else:
-                    sl = SiteLocation(
-                        title=title,
-                        room_number=room_number,
-                        site_area=site_area,
-                        building_id=building_id
-                    )
-                    session.add(sl)
-                    info_id(f"Created SiteLocation '{title}'", request_id)
-
-                session.commit()
-                session.refresh(sl)
+                sl = self._save_internal(
+                    s, title, room_number, site_area, building_id, site_location_id
+                )
+                s.commit()
                 return sl
-
-            except SQLAlchemyError as e:
-                session.rollback()
-                error_id(f"SiteLocationService.save failed: {e}", request_id)
+            except:
+                s.rollback()
                 raise
 
+    def _save_internal(
+        self, session, title, room_number, site_area, building_id, site_location_id
+    ):
+
+        if site_location_id:
+            sl = session.get(SiteLocation, site_location_id)
+            if not sl:
+                raise ValueError(f"SiteLocation id={site_location_id} not found")
+
+            sl.title = title
+            sl.room_number = room_number
+            sl.site_area = site_area
+            sl.building_id = building_id
+        else:
+            sl = SiteLocation(
+                title=title,
+                room_number=room_number,
+                site_area=site_area,
+                building_id=building_id,
+            )
+            session.add(sl)
+
+        session.flush()
+        return sl
+
     # -------------------------------------------------------------------------
-    # REMOVE (SAFE DELETE)
+    # REMOVE
     # -------------------------------------------------------------------------
 
     @with_request_id
-    def remove(self, site_location_id: int, request_id=None) -> bool:
-        with self.db_config.main_session() as session:
+    def remove(
+        self,
+        site_location_id: int,
+        session: Optional[Session] = None,
+    ) -> bool:
+
+        if session:
+            return self._remove_internal(session, site_location_id)
+
+        with self.db_config.main_session() as s:
             try:
-                sl = session.query(SiteLocation).get(site_location_id)
-                if not sl:
-                    return False
-
-                if sl.position:
-                    error_id(
-                        f"Cannot delete SiteLocation id={site_location_id}: "
-                        f"{len(sl.position)} positions exist.",
-                        request_id
-                    )
-                    return False
-
-                session.delete(sl)
-                session.commit()
-                info_id(f"Deleted SiteLocation id={site_location_id}", request_id)
-                return True
-
-            except SQLAlchemyError as e:
-                session.rollback()
-                error_id(f"SiteLocationService.remove failed: {e}", request_id)
+                result = self._remove_internal(s, site_location_id)
+                s.commit()
+                return result
+            except:
+                s.rollback()
                 raise
 
+    def _remove_internal(self, session, site_location_id):
+
+        sl = session.get(SiteLocation, site_location_id)
+        if not sl:
+            return False
+
+        if sl.position:
+            return False
+
+        session.delete(sl)
+        return True
+
     # -------------------------------------------------------------------------
-    # RELATIONSHIP LOOKUP
+    # FIND RELATED
     # -------------------------------------------------------------------------
 
     @with_request_id
@@ -162,33 +183,35 @@ class SiteLocationService:
         self,
         identifier: Union[int, str],
         is_id: bool = True,
-        request_id=None
+        session: Optional[Session] = None,
     ) -> Optional[Dict[str, Any]]:
 
-        with self.db_config.main_session() as session:
-            try:
-                if is_id:
-                    sl = session.query(SiteLocation).get(identifier)
-                else:
-                    sl = session.query(SiteLocation).filter_by(title=identifier).first()
+        if session:
+            return self._find_related_internal(session, identifier, is_id)
 
-                if not sl:
-                    return None
+        with self.db_config.main_session() as s:
+            return self._find_related_internal(s, identifier, is_id)
 
-                return {
-                    "site_location": sl,
-                    "upward": {
-                        "building": sl.building,
-                        "campus": sl.building.campus if sl.building else None
-                    },
-                    "downward": {
-                        "positions": sl.position
-                    }
-                }
+    def _find_related_internal(self, session, identifier, is_id):
 
-            except SQLAlchemyError as e:
-                error_id(f"SiteLocationService.find_related failed: {e}", request_id)
-                raise
+        if is_id:
+            sl = session.get(SiteLocation, identifier)
+        else:
+            sl = session.query(SiteLocation).filter_by(title=identifier).first()
+
+        if not sl:
+            return None
+
+        return {
+            "site_location": sl,
+            "upward": {
+                "building": sl.building,
+                "campus": sl.building.campus if sl.building else None,
+            },
+            "downward": {
+                "positions": sl.position,
+            },
+        }
 
     # -------------------------------------------------------------------------
     # FIND OR CREATE
@@ -201,35 +224,45 @@ class SiteLocationService:
         building_id: int,
         room_number: str = "Unknown",
         site_area: str = "General",
-        request_id=None
+        session: Optional[Session] = None,
     ) -> SiteLocation:
 
-        with self.db_config.main_session() as session:
+        if session:
+            return self._find_or_create_internal(
+                session, title, building_id, room_number, site_area
+            )
+
+        with self.db_config.main_session() as s:
             try:
-                sl = (
-                    session.query(SiteLocation)
-                    .filter_by(title=title, building_id=building_id)
-                    .first()
+                sl = self._find_or_create_internal(
+                    s, title, building_id, room_number, site_area
                 )
-
-                if sl:
-                    debug_id(f"Found existing SiteLocation '{title}'", request_id)
-                    return sl
-
-                sl = SiteLocation(
-                    title=title,
-                    room_number=room_number,
-                    site_area=site_area,
-                    building_id=building_id
-                )
-                session.add(sl)
-                session.commit()
-                session.refresh(sl)
-
-                info_id(f"Created new SiteLocation '{title}'", request_id)
+                s.commit()
                 return sl
-
-            except SQLAlchemyError as e:
-                session.rollback()
-                error_id(f"SiteLocationService.find_or_create failed: {e}", request_id)
+            except:
+                s.rollback()
                 raise
+
+    def _find_or_create_internal(
+        self, session, title, building_id, room_number, site_area
+    ):
+
+        sl = (
+            session.query(SiteLocation)
+            .filter_by(title=title, building_id=building_id)
+            .first()
+        )
+
+        if sl:
+            return sl
+
+        sl = SiteLocation(
+            title=title,
+            room_number=room_number,
+            site_area=site_area,
+            building_id=building_id,
+        )
+
+        session.add(sl)
+        session.flush()
+        return sl
