@@ -76,6 +76,7 @@ from blueprints.position_data_assignment.position_data_assignment import positio
 from blueprints.position_data_assignment.position_data_assignment_data_add_dependencies_bp import position_data_assignment_data_add_dependencies_bp
 from blueprints.upload_search_db.search_drawing import search_drawings, drawing_routes
 from blueprints.chatbot.keyword_search_bp import keyword_search_bp
+from blueprints.dashboards.trace_dashboard import trace_dashboard_bp
 
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
@@ -146,6 +147,7 @@ def register_blueprints(app):
 
     app.register_blueprint(panel_parts_bp)
 
+    app.register_blueprint(trace_dashboard_bp, url_prefix="/dashboards")
 
 app = Flask(__name__)
 app.secret_key = '1234'
