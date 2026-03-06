@@ -1,0 +1,45 @@
+.trace-list {
+    max-height: 500px;
+    overflow-y: auto;
+    font-size: 14px;
+}
+
+.trace-item {
+    padding: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    cursor: pointer;
+}
+
+.trace-item:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+.trace-meta {
+    font-size: 13px;
+}
+
+.trace-tree {
+    max-height: 400px;
+    overflow-y: auto;
+    font-size: 13px;
+}
+
+.trace-node {
+    padding-left: 10px;
+    margin: 4px 0;
+    cursor: pointer;
+}
+
+.trace-node:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+.trace-details {
+    font-size: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.trace-alerts {
+    font-size: 12px;
+}

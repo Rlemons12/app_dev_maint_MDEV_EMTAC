@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Trace Dashboard</title>
+
+  <!-- Optional: keep it readable even if your CSS doesn’t load -->
+  <style>
+    body { font-family: Arial, sans-serif; margin: 16px; }
+    .row { display: grid; grid-template-columns: 360px 1fr; gap: 16px; }
+    .panel { border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
+    .controls { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+    button { padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; }
+    input { padding: 6px; border: 1px solid #ddd; border-radius: 6px; width: 100%; }
+    .muted { color: #777; font-size: 12px; }
+  </style>
+
+  <!-- Your real dashboard css -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboards/trace.css') }}">
+</head>
+
+<body>
+  <h2>Trace Dashboard</h2>
+
+  <div class="controls">
+    <button id="refreshBtn" type="button">Refresh</button>
+    <button id="liveBtn" type="button">Live: OFF</button>
+    <span class="muted">Click a trace to load. Live mode can be added later.</span>
+  </div>
+
+  <div class="row">
+    <!-- Left: Trace list -->
+    <div class="panel">
+      <div style="margin-bottom:8px;">
+        <input id="filterInput" placeholder="Filter by trace_id prefix..." />
+      </div>
+      <div id="traceList"></div>
+    </div>
+
+    <!-- Right: Details -->
+    <div class="panel">
+      <div id="traceMeta" class="muted"></div>
+
+      <h4>Trace Tree</h4>
+      <div id="traceTree"></div>
+
+      <h4>Node Details</h4>
+      <pre id="nodeDetails">(none)</pre>
+
+      <h4>Performance Alerts</h4>
+      <div id="traceAlerts"></div>
+    </div>
+  </div>
+
+  <!-- Your real dashboard js -->
+  <script src="{{ url_for('static', filename='js/dashboards/trace.js') }}"></script>
+
+  <!-- Safety: if trace.js didn’t load, show it clearly -->
+  <script>
+    window.addEventListener("load", () => {
+      if (typeof window.refreshTraces !== "function") {
+        console.error("[trace_dashboard] trace.js did not load or refreshTraces() is missing.");
+        const traceList = document.getElementById("traceList");
+        if (traceList) {
+          traceList.innerHTML = "<div style='color:#b00;'>trace.js did not load or refreshTraces() is not defined.</div>";
+        }
+      }
+    });
+  </script>
+</body>
+</html>
