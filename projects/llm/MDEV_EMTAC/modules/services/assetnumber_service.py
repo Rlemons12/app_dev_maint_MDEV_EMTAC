@@ -1,195 +1,212 @@
-# services/asset_number_service.py
 from typing import Optional, List, Union, Dict, Any
+from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from modules.emtacdb.emtacdb_fts import AssetNumber
 from modules.configuration.config_env import DatabaseConfig
-from modules.configuration.log_config import info_id, warning_id, error_id, with_request_id
+from modules.configuration.log_config import warning_id, with_request_id
 
 
 class AssetNumberService:
-    """
-    Service layer for managing AssetNumber entities.
-
-    Responsibilities:
-    ------------------
-    CRUD:
-        - find
-        - get
-        - save (create/update)
-        - remove (safe delete)
-
-    RELATIONSHIPS:
-        - find_related → upward/downward traversal
-
-    WRAPPERS around ORM helpers:
-        - get_ids_by_number
-        - get_model_id
-        - get_equipment_group_id
-        - get_area_id
-        - get_position_ids
-        - search_numbers
-    """
 
     def __init__(self, db_config: DatabaseConfig = None):
         self.db_config = db_config or DatabaseConfig()
 
-    # ----------------------------------------------------------------------
+    # -----------------------------------------------------
     # FIND
-    # ----------------------------------------------------------------------
+    # -----------------------------------------------------
+
     @with_request_id
-    def find(self,
-             number: Optional[str] = None,
-             description: Optional[str] = None,
-             model_id: Optional[int] = None,
-             limit: int = 100) -> List[AssetNumber]:
+    def find(
+        self,
+        number: Optional[str] = None,
+        description: Optional[str] = None,
+        model_id: Optional[int] = None,
+        limit: int = 100,
+        session: Optional[Session] = None,
+    ) -> List[AssetNumber]:
 
-        with self.db_config.main_session() as session:
-            try:
-                query = session.query(AssetNumber)
+        if session:
+            return self._find_internal(session, number, description, model_id, limit)
 
-                if number:
-                    query = query.filter(AssetNumber.number.ilike(f"%{number}%"))
-                if description:
-                    query = query.filter(AssetNumber.description.ilike(f"%{description}%"))
-                if model_id:
-                    query = query.filter(AssetNumber.model_id == model_id)
+        with self.db_config.main_session() as s:
+            return self._find_internal(s, number, description, model_id, limit)
 
-                results = query.limit(limit).all()
-                info_id(f"Found {len(results)} AssetNumbers", None)
-                return results
-            except SQLAlchemyError as e:
-                error_id(f"AssetNumberService.find failed: {e}", None)
-                raise
+    def _find_internal(self, session, number, description, model_id, limit):
+        query = session.query(AssetNumber)
 
-    # ----------------------------------------------------------------------
+        if number:
+            query = query.filter(AssetNumber.number.ilike(f"%{number}%"))
+
+        if description:
+            query = query.filter(AssetNumber.description.ilike(f"%{description}%"))
+
+        if model_id:
+            query = query.filter(AssetNumber.model_id == model_id)
+
+        return query.limit(limit).all()
+
+    # -----------------------------------------------------
     # GET
-    # ----------------------------------------------------------------------
+    # -----------------------------------------------------
+
     @with_request_id
-    def get(self, asset_number_id: int) -> Optional[AssetNumber]:
+    def get(
+        self,
+        asset_number_id: int,
+        session: Optional[Session] = None,
+    ) -> Optional[AssetNumber]:
 
-        with self.db_config.main_session() as session:
-            try:
-                return session.query(AssetNumber).filter_by(id=asset_number_id).first()
-            except SQLAlchemyError as e:
-                error_id(f"AssetNumberService.get failed: {e}", None)
-                raise
+        if session:
+            return session.get(AssetNumber, asset_number_id)
 
-    # ----------------------------------------------------------------------
-    # SAVE (CREATE / UPDATE)
-    # ----------------------------------------------------------------------
+        with self.db_config.main_session() as s:
+            return s.get(AssetNumber, asset_number_id)
+
+    # -----------------------------------------------------
+    # SAVE
+    # -----------------------------------------------------
+
     @with_request_id
-    def save(self,
-             number: str,
-             model_id: int,
-             description: Optional[str] = None,
-             asset_number_id: Optional[int] = None) -> AssetNumber:
+    def save(
+        self,
+        number: str,
+        model_id: int,
+        description: Optional[str] = None,
+        asset_number_id: Optional[int] = None,
+        session: Optional[Session] = None,
+    ) -> AssetNumber:
 
-        with self.db_config.main_session() as session:
+        if session:
+            return self._save_internal(
+                session, number, model_id, description, asset_number_id
+            )
+
+        with self.db_config.main_session() as s:
             try:
-                if asset_number_id:
-                    asset = session.query(AssetNumber).filter_by(id=asset_number_id).first()
-                    if not asset:
-                        raise ValueError(f"AssetNumber id={asset_number_id} not found")
-
-                    asset.number = number
-                    asset.model_id = model_id
-                    asset.description = description
-
-                    session.commit()
-                    info_id(f"Updated AssetNumber id={asset_number_id}", None)
-
-                else:
-                    asset = AssetNumber(
-                        number=number,
-                        model_id=model_id,
-                        description=description
-                    )
-                    session.add(asset)
-                    session.commit()
-
-                    info_id(f"Created new AssetNumber '{number}'", None)
-
-                return asset
-
-            except SQLAlchemyError as e:
-                error_id(f"AssetNumberService.save failed: {e}", None)
-                raise
-
-    # ----------------------------------------------------------------------
-    # SAFE DELETE
-    # ----------------------------------------------------------------------
-    @with_request_id
-    def remove(self, asset_number_id: int) -> bool:
-        """
-        Prevent deletion if Positions reference this AssetNumber.
-        """
-
-        with self.db_config.main_session() as session:
-            try:
-                asset = session.query(AssetNumber).filter_by(id=asset_number_id).first()
-                if not asset:
-                    return False
-
-                # SAFE DELETE CHECKS
-                if asset.position and len(asset.position) > 0:
-                    warning_id(
-                        f"Cannot delete AssetNumber id={asset_number_id}: "
-                        f"{len(asset.position)} Positions depend on it",
-                        None
-                    )
-                    return False
-
-                session.delete(asset)
-                session.commit()
-                info_id(f"Deleted AssetNumber id={asset_number_id}", None)
-                return True
-
-            except SQLAlchemyError as e:
-                error_id(f"AssetNumberService.remove failed: {e}", None)
-                raise
-
-    # ----------------------------------------------------------------------
-    # FIND RELATED (UPWARD + DOWNWARD)
-    # ----------------------------------------------------------------------
-    @with_request_id
-    def find_related(self, identifier: Union[int, str], is_id: bool = True) -> Optional[Dict[str, Any]]:
-
-        with self.db_config.main_session() as session:
-            try:
-                asset = (
-                    session.query(AssetNumber)
-                    .filter(AssetNumber.id == identifier if is_id else AssetNumber.number == identifier)
-                    .first()
+                asset = self._save_internal(
+                    s, number, model_id, description, asset_number_id
                 )
-
-                if not asset:
-                    warning_id(f"AssetNumber not found: {identifier}", None)
-                    return None
-
-                upward = {
-                    "model": asset.model,
-                    "equipment_group": asset.model.equipment_group if asset.model else None,
-                    "area": asset.model.equipment_group.area if asset.model and asset.model.equipment_group else None,
-                }
-
-                downward = {
-                    "positions": asset.position
-                }
-
-                return {
-                    "asset_number": asset,
-                    "upward": upward,
-                    "downward": downward
-                }
-
-            except SQLAlchemyError as e:
-                error_id(f"AssetNumberService.find_related failed: {e}", None)
+                s.commit()
+                return asset
+            except:
+                s.rollback()
                 raise
 
-    # ----------------------------------------------------------------------
-    # WRAPPERS TO ORM HELPERS
-    # ----------------------------------------------------------------------
+    def _save_internal(
+        self, session, number, model_id, description, asset_number_id
+    ):
+
+        if asset_number_id:
+            asset = session.get(AssetNumber, asset_number_id)
+            if not asset:
+                raise ValueError(f"AssetNumber id={asset_number_id} not found")
+
+            asset.number = number
+            asset.model_id = model_id
+            asset.description = description
+        else:
+            asset = AssetNumber(
+                number=number,
+                model_id=model_id,
+                description=description,
+            )
+            session.add(asset)
+
+        session.flush()
+        return asset
+
+    # -----------------------------------------------------
+    # REMOVE
+    # -----------------------------------------------------
+
+    @with_request_id
+    def remove(
+        self,
+        asset_number_id: int,
+        session: Optional[Session] = None,
+    ) -> bool:
+
+        if session:
+            return self._remove_internal(session, asset_number_id)
+
+        with self.db_config.main_session() as s:
+            try:
+                result = self._remove_internal(s, asset_number_id)
+                s.commit()
+                return result
+            except:
+                s.rollback()
+                raise
+
+    def _remove_internal(self, session, asset_number_id):
+
+        asset = session.get(AssetNumber, asset_number_id)
+        if not asset:
+            return False
+
+        if asset.position:
+            warning_id(
+                f"Cannot delete AssetNumber id={asset_number_id}: "
+                f"{len(asset.position)} Positions depend on it",
+                None,
+            )
+            return False
+
+        session.delete(asset)
+        return True
+
+    # -----------------------------------------------------
+    # FIND RELATED
+    # -----------------------------------------------------
+
+    @with_request_id
+    def find_related(
+        self,
+        identifier: Union[int, str],
+        is_id: bool = True,
+        session: Optional[Session] = None,
+    ) -> Optional[Dict[str, Any]]:
+
+        if session:
+            asset = self._find_related_internal(session, identifier, is_id)
+        else:
+            with self.db_config.main_session() as s:
+                asset = self._find_related_internal(s, identifier, is_id)
+
+        return asset
+
+    def _find_related_internal(self, session, identifier, is_id):
+
+        if is_id:
+            asset = session.get(AssetNumber, identifier)
+        else:
+            asset = session.query(AssetNumber).filter_by(number=identifier).first()
+
+        if not asset:
+            return None
+
+        upward = {
+            "model": asset.model,
+            "equipment_group": asset.model.equipment_group if asset.model else None,
+            "area": asset.model.equipment_group.area
+            if asset.model and asset.model.equipment_group else None,
+        }
+
+        downward = {
+            "positions": asset.position
+        }
+
+        return {
+            "asset_number": asset,
+            "upward": upward,
+            "downward": downward,
+        }
+
+    # -----------------------------------------------------
+    # ORM WRAPPERS (unchanged)
+    # -----------------------------------------------------
+
     def get_ids_by_number(self, number: str) -> List[int]:
         with self.db_config.main_session() as session:
             return AssetNumber.get_ids_by_number(session, number)
