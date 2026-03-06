@@ -609,3 +609,21 @@ class TrainingDatabaseConfig:
             cur.execute("SET timezone = 'UTC'")
             cur.execute("SET statement_timeout = '0'")  # long-running training ok
             cur.execute("SET idle_in_transaction_session_timeout = '60s'")
+
+# -----------------------------------------------------------------------------
+# SINGLETON DATABASE CONFIG (ONE ENGINE / POOL PER PROCESS)
+# -----------------------------------------------------------------------------
+_DB_CONFIG_SINGLETON = None
+_DB_CONFIG_LOCK = threading.Lock()
+
+def get_db_config() -> "DatabaseConfig":
+    global _DB_CONFIG_SINGLETON
+    if _DB_CONFIG_SINGLETON is None:
+        with _DB_CONFIG_LOCK:
+            if _DB_CONFIG_SINGLETON is None:
+                _DB_CONFIG_SINGLETON = DatabaseConfig()
+                logger.info("[CONFIG] DatabaseConfig singleton created")
+    return _DB_CONFIG_SINGLETON
+
+
+
