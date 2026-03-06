@@ -49,6 +49,13 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Optional, List
 
+import logging
+import asyncio
+
+try:
+    from app.api.dashboard import LOG_HUB
+except Exception:
+    LOG_HUB = None
 # ---------------------------------------------------------
 # Filesystem paths
 # ---------------------------------------------------------
@@ -223,3 +230,46 @@ def gpu_shard_info(
         f"MODEL_SHARDED | model={model} devices={','.join(devices)}",
         request_id,
     )
+
+# ---------------------------------------------------------
+# Dashboard Log Forwarder (Stable Version)
+# ---------------------------------------------------------
+class DashboardLogHandler(logging.Handler):
+    def __init__(self, log_hub, event_loop):
+        super().__init__()
+        self.log_hub = log_hub
+        self.event_loop = event_loop
+
+    def emit(self, record):
+        try:
+            if not self.log_hub or not self.event_loop:
+                return
+
+            msg = record.getMessage()
+            level = record.levelname
+
+            asyncio.run_coroutine_threadsafe(
+                self.log_hub.publish(level, msg),
+                self.event_loop,
+            )
+
+        except Exception:
+            # Never let logging crash the app
+            pass
+
+
+def install_dashboard_log_handler(log_hub, event_loop):
+    """
+    Install dashboard streaming handler.
+    Must be called AFTER dashboard startup captures event loop.
+    """
+
+    # Prevent duplicate installs
+    for h in gpu_logger.handlers:
+        if isinstance(h, DashboardLogHandler):
+            return
+
+    handler = DashboardLogHandler(log_hub, event_loop)
+    handler.setLevel(logging.INFO)
+
+    gpu_logger.addHandler(handler)
