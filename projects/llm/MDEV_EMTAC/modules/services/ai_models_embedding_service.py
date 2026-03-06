@@ -21,27 +21,28 @@ from plugins.ai_modules.ai_models import ModelsConfig
 class AIModelsEmbeddingService:
     """
     High-level facade for embedding model usage.
+    Instance-based service (no classmethod usage).
     """
 
-    _model_cache: dict = {}
-    _current_model_name: Optional[str] = None
-    _gpu_adapter: Optional[GPUServerAdapter] = None
+    def __init__(self):
+        self._model_cache: dict = {}
+        self._current_model_name: Optional[str] = None
+        self._gpu_adapter: Optional[GPUServerAdapter] = None
 
     # ----------------------------------------------------
-    # GPU Adapter
+    # GPU Adapter (instance-safe)
     # ----------------------------------------------------
-    @classmethod
-    def _get_gpu_adapter(cls) -> Optional[GPUServerAdapter]:
-        if cls._gpu_adapter is None:
-            cls._gpu_adapter = GPUServerAdapter()
-        return cls._gpu_adapter if cls._gpu_adapter.is_available() else None
+    def _get_gpu_adapter(self) -> Optional[GPUServerAdapter]:
+        if self._gpu_adapter is None:
+            self._gpu_adapter = GPUServerAdapter()
+
+        return self._gpu_adapter if self._gpu_adapter.is_available() else None
 
     # ----------------------------------------------------
     # DB Lookup
     # ----------------------------------------------------
-    @classmethod
     @with_request_id
-    def get_current_model_name(cls, request_id=None) -> str:
+    def get_current_model_name(self, request_id=None) -> str:
         name = ModelsConfig.get_config_value(
             "embedding",
             "CURRENT_MODEL",
@@ -58,20 +59,20 @@ class AIModelsEmbeddingService:
             f"[AIModelsEmbeddingService] Current embedding model from DB: {name}",
             request_id,
         )
+
         return name
 
     # ----------------------------------------------------
-    # Local Model Loader
+    # Local Model Loader (instance-safe cache)
     # ----------------------------------------------------
-    @classmethod
     @with_request_id
-    def _load_local_model(cls, model_name: str, request_id=None):
-        if model_name in cls._model_cache:
+    def _load_local_model(self, model_name: str, request_id=None):
+        if model_name in self._model_cache:
             debug_id(
                 f"[AIModelsEmbeddingService] Using cached local model '{model_name}'",
                 request_id,
             )
-            return cls._model_cache[model_name]
+            return self._model_cache[model_name]
 
         debug_id(
             f"[AIModelsEmbeddingService] Loading local embedding model '{model_name}'",
@@ -80,21 +81,26 @@ class AIModelsEmbeddingService:
 
         model = ModelsConfig.load_embedding_model(model_name)
 
-        cls._model_cache[model_name] = model
-        cls._current_model_name = model_name
+        if not model:
+            raise RuntimeError(
+                f"Failed to load embedding model '{model_name}'"
+            )
+
+        self._model_cache[model_name] = model
+        self._current_model_name = model_name
 
         info_id(
             f"[AIModelsEmbeddingService] Loaded local embedding model '{model_name}'",
             request_id,
         )
+
         return model
 
     # ----------------------------------------------------
     # Public API
     # ----------------------------------------------------
-    @classmethod
     @with_request_id
-    def get_embeddings(cls, text: str, request_id=None) -> List[float]:
+    def get_embeddings(self, text: str, request_id=None) -> List[float]:
         """
         Generate embeddings using the configured model.
         Strict routing. No fallback.
@@ -103,7 +109,7 @@ class AIModelsEmbeddingService:
         if not isinstance(text, str) or not text.strip():
             raise RuntimeError("Embedding text must be a non-empty string")
 
-        model_name = cls.get_current_model_name(request_id=request_id)
+        model_name = self.get_current_model_name(request_id=request_id)
         model_info = ModelsConfig.get_current_model_info("embedding")
 
         if not model_info:
@@ -117,7 +123,7 @@ class AIModelsEmbeddingService:
         # GPU SERVICE PATH (STRICT)
         # -------------------------------------------------
         if backend == "gpu_service":
-            gpu = cls._get_gpu_adapter()
+            gpu = self._get_gpu_adapter()
             if not gpu:
                 raise RuntimeError(
                     "GPU embedding backend configured but GPU service is unavailable"
@@ -146,9 +152,9 @@ class AIModelsEmbeddingService:
             return vecs[0]
 
         # -------------------------------------------------
-        # LOCAL PATH (ONLY if explicitly configured)
+        # LOCAL PATH
         # -------------------------------------------------
-        model = cls._load_local_model(model_name, request_id=request_id)
+        model = self._load_local_model(model_name, request_id=request_id)
 
         debug_id(
             f"[AIModelsEmbeddingService] Using local embedding backend "
@@ -156,10 +162,17 @@ class AIModelsEmbeddingService:
             request_id,
         )
 
-        vec = model.get_embeddings(text)
+        # Support both possible local APIs
+        if hasattr(model, "get_embeddings"):
+            vec = model.get_embeddings(text)
+        elif hasattr(model, "encode"):
+            vec = model.encode([text])[0]
+        else:
+            raise RuntimeError(
+                f"Local embedding model '{model_name}' has no supported embedding method"
+            )
 
         if not vec:
             raise RuntimeError("Local embedding model returned empty vector")
 
         return vec
-
