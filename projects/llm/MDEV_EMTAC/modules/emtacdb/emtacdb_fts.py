@@ -32,7 +32,7 @@ from PIL import Image as PILImage
 from sqlalchemy import (DateTime, Column, ForeignKey, Integer, JSON, LargeBinary,
                        Enum, Boolean, String, create_engine, text, Float,
                        Text, UniqueConstraint, and_, Table)
-
+from modules.configuration.config_env import get_db_config
 import openai
 import spacy
 from fuzzywuzzy import process
@@ -58,6 +58,8 @@ from plugins import generate_embedding, CLIPModelHandler
 from plugins.ai_modules import ModelsConfig
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
+import zipfile
+
 
 # Configure mappers (must be called after all ORM classes are defined)
 configure_mappers()
@@ -2376,7 +2378,7 @@ class Part(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -2583,7 +2585,7 @@ class Part(Base):
         """
         rid = request_id or get_request_id()
 
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -2629,7 +2631,7 @@ class Part(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -2680,7 +2682,7 @@ class Image(Base):
         from modules.configuration.config import DATABASE_PATH_IMAGES_FOLDER, DATABASE_DIR
         try:
             if session is None:
-                db_config = DatabaseConfig()
+                db_config = get_db_config()
                 session = db_config.get_main_session().__enter__()
 
             # Create a database manager instance for committing
@@ -2775,7 +2777,7 @@ class Image(Base):
         Updated internal method with pgvector embedding support.
         """
         try:
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             if hasattr(db_config, 'is_postgresql') and db_config.is_postgresql:
                 debug_id("Using PostgreSQL database with pgvector support", request_id)
             else:
@@ -3174,7 +3176,7 @@ class Image(Base):
         """
         Database-agnostic commit with retry logic.
         """
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
 
         for attempt in range(retries):
             try:
@@ -3246,7 +3248,7 @@ class Image(Base):
                 info_id(f"Starting monitored operation: {self.operation_name}", self.request_id)
 
                 try:
-                    db_config = DatabaseConfig()
+                    db_config = get_db_config()
                     if hasattr(db_config, 'is_postgresql') and db_config.is_postgresql:
                         # PostgreSQL - no PRAGMA commands needed
                         debug_id("Using PostgreSQL for monitored session", self.request_id)
@@ -3289,7 +3291,7 @@ class Image(Base):
         rid = request_id or get_request_id()
         info_id(f"Attempting to retrieve image with ID: {image_id}", rid)
 
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         try:
             with cls.monitor_processing_session(
                     db_config.get_main_session(),
@@ -3881,7 +3883,7 @@ class Image(Base):
             # Create session if not provided
             local_session = None
             if session is None:
-                db_config = DatabaseConfig()
+                db_config = get_db_config()
                 local_session = db_config.get_main_session()
                 session = local_session
 
@@ -4803,7 +4805,7 @@ class Drawing(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -4956,7 +4958,7 @@ class Drawing(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -4998,7 +5000,7 @@ class Drawing(Base):
         # Get or create session
         session_provided = session is not None
         if not session_provided:
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             session = db_config.get_main_session()
 
         try:
@@ -5102,7 +5104,7 @@ class Drawing(Base):
         # Get or create session
         session_provided = session is not None
         if not session_provided:
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             session = db_config.get_main_session()
 
         try:
@@ -5195,7 +5197,7 @@ class Document(Base):
     def get_images_for_chunk(cls, chunk_id, request_id=None):
         """Get all images associated with this text chunk."""
         try:
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 # Query images through the association table
                 result = session.query(Image, ImageCompletedDocumentAssociation).join(
@@ -5223,7 +5225,7 @@ class Document(Base):
     def find_chunks_with_images(cls, complete_document_id, request_id=None):
         """Find all chunks in a document that have associated images."""
         try:
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 result = session.query(cls).join(
                     ImageCompletedDocumentAssociation,
@@ -5243,7 +5245,7 @@ class Document(Base):
     @with_request_id
     def create_fts_table(cls):
         """Enhanced FTS table creation with file_path + image-chunk search support."""
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
 
         with db_config.main_session() as session:
             try:
@@ -5387,7 +5389,7 @@ class Document(Base):
                 - rank (float)
         """
         from sqlalchemy import text
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
 
         sql = text("""
                    SELECT id,
@@ -5560,7 +5562,7 @@ class DocumentEmbedding(Base):
             else:
                 # Fall back to creating new session
                 from modules.configuration.config_env import DatabaseConfig
-                db_config = DatabaseConfig()
+                db_config = get_db_config()
                 with db_config.main_session() as new_session:
                     result = new_session.execute(
                         text("SELECT embedding_vector FROM document_embedding WHERE id = :embedding_id"),
@@ -5595,7 +5597,7 @@ class DocumentEmbedding(Base):
         try:
             from modules.configuration.config_env import DatabaseConfig
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 # Query the full embedding vector directly
                 result = session.execute(
@@ -6015,7 +6017,7 @@ class DocumentEmbedding(Base):
         # Session management
         session_created = False
         if session is None:
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             session = db_config.get_main_session()
             session_created = True
 
@@ -6244,7 +6246,8 @@ class CompleteDocument(Base):
     # =====================================================
     # PUBLIC API - 3 MAIN METHODS (Enhanced for PostgreSQL)
     # =====================================================
-
+    # REVIEW/REMOVE: Has been moved to complete document service
+    # Temporary bridge for backward compatibility.
     @classmethod
     @with_request_id
     def process_upload(cls, files, metadata, request_id=None):
@@ -6275,7 +6278,7 @@ class CompleteDocument(Base):
         if not query or not query.strip():
             return []
 
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
 
         with db_config.main_session() as session:
             return cls._search_postgresql(session, query, limit, request_id)
@@ -6284,7 +6287,7 @@ class CompleteDocument(Base):
     @with_request_id
     def find_similar(cls, document_id, threshold=0.3, limit=10, request_id=None):
         """Find documents similar to the given document using PostgreSQL similarity functions."""
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
 
         with db_config.main_session() as session:
             source = session.query(cls).filter_by(id=document_id).first()
@@ -6432,19 +6435,17 @@ class CompleteDocument(Base):
     def _process_file(cls, file, metadata, position_id, request_id):
         """Enhanced file processing with correct DATABASE_DOC storage location."""
         try:
-            # Import the proper database configuration
             from modules.configuration.config import DATABASE_DIR
 
             filename = secure_filename(file.filename)
 
-            # FIXED: Use DATABASE_DOC instead of generic Uploads folder
-            DATABASE_DOC = os.path.join(DATABASE_DIR, 'DB_DOC')
+            DATABASE_DOC = os.path.join(DATABASE_DIR, "DB_DOC")
             os.makedirs(DATABASE_DOC, exist_ok=True)
+
             file_path = os.path.join(DATABASE_DOC, filename)
 
             # Handle filename conflicts
             counter = 1
-            original_file_path = file_path
             while os.path.exists(file_path):
                 name, ext = os.path.splitext(filename)
                 file_path = os.path.join(DATABASE_DOC, f"{name}_{counter}{ext}")
@@ -6453,33 +6454,70 @@ class CompleteDocument(Base):
             file.save(file_path)
             info_id(f"Saved file to: {file_path}", request_id)
 
-            title = metadata.get('title') or cls._clean_filename(filename)
-            content = cls._extract_content(file_path, request_id)
+            title = metadata.get("title") or cls._clean_filename(filename)
 
-            if not content:
+            # -----------------------------------------
+            # Structured content extraction
+            # -----------------------------------------
+            content_info = cls._extract_content(file_path, request_id)
+
+            if not content_info or not content_info.get("text"):
                 warning_id(f"No content extracted from {filename}", request_id)
                 return False, {"error": f"No text content in {filename}"}, 400
 
-            # Save document and get ID
-            document_id = cls._save_document_and_get_id(title, file_path, content, position_id, request_id)
+            text = content_info["text"]
+            pdf_path = content_info.get("pdf_path")
+
+            # Use PDF path if available (DOC/DOCX conversion)
+            effective_path = pdf_path if pdf_path else file_path
+
+            # -----------------------------------------
+            # Save document (this handles chunk creation)
+            # -----------------------------------------
+            document_id = cls._save_document_and_get_id(
+                title,
+                effective_path,  # ✅ pass real PDF path if available
+                text,
+                position_id,
+                request_id,
+            )
+
             if not document_id:
                 error_id(f"Failed to save document {filename}", request_id)
                 return False, {"error": f"Failed to save document {filename}"}, 500
 
-            # Extract images with guided association
+            # -----------------------------------------
+            # Image extraction (runs AFTER chunks exist)
+            # -----------------------------------------
             try:
                 extracted_count = cls._extract_images_with_guided_association(
-                    file_path=file_path,
+                    file_path=effective_path,
                     document_id=document_id,
                     position_id=position_id,
-                    request_id=request_id
+                    request_id=request_id,
                 )
 
                 if extracted_count > 0:
-                    info_id(f"Created {extracted_count} intelligent image-chunk associations for {filename}",
-                            request_id)
+                    info_id(
+                        f"Created {extracted_count} intelligent image-chunk associations for {filename}",
+                        request_id,
+                    )
+
             except Exception as img_error:
                 warning_id(f"Image extraction failed for {filename}: {img_error}", request_id)
+
+            # -----------------------------------------
+            # Cleanup temporary conversion artifacts
+            # -----------------------------------------
+            try:
+                if pdf_path and "temp" in pdf_path.lower():
+                    cls._cleanup_temp_file(pdf_path, request_id)
+
+                if content_info.get("docx_path"):
+                    cls._cleanup_temp_file(content_info["docx_path"], request_id)
+
+            except Exception as cleanup_error:
+                warning_id(f"Cleanup failed for {filename}: {cleanup_error}", request_id)
 
             return True, None, 200
 
@@ -6563,7 +6601,7 @@ class CompleteDocument(Base):
             doc = fitz.open(file_path)
             file_name = os.path.splitext(os.path.basename(file_path))[0]
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 db_manager = PostgreSQLDatabaseManager(session=session, request_id=request_id)
                 chunks = session.query(Document).filter_by(complete_document_id=document_id).order_by(Document.id).all()
@@ -6730,34 +6768,80 @@ class CompleteDocument(Base):
     @classmethod
     @with_request_id
     def _save_document_and_get_id(cls, title, file_path, content, position_id, request_id):
-        """Save document and return the document ID for image associations."""
-        db_config = DatabaseConfig()
+        """
+        Save document and return the document ID for image associations.
+        Handles:
+            - Document upsert
+            - Position associations
+            - PostgreSQL FTS indexing
+            - Page-aware chunk creation with embeddings
+        """
+        db_config = get_db_config()
 
         with db_config.main_session() as session:
             try:
-                # Set PostgreSQL-specific optimizations
+                # -----------------------------------------
+                # PostgreSQL performance tuning
+                # -----------------------------------------
                 session.execute(text("SET work_mem = '256MB'"))
                 session.execute(text("SET maintenance_work_mem = '512MB'"))
 
+                # -----------------------------------------
                 # Upsert document
+                # -----------------------------------------
                 document_id = cls._upsert_document(session, title, file_path, content)
 
-                # Create associations
+                if not document_id:
+                    error_id(f"Document upsert failed for {title}", request_id)
+                    return None
+
+                # -----------------------------------------
+                # Create position associations
+                # -----------------------------------------
                 cls._create_associations(session, document_id, position_id)
 
-                # Add to PostgreSQL search index
+                # -----------------------------------------
+                # Add to PostgreSQL full-text search
+                # -----------------------------------------
                 cls._add_to_search_safe(session, title, content, request_id)
 
-                # Create chunks
-                cls._create_chunks(session, document_id, title, content, file_path)
+                # -----------------------------------------
+                # Create chunks (PDF-aware if possible)
+                # -----------------------------------------
+                try:
+                    cls._create_chunks(
+                        session,
+                        document_id,
+                        title,
+                        content,
+                        file_path,
+                        request_id,  # ✅ ensure request_id is passed
+                    )
+                except Exception as chunk_error:
+                    # Do NOT kill document save if chunking fails
+                    warning_id(
+                        f"Chunk creation failed for document {title}: {chunk_error}",
+                        request_id,
+                    )
 
+                # -----------------------------------------
+                # Commit transaction
+                # -----------------------------------------
                 session.commit()
-                debug_id(f"Saved document to PostgreSQL with ID {document_id}: {title}", request_id)
+
+                debug_id(
+                    f"Saved document to PostgreSQL with ID {document_id}: {title}",
+                    request_id,
+                )
+
                 return document_id
 
             except Exception as e:
                 session.rollback()
-                error_id(f"PostgreSQL database save failed for {title}: {e}", request_id)
+                error_id(
+                    f"PostgreSQL database save failed for {title}: {e}",
+                    request_id,
+                )
                 return None
 
     @classmethod
@@ -7029,55 +7113,83 @@ class CompleteDocument(Base):
     @with_request_id
     def _generate_embeddings_for_chunks(cls, session, chunk_objects, request_id=None):
         """
-        Updated method to generate embeddings for document chunks using pgvector storage.
-        Now uses the enhanced DocumentEmbedding class with pgvector support.
+        Generate embeddings for document chunks using AIModelsEmbeddingService.
+        Strict backend routing (local vs gpu_service).
         """
-        debug_id("Starting _generate_embeddings_for_chunks with pgvector support", request_id)
+
+        debug_id(
+            "Starting _generate_embeddings_for_chunks via AIModelsEmbeddingService",
+            request_id,
+        )
 
         try:
-            # Import the necessary modules
-            from plugins.ai_modules import generate_embedding, ModelsConfig
+            from modules.services.ai_models_embedding_service import (
+                AIModelsEmbeddingService,
+            )
 
-            # Get current embedding model name
-            current_embedding_model = ModelsConfig.get_config_value('embedding', 'CURRENT_MODEL')
-
-            if current_embedding_model == "NoEmbeddingModel":
-                debug_id("Embedding generation disabled, skipping", request_id)
+            if not chunk_objects:
+                debug_id("No chunks provided for embedding generation", request_id)
                 return
 
-            debug_id(f"Generating embeddings for {len(chunk_objects)} chunks using {current_embedding_model}",
-                     request_id)
+            debug_id(
+                f"Generating embeddings for {len(chunk_objects)} chunks",
+                request_id,
+            )
 
-            # Process each chunk
             for chunk in chunk_objects:
                 try:
-                    # Generate embedding for this chunk
-                    embeddings = generate_embedding(chunk.content, current_embedding_model)
+                    if not chunk.content or not chunk.content.strip():
+                        debug_id(
+                            f"Skipping empty chunk: {chunk.name}",
+                            request_id,
+                        )
+                        continue
 
-                    if embeddings:
-                        # Store using the enhanced DocumentEmbedding with pgvector
-                        # FIXED: Use _store_embedding instead of _store_embedding_pgvector
-                        success = cls._store_embedding(
-                            session, chunk.id, embeddings, current_embedding_model, request_id
+                    vector = AIModelsEmbeddingService.get_embeddings(
+                        chunk.content,
+                        request_id=request_id,
+                    )
+
+                    if not vector:
+                        debug_id(
+                            f"No embedding returned for chunk: {chunk.name}",
+                            request_id,
+                        )
+                        continue
+
+                    success = cls._store_embedding(
+                        session,
+                        chunk.id,
+                        vector,
+                        AIModelsEmbeddingService.get_current_model_name(
+                            request_id=request_id
+                        ),
+                        request_id,
+                    )
+
+                    if success:
+                        debug_id(
+                            f"Stored embedding for chunk: {chunk.name}",
+                            request_id,
+                        )
+                    else:
+                        debug_id(
+                            f"Failed storing embedding for chunk: {chunk.name}",
+                            request_id,
                         )
 
-                        if success:
-                            debug_id(f"Generated and stored pgvector embedding for chunk: {chunk.name}", request_id)
-                        else:
-                            debug_id(f"Failed to store embedding for chunk: {chunk.name}", request_id)
-                    else:
-                        debug_id(f"No embedding generated for chunk: {chunk.name}", request_id)
-
-                except Exception as e:
-                    debug_id(f"Error generating embedding for chunk {chunk.name}: {e}", request_id)
-                    import traceback
-                    debug_id(f"Traceback: {traceback.format_exc()}", request_id)
+                except Exception as chunk_error:
+                    debug_id(
+                        f"Embedding error for chunk {chunk.name}: {chunk_error}",
+                        request_id,
+                    )
                     continue
 
         except Exception as e:
-            debug_id(f"Embedding generation for chunks failed: {e}", request_id)
-            import traceback
-            debug_id(f"Traceback: {traceback.format_exc()}", request_id)
+            debug_id(
+                f"Embedding generation failed entirely: {e}",
+                request_id,
+            )
 
     @classmethod
     @with_request_id
@@ -7182,7 +7294,7 @@ class CompleteDocument(Base):
                 warning_id("Failed to generate embeddings for query text", request_id)
                 return []
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 return cls._search_by_pgvector_similarity(
                     session, query_embeddings, current_embedding_model, limit, threshold, request_id
@@ -7210,7 +7322,7 @@ class CompleteDocument(Base):
                 error_id("DocumentEmbedding class not available", request_id)
                 return {}
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
 
                 total_embeddings = session.query(DocumentEmbeddingClass).count()
@@ -7265,7 +7377,7 @@ class CompleteDocument(Base):
                 error_id("DocumentEmbedding class not available", request_id)
                 return False
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 success = DocumentEmbeddingClass.create_pgvector_indexes(session)
 
@@ -7293,7 +7405,7 @@ class CompleteDocument(Base):
                 error_id("Image class not available", request_id)
                 return []
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 return ImageClass.get_images_with_chunk_context(session, document_id, request_id)
 
@@ -7314,7 +7426,7 @@ class CompleteDocument(Base):
                 error_id("Image class not available", request_id)
                 return []
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 return ImageClass.search_by_chunk_text(
                     session, search_text, document_id, confidence_threshold, request_id
@@ -7337,7 +7449,7 @@ class CompleteDocument(Base):
                 error_id("Image class not available", request_id)
                 return {}
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 return ImageClass.get_association_statistics(session, document_id, request_id)
 
@@ -7457,7 +7569,7 @@ class CompleteDocument(Base):
             error_id("Position class not available", request_id)
             return cls._create_position_fallback(metadata, request_id)
 
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
 
         with db_config.main_session() as session:
             # Create site location if provided
@@ -7491,7 +7603,7 @@ class CompleteDocument(Base):
     @with_request_id
     def _create_position_fallback(cls, metadata, request_id):
         """Fallback position creation using PostgreSQL raw SQL."""
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
 
         with db_config.main_session() as session:
             try:
@@ -7524,12 +7636,13 @@ class CompleteDocument(Base):
     @with_request_id
     def _extract_content(cls, file_path, request_id):
         """
-        Extract text content from file.
-        Supports:
-          - PDF (direct)
-          - TXT (direct)
-          - DOCX (DOCX → PDF → text)
-          - DOC  (DOC → DOCX → PDF → text)
+        Extract text content and preserve source context.
+        Returns:
+            {
+                "text": str,
+                "pdf_path": str | None,
+                "source_type": str
+            }
         """
         ext = os.path.splitext(file_path)[1].lower()
 
@@ -7537,19 +7650,29 @@ class CompleteDocument(Base):
             # -------------------------
             # PDF
             # -------------------------
-            if ext == '.pdf':
-                return cls._extract_pdf_text(file_path, request_id)
+            if ext == ".pdf":
+                text = cls._extract_pdf_text(file_path, request_id)
+                return {
+                    "text": text,
+                    "pdf_path": file_path,
+                    "source_type": "pdf",
+                }
 
             # -------------------------
             # TXT
             # -------------------------
-            elif ext == '.txt':
-                return cls._extract_txt_text(file_path, request_id)
+            elif ext == ".txt":
+                text = cls._extract_txt_text(file_path, request_id)
+                return {
+                    "text": text,
+                    "pdf_path": None,
+                    "source_type": "txt",
+                }
 
             # -------------------------
             # DOCX
             # -------------------------
-            elif ext == '.docx':
+            elif ext == ".docx":
                 info_id("Converting DOCX to PDF for processing", request_id)
 
                 pdf_path = cls._convert_docx_to_pdf(file_path, request_id)
@@ -7558,13 +7681,17 @@ class CompleteDocument(Base):
                     return None
 
                 text = cls._extract_pdf_text(pdf_path, request_id)
-                cls._cleanup_temp_file(pdf_path, request_id)
-                return text
+
+                return {
+                    "text": text,
+                    "pdf_path": pdf_path,  # 🔥 DO NOT CLEANUP HERE
+                    "source_type": "docx->pdf",
+                }
 
             # -------------------------
             # DOC (LEGACY WORD)
             # -------------------------
-            elif ext == '.doc':
+            elif ext == ".doc":
                 info_id("Converting DOC to DOCX for processing", request_id)
 
                 docx_path = cls._convert_doc_to_docx(file_path, request_id)
@@ -7581,11 +7708,12 @@ class CompleteDocument(Base):
 
                 text = cls._extract_pdf_text(pdf_path, request_id)
 
-                # Cleanup temp artifacts
-                cls._cleanup_temp_file(pdf_path, request_id)
-                cls._cleanup_temp_file(docx_path, request_id)
-
-                return text
+                return {
+                    "text": text,
+                    "pdf_path": pdf_path,
+                    "docx_path": docx_path,  # preserve for later cleanup
+                    "source_type": "doc->docx->pdf",
+                }
 
             # -------------------------
             # UNSUPPORTED
@@ -7764,7 +7892,7 @@ class CompleteDocument(Base):
         info_id(f"Attempting to retrieve document with ID: {document_id}", rid)
 
         # Create session using DatabaseConfig
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         try:
             with db_config.main_session() as session:
 
@@ -7995,7 +8123,7 @@ class CompleteDocument(Base):
             # Create session if not provided
             local_session = None
             if session is None:
-                db_config = DatabaseConfig()
+                db_config = get_db_config()
                 local_session = db_config.get_main_session()
                 session = local_session
 
@@ -8382,7 +8510,7 @@ class DrawingPartAssociation(Base):
             int: ID of the created association, or None if it already existed or failed
         """
         rid = request_id or get_request_id()
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -8455,7 +8583,7 @@ class DrawingPartAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -8631,7 +8759,7 @@ class DrawingPartAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -8781,7 +8909,7 @@ class DrawingPartAssociation(Base):
             int: Number of new associations created
         """
         rid = request_id or get_request_id()
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -9032,7 +9160,7 @@ class TaskPositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -9120,7 +9248,7 @@ class TaskPositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -9189,7 +9317,7 @@ class TaskPositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -9275,7 +9403,7 @@ class TaskPositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -9384,7 +9512,7 @@ class PartTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -9516,7 +9644,7 @@ class PartTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -9637,7 +9765,7 @@ class PartTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -9739,7 +9867,7 @@ class DrawingTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -9886,7 +10014,7 @@ class DrawingTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -10105,7 +10233,7 @@ class ImageTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -10230,7 +10358,7 @@ class ImageTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -10341,7 +10469,7 @@ class ImageTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -10438,7 +10566,7 @@ class TaskToolAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -10522,7 +10650,7 @@ class TaskToolAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -10607,7 +10735,7 @@ class TaskToolAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -10741,7 +10869,7 @@ class TaskToolAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -11124,7 +11252,7 @@ class CompleteDocumentTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -11223,7 +11351,7 @@ class CompleteDocumentTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -11316,7 +11444,7 @@ class CompleteDocumentTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -11449,7 +11577,7 @@ class CompleteDocumentTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -11739,7 +11867,7 @@ class ImagePositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -11827,7 +11955,7 @@ class ImagePositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -11924,7 +12052,7 @@ class ImagePositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -12087,7 +12215,7 @@ class ImagePositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -12230,7 +12358,7 @@ class DrawingPositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -12318,7 +12446,7 @@ class DrawingPositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -12421,7 +12549,7 @@ class DrawingPositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -12612,7 +12740,7 @@ class DrawingPositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -12842,7 +12970,7 @@ class ImageCompletedDocumentAssociation(Base):
             file_name = os.path.splitext(os.path.basename(file_path))[0]
             associations_created = 0
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 # FIXED: Get all chunks and create a comprehensive mapping
                 all_chunks = session.query(Document).filter_by(
@@ -13267,7 +13395,7 @@ class ImageCompletedDocumentAssociation(Base):
             if not ImageClass:
                 return 0
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             associations_created = 0
 
             with db_config.main_session() as session:
@@ -13346,7 +13474,7 @@ class ImageCompletedDocumentAssociation(Base):
 
             info_id(f"Using DocumentStructureManager for analysis: {file_path}", request_id)
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 structure_manager = DocumentStructureManager(session=session, request_id=request_id)
                 return structure_manager.analyze_document_structure(file_path, request_id, ocr_content)
@@ -13373,7 +13501,7 @@ class ImageCompletedDocumentAssociation(Base):
                 return []
 
             from modules.configuration.config_env import DatabaseConfig
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
 
             with db_config.main_session() as session:
                 return ImageClass.get_images_with_chunk_context(session, complete_document_id, request_id)
@@ -13396,7 +13524,7 @@ class ImageCompletedDocumentAssociation(Base):
                 return []
 
             from modules.configuration.config_env import DatabaseConfig
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
 
             with db_config.main_session() as session:
                 return ImageClass.search_by_chunk_text(
@@ -13421,7 +13549,7 @@ class ImageCompletedDocumentAssociation(Base):
                 return {}
 
             from modules.configuration.config_env import DatabaseConfig
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
 
             with db_config.main_session() as session:
                 return ImageClass.get_association_statistics(session, complete_document_id, request_id)
@@ -13436,7 +13564,7 @@ class ImageCompletedDocumentAssociation(Base):
         """Update the confidence score of an association."""
         try:
             from modules.configuration.config_env import DatabaseConfig
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
 
             with db_config.main_session() as session:
                 association = session.query(cls).filter(cls.id == association_id).first()
@@ -13462,7 +13590,7 @@ class ImageCompletedDocumentAssociation(Base):
             from modules.configuration.config_env import DatabaseConfig
             from sqlalchemy import text
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
 
             with db_config.main_session() as session:
                 # Use raw SQL for bulk update efficiency
@@ -13499,7 +13627,7 @@ class ImageCompletedDocumentAssociation(Base):
             from modules.database_manager.db_manager import DocumentStructureManager
             from modules.configuration.config_env import DatabaseConfig
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 structure_manager = DocumentStructureManager(session=session, request_id=request_id)
                 # Use the manager's storage method if available
@@ -13704,7 +13832,7 @@ class ImageCompletedDocumentAssociation(Base):
         DEBUGGING: Analyze chunk distribution for a document.
         """
         try:
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 chunks = session.query(Document).filter_by(
                     complete_document_id=complete_document_id
@@ -13944,7 +14072,7 @@ class KeywordAction(Base):
             session_provided = session is not None
             if not session_provided:
                 from modules.configuration.config_env import DatabaseConfig
-                db_config = DatabaseConfig()
+                db_config = get_db_config()
                 session = db_config.get_main_session()
                 debug_id("Created new database session for keyword extraction", request_id)
 
@@ -14448,7 +14576,7 @@ class User(Base):
         # Get database session
         try:
             logger.info("Getting database session...")
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             session = db_config.get_main_session()
             logger.debug(f"Got database session: {session}")
         except Exception as e:
@@ -15830,7 +15958,7 @@ class KeywordSearch:
             session: SQLAlchemy session (optional)
         """
         self._session = session
-        self._db_config = DatabaseConfig()
+        self._db_config = get_db_config()
 
     @property
     def session(self):
