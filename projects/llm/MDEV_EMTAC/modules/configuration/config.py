@@ -61,7 +61,7 @@ CSV_DIR = DATABASE_DIR
 COMMENT_IMAGES_FOLDER = os.path.join(BASE_DIR,'static', 'comment_images')
 UPLOAD_FOLDER = os.path.join(BASE_DIR,"static", "uploads")
 IMAGES_FOLDER = os.path.join(BASE_DIR,"static", "images")
-DATABASE_PATH_IMAGES_FOLDER = os.path.join(DATABASE_DIR, 'DB_IMAGES')
+DATABASE_PATH_IMAGES_FOLDER = os.path.join(DATABASE_DIR, "DB_IMAGES")
 PDF_FOR_EXTRACTION_FOLDER = os.path.join("../../static", "image_extraction")
 IMAGES_EXTRACTED = os.path.join("../../static", "extracted_pdf_images")
 COPY_FILES = False
@@ -279,8 +279,11 @@ GIT_REPOS_DIR    = os.getenv("GIT_REPOS_DIR")
 # --------------------------------------------------------
 MODELS_IMAGE_DIR       = os.getenv("MODELS_IMAGE_DIR", os.path.join(MODELS_DIR, "image"))
 MODELS_LLM_DIR         = os.getenv("MODELS_LLM_DIR", os.path.join(MODELS_DIR, "llm"))
-MODELS_CLIP_DIR        = os.getenv("MODELS_CLIP_DIR", os.path.join(MODELS_DIR, "openai_clip-vit-base-patch32"))
+MODEL_CLIP_DIR        = os.getenv("MODEL_CLIP_DIR", os.path.join(MODELS_DIR, "openai_clip-vit-base-patch32"))
 MODELS_CACHE_DIR       = os.path.join(MODELS_DIR, "cache")  # derived convenience path
+
+
+
 
 # Optional specific models
 MODELS_QWEN_DIR        = os.getenv("MODELS_QWEN_DIR")
@@ -332,7 +335,9 @@ os.makedirs(TEMPORARY_UPLOAD, exist_ok=True)
 
 
 # DEBUG FLAGS
-FORCE_DEBUG_CHUNK = True
+FORCE_DEBUG_CHUNK = false
 FORCE_DEBUG_CHUNK_ID = 1
+#FORCE_DEBUG_CHUNK_ID that can be used for demo
+#1595, 1
 
 
