@@ -1,14 +1,16 @@
-from typing import List, Optional
+# modules/services/tool_position_association_service.py
+
+from typing import List
 
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 
-from modules.configuration.config_env import DatabaseConfig
 from modules.configuration.log_config import (
     debug_id,
     error_id,
     with_request_id,
 )
+
 from modules.emtacdb.emtacdb_fts import (
     Tool,
     ToolPositionAssociation,
@@ -19,22 +21,12 @@ class ToolPositionAssociationService:
     """
     Service for Tool ↔ Position associations.
 
-    ✔ Read-only
-    ✔ Service-layer safe
-    ✔ Used by enrichment, UI, and RAG pipelines
+    ✔ No session ownership
+    ✔ No DatabaseConfig dependency
+    ✔ No transaction control
+    ✔ Orchestrator controls session lifecycle
+    ✔ Safe for RAG / UI / Enrichment
     """
-
-    def __init__(self, db_config: DatabaseConfig):
-        self.db_config = db_config
-
-    # --------------------------------------------------
-    # INTERNAL SESSION HANDLING
-    # --------------------------------------------------
-
-    def _get_session(self, session: Optional[Session]):
-        if session:
-            return session, False
-        return self.db_config.get_main_session(), True
 
     # --------------------------------------------------
     # CORE QUERIES
@@ -43,10 +35,10 @@ class ToolPositionAssociationService:
     @with_request_id
     def get_tools_for_positions(
         self,
+        session: Session,
         position_ids: List[int],
         *,
-        session: Optional[Session] = None,
-        request_id: Optional[str] = None,
+        request_id: str = None,
     ) -> List[Tool]:
         """
         Return Tool objects associated with given positions.
@@ -54,8 +46,6 @@ class ToolPositionAssociationService:
 
         if not position_ids:
             return []
-
-        session, created = self._get_session(session)
 
         try:
             stmt = (
@@ -84,11 +74,7 @@ class ToolPositionAssociationService:
                 request_id,
                 exc_info=True,
             )
-            return []
-
-        finally:
-            if created:
-                session.close()
+            raise  # 🚨 Do NOT swallow errors
 
     # --------------------------------------------------
     # COUNT (USED BY LIGHTWEIGHT SUMMARY)
@@ -96,8 +82,8 @@ class ToolPositionAssociationService:
 
     def count_tools(
         self,
-        position_ids: List[int],
         session: Session,
+        position_ids: List[int],
     ) -> int:
         """
         Count distinct tools associated with given positions.
@@ -121,9 +107,8 @@ class ToolPositionAssociationService:
 
     def get_position_ids_for_tool(
         self,
+        session: Session,
         tool_id: int,
-        *,
-        session: Optional[Session] = None,
     ) -> List[int]:
         """
         Tool → Position IDs
@@ -131,16 +116,9 @@ class ToolPositionAssociationService:
         ✔ Used for reverse chunk lookups
         """
 
-        session, created = self._get_session(session)
+        stmt = (
+            select(ToolPositionAssociation.position_id)
+            .where(ToolPositionAssociation.tool_id == tool_id)
+        )
 
-        try:
-            stmt = (
-                select(ToolPositionAssociation.position_id)
-                .where(ToolPositionAssociation.tool_id == tool_id)
-            )
-
-            return [row[0] for row in session.execute(stmt).all()]
-
-        finally:
-            if created:
-                session.close()
+        return [row[0] for row in session.execute(stmt).all()]
