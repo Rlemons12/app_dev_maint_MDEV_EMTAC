@@ -10,7 +10,8 @@ class DocumentUIPayload:
     Orchestrates construction of UI-ready CompleteDocument payloads.
     """
 
-    def __init__(self):
+    def __init__(self, session=None):
+        self.session = session
         self._documents: Dict[int, Dict[str, Any]] = {}
 
     # ---------------------------------------------------------
@@ -112,8 +113,12 @@ class DocumentUIPayload:
     ) -> "DocumentUIPayload":
 
         for doc in self._documents.values():
+            if not self.session:
+                raise RuntimeError("DocumentUIPayload requires session for image enrichment")
+
             resolved = image_assoc_service.resolve_related_entities(
-                complete_document_id=doc["complete_document_id"]
+                session=self.session,
+                complete_document_id=doc["complete_document_id"],
             )
 
             images = resolved.get("images", [])
