@@ -1,211 +1,261 @@
 # modules/services/document_embedding_service.py
 
 from typing import List, Optional, Dict
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
-from modules.configuration.config_env import DatabaseConfig
 from modules.configuration.log_config import (
-    info_id, debug_id, warning_id, error_id, with_request_id, get_request_id
+    info_id,
+    debug_id,
+    error_id,
+    with_request_id,
 )
-from modules.emtacdb.emtacdb_fts import Document, DocumentEmbedding
+from modules.emtacdb.emtacdb_fts import DocumentEmbedding
 
 
 class DocumentEmbeddingService:
-    """Service layer for managing DocumentEmbedding objects."""
+    """
+    Pure domain service for DocumentEmbedding.
 
-    def __init__(self, db_config: Optional[DatabaseConfig] = None):
-        self.db_config = db_config or DatabaseConfig()
+    HARD RULES:
+    - NEVER open sessions
+    - NEVER close sessions
+    - NEVER commit
+    - NEVER rollback
+    - Orchestrator owns transactions
+    """
 
-    # ----------------------------
-    # CREATE / ADD
-    # ----------------------------
+    # ==========================================================
+    # CREATE
+    # ==========================================================
+
     @with_request_id
     def add_embedding(
         self,
         session: Session,
+        *,
         document_id: int,
         model_name: str,
         embedding: List[float],
         use_pgvector: bool = True,
         metadata: Optional[Dict] = None,
-        request_id: Optional[str] = None
-    ) -> Optional[int]:
-        """
-        Add a new document embedding (pgvector preferred, fallback to legacy).
-        """
-        try:
-            if use_pgvector:
-                embedding_obj = DocumentEmbedding.create_with_pgvector(
-                    document_id=document_id,
-                    model_name=model_name,
-                    embedding=embedding,
-                    embedding_metadata=metadata or {}
-                )
-            else:
-                embedding_obj = DocumentEmbedding.create_with_legacy(
-                    document_id=document_id,
-                    model_name=model_name,
-                    embedding=embedding,
-                    embedding_metadata=metadata or {}
-                )
+        request_id: Optional[str] = None,
+    ) -> int:
 
-            session.add(embedding_obj)
-            session.commit()
+        if not session:
+            raise RuntimeError("Session required for add_embedding")
 
-            info_id(
-                f"Created new DocumentEmbedding for document_id={document_id}, "
-                f"model={model_name}, id={embedding_obj.id}",
-                request_id
+        if use_pgvector:
+            embedding_obj = DocumentEmbedding.create_with_pgvector(
+                document_id=document_id,
+                model_name=model_name,
+                embedding=embedding,
+                embedding_metadata=metadata or {},
             )
-            return embedding_obj.id
-        except SQLAlchemyError as e:
-            session.rollback()
-            error_id(f"Failed to add DocumentEmbedding: {e}", request_id)
-            return None
+        else:
+            embedding_obj = DocumentEmbedding.create_with_legacy(
+                document_id=document_id,
+                model_name=model_name,
+                embedding=embedding,
+                embedding_metadata=metadata or {},
+            )
 
-    # ----------------------------
-    # RETRIEVE
-    # ----------------------------
-    @with_request_id
-    def get_by_id(self, embedding_id: int, session: Optional[Session] = None, request_id: Optional[str] = None) -> Optional[DocumentEmbedding]:
-        """Retrieve embedding by its ID."""
-        rid = request_id or get_request_id()
-        session_provided = session is not None
+        session.add(embedding_obj)
+        session.flush()
 
-        if not session_provided:
-            session = self.db_config.get_main_session()
-            debug_id("Created new session in get_by_id", rid)
+        debug_id(
+            f"Embedding staged doc={document_id}, "
+            f"model={model_name}, id={embedding_obj.id}",
+            request_id,
+        )
 
-        try:
-            embedding = session.query(DocumentEmbedding).filter_by(id=embedding_id).first()
-            if embedding:
-                debug_id(f"Found embedding ID={embedding_id}, dims={embedding.actual_dimensions}", rid)
-            else:
-                warning_id(f"No embedding found with ID={embedding_id}", rid)
-            return embedding
-        finally:
-            if not session_provided:
-                session.close()
+        return embedding_obj.id
+
+    # ==========================================================
+    # READ
+    # ==========================================================
 
     @with_request_id
-    def get_by_document(self, document_id: int, session: Optional[Session] = None, request_id: Optional[str] = None) -> List[DocumentEmbedding]:
-        """Retrieve all embeddings for a given document ID."""
-        rid = request_id or get_request_id()
-        session_provided = session is not None
+    def get_by_id(
+        self,
+        session: Session,
+        *,
+        embedding_id: int,
+        request_id: Optional[str] = None,
+    ) -> Optional[DocumentEmbedding]:
 
-        if not session_provided:
-            session = self.db_config.get_main_session()
-            debug_id("Created new session in get_by_document", rid)
+        return session.get(DocumentEmbedding, embedding_id)
 
-        try:
-            embeddings = session.query(DocumentEmbedding).filter_by(document_id=document_id).all()
-            debug_id(f"Found {len(embeddings)} embeddings for document_id={document_id}", rid)
-            return embeddings
-        finally:
-            if not session_provided:
-                session.close()
+    @with_request_id
+    def get_by_document(
+        self,
+        session: Session,
+        *,
+        document_id: int,
+        request_id: Optional[str] = None,
+    ) -> List[DocumentEmbedding]:
 
-    # ----------------------------
-    # SEARCH
-    # ----------------------------
+        return (
+            session.query(DocumentEmbedding)
+            .filter(DocumentEmbedding.document_id == document_id)
+            .all()
+        )
+
+    # ==========================================================
+    # VECTOR SEARCH (DIMENSION SAFE)
+    # ==========================================================
+
     @with_request_id
     def search_similar(
         self,
+        session: Session,
+        *,
         query_embedding: List[float],
         model_name: Optional[str] = None,
         limit: int = 5,
         threshold: float = 0.5,
-        session: Optional[Session] = None,
-        request_id: Optional[str] = None
+        request_id: Optional[str] = None,
     ) -> List[Dict]:
-        """
-        Search for document chunks similar to a given embedding.
-        """
-        rid = request_id or get_request_id()
-        session_provided = session is not None
 
-        if not session_provided:
-            session = self.db_config.get_main_session()
-            debug_id("Created new session in search_similar", rid)
-
-        try:
-            results = DocumentEmbedding.search_similar_images(  # NOTE: we can rename this to search_similar_chunks later
-                session=session,
-                query_embedding=query_embedding,
-                model_name=model_name,
-                limit=limit,
-                similarity_threshold=threshold
-            )
-            info_id(f"Found {len(results)} similar document embeddings", rid)
-            return results
-        except Exception as e:
-            error_id(f"Error in search_similar: {e}", rid)
+        if not query_embedding:
             return []
-        finally:
-            if not session_provided:
-                session.close()
 
-    # ----------------------------
-    # MIGRATION & MAINTENANCE
-    # ----------------------------
+        dims = len(query_embedding)
+        vector_str = "[" + ",".join(map(str, query_embedding)) + "]"
+
+        sql = text("""
+            SELECT 
+                id,
+                document_id,
+                model_name,
+                actual_dimensions,
+                1 - (embedding_vector <=> :query_vector::vector) AS similarity
+            FROM document_embedding
+            WHERE embedding_vector IS NOT NULL
+              AND actual_dimensions = :dims
+              AND (:model_name IS NULL OR model_name = :model_name)
+              AND (1 - (embedding_vector <=> :query_vector::vector)) >= :threshold
+            ORDER BY embedding_vector <=> :query_vector::vector ASC
+            LIMIT :limit
+        """)
+
+        rows = session.execute(
+            sql,
+            {
+                "query_vector": vector_str,
+                "dims": dims,
+                "model_name": model_name,
+                "threshold": threshold,
+                "limit": limit,
+            },
+        ).fetchall()
+
+        results = [
+            {
+                "embedding_id": r[0],
+                "document_id": r[1],
+                "model_name": r[2],
+                "dimensions": r[3],
+                "similarity": float(r[4]),
+            }
+            for r in rows
+        ]
+
+        info_id(f"Vector search returned {len(results)} results", request_id)
+
+        return results
+
+    # ==========================================================
+    # MIGRATION
+    # ==========================================================
+
     @with_request_id
-    def migrate_all_to_pgvector(self, session: Optional[Session] = None, request_id: Optional[str] = None) -> Dict:
-        """
-        Migrate all legacy embeddings to pgvector format.
-        """
-        rid = request_id or get_request_id()
-        session_provided = session is not None
+    def migrate_all_to_pgvector(
+        self,
+        session: Session,
+        *,
+        request_id: Optional[str] = None,
+    ) -> Dict:
 
-        if not session_provided:
-            session = self.db_config.get_main_session()
-            debug_id("Created new session in migrate_all_to_pgvector", rid)
-
-        try:
-            legacy_embeddings = session.query(DocumentEmbedding).filter(
+        legacy_embeddings = (
+            session.query(DocumentEmbedding)
+            .filter(
                 DocumentEmbedding.embedding_vector.is_(None),
-                DocumentEmbedding.model_embedding.isnot(None)
-            ).all()
+                DocumentEmbedding.model_embedding.isnot(None),
+            )
+            .all()
+        )
 
-            migrated = 0
-            failed = 0
-            for emb in legacy_embeddings:
-                if emb.migrate_to_pgvector():
-                    migrated += 1
-                    session.add(emb)
-                else:
-                    failed += 1
+        migrated = 0
+        failed = 0
 
-            session.commit()
-            info_id(f"Migrated {migrated} embeddings, failed {failed}", rid)
-            return {"migrated": migrated, "failed": failed}
-        except Exception as e:
-            error_id(f"Error in migrate_all_to_pgvector: {e}", rid)
-            session.rollback()
-            return {"migrated": 0, "failed": 0}
-        finally:
-            if not session_provided:
-                session.close()
+        for emb in legacy_embeddings:
+            if emb.migrate_to_pgvector():
+                session.add(emb)
+                migrated += 1
+            else:
+                failed += 1
+
+        session.flush()
+
+        info_id(
+            f"Migrated {migrated} embeddings (no commit here)",
+            request_id,
+        )
+
+        return {"migrated": migrated, "failed": failed}
+
+    # ==========================================================
+    # INDEX CREATION (PRODUCTION READY)
+    # ==========================================================
 
     @with_request_id
-    def setup_pgvector_indexes(self, session: Optional[Session] = None, request_id: Optional[str] = None) -> bool:
-        """
-        Create optimized indexes for pgvector searches on document embeddings.
-        """
-        rid = request_id or get_request_id()
-        session_provided = session is not None
+    def setup_pgvector_indexes(
+        self,
+        session: Session,
+        *,
+        request_id: Optional[str] = None,
+    ) -> bool:
 
-        if not session_provided:
-            session = self.db_config.get_main_session()
+        index_statements = [
+            # Core indexes
+            "CREATE INDEX IF NOT EXISTS idx_doc_embedding_doc_id ON document_embedding (document_id);",
+            "CREATE INDEX IF NOT EXISTS idx_doc_embedding_model ON document_embedding (model_name);",
+            "CREATE INDEX IF NOT EXISTS idx_doc_embedding_dims ON document_embedding (actual_dimensions);",
+            "CREATE INDEX IF NOT EXISTS idx_doc_embedding_metadata ON document_embedding USING gin (embedding_metadata);",
+
+            # HNSW cosine indexes by dimension
+            """
+            CREATE INDEX IF NOT EXISTS idx_doc_embedding_cosine_384d
+            ON document_embedding
+            USING hnsw (embedding_vector vector_cosine_ops)
+            WHERE actual_dimensions = 384;
+            """,
+
+            """
+            CREATE INDEX IF NOT EXISTS idx_doc_embedding_cosine_768d
+            ON document_embedding
+            USING hnsw (embedding_vector vector_cosine_ops)
+            WHERE actual_dimensions = 768;
+            """,
+
+            """
+            CREATE INDEX IF NOT EXISTS idx_doc_embedding_cosine_1536d
+            ON document_embedding
+            USING hnsw (embedding_vector vector_cosine_ops)
+            WHERE actual_dimensions = 1536;
+            """,
+        ]
 
         try:
-            success = DocumentEmbedding.create_pgvector_indexes(session)
-            if success:
-                info_id("pgvector indexes for DocumentEmbedding created successfully", rid)
-            else:
-                warning_id("Some or all pgvector indexes for DocumentEmbedding failed", rid)
-            return success
-        finally:
-            if not session_provided:
-                session.close()
+            for stmt in index_statements:
+                session.execute(text(stmt))
+
+            session.flush()
+
+            info_id("pgvector indexes ensured", request_id)
+            return True
+
+        except Exception as e:
+            error_id(f"Index creation failed: {e}", request_id)
+            raise
