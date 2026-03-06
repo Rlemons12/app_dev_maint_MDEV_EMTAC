@@ -10,9 +10,6 @@ from modules.configuration.log_config import (
 )
 from plugins.ai_modules.ai_models import ModelsConfig
 
-# DB-backed prompt provider
-from modules.emtac_ai.prompts.prompt_provider import PromptProvider
-
 
 class AIModelsService:
     """
@@ -99,7 +96,7 @@ class AIModelsService:
         """
 
         backend = ModelsConfig.get_execution_backend("ai")
-
+        from modules.emtac_ai.prompts.prompt_provider import PromptProvider
         # -------------------------------------------------
         # Build DB-driven prompt
         # -------------------------------------------------
