@@ -25,7 +25,7 @@ if PROJECT_ENV.exists():
     print(f"Loaded project overrides from {PROJECT_ENV}")
 
 print("MODEL_PATH_CLIP =", os.getenv("MODEL_PATH_CLIP"))
-print("MODELS_CLIP_DIR =", os.getenv("MODELS_CLIP_DIR"))
+print("MODEL_CLIP_DIR =", os.getenv("MODEL_CLIP_DIR"))
 
 
 import os
@@ -62,7 +62,7 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 # -------------------------------------------------------
 from modules.configuration.config import (
     OPENAI_API_KEY, OPENAI_MODEL_NAME, DATABASE_URL, ANTHROPIC_API_KEY,
-    MODELS_DIR, MODELS_LLM_DIR, MODELS_IMAGE_DIR, MODELS_CLIP_DIR,
+    MODELS_DIR, MODELS_LLM_DIR, MODELS_IMAGE_DIR, MODEL_CLIP_DIR,
     MODELS_TINY_LLAMA_DIR, MODELS_QWEN_DIR,
     HF_HOME, HF_HUB_CACHE, SENTENCE_TRANSFORMERS_MODELS_PATH
 )
@@ -459,6 +459,60 @@ class ModelsConfig(Base):
     def get_execution_backend(cls, model_type, default="gpu_service"):
         return cls.get_config_value(model_type, "EXECUTION_BACKEND", default)
 
+    # ---------------------------------------------------
+    # Auto-Promote Latest Trained Model
+    # ---------------------------------------------------
+    @classmethod
+    def auto_promote_latest_trained_model(cls):
+        """
+        Detect latest trained model using ModelResolverConfig
+        and set it as CURRENT_MODEL (ai).
+
+        Stores ONLY the model name (not absolute path).
+        """
+
+        try:
+            from modules.configuration.model_resolver_config import (
+                resolve_latest_trained_model,
+            )
+
+            # Force refresh to ensure newly trained models are detected
+            resolved = resolve_latest_trained_model(refresh=True)
+
+            model_name = resolved["model_name"]
+            model_path = resolved["model_path"]
+            version = resolved["version"]
+
+            logger.info(
+                "[ModelsConfig] Latest trained model detected → %s (v%s)",
+                model_name,
+                version,
+            )
+
+            # Store ONLY model name
+            ok = cls.set_current_ai_model(model_name)
+
+            if ok:
+                logger.info(
+                    "[ModelsConfig] Auto-promoted latest trained model → %s (v%s)",
+                    model_name,
+                    version,
+                )
+            else:
+                logger.error(
+                    "[ModelsConfig] Failed to update CURRENT_MODEL to %s",
+                    model_name,
+                )
+
+            return ok
+
+        except Exception as e:
+            logger.error(
+                "[ModelsConfig] Auto-promote failed: %s",
+                e,
+                exc_info=True,
+            )
+            return False
 
 # Define the AIModel interface
 class AIModel(ABC):
