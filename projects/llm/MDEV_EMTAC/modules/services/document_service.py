@@ -1,46 +1,43 @@
 # modules/services/document_service.py
 
 from typing import Optional, List, Dict, Any
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 from sqlalchemy import text
 
-from modules.configuration.config_env import DatabaseConfig
 from modules.configuration.log_config import (
-    info_id, error_id, warning_id, debug_id, with_request_id
+    info_id,
+    warning_id,
+    with_request_id,
 )
+
 from modules.emtacdb.emtacdb_fts import (
     Document,
     Image,
     ImageCompletedDocumentAssociation,
-    CompleteDocument
 )
 
 
 class DocumentService:
     """
-    Service layer for managing Document (text chunk) entities.
+    Pure domain service for Document (text chunk).
 
-    Provides:
-      - save()                   → Create / update chunk
-      - get()                    → Retrieve by ID
-      - remove()                 → Delete a chunk
-      - find()                   → Search by name/path/metadata
-      - find_related()           → Upward/downward relationships
-      - get_images_for_chunk()   → All images linked to this chunk
-      - find_chunks_with_images()
-      - create_fts_table()       → Initialize enhanced FTS
-      - search_fts()             → FTS query for RAG
+    HARD RULES:
+    - NEVER open sessions
+    - NEVER close sessions
+    - NEVER commit
+    - NEVER rollback
+    - Orchestrator owns transactions
     """
-
-    def __init__(self, db_config: DatabaseConfig = None):
-        self.db_config = db_config or DatabaseConfig()
 
     # ----------------------------------------------------------------------
     # CREATE / UPDATE
     # ----------------------------------------------------------------------
+
     @with_request_id
     def save(
         self,
+        session: Session,
+        *,
         name: str,
         file_path: str,
         content: Optional[str] = None,
@@ -50,200 +47,266 @@ class DocumentService:
         doc_id: Optional[int] = None,
         request_id: Optional[str] = None,
     ) -> Document:
+
+        if doc_id:
+            chunk = session.get(Document, doc_id)
+            if not chunk:
+                raise ValueError(f"Document id={doc_id} not found")
+
+            chunk.name = name
+            chunk.file_path = file_path
+            chunk.content = content
+            chunk.rev = rev
+
+            if doc_metadata is not None:
+                chunk.doc_metadata = doc_metadata
+
+            return chunk
+
+        chunk = Document(
+            name=name,
+            file_path=file_path,
+            content=content,
+            complete_document_id=complete_document_id,
+            rev=rev,
+            doc_metadata=doc_metadata or {},
+        )
+
+        session.add(chunk)
+        session.flush()
+
+        return chunk
+
+    # ----------------------------------------------------------------------
+    # CREATE CHUNKS (Text Splitting + Insert)
+    # ----------------------------------------------------------------------
+
+    @with_request_id
+    def create_chunks(
+        self,
+        session: Session,
+        *,
+        complete_document_id: int,
+        text: str,
+        file_path: Optional[str] = None,
+        chunk_size: int = 1000,
+        overlap: int = 100,
+        request_id: Optional[str] = None,
+    ) -> List[int]:
         """
-        Create or update a document chunk.
+        Split text into overlapping chunks and persist as Document rows.
         """
-        with self.db_config.main_session() as session:
-            try:
-                # ----------------------------------------------------------
-                # UPDATE
-                # ----------------------------------------------------------
-                if doc_id:
-                    chunk = session.query(Document).filter_by(id=doc_id).first()
-                    if not chunk:
-                        raise ValueError(f"Document id={doc_id} not found")
 
-                    chunk.name = name
-                    chunk.file_path = file_path
-                    chunk.content = content
-                    chunk.rev = rev
-                    chunk.doc_metadata = doc_metadata or chunk.doc_metadata
+        if not text:
+            return []
 
-                    info_id(f"Updated Document chunk id={doc_id}", request_id)
-                    return chunk
+        created_ids: List[int] = []
 
-                # ----------------------------------------------------------
-                # CREATE
-                # ----------------------------------------------------------
-                chunk = Document(
-                    name=name,
-                    file_path=file_path,
-                    content=content,
-                    complete_document_id=complete_document_id,
-                    rev=rev,
-                    doc_metadata=doc_metadata or {}
-                )
-                session.add(chunk)
-                session.flush()
+        start = 0
+        text_length = len(text)
+        index = 0
 
-                info_id(f"Created Document chunk '{name}' (id={chunk.id})", request_id)
-                return chunk
+        while start < text_length:
+            end = start + chunk_size
+            chunk_text = text[start:end]
 
-            except SQLAlchemyError as e:
-                error_id(f"DocumentService.save failed: {e}", request_id)
-                raise
+            chunk = Document(
+                name=f"chunk_{complete_document_id}_{index}",
+                file_path=file_path,
+                content=chunk_text,
+                complete_document_id=complete_document_id,
+                rev="R0",
+                doc_metadata={
+                    "chunk_index": index,
+                    "char_start": start,
+                    "char_end": min(end, text_length),
+                },
+            )
+
+            session.add(chunk)
+            session.flush()
+
+            created_ids.append(chunk.id)
+
+            start += chunk_size - overlap
+            index += 1
+
+        return created_ids
 
     # ----------------------------------------------------------------------
     # GET
     # ----------------------------------------------------------------------
+
     @with_request_id
-    def get(self, doc_id: int, request_id: Optional[str] = None) -> Optional[Document]:
-        with self.db_config.main_session() as session:
-            try:
-                return session.query(Document).filter_by(id=doc_id).first()
-            except SQLAlchemyError as e:
-                error_id(f"DocumentService.get failed: {e}", request_id)
-                raise
+    def get(
+            self,
+            session: Session,
+            *,
+            doc_id: Optional[int] = None,
+            document_id: Optional[int] = None,
+            id: Optional[int] = None,
+            request_id: Optional[str] = None,
+    ) -> Optional[Document]:
+
+        # Normalize primary key
+        resolved_id = doc_id or document_id or id
+
+        if resolved_id is None:
+            raise ValueError(
+                "DocumentService.get() requires one of: doc_id, document_id, or id"
+            )
+
+        return session.get(Document, resolved_id)
+
+    # ----------------------------------------------------------------------
+    # GET MULTIPLE
+    # ----------------------------------------------------------------------
+
+    @with_request_id
+    def get_by_ids(
+        self,
+        session: Session,
+        *,
+        ids: List[int],
+        request_id: Optional[str] = None,
+    ) -> List[Document]:
+
+        if not ids:
+            return []
+
+        return (
+            session.query(Document)
+            .filter(Document.id.in_(ids))
+            .all()
+        )
 
     # ----------------------------------------------------------------------
     # DELETE
     # ----------------------------------------------------------------------
+
     @with_request_id
-    def remove(self, doc_id: int, request_id: Optional[str] = None) -> bool:
-        with self.db_config.main_session() as session:
-            try:
-                doc = session.query(Document).filter_by(id=doc_id).first()
-                if not doc:
-                    warning_id(f"Document id={doc_id} not found for deletion", request_id)
-                    return False
+    def remove(
+        self,
+        session: Session,
+        *,
+        doc_id: int,
+        request_id: Optional[str] = None,
+    ) -> bool:
 
-                session.delete(doc)
-                info_id(f"Deleted Document id={doc_id}", request_id)
-                return True
-            except SQLAlchemyError as e:
-                error_id(f"DocumentService.remove failed: {e}", request_id)
-                raise
+        doc = session.get(Document, doc_id)
+        if not doc:
+            warning_id(f"Document id={doc_id} not found", request_id)
+            return False
+
+        session.delete(doc)
+        return True
 
     # ----------------------------------------------------------------------
-    # FIND (Generic Search)
+    # FIND (Dynamic Filtering)
     # ----------------------------------------------------------------------
+
     @with_request_id
     def find(
         self,
+        session: Session,
+        *,
         name: Optional[str] = None,
         file_path: Optional[str] = None,
         complete_document_id: Optional[int] = None,
+        has_images: Optional[bool] = None,
         limit: int = 50,
         request_id: Optional[str] = None,
     ) -> List[Document]:
-        """Search Document chunks by simple filters."""
-        with self.db_config.main_session() as session:
-            try:
-                query = session.query(Document)
 
-                if name:
-                    query = query.filter(Document.name.ilike(f"%{name}%"))
+        query = session.query(Document)
 
-                if file_path:
-                    query = query.filter(Document.file_path.ilike(f"%{file_path}%"))
+        if name:
+            query = query.filter(Document.name.ilike(f"%{name}%"))
 
-                if complete_document_id:
-                    query = query.filter(Document.complete_document_id == complete_document_id)
+        if file_path:
+            query = query.filter(Document.file_path.ilike(f"%{file_path}%"))
 
-                results = query.limit(limit).all()
-                info_id(f"Found {len(results)} Document chunks", request_id)
-                return results
+        if complete_document_id:
+            query = query.filter(
+                Document.complete_document_id == complete_document_id
+            )
 
-            except SQLAlchemyError as e:
-                error_id(f"DocumentService.find failed: {e}", request_id)
-                raise
+        if has_images is True:
+            query = query.join(
+                ImageCompletedDocumentAssociation,
+                ImageCompletedDocumentAssociation.document_id == Document.id,
+            ).distinct()
 
-    # ----------------------------------------------------------------------
-    # RELATIONSHIP TRAVERSAL
-    # ----------------------------------------------------------------------
-    @with_request_id
-    def find_related(self, doc_id: int, request_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
-        """Return related CompleteDocument and images."""
-        with self.db_config.main_session() as session:
-            try:
-                chunk = session.query(Document).filter_by(id=doc_id).first()
-                if not chunk:
-                    warning_id(f"No Document chunk found for id={doc_id}", request_id)
-                    return None
-
-                complete_doc = chunk.complete_document
-
-                images = (
-                    session.query(Image)
-                    .join(ImageCompletedDocumentAssociation,
-                          ImageCompletedDocumentAssociation.image_id == Image.id)
-                    .filter(ImageCompletedDocumentAssociation.document_id == doc_id)
-                    .all()
-                )
-
-                return {
-                    "chunk": chunk,
-                    "upward": {"complete_document": complete_doc},
-                    "downward": {"images": images},
-                }
-
-            except SQLAlchemyError as e:
-                error_id(f"DocumentService.find_related failed: {e}", request_id)
-                raise
+        return query.limit(limit).all()
 
     # ----------------------------------------------------------------------
-    # IMAGE-CHUNK ASSOCIATIONS
+    # IMAGE RELATIONSHIPS
     # ----------------------------------------------------------------------
-    @with_request_id
-    def get_images_for_chunk(self, chunk_id: int, request_id: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Wrapper around model-level helper."""
-        try:
-            return Document.get_images_for_chunk(chunk_id)
-        except SQLAlchemyError as e:
-            error_id(f"DocumentService.get_images_for_chunk failed: {e}", request_id)
-            raise
 
     @with_request_id
-    def find_chunks_with_images(self, complete_document_id: int, request_id: Optional[str] = None) -> List[Document]:
-        """Wrapper around model-level helper."""
-        try:
-            return Document.find_chunks_with_images(complete_document_id)
-        except SQLAlchemyError as e:
-            error_id(f"DocumentService.find_chunks_with_images failed: {e}", request_id)
-            raise
+    def get_images_for_chunk(
+        self,
+        session: Session,
+        *,
+        chunk_id: int,
+        request_id: Optional[str] = None,
+    ) -> List[Image]:
+
+        return (
+            session.query(Image)
+            .join(
+                ImageCompletedDocumentAssociation,
+                ImageCompletedDocumentAssociation.image_id == Image.id,
+            )
+            .filter(
+                ImageCompletedDocumentAssociation.document_id == chunk_id
+            )
+            .all()
+        )
 
     # ----------------------------------------------------------------------
-    # FULL-TEXT SEARCH
+    # FULL-TEXT SEARCH (FTS DIRECT ON DOCUMENT)
     # ----------------------------------------------------------------------
-    @with_request_id
-    def create_fts_table(self, request_id: Optional[str] = None) -> bool:
-        try:
-            return Document.create_fts_table()
-        except SQLAlchemyError as e:
-            error_id(f"DocumentService.create_fts_table failed: {e}", request_id)
-            return False
 
     @with_request_id
     def search_fts(
-            self,
-            search_text: str,
-            limit: int = 20,
-            request_id: Optional[str] = None
+        self,
+        session: Session,
+        *,
+        search_text: str,
+        limit: int = 20,
+        request_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        """
-        Run FTS by delegating to Document.search_fts().
-        The model owns the SQL logic; the service acts as a thin wrapper.
-        """
-        try:
-            results = Document.search_fts(
-                query_text=search_text,
-                limit=limit,
-                request_id=request_id
-            )
-            return results
 
-        except Exception as e:
-            error_id(f"DocumentService.search_fts failed: {e}", request_id)
-            return []
+        sql = text("""
+            SELECT 
+                id,
+                name,
+                file_path,
+                rev,
+                ts_rank(
+                    to_tsvector('english', COALESCE(content, '')),
+                    plainto_tsquery('english', :query)
+                ) AS rank
+            FROM document
+            WHERE to_tsvector('english', COALESCE(content, ''))
+                  @@ plainto_tsquery('english', :query)
+            ORDER BY rank DESC
+            LIMIT :limit
+        """)
 
+        rows = session.execute(
+            sql,
+            {"query": search_text, "limit": limit},
+        ).fetchall()
 
+        return [
+            {
+                "id": r[0],
+                "name": r[1],
+                "file_path": r[2],
+                "rev": r[3],
+                "rank": float(r[4]),
+            }
+            for r in rows
+        ]
