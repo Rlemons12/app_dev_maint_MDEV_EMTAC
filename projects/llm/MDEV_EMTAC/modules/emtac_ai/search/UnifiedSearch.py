@@ -1,4 +1,4 @@
-# UnifiedSearch.py
+# unified_search_service.py
 # Clean, intent-first + resolver/expander + RAG-primary unified search hub.
 
 from __future__ import annotations
@@ -390,7 +390,7 @@ class UnifiedSearch:
         # SINGLE aggregation + FULL enrichment chain
         # --------------------------------------------------
         payload_builder = (
-            DocumentUIPayload()
+            DocumentUIPayload(session=session)
             .aggregate_from_chunks(chunks, request_id=request_id)
             .enrich_with_images(
                 self.image_assoc_service,
