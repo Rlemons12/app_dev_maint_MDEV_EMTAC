@@ -84,7 +84,7 @@ class AistManager:
             # -----------------------------
             # Enrichment services (OWNED HERE)
             # -----------------------------
-            self.image_assoc_service = ImageCompletedDocumentAssociationService(self.db_config)
+            self.image_assoc_service = ImageCompletedDocumentAssociationService()
             self.position_service = PositionService(self.db_session)
             self.parts_position_image_service = PartsPositionImageService(self.db_session)
 
