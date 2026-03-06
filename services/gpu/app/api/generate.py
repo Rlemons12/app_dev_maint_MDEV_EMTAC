@@ -129,31 +129,65 @@ def generate_text(req: GenerateRequest):
             },
         }
 
+
     except Exception as e:
+
         # -------------------------------------------------
+
         # HARD SYNC CUDA ERRORS (CRITICAL)
+
         # -------------------------------------------------
+
         if torch.cuda.is_available():
+
             try:
+
                 torch.cuda.synchronize()
+
             except Exception:
+
                 pass
 
         tb = traceback.format_exc()
 
         gpu_error(
+
             f"Generation FAILED | model={model_name} "
+
             f"error={e.__class__.__name__}: {e}",
+
             rid,
+
         )
 
         gpu_error(tb, rid)
 
+        # 🔥 IMPORTANT: Clear fragmented CUDA memory after failure
+
+        if torch.cuda.is_available():
+
+            try:
+
+                torch.cuda.empty_cache()
+
+                gpu_warning("CUDA cache cleared after failure", rid)
+
+            except Exception:
+
+                pass
+
         raise HTTPException(
+
             status_code=500,
+
             detail={
+
                 "error": "GPU generation failed",
+
                 "model": model_name,
+
                 "request_id": rid,
+
             },
+
         )
