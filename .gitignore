@@ -377,3 +377,18 @@ projects/llm/MDEV_EMTAC/static/background_images/**/*.webp
 
 *.db-shm
 *.db-wal
+tools/custom_scripts/python_scripts/mlruns/      
+projects/llm/DATASET_GEN/
+# GPU runtime artifacts
+services/gpu/artifacts/json/*
+!services/gpu/artifacts/json/.gitkeep   
+# GPU runtime artifacts
+services/gpu/artifacts/images/*
+services/gpu/artifacts/json/*
+services/gpu/artifacts/markdown/*
+services/gpu/artifacts/pdf/*
+
+!services/gpu/artifacts/images/.gitkeep
+!services/gpu/artifacts/json/.gitkeep
+!services/gpu/artifacts/markdown/.gitkeep
+!services/gpu/artifacts/pdf/.gitkeep
