@@ -1,20 +1,12 @@
-# modules/services/completed_document_position_service.py
-
-from typing import Optional, List, Tuple
+from typing import List, Optional
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session as SASession
 from sqlalchemy import select
 
-from modules.configuration.config_env import DatabaseConfig
 from modules.configuration.log_config import (
     info_id,
-    error_id,
     warning_id,
     debug_id,
     with_request_id,
-    log_timed_operation,
-    get_request_id,
 )
 
 from modules.emtacdb.emtacdb_fts import (
@@ -26,138 +18,206 @@ from modules.emtacdb.emtacdb_fts import (
 
 class CompletedDocumentPositionService:
     """
-    Service layer for CompletedDocumentPositionAssociation.
+    Domain service for CompletedDocumentPositionAssociation.
 
-    Responsibilities:
-    - Associate positions and complete documents
-    - List documents for a position
-    - List positions for a document
-    - Manage association lifecycle
+    HARD RULES:
+    - NEVER open sessions
+    - NEVER commit
+    - NEVER rollback
+    - NEVER close sessions
+    - Orchestrator owns transaction scope
     """
 
-    def __init__(self, db_config: Optional[DatabaseConfig] = None):
-        self.db_config = db_config or DatabaseConfig()
+    # =========================================================
+    # ASSOCIATE
+    # =========================================================
 
-    def _get_session(self, session: Optional[SASession]) -> Tuple[SASession, bool]:
-        if session is not None:
-            return session, False
-        return self.db_config.get_main_session(), True
-
-    # ---------------------------------------------------------
-    # Associate
-    # ---------------------------------------------------------
     @with_request_id
     def associate(
         self,
+        session: Session,
+        *,
         position_id: int,
         complete_document_id: int,
-        session: Optional[SASession] = None,
+        request_id: Optional[str] = None,
     ) -> Optional[CompletedDocumentPositionAssociation]:
-        """
-        Create or reuse a CompletedDocumentPositionAssociation.
 
-        Uses the model's associate method under the hood.
-        """
-        rid = get_request_id()
-        sess, created_here = self._get_session(session)
-        debug_id(
-            f"[CompletedDocumentPositionService.associate] position_id={position_id}, "
-            f"complete_document_id={complete_document_id}",
-            rid,
+        if not session:
+            raise RuntimeError("Session required for associate")
+
+        if not position_id or not complete_document_id:
+            warning_id("Invalid IDs provided to associate()", request_id)
+            return None
+
+        position = session.get(Position, position_id)
+        if not position:
+            warning_id(f"Position id={position_id} not found", request_id)
+            return None
+
+        document = session.get(CompleteDocument, complete_document_id)
+        if not document:
+            warning_id(
+                f"CompleteDocument id={complete_document_id} not found",
+                request_id,
+            )
+            return None
+
+        existing = (
+            session.query(CompletedDocumentPositionAssociation)
+            .filter_by(
+                position_id=position_id,
+                complete_document_id=complete_document_id,
+            )
+            .first()
         )
 
-        try:
-            with log_timed_operation("CompletedDocumentPositionService.associate", rid):
-                position = sess.query(Position).filter(Position.id == position_id).first()
-                doc = (
-                    sess.query(CompleteDocument)
-                    .filter(CompleteDocument.id == complete_document_id)
-                    .first()
-                )
+        if existing:
+            debug_id(
+                f"Association already exists id={existing.id}",
+                request_id,
+            )
+            return existing
 
-                if not position:
-                    warning_id(f"Position id={position_id} not found", rid)
-                    return None
-                if not doc:
-                    warning_id(f"CompleteDocument id={complete_document_id} not found", rid)
-                    return None
+        assoc = CompletedDocumentPositionAssociation(
+            position_id=position_id,
+            complete_document_id=complete_document_id,
+        )
 
-                assoc = CompletedDocumentPositionAssociation.associate(
-                    session=sess,
-                    position=position,
-                    complete_document=doc,
-                )
-                debug_id(f"Association id={assoc.id} created/reused", rid)
-                return assoc
+        session.add(assoc)
+        session.flush()
 
-        except SQLAlchemyError as e:
-            error_id(f"Error in CompletedDocumentPositionService.associate: {e}", rid, exc_info=True)
-            if created_here:
-                sess.rollback()
-            return None
-        finally:
-            if created_here:
-                sess.close()
+        info_id(
+            f"Association staged document={complete_document_id}, "
+            f"position={position_id}",
+            request_id,
+        )
 
-    # ---------------------------------------------------------
-    # Queries
-    # ---------------------------------------------------------
+        return assoc
+
+    # =========================================================
+    # BULK ASSOCIATE (Optimized)
+    # =========================================================
+
+    @with_request_id
+    def bulk_associate(
+        self,
+        session: Session,
+        *,
+        position_id: int,
+        document_ids: List[int],
+        request_id: Optional[str] = None,
+    ) -> List[CompletedDocumentPositionAssociation]:
+
+        if not session:
+            raise RuntimeError("Session required for bulk_associate")
+
+        if not document_ids:
+            return []
+
+        created = []
+
+        for doc_id in document_ids:
+            assoc = self.associate(
+                session=session,
+                position_id=position_id,
+                complete_document_id=doc_id,
+                request_id=request_id,
+            )
+            if assoc:
+                created.append(assoc)
+
+        return created
+
+    # =========================================================
+    # REMOVE
+    # =========================================================
+
+    @with_request_id
+    def dissociate(
+        self,
+        session: Session,
+        *,
+        position_id: int,
+        complete_document_id: int,
+        request_id: Optional[str] = None,
+    ) -> bool:
+
+        assoc = (
+            session.query(CompletedDocumentPositionAssociation)
+            .filter_by(
+                position_id=position_id,
+                complete_document_id=complete_document_id,
+            )
+            .first()
+        )
+
+        if not assoc:
+            warning_id(
+                f"No association found document={complete_document_id}, "
+                f"position={position_id}",
+                request_id,
+            )
+            return False
+
+        session.delete(assoc)
+
+        info_id(
+            f"Association staged for removal document={complete_document_id}, "
+            f"position={position_id}",
+            request_id,
+        )
+
+        return True
+
+    # =========================================================
+    # QUERIES
+    # =========================================================
+
     @with_request_id
     def get_documents_for_position(
         self,
+        session: Session,
+        *,
         position_id: int,
-        session: Optional[SASession] = None,
+        request_id: Optional[str] = None,
     ) -> List[CompleteDocument]:
-        """
-        Get all CompleteDocuments linked to a given Position.
-        """
-        rid = get_request_id()
-        sess, created_here = self._get_session(session)
-        debug_id(
-            f"[CompletedDocumentPositionService.get_documents_for_position] position_id={position_id}",
-            rid,
+
+        if not position_id:
+            return []
+
+        stmt = (
+            select(CompleteDocument)
+            .join(
+                CompletedDocumentPositionAssociation,
+                CompleteDocument.id ==
+                CompletedDocumentPositionAssociation.complete_document_id,
+            )
+            .where(
+                CompletedDocumentPositionAssociation.position_id ==
+                position_id
+            )
+            .distinct()
         )
 
-        try:
-            with log_timed_operation(
-                "CompletedDocumentPositionService.get_documents_for_position", rid
-            ):
-                q = (
-                    sess.query(CompleteDocument)
-                    .join(
-                        CompletedDocumentPositionAssociation,
-                        CompleteDocument.id
-                        == CompletedDocumentPositionAssociation.complete_document_id,
-                    )
-                    .filter(CompletedDocumentPositionAssociation.position_id == position_id)
-                    .distinct()
-                )
-                docs = q.all()
-                debug_id(f"Found {len(docs)} documents for position_id={position_id}", rid)
-                return docs
+        results = session.execute(stmt).scalars().all()
 
-        except SQLAlchemyError as e:
-            error_id(f"Error in get_documents_for_position: {e}", rid, exc_info=True)
-            return []
-        finally:
-            if created_here:
-                sess.close()
+        debug_id(
+            f"Found {len(results)} documents for position_id={position_id}",
+            request_id,
+        )
+
+        return results
+
+    # ---------------------------------------------------------
 
     @with_request_id
     def get_positions_for_document(
-            self,
-            complete_document_id: int,
-            session: Session,
-            request_id: str | None = None,
+        self,
+        session: Session,
+        *,
+        complete_document_id: int,
+        request_id: Optional[str] = None,
     ) -> List[Position]:
-        """
-        Return Position ORM objects linked to a CompleteDocument.
-
-        HARD RULE:
-        - Uses caller-provided session ONLY
-        - Never opens its own session
-        - No ORM traversal
-        """
 
         if not complete_document_id:
             return []
@@ -166,73 +226,55 @@ class CompletedDocumentPositionService:
             select(Position)
             .join(
                 CompletedDocumentPositionAssociation,
-                CompletedDocumentPositionAssociation.position_id == Position.id,
+                CompletedDocumentPositionAssociation.position_id ==
+                Position.id,
             )
             .where(
-                CompletedDocumentPositionAssociation.complete_document_id
-                == complete_document_id
+                CompletedDocumentPositionAssociation.complete_document_id ==
+                complete_document_id
             )
+            .distinct()
         )
 
-        return session.execute(stmt).scalars().all()
+        results = session.execute(stmt).scalars().all()
+
+        debug_id(
+            f"Found {len(results)} positions for "
+            f"document_id={complete_document_id}",
+            request_id,
+        )
+
+        return results
 
     # ---------------------------------------------------------
-    # LIGHTWEIGHT HELPERS (USED BY CHUNK RELATIONSHIP MAP)
-    # ---------------------------------------------------------
+
     @with_request_id
     def get_position_ids_for_document(
         self,
+        session: Session,
+        *,
         complete_document_id: int,
-        session: Optional[SASession] = None,
+        request_id: Optional[str] = None,
     ) -> List[int]:
-        """
-        Return position IDs associated with a complete document.
-
-        Lightweight helper for chunk relationship graphs.
-        """
-        rid = get_request_id()
 
         if not complete_document_id:
-            debug_id(
-                "[CompletedDocumentPositionService.get_position_ids_for_document] "
-                "No complete_document_id provided",
-                rid,
-            )
             return []
 
-        sess, created_here = self._get_session(session)
-
-        try:
-            with log_timed_operation(
-                "CompletedDocumentPositionService.get_position_ids_for_document", rid
-            ):
-                rows = (
-                    sess.query(CompletedDocumentPositionAssociation.position_id)
-                    .filter(
-                        CompletedDocumentPositionAssociation.complete_document_id
-                        == complete_document_id
-                    )
-                    .distinct()
-                    .all()
-                )
-
-                position_ids = [r[0] for r in rows]
-
-                debug_id(
-                    f"Found {len(position_ids)} positions for "
-                    f"complete_document_id={complete_document_id}",
-                    rid,
-                )
-
-                return position_ids
-
-        except Exception as e:
-            error_id(
-                f"Error getting position IDs for document {complete_document_id}: {e}",
-                rid,
-                exc_info=True,
+        stmt = (
+            select(CompletedDocumentPositionAssociation.position_id)
+            .where(
+                CompletedDocumentPositionAssociation.complete_document_id ==
+                complete_document_id
             )
-            return []
-        finally:
-            if created_here:
-                sess.close()
+            .distinct()
+        )
+
+        results = session.execute(stmt).scalars().all()
+
+        debug_id(
+            f"Found {len(results)} position IDs for "
+            f"document_id={complete_document_id}",
+            request_id,
+        )
+
+        return results
