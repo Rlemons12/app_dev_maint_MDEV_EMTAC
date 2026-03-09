@@ -419,3 +419,23 @@ class ImageCompletedDocumentAssociationService:
                     continue
 
         return None
+
+    @with_request_id
+    def get_by_complete_document(
+            self,
+            session: Session,
+            *,
+            complete_document_id: int,
+            request_id: Optional[str] = None,
+    ) -> List[ImageCompletedDocumentAssociation]:
+        assocs = (
+            session.query(ImageCompletedDocumentAssociation)
+            .filter(ImageCompletedDocumentAssociation.complete_document_id == complete_document_id)
+            .order_by(ImageCompletedDocumentAssociation.id.asc())
+            .all()
+        )
+        debug_id(
+            f"[ImgAssocService] get_by_complete_document id={complete_document_id} found={len(assocs)}",
+            request_id,
+        )
+        return assocs

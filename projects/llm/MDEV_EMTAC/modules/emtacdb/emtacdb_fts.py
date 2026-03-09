@@ -5590,43 +5590,6 @@ class DocumentEmbedding(Base):
 
         return []
 
-    def _get_full_embedding_from_db(self):
-        """
-        Get the full embedding data directly from the database when the cached version is truncated.
-        """
-        try:
-            from modules.configuration.config_env import DatabaseConfig
-
-            db_config = get_db_config()
-            with db_config.main_session() as session:
-                # Query the full embedding vector directly
-                result = session.execute(
-                    text("SELECT embedding_vector FROM document_embedding WHERE id = :embedding_id"),
-                    {"embedding_id": self.id}
-                ).fetchone()
-
-                if result and result[0] is not None:
-                    full_vector_str = str(result[0]).strip()
-
-                    # Parse the full vector string
-                    if full_vector_str.startswith('[') and full_vector_str.endswith(']'):
-                        vector_str = full_vector_str[1:-1]  # Remove brackets
-                        embedding_list = [float(x.strip()) for x in vector_str.split(',') if x.strip()]
-                    else:
-                        # Handle space-separated format
-                        import re
-                        values = re.split(r'\s+', full_vector_str.replace('\\n', '\n').replace('\\t', ' '))
-                        embedding_list = [float(x) for x in values if
-                                          x.strip() and x.strip() != '...' and x.strip() != '']
-
-                    logger.debug(f"Retrieved full embedding from DB: {len(embedding_list)} dimensions")
-                    return embedding_list
-
-        except Exception as e:
-            logger.error(f"Error retrieving full embedding from database: {e}")
-
-        return []
-
     @embedding_as_list.setter
     def embedding_as_list(self, value: List[float]):
         """
@@ -5981,7 +5944,7 @@ class DocumentEmbedding(Base):
         logger.info(f"Successfully created {successful_indexes} indexes for document_embedding table")
         return successful_indexes > 0
 
-
+    @classmethod
     @with_request_id
     def _find_most_relevant_document_chunk(cls, question, model_name=None, session=None, request_id=None):
         """

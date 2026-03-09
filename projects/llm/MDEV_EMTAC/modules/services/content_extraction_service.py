@@ -1,3 +1,4 @@
+import csv
 import os
 import unicodedata
 from typing import Optional, Dict, Any, List
@@ -51,6 +52,12 @@ class ContentExtractionService:
                 "scanned": False,
                 "pages": None,
             }
+
+        if ext == ".csv":
+            return self._extract_csv(file_path, request_id=request_id)
+
+        if ext in (".xlsx", ".xls"):
+            return self._extract_excel(file_path, request_id=request_id)
 
         warning_id(
             f"[ContentExtractionService] Unsupported file type: {ext}",
@@ -119,7 +126,7 @@ class ContentExtractionService:
                     "source_type": "pdf",
                     "method": "vlm_structured",
                     "scanned": True,
-                    "pages": pages,   # 🔥 NEW structured multimodal output
+                    "pages": pages,
                 }
 
             except Exception as e:
@@ -173,6 +180,119 @@ class ContentExtractionService:
     def _extract_txt(self, path: str) -> str:
         with open(path, "r", encoding="utf-8") as f:
             return f.read().strip()
+
+    # ------------------------------------------------
+    # CSV Extraction
+    # ------------------------------------------------
+
+    def _extract_csv(self, path: str, request_id=None) -> Optional[Dict[str, Any]]:
+        try:
+            with open(path, "r", encoding="utf-8", errors="replace") as f:
+                reader = csv.reader(f)
+                rows = [row for row in reader if any(cell.strip() for cell in row)]
+
+            if not rows:
+                warning_id(
+                    f"[ContentExtractionService] CSV has no data rows: {path}",
+                    request_id,
+                )
+                return None
+
+            headers = rows[0]
+            chunks = []
+
+            for row in rows[1:]:
+                pairs = [
+                    f"{h.strip()}: {v.strip()}"
+                    for h, v in zip(headers, row)
+                    if h.strip() and v.strip()
+                ]
+                if pairs:
+                    chunks.append(" | ".join(pairs))
+
+            if not chunks:
+                warning_id(
+                    f"[ContentExtractionService] CSV produced no text chunks: {path}",
+                    request_id,
+                )
+                return None
+
+            text = "\n".join(chunks)
+
+            debug_id(
+                f"[ContentExtractionService] CSV extraction | rows={len(chunks)} | chars={len(text)}",
+                request_id,
+            )
+
+            return {
+                "text": text,
+                "pdf_path": None,
+                "source_type": "csv",
+                "method": "native_csv",
+                "scanned": False,
+                "pages": None,
+            }
+
+        except Exception as e:
+            error_id(f"[ContentExtractionService] CSV extraction failed: {e}", request_id)
+            return None
+
+    # ------------------------------------------------
+    # Excel Extraction
+    # ------------------------------------------------
+
+    def _extract_excel(self, path: str, request_id=None) -> Optional[Dict[str, Any]]:
+        try:
+            import openpyxl
+
+            wb = openpyxl.load_workbook(path, data_only=True)
+            all_chunks = []
+
+            for sheet_name in wb.sheetnames:
+                ws = wb[sheet_name]
+                rows = list(ws.iter_rows(values_only=True))
+
+                non_empty = [r for r in rows if any(c is not None for c in r)]
+                if not non_empty:
+                    continue
+
+                headers = [str(c).strip() if c is not None else "" for c in non_empty[0]]
+
+                for row in non_empty[1:]:
+                    pairs = [
+                        f"{h}: {str(v).strip()}"
+                        for h, v in zip(headers, row)
+                        if h and v is not None and str(v).strip()
+                    ]
+                    if pairs:
+                        all_chunks.append(f"[{sheet_name}] " + " | ".join(pairs))
+
+            if not all_chunks:
+                warning_id(
+                    f"[ContentExtractionService] Excel produced no text chunks: {path}",
+                    request_id,
+                )
+                return None
+
+            text = "\n".join(all_chunks)
+
+            debug_id(
+                f"[ContentExtractionService] Excel extraction | sheets={len(wb.sheetnames)} | rows={len(all_chunks)} | chars={len(text)}",
+                request_id,
+            )
+
+            return {
+                "text": text,
+                "pdf_path": None,
+                "source_type": "xlsx",
+                "method": "native_excel",
+                "scanned": False,
+                "pages": None,
+            }
+
+        except Exception as e:
+            error_id(f"[ContentExtractionService] Excel extraction failed: {e}", request_id)
+            return None
 
     # ------------------------------------------------
     # Scanned Detection Heuristic
