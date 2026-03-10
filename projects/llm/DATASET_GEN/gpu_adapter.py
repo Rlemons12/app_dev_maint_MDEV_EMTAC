@@ -14,7 +14,7 @@ class GPUServiceError(RuntimeError):
 
 class GPUAdapter:
     """
-    Thin client adapter between local applications and the EMTAC GPU Service.
+    Thin client adapter between local coordinators and the EMTAC GPU Service.
 
     Responsibilities:
     - NO torch / cuda
