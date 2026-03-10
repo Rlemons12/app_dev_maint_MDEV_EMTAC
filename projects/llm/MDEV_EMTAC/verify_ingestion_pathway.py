@@ -45,7 +45,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from sqlalchemy import text
 
 from modules.configuration.config_env import get_db_config
-from modules.applications.file_processing_coordinator import FileProcessingCoordinator
+from modules.coordinators.file_processing_coordinator import FileProcessingCoordinator
 
 # Services — for inspect phase
 from modules.services.document_service import DocumentService
