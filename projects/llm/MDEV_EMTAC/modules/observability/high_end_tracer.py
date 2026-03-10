@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import sys
 import json
 import uuid
 import threading
@@ -9,7 +8,7 @@ import traceback
 import contextvars
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional, Callable
+from typing import Any, Dict, Optional, Callable, List
 
 from modules.observability.models import TraceSpan, TraceEvent
 
@@ -55,7 +54,7 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _safe_json_size(obj: Any, *, max_bytes: int) -> Dict[str, Any]:
+def _safe_json_size(obj: Any, *, max_bytes: int) -> Dict[str, Any] | List[Any] | Any:
     try:
         raw = json.dumps(obj, default=str)
         if len(raw.encode("utf-8")) <= max_bytes:
@@ -102,11 +101,16 @@ class HighEndTracer:
     """
     Pure tracing engine.
 
+    Responsibilities:
     - Span lifecycle
     - Event handling
     - Deep profiling
     - Context management
-    - No DB transactions
+
+    Design:
+    - Primary mode is in-memory buffering using contextvars
+    - Optional attached SQLAlchemy session is supported as a best-effort fast path
+    - Observability must never break business logic
     """
 
     def __init__(
@@ -124,10 +128,26 @@ class HighEndTracer:
     # Context Management
     # --------------------------------------------------
 
+    def clear_trace_context(self):
+        """
+        Best-effort cleanup for trace-local contextvars.
+
+        Use this at the end of a traced entrypoint so stale span/session state
+        does not leak into later work.
+        """
+        ctx_trace_id.set(None)
+        ctx_request_id.set(None)
+        ctx_stack.set(tuple())
+        ctx_span_map.set(None)
+
     def new_trace_context(self, trace_id: uuid.UUID):
         ctx_trace_id.set(trace_id)
         ctx_stack.set(tuple())
-        ctx_span_map.set({"_span_count": 0})
+        ctx_span_map.set({
+            "_span_count": 0,
+            "_db_session": None,
+            "_events": [],
+        })
 
     def set_request_id(self, request_id: Optional[str]):
         ctx_request_id.set(request_id)
@@ -139,9 +159,60 @@ class HighEndTracer:
         return ctx_trace_id.get()
 
     def attach_session(self, session):
+        """
+        Optional compatibility hook.
+
+        The tracer no longer requires a DB session for normal operation, but
+        callers may still attach one if they want best-effort immediate staging.
+        """
         span_map = ctx_span_map.get()
         if span_map is not None:
             span_map["_db_session"] = session
+
+    # --------------------------------------------------
+    # Buffer Export Helpers
+    # --------------------------------------------------
+
+    def get_span_map(self) -> Optional[Dict[str, Any]]:
+        return ctx_span_map.get()
+
+    def get_buffered_spans(self) -> List[TraceSpan]:
+        span_map = ctx_span_map.get()
+        if not span_map:
+            return []
+
+        return [
+            value
+            for key, value in span_map.items()
+            if not str(key).startswith("_") and isinstance(value, TraceSpan)
+        ]
+
+    def get_buffered_events(self) -> List[TraceEvent]:
+        span_map = ctx_span_map.get()
+        if not span_map:
+            return []
+
+        return list(span_map.get("_events", []))
+
+    def drain_trace_buffers(self) -> Dict[str, List[Any]]:
+        """
+        Returns buffered spans/events as plain lists and clears the event buffer.
+
+        This is useful if you want the decorator or a persistence layer to flush
+        spans/events in a fresh short-lived DB session after business logic.
+        """
+        span_map = ctx_span_map.get()
+        if not span_map:
+            return {"spans": [], "events": []}
+
+        spans = self.get_buffered_spans()
+        events = list(span_map.get("_events", []))
+        span_map["_events"] = []
+
+        return {
+            "spans": spans,
+            "events": events,
+        }
 
     # --------------------------------------------------
     # Span Context Manager
@@ -173,6 +244,7 @@ class HighEndTracer:
         span_map = ctx_span_map.get()
         stack = list(ctx_stack.get())
 
+        # If no active trace context exists, fail open and return synthetic span ID
         if not span_map:
             return uuid.uuid4()
 
@@ -188,6 +260,7 @@ class HighEndTracer:
         stack.append(span_id)
         ctx_stack.set(tuple(stack))
 
+        meta = meta or {}
         meta_bounded = _safe_json_size(meta, max_bytes=self.config.max_meta_bytes)
 
         span = TraceSpan(
@@ -195,12 +268,10 @@ class HighEndTracer:
             trace_id=trace_id,
             parent_span_id=parent_id,
             name=name,
-
             qualified_name=meta.get("qualified_name"),
             module_name=meta.get("module_name"),
             file_path=meta.get("file_path"),
             line_number=meta.get("line_number"),
-
             metadata_json=meta_bounded,
             depth=len(stack) - 1,
             started_at=utcnow(),
@@ -213,9 +284,14 @@ class HighEndTracer:
         span_map[span_id] = span
         span_map["_span_count"] += 1
 
+        # Optional immediate staging if a caller attached a live session
         session = span_map.get("_db_session")
-        if session:
-            session.add(span)
+        if session is not None:
+            try:
+                session.add(span)
+            except Exception:
+                # Tracing must never break business logic
+                pass
 
         return span_id
 
@@ -226,24 +302,19 @@ class HighEndTracer:
 
         span = span_map.get(span_id)
         if not span:
+            self._safe_stack_remove(span_id)
             return
 
         try:
-            # --------------------------------------------------
-            # End timing
-            # --------------------------------------------------
             span.ended_at = utcnow()
 
             if span.started_at:
                 span.duration_ms = (
-                                           span.ended_at - span.started_at
-                                   ).total_seconds() * 1000.0
+                    span.ended_at - span.started_at
+                ).total_seconds() * 1000.0
             else:
                 span.duration_ms = 0.0
 
-            # --------------------------------------------------
-            # Status handling
-            # --------------------------------------------------
             if exc:
                 span.status = "failed"
 
@@ -257,58 +328,47 @@ class HighEndTracer:
             else:
                 span.status = "completed"
 
-            # --------------------------------------------------
-            # Automatic Performance Alert (Slow Span Detection)
-            # --------------------------------------------------
+            # Automatic slow-span event
             try:
-                threshold_ms = 500  # Adjust threshold as needed
-
-                if (
-                        span.duration_ms is not None
-                        and span.duration_ms > threshold_ms
-                ):
-                    session = span_map.get("_db_session")
-
-                    if session:
-                        from modules.observability.models import TraceAlert
-
-                        alert = TraceAlert(
-                            span_id=span.id,
-                            metric_type="duration_ms",
-                            threshold_value=threshold_ms,
-                            actual_value=span.duration_ms,
-                            severity="warning",
-                        )
-
-                        session.add(alert)
-
+                threshold_ms = 500.0
+                if span.duration_ms is not None and span.duration_ms > threshold_ms:
+                    self.event(
+                        "slow_span",
+                        {
+                            "span_id": str(span.id),
+                            "metric_type": "duration_ms",
+                            "threshold_value": threshold_ms,
+                            "actual_value": span.duration_ms,
+                            "severity": "warning",
+                            "span_name": span.name,
+                        },
+                    )
             except Exception:
-                # Alerts must never break tracing
                 pass
 
         except Exception:
             # Span closing must never break production code
             pass
 
-        # --------------------------------------------------
-        # Safe stack cleanup
-        # --------------------------------------------------
+        self._safe_stack_remove(span_id)
+
+    def _safe_stack_remove(self, span_id) -> None:
         try:
             stack = list(ctx_stack.get())
 
             if stack and stack[-1] == span_id:
                 stack.pop()
                 ctx_stack.set(tuple(stack))
-            else:
-                # Defensive: remove if it exists somewhere deeper
-                if span_id in stack:
-                    stack.remove(span_id)
-                    ctx_stack.set(tuple(stack))
+                return
+
+            if span_id in stack:
+                stack.remove(span_id)
+                ctx_stack.set(tuple(stack))
 
         except Exception:
             pass
 
-    def force_close_open_spans(self, status="completed"):
+    def force_close_open_spans(self, status: str = "completed"):
         span_map = ctx_span_map.get()
         if not span_map:
             return
@@ -318,13 +378,16 @@ class HighEndTracer:
             sid = stack.pop()
             span = span_map.get(sid)
             if span and not span.ended_at:
-                span.ended_at = utcnow()
-                span.duration_ms = (
-                    span.ended_at - span.started_at
-                ).total_seconds() * 1000.0
-                span.status = status
+                try:
+                    span.ended_at = utcnow()
+                    span.duration_ms = (
+                        span.ended_at - span.started_at
+                    ).total_seconds() * 1000.0 if span.started_at else 0.0
+                    span.status = status
+                except Exception:
+                    pass
 
-        ctx_stack.set(tuple(stack))
+        ctx_stack.set(tuple())
 
     # --------------------------------------------------
     # Event Handling (Safe)
@@ -339,10 +402,6 @@ class HighEndTracer:
                 return
 
             current_span_id = stack[-1]
-            session = span_map.get("_db_session")
-
-            if not session:
-                return
 
             event = TraceEvent(
                 span_id=current_span_id,
@@ -353,7 +412,16 @@ class HighEndTracer:
                 ),
             )
 
-            session.add(event)
+            # Always buffer in-memory
+            span_map.setdefault("_events", []).append(event)
+
+            # Optional immediate staging if a caller attached a live session
+            session = span_map.get("_db_session")
+            if session is not None:
+                try:
+                    session.add(event)
+                except Exception:
+                    pass
 
         except Exception:
             # Observability must NEVER break business logic
@@ -369,32 +437,44 @@ class HighEndTracer:
         project_root = self.project_root
 
         def profiler(frame, event, arg):
-            module_name = frame.f_globals.get("__name__", "")
-            func_name = frame.f_code.co_name
+            try:
+                module_name = frame.f_globals.get("__name__", "")
+                func_name = frame.f_code.co_name
 
-            if not module_name.startswith(allowed):
-                return profiler
-            if func_name in ignored:
-                return profiler
+                if not module_name.startswith(allowed):
+                    return profiler
 
-            if event == "call":
-                filename = frame.f_code.co_filename
-                line_no = frame.f_lineno
-                rel_path = _safe_relpath(filename, project_root)
+                if func_name in ignored:
+                    return profiler
 
-                meta = {
-                    "module_name": module_name,
-                    "file_path": rel_path,
-                    "line_number": line_no,
-                    "qualified_name": f"{module_name}.{func_name}",
-                }
+                if event == "call":
+                    filename = frame.f_code.co_filename
+                    line_no = frame.f_lineno
+                    rel_path = _safe_relpath(filename, project_root)
 
-                self._start_span(func_name, meta)
+                    meta = {
+                        "module_name": module_name,
+                        "file_path": rel_path,
+                        "line_number": line_no,
+                        "qualified_name": f"{module_name}.{func_name}",
+                    }
 
-            elif event == "return":
-                stack = list(ctx_stack.get())
-                if stack:
-                    self._end_span(stack[-1], None, None, None)
+                    self._start_span(func_name, meta)
+
+                elif event == "return":
+                    stack = list(ctx_stack.get())
+                    if stack:
+                        self._end_span(stack[-1], None, None, None)
+
+                elif event == "exception":
+                    stack = list(ctx_stack.get())
+                    if stack:
+                        exc_type, exc, tb = arg
+                        self._end_span(stack[-1], exc_type, exc, tb)
+
+            except Exception:
+                # Profiling must never break application execution
+                pass
 
             return profiler
 
