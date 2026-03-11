@@ -8,11 +8,11 @@ from modules.configuration.log_config import (
     error_id,
 )
 
-from modules.applications.chat_coordinator import ChatCoordinator
-from modules.applications.feedback_coordinator import FeedbackCoordinator
-from modules.applications.health_coordinator import HealthCoordinator
-from modules.applications.analytics_coordinator import AnalyticsCoordinator
-from modules.applications.dashboard_coordinator import DashboardCoordinator
+from modules.coordinators.chat_coordinator import ChatCoordinator
+from modules.coordinators.feedback_coordinator import FeedbackCoordinator
+from modules.coordinators.health_coordinator import HealthCoordinator
+from modules.coordinators.analytics_coordinator import AnalyticsCoordinator
+from modules.coordinators.dashboard_coordinator import DashboardCoordinator
 from modules.observability.models import TraceSession, TraceSpan
 from modules.decorators import trace_entrypoint, integration_trace
 
