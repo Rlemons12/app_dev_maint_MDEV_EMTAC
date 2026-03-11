@@ -100,10 +100,14 @@ class NoImageModel(BaseImageModelHandler):
 class CLIPModelHandler(BaseImageModelHandler):
     """
     Clean, corrected, and unified CLIP model handler.
-    - Removes ALL duplicated _load_model() logic
+
     - Loads CLIP strictly offline using MODEL_PATH_CLIP
-    - Provides consistent caching
-    - Maintains pgvector support
+    - Supports local Hugging Face folders with:
+        * model.safetensors
+        * or pytorch_model.bin
+    - Uses cache to avoid repeated reloads
+    - Retries on CPU if initial CUDA load fails
+    - Returns list embeddings for pgvector compatibility
     """
 
     _model_cache = {}
@@ -111,14 +115,19 @@ class CLIPModelHandler(BaseImageModelHandler):
 
     def __init__(self):
         load_dotenv()
+
         self.model_name = "CLIPModelHandler"
-        self.clip_model_dir = os.getenv("MODEL_PATH_CLIP")
+        self.clip_model_dir = os.getenv("MODEL_PATH_CLIP") or os.getenv("MODEL_CLIP_DIR")
 
         if not self.clip_model_dir:
-            raise RuntimeError("MODEL_PATH_CLIP not set in .env")
+            raise RuntimeError("MODEL_PATH_CLIP or MODEL_CLIP_DIR not set in .env")
 
-        if not os.path.exists(self.clip_model_dir):
-            raise RuntimeError(f"MODEL_PATH_CLIP directory does not exist: {self.clip_model_dir}")
+        if not os.path.isdir(self.clip_model_dir):
+            raise RuntimeError(
+                f"CLIP model directory does not exist: {self.clip_model_dir}"
+            )
+
+        self._validate_model_dir()
 
         self.model = None
         self.processor = None
@@ -130,14 +139,42 @@ class CLIPModelHandler(BaseImageModelHandler):
         self._load_model()
 
     # -------------------------------------------------------------
-    # UNIFIED MODEL LOADER  ✔ Only one version
+    # VALIDATE LOCAL MODEL DIRECTORY
+    # -------------------------------------------------------------
+    def _validate_model_dir(self):
+        required_files = [
+            "config.json",
+            "preprocessor_config.json",
+        ]
+
+        missing = [
+            name for name in required_files
+            if not os.path.exists(os.path.join(self.clip_model_dir, name))
+        ]
+        if missing:
+            raise RuntimeError(
+                f"Offline CLIP model missing required files: {', '.join(missing)}"
+            )
+
+        has_weights = (
+            os.path.exists(os.path.join(self.clip_model_dir, "model.safetensors"))
+            or os.path.exists(os.path.join(self.clip_model_dir, "pytorch_model.bin"))
+        )
+
+        if not has_weights:
+            raise RuntimeError(
+                "Offline CLIP model missing weights file. "
+                "Expected 'model.safetensors' or 'pytorch_model.bin'."
+            )
+
+    # -------------------------------------------------------------
+    # UNIFIED MODEL LOADER
     # -------------------------------------------------------------
     def _load_model(self):
-        cache_key = f"{self.clip_model_dir}_{self.device}"
+        cache_key = self.clip_model_dir
 
-        # Return cached model instantly
         if cache_key in self._model_cache:
-            logger.info("[CLIP] Loaded from cache (instant)")
+            logger.info("[CLIP] Loaded from cache")
             self.model = self._model_cache[cache_key]
             self.processor = self._processor_cache[cache_key]
             return
@@ -146,27 +183,52 @@ class CLIPModelHandler(BaseImageModelHandler):
         start = time.time()
 
         try:
-            self.model = CLIPModel.from_pretrained(
+            # Load processor first
+            processor = CLIPProcessor.from_pretrained(
                 self.clip_model_dir,
-                local_files_only=True
-            ).to(self.device)
-
-            self.processor = CLIPProcessor.from_pretrained(
-                self.clip_model_dir,
-                local_files_only=True
+                local_files_only=True,
             )
+
+            # First try normal device path
+            try:
+                model = CLIPModel.from_pretrained(
+                    self.clip_model_dir,
+                    local_files_only=True,
+                )
+                model = model.to(self.device)
+
+            except Exception as first_error:
+                logger.warning(f"[CLIP] First model load attempt failed: {first_error}")
+
+                # If CUDA is available, clear cache and retry on CPU
+                try:
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                        logger.info("[CLIP] CUDA cache cleared after failed load")
+                except Exception:
+                    pass
+
+                logger.info("[CLIP] Retrying CLIP load on CPU")
+                model = CLIPModel.from_pretrained(
+                    self.clip_model_dir,
+                    local_files_only=True,
+                )
+                self.device = torch.device("cpu")
+                model = model.to(self.device)
+
+            self.model = model
+            self.processor = processor
 
         except Exception as e:
-            logger.error(f"[CLIP] FAILED to load offline model: {e}")
+            logger.error(f"[CLIP] FAILED to load offline model from {self.clip_model_dir}: {e}", exc_info=True)
             raise RuntimeError(
-                "Offline CLIP model missing required files (config.json, pytorch_model.bin)"
-            )
+                f"Failed to load offline CLIP model from '{self.clip_model_dir}': {e}"
+            ) from e
 
-        # Cache after successful load
         self._model_cache[cache_key] = self.model
         self._processor_cache[cache_key] = self.processor
 
-        logger.info(f"[CLIP] Model loaded in {time.time() - start:.2f}s")
+        logger.info(f"[CLIP] Model loaded successfully in {time.time() - start:.2f}s on {self.device}")
 
     # -------------------------------------------------------------
     # ALLOWED FILE EXTENSIONS
@@ -178,31 +240,37 @@ class CLIPModelHandler(BaseImageModelHandler):
     # PREPROCESSING
     # -------------------------------------------------------------
     def preprocess_image(self, image):
-        if not self.processor:
+        if self.processor is None:
             raise RuntimeError("CLIP processor not loaded")
 
-        image = image.resize((224, 224))
+        if image.mode != "RGB":
+            image = image.convert("RGB")
+
         inputs = self.processor(images=image, return_tensors="pt", padding=True)
-        return inputs.to(self.device)
+        return {k: v.to(self.device) for k, v in inputs.items()}
 
     # -------------------------------------------------------------
     # EMBEDDING
     # -------------------------------------------------------------
     def get_image_embedding(self, image):
         try:
+            if not self.is_valid_image(image):
+                logger.warning("[CLIP] Invalid image supplied for embedding")
+                return None
+
             inputs = self.preprocess_image(image)
 
             with torch.no_grad():
                 img_features = self.model.get_image_features(**inputs)
                 img_features = img_features / img_features.norm(dim=-1, keepdim=True)
 
-            embedding = img_features.cpu().numpy().flatten().tolist()
+            embedding = img_features.detach().cpu().numpy().flatten().tolist()
 
             logger.debug(f"[CLIP] Embedding generated ({len(embedding)} dims)")
             return embedding
 
         except Exception as e:
-            logger.error(f"[CLIP] Error generating embedding: {e}")
+            logger.error(f"[CLIP] Error generating embedding: {e}", exc_info=True)
             return None
 
     # -------------------------------------------------------------
@@ -211,60 +279,63 @@ class CLIPModelHandler(BaseImageModelHandler):
     def is_valid_image(self, image):
         try:
             w, h = image.size
-            if w < 100 or h < 100:
-                return False
-            if w > 5000 or h > 5000:
+
+            if w < 32 or h < 32:
+                logger.warning(f"[CLIP] Image too small: {w}x{h}")
                 return False
 
-            aspect = w / h
-            return 0.2 <= aspect <= 5.0
+            if w > 10000 or h > 10000:
+                logger.warning(f"[CLIP] Image too large: {w}x{h}")
+                return False
+
+            aspect = w / h if h else 0
+            if not (0.1 <= aspect <= 10.0):
+                logger.warning(f"[CLIP] Invalid image aspect ratio: {aspect}")
+                return False
+
+            return True
 
         except Exception as e:
-            logger.error(f"Image validation failed: {e}")
+            logger.error(f"[CLIP] Image validation failed: {e}", exc_info=True)
             return False
 
     # -------------------------------------------------------------
-    # DB STORAGE (single clean version)
+    # DB STORAGE
     # -------------------------------------------------------------
     def store_image_metadata(self, session, title, description, file_path, embedding, model_name):
         from modules.emtacdb.emtacdb_fts import Image, ImageEmbedding
 
-        # Ensure relative path
         if os.path.isabs(file_path):
             file_path = os.path.relpath(file_path, BASE_DIR)
 
         img = Image(title=title, description=description, file_path=file_path)
         session.add(img)
-        session.commit()
+        session.flush()
 
         try:
-            if isinstance(embedding, list):
-                emb_list = embedding
-            elif hasattr(embedding, "tolist"):
-                emb_list = embedding.tolist()
-            else:
-                emb_list = list(embedding)
+            if embedding is None:
+                logger.warning(f"[CLIP] No embedding generated for {file_path}")
+                return
+
+            if not isinstance(embedding, list):
+                if hasattr(embedding, "tolist"):
+                    embedding = embedding.tolist()
+                else:
+                    embedding = list(embedding)
 
             emb = ImageEmbedding.create_with_pgvector(
                 image_id=img.id,
                 model_name=model_name,
-                embedding=emb_list
+                embedding=embedding,
             )
-
             session.add(emb)
-            session.commit()
+            session.flush()
+
             logger.info(f"[CLIP] Stored pgvector embedding for {file_path}")
 
         except Exception as e:
-            logger.error(f"[CLIP] Failed pgvector store: {e}")
-            # legacy fallback
-            emb = ImageEmbedding.create_with_legacy(
-                image_id=img.id,
-                model_name=model_name,
-                embedding=embedding
-            )
-            session.add(emb)
-            session.commit()
+            logger.error(f"[CLIP] Failed to store pgvector embedding: {e}", exc_info=True)
+            raise
 
     # -------------------------------------------------------------
     # IMAGE COMPARISON
@@ -280,21 +351,22 @@ class CLIPModelHandler(BaseImageModelHandler):
             emb2 = self.get_image_embedding(img2)
 
             if not emb1 or not emb2:
-                return {"similarity": 0, "error": "Embedding failed"}
+                return {"similarity": 0.0, "error": "Embedding failed"}
 
             dot = sum(a * b for a, b in zip(emb1, emb2))
             n1 = math.sqrt(sum(a * a for a in emb1))
             n2 = math.sqrt(sum(b * b for b in emb2))
-            sim = dot / (n1 * n2) if n1 and n2 else 0
+            sim = dot / (n1 * n2) if n1 and n2 else 0.0
 
             return {
                 "similarity": float(sim),
                 "image1": image1_path,
                 "image2": image2_path,
-                "model": self.model_name
+                "model": self.model_name,
             }
 
         except Exception as e:
+            logger.error(f"[CLIP] compare_images failed: {e}", exc_info=True)
             return {"similarity": 0.0, "error": str(e)}
 
     # -------------------------------------------------------------
@@ -303,6 +375,7 @@ class CLIPModelHandler(BaseImageModelHandler):
     def search_similar_images_in_db(self, session, query_image_path, limit=10, similarity_threshold=0.7):
         try:
             query_img = Image.open(query_image_path).convert("RGB")
+
             if not self.is_valid_image(query_img):
                 return []
 
@@ -317,11 +390,11 @@ class CLIPModelHandler(BaseImageModelHandler):
                 query_embedding=emb,
                 model_name=self.model_name,
                 limit=limit,
-                similarity_threshold=similarity_threshold
+                similarity_threshold=similarity_threshold,
             )
 
         except Exception as e:
-            logger.error(f"[CLIP] search_similar_images_in_db failed: {e}")
+            logger.error(f"[CLIP] search_similar_images_in_db failed: {e}", exc_info=True)
             return []
 
     # -------------------------------------------------------------
@@ -340,7 +413,7 @@ class CLIPModelHandler(BaseImageModelHandler):
         }
 
     # -------------------------------------------------------------
-    # PRELOAD FOR STARTUP
+    # PRELOAD
     # -------------------------------------------------------------
     @classmethod
     def preload_model(cls):
@@ -351,6 +424,6 @@ class CLIPModelHandler(BaseImageModelHandler):
             logger.info(f"[CLIP] Preloaded in {time.time() - start:.2f}s")
             return True
         except Exception as e:
-            logger.error(f"[CLIP] Preload failed: {e}")
+            logger.error(f"[CLIP] Preload failed: {e}", exc_info=True)
             return False
 
