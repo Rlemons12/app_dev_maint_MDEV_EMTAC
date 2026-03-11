@@ -80,10 +80,10 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
     # =========================================================
     @with_request_id
     def process_upload(
-        self,
-        files: List[Any],
-        metadata: Dict[str, Any],
-        request_id: Optional[str] = None,
+            self,
+            files: List[Any],
+            metadata: Dict[str, Any],
+            request_id: Optional[str] = None,
     ) -> Dict[str, Any]:
 
         if not files:
@@ -101,6 +101,7 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
         total_images = 0
         deduped = 0
         document_ids: List[int] = []
+        position_id: Optional[int] = None
 
         # ---------------------------------------
         # PHASE 1 — FILE SAVE + EXTRACTION (NO DB)
@@ -109,43 +110,91 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
 
         for file in valid_files:
             original_filename = getattr(file, "filename", None) or str(file)
+            conversion = None
 
-            stored_path = self.file_storage_service.save(file)
+            try:
+                stored_path = self.file_storage_service.save(file)
 
-            conversion = self.conversion_service.ensure_pdf(stored_path)
-            effective_path = conversion.pdf_path or stored_path
-
-            content_info = self.content_extraction_service.extract(
-                effective_path,
-                request_id=request_id,
-            )
-
-            if not content_info or not content_info.get("text"):
-                warning_id(
-                    f"[CompleteDocumentOrchestrator] No extractable text; skipping | file={effective_path}",
-                    request_id,
+                conversion = self.conversion_service.ensure_pdf(
+                    stored_path,
+                    request_id=request_id,
                 )
+                effective_path = conversion.pdf_path or stored_path
+
+                content_info = self.content_extraction_service.extract(
+                    effective_path,
+                    request_id=request_id,
+                )
+
+                if not content_info or not content_info.get("text"):
+                    warning_id(
+                        f"[CompleteDocumentOrchestrator] No extractable text; skipping | file={effective_path}",
+                        request_id,
+                    )
+
+                    if conversion and conversion.temp_dir:
+                        self._safe_cleanup_temp_dir(
+                            conversion.temp_dir,
+                            request_id=request_id,
+                        )
+                    continue
+
+                filename = os.path.basename(original_filename)
+
+                title = (
+                    metadata.get("title")
+                    if metadata and metadata.get("title")
+                    else self._clean_filename(filename)
+                )
+
+                prepared_docs.append(
+                    {
+                        "title": title,
+                        "file_path": effective_path,
+                        "text": content_info.get("text") or "",
+                        "pages": content_info.get("pages") or [],
+                        "conversion": conversion,
+                        "original_filename": original_filename,
+                        "source_type": content_info.get("source_type"),
+                        "method": content_info.get("method"),
+                        "scanned": bool(content_info.get("scanned", False)),
+                    }
+                )
+
+            except Exception as e:
+                error_id(
+                    f"[CompleteDocumentOrchestrator] Preparation failed for '{original_filename}': {e}",
+                    request_id,
+                    exc_info=True,
+                )
+
+                if conversion and conversion.temp_dir:
+                    self._safe_cleanup_temp_dir(
+                        conversion.temp_dir,
+                        request_id=request_id,
+                    )
                 continue
 
-            filename = os.path.basename(original_filename)
-
-            title = (
-                metadata.get("title")
-                if metadata and metadata.get("title")
-                else self._clean_filename(filename)
+        # ---------------------------------------
+        # EARLY EXIT — ALL FILES SKIPPED
+        # ---------------------------------------
+        if not prepared_docs:
+            warning_id(
+                "[CompleteDocumentOrchestrator] No documents prepared for persistence; all files skipped",
+                request_id,
             )
-
-            prepared_docs.append(
-                {
-                    "title": title,
-                    "file_path": effective_path,
-                    "text": content_info.get("text") or "",
-                    # May be present if your extraction pipeline returns structured pages
-                    "pages": content_info.get("pages"),
-                    "conversion": conversion,
-                    "original_filename": original_filename,
-                }
-            )
+            return {
+                "status": "skipped",
+                "message": "No extractable text found for uploaded file(s)",
+                "documents_processed": 0,
+                "document_ids": [],
+                "deduped": 0,
+                "chunks_created": 0,
+                "embeddings_created": 0,
+                "images_extracted": 0,
+                "position_id": None,
+                "skip_reason": "unsupported_or_no_extractable_text",
+            }
 
         # ---------------------------------------
         # PHASE 2 — DATABASE PERSISTENCE (TXN)
@@ -161,157 +210,217 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                 title = doc_data["title"]
                 effective_path = doc_data["file_path"]
                 extracted_text = doc_data["text"]
-                structured_pages = doc_data.get("pages")
+                structured_pages = doc_data.get("pages") or []
                 conversion = doc_data["conversion"]
 
-                # Idempotency
-                signature = self.idempotency_service.compute_signature(
-                    file_path=effective_path
-                )
+                try:
+                    signature = self.idempotency_service.compute_signature(
+                        file_path=effective_path
+                    )
 
-                existing_id = self.idempotency_service.find_existing_complete_document_id(
-                    session=session,
-                    file_sha256=signature.get("file_sha256"),
-                )
+                    existing_id = self.idempotency_service.find_existing_complete_document_id(
+                        session=session,
+                        file_sha256=signature.get("file_sha256"),
+                    )
 
-                if existing_id:
-                    document_ids.append(existing_id)
-                    deduped += 1
-                    info_id(
-                        f"[CompleteDocumentOrchestrator] Deduped upload -> existing complete_document_id={existing_id}",
+                    if existing_id:
+                        document_ids.append(existing_id)
+                        deduped += 1
+
+                        info_id(
+                            f"[CompleteDocumentOrchestrator] Deduped upload -> existing complete_document_id={existing_id}",
+                            request_id,
+                        )
+
+                        if conversion and conversion.temp_dir:
+                            self._safe_cleanup_temp_dir(
+                                conversion.temp_dir,
+                                request_id=request_id,
+                            )
+                        continue
+
+                    doc = self.complete_document_service.upsert(
+                        session=session,
+                        title=title,
+                        file_path=effective_path,
+                        content=extracted_text,
+                        request_id=request_id,
+                    )
+
+                    if position_id:
+                        self.completed_document_position_service.associate(
+                            session=session,
+                            position_id=position_id,
+                            complete_document_id=doc.id,
+                        )
+
+                    document_ids.append(doc.id)
+
+                    # -------------------------
+                    # CHUNKING + EMBEDDINGS
+                    # -------------------------
+                    debug_id(
+                        f"[CompleteDocumentOrchestrator] structured_pages count={len(structured_pages)} "
+                        f"sample={structured_pages[:2] if structured_pages else []}",
                         request_id,
                     )
-                    # Cleanup temp conversion dir if it exists
-                    if conversion.temp_dir:
-                        self._safe_cleanup_temp_dir(conversion.temp_dir, request_id=request_id)
-                    continue
-
-                # Upsert CompleteDocument
-                doc = self.complete_document_service.upsert(
-                    session=session,
-                    title=title,
-                    file_path=effective_path,
-                    content=extracted_text,
-                )
-
-                if position_id:
-                    self.completed_document_position_service.associate(
+                    chunk_ids = self.document_service.create_chunks(
                         session=session,
-                        position_id=position_id,
                         complete_document_id=doc.id,
-                    )
-
-                document_ids.append(doc.id)
-
-                # -------------------------
-                # CHUNKING + EMBEDDINGS
-                # -------------------------
-                chunk_ids = self.document_service.create_chunks(
-                    session=session,
-                    complete_document_id=doc.id,
-                    text=extracted_text,
-                    file_path=effective_path,
-                )
-
-                if chunk_ids:
-                    total_chunks += len(chunk_ids)
-
-                    chunks = self.document_service.get_by_ids(
-                        session=session,
-                        ids=chunk_ids,
-                    )
-
-                    total_embeddings += self.batch_embedding_service.embed_and_store(
-                        session=session,
-                        chunks=chunks,
-                        embedding_model_service=self.embedding_model_service,
-                        document_embedding_service=self.document_embedding_service,
-                        complete_document_id=doc.id,
-                    )
-
-                # FTS index
-                self.search_index_service.index_complete_document(
-                    session=session,
-                    title=title,
-                    content=extracted_text,
-                )
-
-                # -------------------------
-                # VLM STRUCTURED VISUALS
-                # -------------------------
-                # Your latest direction: do NOT associate visuals with page number here.
-                # We store them as synthetic "images" (records) but no page association.
-                if structured_pages:
-                    created = self._store_structured_visuals_no_page_assoc(
-                        session=session,
-                        structured_pages=structured_pages,
-                        complete_document_id=doc.id,
-                        position_id=position_id,
-                        request_id=request_id,
-                    )
-                    total_images += created
-
-                # -------------------------
-                # Native PDF image extraction + page-first association
-                # -------------------------
-                if (not structured_pages) and effective_path.lower().endswith(".pdf"):
-                    extracted = self.image_guided_service.extract_and_associate(
-                        session=session,
+                        text=extracted_text,
+                        pages=structured_pages if structured_pages else None,
                         file_path=effective_path,
-                        complete_document_id=doc.id,
-                        position_id=position_id,
-                        embedding_model_service=self.image_model_service,
                         request_id=request_id,
                     )
-                    total_images += int(extracted or 0)
 
-                    # Page-first association: uses Image.img_metadata["page_number"]
-                    # Deterministic, no guessing.
-                    try:
-                        # Find images for this complete_document that are not yet associated
-                        unassociated_images = (
-                            session.query(Image)
-                            .join(
-                                ImageCompletedDocumentAssociation,
-                                Image.id == ImageCompletedDocumentAssociation.image_id,
-                                isouter=True,
+                    if chunk_ids:
+                        total_chunks += len(chunk_ids)
+
+                        chunks = self.document_service.get_by_ids(
+                            session=session,
+                            ids=chunk_ids,
+                        )
+
+                        total_embeddings += self.batch_embedding_service.embed_and_store(
+                            session=session,
+                            chunks=chunks,
+                            embedding_model_service=self.embedding_model_service,
+                            document_embedding_service=self.document_embedding_service,
+                            complete_document_id=doc.id,
+                        )
+
+                    # -------------------------
+                    # SEARCH INDEX
+                    # -------------------------
+                    self.search_index_service.index_complete_document(
+                        session=session,
+                        title=title,
+                        content=extracted_text,
+                    )
+
+                    # -------------------------
+                    # VLM STRUCTURED VISUALS
+                    # -------------------------
+                    if structured_pages:
+                        created = self._store_structured_visuals_no_page_assoc(
+                            session=session,
+                            structured_pages=structured_pages,
+                            complete_document_id=doc.id,
+                            position_id=position_id,
+                            request_id=request_id,
+                        )
+                        total_images += int(created or 0)
+
+                    # -------------------------
+                    # PDF IMAGE EXTRACTION
+                    # -------------------------
+                    if effective_path.lower().endswith(".pdf"):
+                        extracted = self.image_guided_service.extract_and_associate(
+                            session=session,
+                            file_path=effective_path,
+                            complete_document_id=doc.id,
+                            position_id=position_id,
+                            embedding_model_service=self.image_model_service,
+                            request_id=request_id,
+                        )
+                        total_images += int(extracted or 0)
+
+
+                        # -------------------------------------------------
+                        # PAGE-FIRST ASSOCIATION / ENRICHMENT
+                        # IMPORTANT:
+                        # Only scope to images already linked to THIS document.
+                        # Do not query every unassociated image in the database.
+                        # -------------------------------------------------
+                        try:
+                            current_doc_image_id_rows = (
+                                session.query(Image.id)
+                                .join(
+                                    ImageCompletedDocumentAssociation,
+                                    Image.id == ImageCompletedDocumentAssociation.image_id,
+                                )
+                                .filter(
+                                    ImageCompletedDocumentAssociation.complete_document_id == doc.id
+                                )
+                                .order_by(Image.id.asc())
+                                .distinct()
+                                .all()
                             )
-                            .filter(ImageCompletedDocumentAssociation.id.is_(None))
-                            .all()
-                        )
 
-                        # Note: if your extractor already creates associations, this may be empty.
-                        created_assocs = self.image_assoc_service.associate_images_by_page(
-                            session=session,
-                            complete_document_id=doc.id,
-                            images=unassociated_images,
+                            current_doc_image_ids = [row[0] for row in current_doc_image_id_rows]
+
+                            current_doc_images = []
+                            if current_doc_image_ids:
+                                current_doc_images = (
+                                    session.query(Image)
+                                    .filter(Image.id.in_(current_doc_image_ids))
+                                    .all()
+                                )
+
+                            created_assocs = self.image_assoc_service.associate_images_by_page(
+                                session=session,
+                                complete_document_id=doc.id,
+                                images=current_doc_images,
+                                request_id=request_id,
+                            )
+
+                            enriched_assocs = self.image_assoc_service.associate_images_to_chunks_by_page(
+                                session=session,
+                                complete_document_id=doc.id,
+                                request_id=request_id,
+                            )
+
+                            debug_id(
+                                f"[CompleteDocumentOrchestrator] Page-first image associations created={created_assocs} enriched={enriched_assocs}",
+                                request_id,
+                            )
+
+                        except Exception as e:
+                            warning_id(
+                                f"[CompleteDocumentOrchestrator] Page-first association step failed: {e}",
+                                request_id,
+                            )
+
+
+                except Exception as e:
+                    error_id(
+                        f"[CompleteDocumentOrchestrator] Persistence failed for '{effective_path}': {e}",
+                        request_id,
+                        exc_info=True,
+                    )
+                    raise
+
+                finally:
+                    if conversion and conversion.temp_dir:
+                        self._safe_cleanup_temp_dir(
+                            conversion.temp_dir,
                             request_id=request_id,
                         )
 
-                        # Optional enrichment: link to first chunk on the same page (only if chunks have page_number).
-                        self.image_assoc_service.associate_images_to_chunks_by_page(
-                            session=session,
-                            complete_document_id=doc.id,
-                            request_id=request_id,
-                        )
-
-                        debug_id(
-                            f"[CompleteDocumentOrchestrator] Page-first image associations created={created_assocs}",
-                            request_id,
-                        )
-
-                    except Exception as e:
-                        warning_id(
-                            f"[CompleteDocumentOrchestrator] Page-first association step failed: {e}",
-                            request_id,
-                        )
-
-                # Cleanup conversion temp dir
-                if conversion.temp_dir:
-                    self._safe_cleanup_temp_dir(conversion.temp_dir, request_id=request_id)
+        # ---------------------------------------
+        # FINAL STATUS
+        # ---------------------------------------
+        if not document_ids:
+            warning_id(
+                "[CompleteDocumentOrchestrator] No documents persisted; returning skipped status",
+                request_id,
+            )
+            return {
+                "status": "skipped",
+                "message": "No documents were persisted",
+                "documents_processed": 0,
+                "document_ids": [],
+                "deduped": deduped,
+                "chunks_created": total_chunks,
+                "embeddings_created": total_embeddings,
+                "images_extracted": total_images,
+                "position_id": position_id,
+                "skip_reason": "nothing_persisted",
+            }
 
         return {
             "status": "success",
+            "message": "Processed",
             "documents_processed": len(document_ids),
             "document_ids": document_ids,
             "deduped": deduped,
