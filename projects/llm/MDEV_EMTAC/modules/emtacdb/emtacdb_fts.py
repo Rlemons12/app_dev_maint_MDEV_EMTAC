@@ -2673,97 +2673,139 @@ class Image(Base):
 
     @classmethod
     @with_request_id
-    def add_to_db(cls, session, title, file_path, description, position_id=None, complete_document_id=None,
-                  metadata=None,
-                  request_id=None):
-        import shutil
+    def add_to_db(
+            cls,
+            session,
+            title,
+            file_path,
+            description,
+            position_id=None,
+            complete_document_id=None,
+            metadata=None,
+            request_id=None,
+    ):
         import os
-        from modules.database_manager.db_manager import PostgreSQLDatabaseManager
-        from modules.configuration.config import DATABASE_PATH_IMAGES_FOLDER, DATABASE_DIR
+        import re
+        import shutil
+        from modules.configuration.config import DATABASE_PATH_IMAGES_FOLDER
+
+        rid = request_id
+
         try:
             if session is None:
-                db_config = get_db_config()
-                session = db_config.get_main_session().__enter__()
+                raise RuntimeError("Session required for Image.add_to_db")
 
-            # Create a database manager instance for committing
-            db_manager = PostgreSQLDatabaseManager(session=session, request_id=request_id)
+            if not title:
+                raise ValueError("title is required")
 
-            # Create a unique destination path by combining the directory and a unique filename
+            if not file_path:
+                raise ValueError("file_path is required")
+
+            if not description:
+                raise ValueError("description is required")
+
+            # Keep filenames safe and stable
             original_filename = os.path.basename(file_path)
             base_name, ext = os.path.splitext(original_filename)
-            destination_filename = f"{title.replace(' ', '_')}_{base_name}{ext}"  # Use title to make filename meaningful
 
-            # FIXED: Create both absolute path (for file operations) and relative path (for database)
-            destination_absolute_path = os.path.join(DATABASE_PATH_IMAGES_FOLDER, destination_filename)
-            destination_relative_path = os.path.join("DB_IMAGES",
-                                                     destination_filename)  # Store relative path like before
+            safe_title = re.sub(r"[^\w\-\.]+", "_", title).strip("_")
+            safe_base = re.sub(r"[^\w\-\.]+", "_", base_name).strip("_")
 
-            # Ensure the destination directory exists
+            destination_filename = (
+                f"{safe_title}_{safe_base}{ext}"
+                if safe_base else f"{safe_title}{ext}"
+            )
+
+            destination_absolute_path = os.path.join(
+                DATABASE_PATH_IMAGES_FOLDER,
+                destination_filename,
+            )
+            destination_relative_path = os.path.join(
+                "DB_IMAGES",
+                destination_filename,
+            )
+
             os.makedirs(DATABASE_PATH_IMAGES_FOLDER, exist_ok=True)
-
             shutil.copy(file_path, destination_absolute_path)
-            debug_id(f"Copied '{file_path}' -> '{destination_absolute_path}'", request_id)
 
-            # FIXED: Store relative path in database (like the old system)
+            debug_id(
+                f"Copied '{file_path}' -> '{destination_absolute_path}'",
+                rid,
+            )
+
             image = cls(
                 title=title,
                 description=description,
-                file_path=destination_relative_path,  #  Store relative path like: DB_IMAGES\filename.png
-                img_metadata=metadata if metadata else {}
+                file_path=destination_relative_path,
+                img_metadata=metadata or {},
             )
             session.add(image)
             session.flush()
 
-            debug_id(f"Added image to session: {title}, id={image.id}, stored path: {destination_relative_path}",
-                     request_id)
+            debug_id(
+                f"Added image to session: {title}, id={image.id}, stored path: {destination_relative_path}",
+                rid,
+            )
 
-            # Conditionally handle embedding generation and associations if associated with a document OR position
-            if complete_document_id is not None or position_id is not None:
-                debug_id(f"Generating embedding for image {image.id}", request_id)
-
-                # Add this code in Image.add_to_db() method after session.flush() and before the commit
-
-                # Create position association if position_id is provided
-                if position_id is not None:
-                    # Check if association already exists
-                    existing_association = session.query(ImagePositionAssociation).filter(
-                        and_(ImagePositionAssociation.image_id == image.id,
-                             ImagePositionAssociation.position_id == position_id)
-                    ).first()
-
-                    if existing_association is None:
-                        # Create the association
-                        image_position_association = ImagePositionAssociation(
-                            image_id=image.id,
-                            position_id=position_id
+            # Create position association if requested
+            if position_id is not None:
+                existing_position_assoc = (
+                    session.query(ImagePositionAssociation)
+                    .filter(
+                        and_(
+                            ImagePositionAssociation.image_id == image.id,
+                            ImagePositionAssociation.position_id == position_id,
                         )
-                        session.add(image_position_association)
-                        debug_id(f"Added position association for image {image.id} with position_id {position_id}",
-                                 request_id)
-                    else:
-                        debug_id(
-                            f"Position association already exists for image {image.id} with position_id {position_id}",
-                            request_id)
+                    )
+                    .first()
+                )
 
-                # Only create document association if complete_document_id is provided
-                if complete_document_id is not None:
+                if existing_position_assoc is None:
+                    image_position_association = ImagePositionAssociation(
+                        image_id=image.id,
+                        position_id=position_id,
+                    )
+                    session.add(image_position_association)
                     debug_id(
-                        f"Added enhanced document association for image {image.id} with complete_document_id {complete_document_id}",
-                        request_id)
-            else:
-                debug_id(f"Skipping embedding and associations for standalone image {image.id}", request_id)
+                        f"Added position association for image {image.id} with position_id {position_id}",
+                        rid,
+                    )
+                else:
+                    debug_id(
+                        f"Position association already exists for image {image.id} with position_id {position_id}",
+                        rid,
+                    )
 
-            # Use the database manager's commit_with_retry
-            if not db_manager.commit_with_retry():
-                raise Exception("Failed to commit image to database")
+            # IMPORTANT:
+            # complete_document_id is intentionally NOT used here anymore.
+            # Main workflow ownership rule (Option B):
+            # - Image.add_to_db() creates only the Image row (+ optional position association)
+            # - The calling workflow must explicitly create ImageCompletedDocumentAssociation
+            if complete_document_id is not None:
+                debug_id(
+                    f"Skipping automatic complete-document association for image {image.id} "
+                    f"(complete_document_id={complete_document_id}); "
+                    f"association must be created explicitly by the calling workflow",
+                    rid,
+                )
 
-            debug_id(f"Committed image to database: {title}, id={image.id}", request_id)
+            # IMPORTANT:
+            # - no session creation here
+            # - no commit here
+            # - no rollback here
+            # - caller/orchestrator owns transaction
+
+            session.flush()
+
+            debug_id(
+                f"Image staged successfully: {title}, id={image.id}",
+                rid,
+            )
             return image.id
+
         except Exception as e:
-            error_id(f"Failed to add image to database: {e}", request_id)
-            if session is None:
-                session.__exit__(None, None, None)
-            return None
+            error_id(f"Failed to add image to database: {e}", rid)
+            raise
 
     # =============================================================================
     # Also fix the serve_file method to handle relative paths correctly
@@ -2899,58 +2941,102 @@ class Image(Base):
             raise
 
     @classmethod
-    def _create_enhanced_document_association(cls, session, image_id, complete_document_id, metadata, request_id):
+    def _create_enhanced_document_association(
+            cls,
+            session,
+            image_id,
+            complete_document_id,
+            metadata,
+            request_id,
+    ):
         """
-        Create enhanced ImageCompletedDocumentAssociation with structure-guided data.
+        Stage an ImageCompletedDocumentAssociation with structure-guided metadata.
+
+        HARD RULES:
+        - NEVER open a session here
+        - NEVER commit here
+        - NEVER rollback here
+        - Store JSON columns as Python dicts, not json.dumps strings
         """
         try:
-            # Check for existing association
-            existing_association = session.query(ImageCompletedDocumentAssociation).filter(
-                and_(ImageCompletedDocumentAssociation.image_id == image_id,
-                     ImageCompletedDocumentAssociation.complete_document_id == complete_document_id)
-            ).first()
+            if session is None:
+                raise RuntimeError("Session required for _create_enhanced_document_association")
 
-            if existing_association is None:
-                # Extract structure-guided metadata
-                structure_metadata = metadata or {}
-
-                # Create enhanced association with structure-guided fields
-                association = ImageCompletedDocumentAssociation(
-                    image_id=image_id,
-                    complete_document_id=complete_document_id,
-                    # NEW: Structure-guided fields
-                    page_number=structure_metadata.get('page_number'),
-                    chunk_index=structure_metadata.get('image_index', 0),
-                    association_method=structure_metadata.get('association_method', 'structure_guided'),
-                    confidence_score=structure_metadata.get('confidence_score', 0.8),
-                    context_metadata=json.dumps({
-                        'structure_guided': structure_metadata.get('structure_guided', True),
-                        'content_type': structure_metadata.get('content_type', 'image'),
-                        'bbox': structure_metadata.get('bbox'),
-                        'estimated_size': structure_metadata.get('estimated_size'),
-                        'created_at': datetime.now().isoformat(),
-                        'processing_method': structure_metadata.get('processing_method', 'enhanced_add_to_db')
-                    })
+            existing_association = (
+                session.query(ImageCompletedDocumentAssociation)
+                .filter(
+                    and_(
+                        ImageCompletedDocumentAssociation.image_id == image_id,
+                        ImageCompletedDocumentAssociation.complete_document_id == complete_document_id,
+                    )
                 )
+                .first()
+            )
 
-                session.add(association)
-                debug_id(f"Added enhanced document association for image {image_id}", request_id)
-            else:
-                debug_id(f"Document association already exists for image {image_id}", request_id)
+            if existing_association is not None:
+                debug_id(
+                    f"Document association already exists for image {image_id}",
+                    request_id,
+                )
+                return existing_association
+
+            structure_metadata = metadata or {}
+
+            association = ImageCompletedDocumentAssociation(
+                image_id=image_id,
+                complete_document_id=complete_document_id,
+                page_number=structure_metadata.get("page_number"),
+                chunk_index=structure_metadata.get("image_index", 0),
+                association_method=structure_metadata.get("association_method", "structure_guided"),
+                confidence_score=structure_metadata.get("confidence_score", 0.8),
+                context_metadata={
+                    "structure_guided": structure_metadata.get("structure_guided", True),
+                    "content_type": structure_metadata.get("content_type", "image"),
+                    "bbox": structure_metadata.get("bbox"),
+                    "estimated_size": structure_metadata.get("estimated_size"),
+                    "created_at": datetime.now().isoformat(),
+                    "processing_method": structure_metadata.get(
+                        "processing_method",
+                        "enhanced_add_to_db",
+                    ),
+                },
+            )
+
+            session.add(association)
+            session.flush()
+
+            debug_id(
+                f"Added enhanced document association for image {image_id}",
+                request_id,
+            )
+            return association
 
         except Exception as e:
-            warning_id(f"Failed to create enhanced document association: {e}", request_id)
-            # Fallback to basic association
+            warning_id(
+                f"Failed to create enhanced document association: {e}",
+                request_id,
+            )
+
             try:
                 basic_association = ImageCompletedDocumentAssociation(
                     image_id=image_id,
-                    complete_document_id=complete_document_id
+                    complete_document_id=complete_document_id,
                 )
                 session.add(basic_association)
-                debug_id(f"Added basic document association for image {image_id}", request_id)
-            except Exception as fallback_error:
-                error_id(f"Failed to create even basic association: {fallback_error}", request_id)
+                session.flush()
 
+                debug_id(
+                    f"Added basic document association for image {image_id}",
+                    request_id,
+                )
+                return basic_association
+
+            except Exception as fallback_error:
+                error_id(
+                    f"Failed to create even basic association: {fallback_error}",
+                    request_id,
+                )
+                raise
     @classmethod
     @with_request_id
     def create_with_tool_association(cls, session, title, file_path, tool, description="", request_id=None):
@@ -4006,6 +4092,11 @@ class Image(Base):
     def _get_enhanced_image_associations(cls, session, image_id, request_id=None):
         """
         Enhanced helper method to get all associations for an image, including structure-guided ones.
+
+        Handles context_metadata safely whether it is:
+        - a dict (correct JSON-column usage)
+        - a JSON string (legacy data)
+        - None / invalid
         """
         from modules.configuration.log_config import debug_id, error_id
 
@@ -4014,66 +4105,119 @@ class Image(Base):
 
         try:
             # Get position associations
-            position_assocs = session.query(ImagePositionAssociation).filter(
-                ImagePositionAssociation.image_id == image_id).all()
-            associations['positions'] = [{'position_id': assoc.position_id} for assoc in position_assocs]
+            position_assocs = (
+                session.query(ImagePositionAssociation)
+                .filter(ImagePositionAssociation.image_id == image_id)
+                .all()
+            )
+            associations["positions"] = [
+                {"position_id": assoc.position_id}
+                for assoc in position_assocs
+            ]
 
             # Get tool associations
-            tool_assocs = session.query(ToolImageAssociation).filter(
-                ToolImageAssociation.image_id == image_id).all()
-            associations['tools'] = [{'tool_id': assoc.tool_id, 'description': assoc.description}
-                                     for assoc in tool_assocs]
+            tool_assocs = (
+                session.query(ToolImageAssociation)
+                .filter(ToolImageAssociation.image_id == image_id)
+                .all()
+            )
+            associations["tools"] = [
+                {
+                    "tool_id": assoc.tool_id,
+                    "description": assoc.description,
+                }
+                for assoc in tool_assocs
+            ]
 
             # Get task associations
-            task_assocs = session.query(ImageTaskAssociation).filter(
-                ImageTaskAssociation.image_id == image_id).all()
-            associations['tasks'] = [{'task_id': assoc.task_id} for assoc in task_assocs]
+            task_assocs = (
+                session.query(ImageTaskAssociation)
+                .filter(ImageTaskAssociation.image_id == image_id)
+                .all()
+            )
+            associations["tasks"] = [
+                {"task_id": assoc.task_id}
+                for assoc in task_assocs
+            ]
 
             # Get problem associations
-            problem_assocs = session.query(ImageProblemAssociation).filter(
-                ImageProblemAssociation.image_id == image_id).all()
-            associations['problems'] = [{'problem_id': assoc.problem_id} for assoc in problem_assocs]
+            problem_assocs = (
+                session.query(ImageProblemAssociation)
+                .filter(ImageProblemAssociation.image_id == image_id)
+                .all()
+            )
+            associations["problems"] = [
+                {"problem_id": assoc.problem_id}
+                for assoc in problem_assocs
+            ]
 
-            # ENHANCED: Get completed document associations with structure-guided data
-            doc_assocs = session.query(ImageCompletedDocumentAssociation).filter(
-                ImageCompletedDocumentAssociation.image_id == image_id).all()
+            # Get completed document associations with structure-guided data
+            doc_assocs = (
+                session.query(ImageCompletedDocumentAssociation)
+                .filter(ImageCompletedDocumentAssociation.image_id == image_id)
+                .all()
+            )
 
             enhanced_doc_assocs = []
             for assoc in doc_assocs:
                 context_metadata = {}
+
                 if assoc.context_metadata:
-                    try:
-                        context_metadata = json.loads(assoc.context_metadata)
-                    except:
-                        pass
+                    if isinstance(assoc.context_metadata, dict):
+                        context_metadata = assoc.context_metadata
+                    elif isinstance(assoc.context_metadata, str):
+                        try:
+                            context_metadata = json.loads(assoc.context_metadata)
+                        except Exception:
+                            context_metadata = {}
+                    else:
+                        context_metadata = {}
 
                 enhanced_doc_assocs.append({
-                    'document_id': assoc.complete_document_id,
-                    'page_number': assoc.page_number,
-                    'chunk_index': assoc.chunk_index,
-                    'association_method': assoc.association_method,
-                    'confidence_score': assoc.confidence_score,
-                    'structure_guided': context_metadata.get('structure_guided', False),
-                    'content_type': context_metadata.get('content_type', 'image')
+                    "document_id": assoc.complete_document_id,
+                    "page_number": assoc.page_number,
+                    "chunk_index": assoc.chunk_index,
+                    "association_method": assoc.association_method,
+                    "confidence_score": assoc.confidence_score,
+                    "structure_guided": context_metadata.get("structure_guided", False),
+                    "content_type": context_metadata.get("content_type", "image"),
+                    "bbox": context_metadata.get("bbox"),
+                    "estimated_size": context_metadata.get("estimated_size"),
+                    "processing_method": context_metadata.get("processing_method"),
                 })
 
-            associations['completed_documents'] = enhanced_doc_assocs
+            associations["completed_documents"] = enhanced_doc_assocs
 
             # Get parts position associations
-            parts_assocs = session.query(PartsPositionImageAssociation).filter(
-                PartsPositionImageAssociation.image_id == image_id).all()
-            associations['parts_positions'] = [{'part_id': assoc.part_id, 'position_id': assoc.position_id}
-                                               for assoc in parts_assocs]
+            parts_assocs = (
+                session.query(PartsPositionImageAssociation)
+                .filter(PartsPositionImageAssociation.image_id == image_id)
+                .all()
+            )
+            associations["parts_positions"] = [
+                {
+                    "part_id": assoc.part_id,
+                    "position_id": assoc.position_id,
+                }
+                for assoc in parts_assocs
+            ]
 
-            debug_id(f"Retrieved enhanced associations for image {image_id}: "
-                     f"{len(associations.get('positions', []))} positions, "
-                     f"{len(associations.get('tools', []))} tools, "
-                     f"{len(associations.get('tasks', []))} tasks, "
-                     f"{len(associations.get('problems', []))} problems, "
-                     f"{len(associations.get('completed_documents', []))} documents", rid)
+            debug_id(
+                f"Retrieved enhanced associations for image {image_id}: "
+                f"{len(associations.get('positions', []))} positions, "
+                f"{len(associations.get('tools', []))} tools, "
+                f"{len(associations.get('tasks', []))} tasks, "
+                f"{len(associations.get('problems', []))} problems, "
+                f"{len(associations.get('completed_documents', []))} documents",
+                rid,
+            )
 
         except Exception as e:
-            error_id(f"Error getting enhanced associations for image {image_id}: {e}", rid, exc_info=True)
+            error_id(
+                f"Error getting enhanced associations for image {image_id}: {e}",
+                rid,
+                exc_info=True,
+            )
 
         return associations
 
@@ -12918,13 +13062,38 @@ class ImageCompletedDocumentAssociation(Base):
 
     @classmethod
     @with_request_id
-    def guided_extraction_with_mapping(cls, file_path, metadata, request_id=None):
+    def guided_extraction_with_mapping(
+            cls,
+            *,
+            session,
+            file_path,
+            metadata,
+            request_id=None,
+    ):
         """
-        FIXED: Enhanced guided extraction with proper chunk distribution and intelligent association.
+        Guided extraction using the caller-owned session.
+
+        HARD RULES:
+        - NEVER open a session here
+        - NEVER commit here
+        - NEVER rollback here
+        - Caller/orchestrator owns the transaction
+
+        Alignment updates:
+        - Uses caller-owned session so newly-created, uncommitted chunks are visible
+        - Uses 1-based page numbering everywhere stored in metadata/associations
+        - Passes 1-based page_number into _get_page_chunks_enhanced()
+        - Stores JSON columns as Python dicts, not json.dumps strings
         """
+        doc = None
+        rid = request_id
+
         try:
-            complete_document_id = metadata.get('complete_document_id')
-            position_id = metadata.get('position_id')
+            if session is None:
+                raise RuntimeError("Session required for guided_extraction_with_mapping")
+
+            complete_document_id = metadata.get("complete_document_id")
+            position_id = metadata.get("position_id")
 
             if not complete_document_id:
                 return False, {"error": "complete_document_id required"}, 400
@@ -12933,145 +13102,178 @@ class ImageCompletedDocumentAssociation(Base):
             file_name = os.path.splitext(os.path.basename(file_path))[0]
             associations_created = 0
 
-            db_config = get_db_config()
-            with db_config.main_session() as session:
-                # FIXED: Get all chunks and create a comprehensive mapping
-                all_chunks = session.query(Document).filter_by(
-                    complete_document_id=complete_document_id
-                ).order_by(Document.id).all()
+            # Use the passed-in session so uncommitted chunks are visible
+            all_chunks = (
+                session.query(Document)
+                .filter(Document.complete_document_id == complete_document_id)
+                .order_by(Document.id.asc())
+                .all()
+            )
 
-                if not all_chunks:
-                    warning_id(f"No chunks found for complete_document_id {complete_document_id}", request_id)
-                    return False, {"error": "No chunks found"}, 400
+            if not all_chunks:
+                warning_id(
+                    f"No chunks found for complete_document_id {complete_document_id}",
+                    rid,
+                )
+                return False, {"error": "No chunks found"}, 400
 
-                info_id(f"Found {len(all_chunks)} total chunks for document {complete_document_id}", request_id)
+            info_id(
+                f"Found {len(all_chunks)} total chunks for document {complete_document_id}",
+                rid,
+            )
 
-                # FIXED: Create a better chunk mapping system
-                chunk_page_map = cls._create_enhanced_chunk_page_mapping(all_chunks, request_id)
+            chunk_page_map = cls._create_enhanced_chunk_page_mapping(all_chunks, rid)
 
-                for page_num in range(len(doc)):
-                    page = doc[page_num]
-                    img_list = page.get_images(full=True)
+            for page_idx in range(len(doc)):
+                page = doc[page_idx]
+                page_number = page_idx + 1
+                img_list = page.get_images(full=True)
 
-                    if not img_list:
-                        debug_id(f"No images found on page {page_num + 1}", request_id)
-                        continue
+                if not img_list:
+                    debug_id(f"No images found on page {page_number}", rid)
+                    continue
 
-                    # FIXED: Get chunks for this specific page with better logic
-                    page_chunks = cls._get_page_chunks_enhanced(
-                        chunk_page_map, page_num, all_chunks, request_id
+                page_chunks = cls._get_page_chunks_enhanced(
+                    chunk_page_map,
+                    page_number,
+                    all_chunks,
+                    rid,
+                )
+
+                if not page_chunks:
+                    warning_id(
+                        f"No chunks found for page {page_number}, skipping image association",
+                        rid,
                     )
+                    continue
 
-                    if not page_chunks:
-                        warning_id(f"No chunks found for page {page_num + 1}, skipping image association", request_id)
-                        continue
+                info_id(
+                    f"Page {page_number}: Processing {len(img_list)} images with {len(page_chunks)} available chunks",
+                    rid,
+                )
 
-                    info_id(
-                        f"Page {page_num + 1}: Processing {len(img_list)} images with {len(page_chunks)} available chunks",
-                        request_id)
+                for img_index, img in enumerate(img_list):
+                    temp_path = None
 
-                    for img_index, img in enumerate(img_list):
-                        try:
-                            xref = img[0]
-                            base_image = doc.extract_image(xref)
-                            image_bytes = base_image["image"]
-                            ext = base_image.get("ext", "jpg")
+                    try:
+                        xref = img[0]
+                        base_image = doc.extract_image(xref)
+                        image_bytes = base_image["image"]
+                        ext = base_image.get("ext", "jpg")
 
-                            with tempfile.NamedTemporaryFile(suffix=f'.{ext}', delete=False) as tmp:
-                                tmp.write(image_bytes)
-                                temp_path = tmp.name
+                        with tempfile.NamedTemporaryFile(suffix=f".{ext}", delete=False) as tmp:
+                            tmp.write(image_bytes)
+                            temp_path = tmp.name
 
-                            title = f"{file_name} - Page {page_num + 1} Image {img_index + 1}"
+                        title = f"{file_name} - Page {page_number} Image {img_index + 1}"
 
-                            # FIXED: Intelligent chunk selection with multiple strategies
-                            selected_chunk_info = cls._select_best_chunk_for_image(
-                                page_chunks, img_index, page_num, img, request_id
+                        selected_chunk_info = cls._select_best_chunk_for_image(
+                            page_chunks,
+                            img_index,
+                            page_number,
+                            img,
+                            rid,
+                        )
+
+                        if not selected_chunk_info:
+                            warning_id(
+                                f"Could not select appropriate chunk for image {img_index + 1} on page {page_number}",
+                                rid,
                             )
-
-                            if not selected_chunk_info:
-                                warning_id(
-                                    f"Could not select appropriate chunk for image {img_index + 1} on page {page_num + 1}",
-                                    request_id)
-                                continue
-
-                            chunk_index = selected_chunk_info['chunk_index']
-                            nearest_chunk = selected_chunk_info['chunk']
-                            association_method = selected_chunk_info['method']
-                            confidence = selected_chunk_info['confidence']
-
-                            debug_id(
-                                f"Page {page_num + 1}, Image {img_index + 1}: Selected chunk_index={chunk_index}, chunk_id={nearest_chunk.id}, method={association_method}",
-                                request_id)
-
-                            # Create image metadata
-                            image_metadata = {
-                                'page_number': page_num,
-                                'image_index': img_index,
-                                'extraction_method': 'structure_guided_enhanced',
-                                'structure_guided': True,
-                                'association_method': association_method,
-                                'confidence_score': confidence
-                            }
-
-                            # Save the image
-                            image_id = Image.add_to_db(
-                                session=session,
-                                title=title,
-                                file_path=temp_path,
-                                description=f"Enhanced guided extraction from {os.path.basename(file_path)}",
-                                position_id=position_id,
-                                complete_document_id=complete_document_id,
-                                metadata=image_metadata,
-                                request_id=request_id
-                            )
-
-                            if image_id is not None:
-                                # FIXED: Create association with proper page and chunk indexing
-                                association = cls(
-                                    complete_document_id=complete_document_id,
-                                    image_id=image_id,
-                                    document_id=nearest_chunk.id,
-                                    page_number=page_num,  # Correct page number (0-indexed)
-                                    chunk_index=chunk_index,  # Proper chunk index within page
-                                    association_method=association_method,
-                                    confidence_score=confidence,
-                                    context_metadata=json.dumps({
-                                        'extraction_method': 'enhanced_guided',
-                                        'selection_strategy': association_method,
-                                        'page_total_images': len(img_list),
-                                        'page_total_chunks': len(page_chunks),
-                                        'created_at': datetime.now().isoformat()
-                                    })
-                                )
-                                session.add(association)
-                                associations_created += 1
-
-                                info_id(
-                                    f"Associated image {image_id} with chunk {nearest_chunk.id} (page {page_num + 1}, chunk_index {chunk_index})",
-                                    request_id)
-                            else:
-                                warning_id(f"Failed to save image {title}", request_id)
-
-                            # Cleanup temp file
-                            try:
-                                os.unlink(temp_path)
-                            except:
-                                pass
-
-                        except Exception as e:
-                            error_id(f"Error processing image {img_index + 1} on page {page_num + 1}: {e}", request_id)
                             continue
 
-                session.commit()
-                doc.close()
+                        chunk_index = selected_chunk_info["chunk_index"]
+                        nearest_chunk = selected_chunk_info["chunk"]
+                        association_method = selected_chunk_info["method"]
+                        confidence = selected_chunk_info["confidence"]
 
-                info_id(f"Enhanced guided extraction completed: {associations_created} associations created",
-                        request_id)
-                return True, {"associations_created": associations_created}, 200
+                        debug_id(
+                            f"Page {page_number}, Image {img_index + 1}: "
+                            f"Selected chunk_index={chunk_index}, chunk_id={nearest_chunk.id}, method={association_method}",
+                            rid,
+                        )
+
+                        image_metadata = {
+                            "page_number": page_number,
+                            "image_index": img_index,
+                            "extraction_method": "structure_guided_enhanced",
+                            "structure_guided": True,
+                            "association_method": association_method,
+                            "confidence_score": confidence,
+                        }
+
+                        image_id = Image.add_to_db(
+                            session=session,
+                            title=title,
+                            file_path=temp_path,
+                            description=f"Enhanced guided extraction from {os.path.basename(file_path)}",
+                            position_id=position_id,
+                            complete_document_id=complete_document_id,
+                            metadata=image_metadata,
+                            request_id=rid,
+                        )
+
+                        if image_id is None:
+                            warning_id(f"Failed to save image {title}", rid)
+                            continue
+
+                        association = cls(
+                            complete_document_id=complete_document_id,
+                            image_id=image_id,
+                            document_id=nearest_chunk.id,
+                            page_number=page_number,
+                            chunk_index=chunk_index,
+                            association_method=association_method,
+                            confidence_score=confidence,
+                            context_metadata={
+                                "extraction_method": "enhanced_guided",
+                                "selection_strategy": association_method,
+                                "page_total_images": len(img_list),
+                                "page_total_chunks": len(page_chunks),
+                                "created_at": datetime.now().isoformat(),
+                            },
+                        )
+                        session.add(association)
+                        session.flush()
+
+                        associations_created += 1
+
+                        info_id(
+                            f"Associated image {image_id} with chunk {nearest_chunk.id} "
+                            f"(page {page_number}, chunk_index {chunk_index})",
+                            rid,
+                        )
+
+                    except Exception as e:
+                        error_id(
+                            f"Error processing image {img_index + 1} on page {page_number}: {e}",
+                            rid,
+                        )
+                        continue
+
+                    finally:
+                        if temp_path:
+                            try:
+                                os.unlink(temp_path)
+                            except Exception:
+                                pass
+
+            info_id(
+                f"Enhanced guided extraction completed: {associations_created} associations created",
+                rid,
+            )
+            return True, {"associations_created": associations_created}, 200
 
         except Exception as e:
-            error_id(f"Enhanced guided extraction failed: {e}", request_id)
+            error_id(f"Enhanced guided extraction failed: {e}", rid, exc_info=True)
             return False, {"error": str(e)}, 500
+
+        finally:
+            if doc is not None:
+                try:
+                    doc.close()
+                except Exception:
+                    pass
 
     @classmethod
     @with_request_id
