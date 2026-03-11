@@ -421,14 +421,37 @@ class ModelsConfig(Base):
 
         entry = registry.get(model_name)
         if not entry:
-            return cls._fallback_image_model()
+            raise RuntimeError(
+                f"[ModelsConfig] Unknown image model '{model_name}'. "
+                f"Registered image models: {list(registry.keys())}"
+            )
+
+        module_name, class_name = entry
 
         try:
-            module = importlib.import_module(entry[0])
-            return getattr(module, entry[1])()
+            logger.info(
+                f"[ModelsConfig] Loading image model '{model_name}' "
+                f"from {module_name}.{class_name}"
+            )
+
+            module = importlib.import_module(module_name)
+            model_cls = getattr(module, class_name)
+            model = model_cls()
+
+            logger.info(
+                f"[ModelsConfig] Image model loaded successfully: "
+                f"{model_name} -> {type(model).__name__}"
+            )
+            return model
+
         except Exception as e:
-            logger.error(f"[ModelsConfig] Image model load failed: {e}")
-            return cls._fallback_image_model()
+            logger.error(
+                f"[ModelsConfig] Image model load failed for '{model_name}': {e}",
+                exc_info=True,
+            )
+            raise RuntimeError(
+                f"Failed to load image model '{model_name}': {e}"
+            ) from e
 
     # ---------------------------------------------------
     # Fallback implementations
