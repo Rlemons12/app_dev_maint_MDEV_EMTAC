@@ -22,8 +22,10 @@ class ImageHandler:
         self.Session = Session
 
         self.model_handlers = {
-            "clip": CLIPModelHandler(),
-            "no_model": NoImageModel()
+            "CLIPModelHandler": CLIPModelHandler(),
+            "NoImageModel": NoImageModel(),
+            "clip": CLIPModelHandler(),  # optional backward compatibility
+            "no_model": NoImageModel(),  # optional backward compatibility
         }
         self.Session = Session
         self.current_model = load_image_model_config_from_db()
