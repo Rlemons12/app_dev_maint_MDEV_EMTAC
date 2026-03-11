@@ -20,6 +20,8 @@ from modules.runtime.gpu_service_adapter_emtac import GPUServerAdapter
 from modules.configuration.log_config import (
     debug_id,
     info_id,
+    warning_id,
+    error_id,
     with_request_id,
     get_request_id,
 )
@@ -49,6 +51,8 @@ class AIModelImageService:
             resolved = image_path
         else:
             resolved = os.path.join(DATABASE_DIR, image_path)
+
+        resolved = os.path.normpath(resolved)
 
         if not os.path.exists(resolved):
             raise FileNotFoundError(
@@ -98,7 +102,6 @@ class AIModelImageService:
         cls,
         request_id: Optional[str],
     ) -> Tuple[str, Dict[str, Any], str]:
-
         rid = request_id or get_request_id()
 
         model_name = cls.get_current_model_name(request_id=rid)
@@ -120,6 +123,108 @@ class AIModelImageService:
         return model_name, model_info, backend
 
     # ----------------------------------------------------
+    # Validation Helpers
+    # ----------------------------------------------------
+    @classmethod
+    def _validate_local_model_interface(
+        cls,
+        model: Any,
+        *,
+        model_name: str,
+        request_id: Optional[str] = None,
+    ) -> Any:
+        rid = request_id or get_request_id()
+
+        if model is None:
+            raise RuntimeError(
+                f"Local image model '{model_name}' resolved to None"
+            )
+
+        debug_id(
+            f"[AIModelImage] Local model instance type for '{model_name}': "
+            f"{type(model).__name__}",
+            rid,
+        )
+
+        return model
+
+    @classmethod
+    def _ensure_supports_method(
+        cls,
+        model: Any,
+        *,
+        model_name: str,
+        method_name: str,
+        request_id: Optional[str] = None,
+    ) -> None:
+        rid = request_id or get_request_id()
+
+        if not hasattr(model, method_name):
+            available = [
+                attr for attr in dir(model)
+                if not attr.startswith("_")
+            ]
+            raise RuntimeError(
+                f"Local model '{model_name}' does not support '{method_name}'. "
+                f"Resolved object type: {type(model).__name__}. "
+                f"Available public attrs sample: {available[:20]}"
+            )
+
+        debug_id(
+            f"[AIModelImage] Verified method '{method_name}' on local model '{model_name}'",
+            rid,
+        )
+
+    @classmethod
+    def _normalize_vector(
+        cls,
+        vector: Any,
+        *,
+        source: str,
+    ) -> List[float]:
+        if vector is None:
+            raise RuntimeError(f"{source} returned None")
+
+        if hasattr(vector, "tolist"):
+            vector = vector.tolist()
+
+        if isinstance(vector, tuple):
+            vector = list(vector)
+
+        if not isinstance(vector, list):
+            raise RuntimeError(
+                f"{source} returned unsupported vector type: {type(vector).__name__}"
+            )
+
+        if not vector:
+            raise RuntimeError(f"{source} returned empty vector")
+
+        try:
+            normalized = [float(x) for x in vector]
+        except Exception as e:
+            raise RuntimeError(
+                f"{source} returned non-numeric vector values: {e}"
+            ) from e
+
+        return normalized
+
+    @classmethod
+    def _try_clear_cuda_cache(
+        cls,
+        request_id: Optional[str] = None,
+    ) -> None:
+        rid = request_id or get_request_id()
+
+        try:
+            import torch
+
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                debug_id("[AIModelImage] Cleared CUDA cache before local model load", rid)
+        except Exception as e:
+            debug_id(f"[AIModelImage] Could not clear CUDA cache: {e}", rid)
+
+    # ----------------------------------------------------
     # Local Loader (cached)
     # ----------------------------------------------------
     @classmethod
@@ -132,28 +237,44 @@ class AIModelImageService:
         rid = request_id or get_request_id()
 
         if model_name in cls._model_cache:
+            cached_model = cls._model_cache[model_name]
             debug_id(
-                f"[AIModelImage] Using cached local model '{model_name}'",
+                f"[AIModelImage] Using cached local model '{model_name}' "
+                f"type={type(cached_model).__name__}",
                 rid,
             )
-            return cls._model_cache[model_name]
+            return cached_model
 
         debug_id(
             f"[AIModelImage] Loading local image model '{model_name}'",
             rid,
         )
 
-        model = ModelsConfig.load_image_model(model_name)
+        cls._try_clear_cuda_cache(request_id=rid)
 
-        if model is None:
-            raise RuntimeError(
-                f"load_image_model returned None for '{model_name}'"
+        try:
+            model = ModelsConfig.load_image_model(model_name)
+        except Exception as e:
+            error_id(
+                f"[AIModelImage] load_image_model failed for '{model_name}': {e}",
+                rid,
+                exc_info=True,
             )
+            raise RuntimeError(
+                f"Failed to load local image model '{model_name}': {e}"
+            ) from e
+
+        model = cls._validate_local_model_interface(
+            model,
+            model_name=model_name,
+            request_id=rid,
+        )
 
         cls._model_cache[model_name] = model
 
         info_id(
-            f"[AIModelImage] Loaded local image model '{model_name}'",
+            f"[AIModelImage] Loaded local image model '{model_name}' "
+            f"type={type(model).__name__}",
             rid,
         )
 
@@ -169,7 +290,6 @@ class AIModelImageService:
         image_path: str,
         request_id: Optional[str] = None,
     ) -> List[float]:
-
         rid = request_id or get_request_id()
 
         resolved_path = cls._resolve_image_path(image_path)
@@ -197,50 +317,74 @@ class AIModelImageService:
                 gpu_model=gpu_key,
             )
 
-            if not vec:
-                raise RuntimeError("GPU image embedding returned empty vector")
-
-            return vec
+            return cls._normalize_vector(
+                vec,
+                source=f"GPU image embedding ({model_name})",
+            )
 
         # LOCAL BACKEND
         model = cls._load_local_model(model_name, request_id=rid)
 
-        if not hasattr(model, "get_image_embedding"):
-            raise RuntimeError(
-                f"Local model '{model_name}' does not support image embeddings"
-            )
+        cls._ensure_supports_method(
+            model,
+            model_name=model_name,
+            method_name="get_image_embedding",
+            request_id=rid,
+        )
 
         from PIL import Image
 
-        img = Image.open(resolved_path).convert("RGB")
-        vec = model.get_image_embedding(img)
+        try:
+            with Image.open(resolved_path) as pil_img:
+                img = pil_img.convert("RGB")
+                vec = model.get_image_embedding(img)
+        except Exception as e:
+            raise RuntimeError(
+                f"Local image embedding failed for '{resolved_path}' using model '{model_name}': {e}"
+            ) from e
 
-        if not vec:
-            raise RuntimeError("Local image embedding returned empty vector")
-
-        return vec
+        return cls._normalize_vector(
+            vec,
+            source=f"Local image embedding ({model_name})",
+        )
 
     # ----------------------------------------------------
     # IMAGE PROCESSING
     # ----------------------------------------------------
     @classmethod
     @with_request_id
-    def process_image(cls, image_path: str, request_id=None) -> Any:
+    def process_image(
+        cls,
+        image_path: str,
+        request_id: Optional[str] = None,
+    ) -> Any:
+        rid = request_id or get_request_id()
 
         resolved_path = cls._resolve_image_path(image_path)
 
         model_name, model_info, backend = cls._resolve_model_or_raise(
-            request_id=request_id,
+            request_id=rid,
         )
 
         if backend == "gpu_service":
             gpu = cls._get_gpu_adapter()
+            if not gpu:
+                raise RuntimeError(
+                    "GPU image backend configured but GPU service unavailable"
+                )
+
             return gpu.process_image(
                 image_path=resolved_path,
                 model=model_name,
             )
 
-        model = cls._load_local_model(model_name, request_id=request_id)
+        model = cls._load_local_model(model_name, request_id=rid)
+        cls._ensure_supports_method(
+            model,
+            model_name=model_name,
+            method_name="process_image",
+            request_id=rid,
+        )
         return model.process_image(resolved_path)
 
     # ----------------------------------------------------
@@ -252,25 +396,37 @@ class AIModelImageService:
         cls,
         image_a: str,
         image_b: str,
-        request_id=None,
+        request_id: Optional[str] = None,
     ) -> Dict[str, Any]:
+        rid = request_id or get_request_id()
 
         resolved_a = cls._resolve_image_path(image_a)
         resolved_b = cls._resolve_image_path(image_b)
 
         model_name, model_info, backend = cls._resolve_model_or_raise(
-            request_id=request_id,
+            request_id=rid,
         )
 
         if backend == "gpu_service":
             gpu = cls._get_gpu_adapter()
+            if not gpu:
+                raise RuntimeError(
+                    "GPU image backend configured but GPU service unavailable"
+                )
+
             return gpu.compare_images(
                 image_a=resolved_a,
                 image_b=resolved_b,
                 model=model_name,
             )
 
-        model = cls._load_local_model(model_name, request_id=request_id)
+        model = cls._load_local_model(model_name, request_id=rid)
+        cls._ensure_supports_method(
+            model,
+            model_name=model_name,
+            method_name="compare_images",
+            request_id=rid,
+        )
         return model.compare_images(resolved_a, resolved_b)
 
     # ----------------------------------------------------
@@ -281,21 +437,46 @@ class AIModelImageService:
     def generate_description(
         cls,
         image_path: str,
-        request_id=None,
+        request_id: Optional[str] = None,
     ) -> str:
+        rid = request_id or get_request_id()
 
         resolved_path = cls._resolve_image_path(image_path)
 
         model_name, model_info, backend = cls._resolve_model_or_raise(
-            request_id=request_id,
+            request_id=rid,
         )
 
         if backend == "gpu_service":
             gpu = cls._get_gpu_adapter()
+            if not gpu:
+                raise RuntimeError(
+                    "GPU image backend configured but GPU service unavailable"
+                )
+
             return gpu.generate_description(
                 image_path=resolved_path,
                 model=model_name,
             )
 
-        model = cls._load_local_model(model_name, request_id=request_id)
+        model = cls._load_local_model(model_name, request_id=rid)
+        cls._ensure_supports_method(
+            model,
+            model_name=model_name,
+            method_name="generate_description",
+            request_id=rid,
+        )
         return model.generate_description(resolved_path)
+
+    # ----------------------------------------------------
+    # Cache Utility
+    # ----------------------------------------------------
+    @classmethod
+    @with_request_id
+    def clear_model_cache(cls, request_id: Optional[str] = None) -> None:
+        rid = request_id or get_request_id()
+
+        cls._model_cache.clear()
+        info_id("[AIModelImage] Cleared local model cache", rid)
+
+        cls._try_clear_cuda_cache(request_id=rid)
