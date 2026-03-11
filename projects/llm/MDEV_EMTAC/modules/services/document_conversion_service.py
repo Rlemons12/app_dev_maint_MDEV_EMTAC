@@ -28,24 +28,31 @@ class ConversionResult:
 
 class DocumentConversionService:
     """
-    Converts DOC/DOCX -> PDF so downstream can:
-      - extract page-aware text
-      - extract images from PDFs
+    Converts office-style files into PDF for downstream extraction.
+
+    Supported behavior:
+      - PDF  -> passthrough
+      - DOCX -> PDF
+      - DOC  -> DOCX -> PDF
+
+    Platform behavior:
+      - Windows:
+          * DOCX -> PDF via docx2pdf / Word COM
+          * DOC  -> DOCX via Word COM, then DOCX -> PDF
+      - Non-Windows:
+          * DOCX -> PDF via LibreOffice
+          * DOC  -> DOCX via LibreOffice, then DOCX -> PDF
 
     HARD RULES:
-    - No DB
-    - No sessions
-    - Returns temp paths so orchestrator can cleanup
-
-    PLATFORM RULES:
-    - PDF: passthrough
-    - DOCX:
-        - Windows -> docx2pdf
-        - non-Windows -> LibreOffice (soffice)
-    - DOC:
-        - Windows -> not converted here unless a Windows-native converter is added
-        - non-Windows -> LibreOffice DOC -> DOCX -> PDF
+      - No DB
+      - No sessions
+      - No commit / rollback
+      - Return temp paths so orchestrators can clean up
     """
+
+    # ---------------------------------------------------------
+    # Public API
+    # ---------------------------------------------------------
 
     @with_request_id
     def ensure_pdf(
@@ -55,7 +62,24 @@ class DocumentConversionService:
         request_id: Optional[str] = None,
     ) -> ConversionResult:
         rid = request_id or get_request_id()
+
+        if not file_path:
+            warning_id("[DocumentConversionService] No file_path provided", rid)
+            return ConversionResult(pdf_path=None, source_type="missing_path")
+
+        if not os.path.exists(file_path):
+            warning_id(
+                f"[DocumentConversionService] File does not exist: {file_path}",
+                rid,
+            )
+            return ConversionResult(pdf_path=None, source_type="missing_file")
+
         ext = os.path.splitext(file_path)[1].lower()
+
+        debug_id(
+            f"[DocumentConversionService] ensure_pdf requested | ext={ext} | file={file_path}",
+            rid,
+        )
 
         if ext == ".pdf":
             return ConversionResult(
@@ -69,43 +93,39 @@ class DocumentConversionService:
                 pdf_path=pdf_path,
                 docx_path=file_path,
                 temp_dir=temp_dir,
-                source_type="docx->pdf",
+                source_type="docx->pdf" if pdf_path else "docx->pdf-failed",
             )
 
         if ext == ".doc":
-            if self._is_windows():
-                warning_id(
-                    "[DOC->PDF] Windows .doc conversion is not enabled in this service; "
-                    "LibreOffice is optional on Windows and will not be required here",
-                    rid,
-                )
-                return ConversionResult(
-                    pdf_path=None,
-                    docx_path=None,
-                    temp_dir=None,
-                    source_type="doc-windows-skipped",
-                )
-
-            docx_path, temp_dir1 = self._doc_to_docx(file_path, rid)
+            docx_path, temp_dir_1 = self._doc_to_docx(file_path, rid)
             if not docx_path:
                 return ConversionResult(
                     pdf_path=None,
                     docx_path=None,
-                    temp_dir=temp_dir1,
+                    temp_dir=temp_dir_1,
                     source_type="doc->docx-failed",
                 )
 
-            pdf_path, temp_dir2 = self._docx_to_pdf(docx_path, rid)
+            pdf_path, temp_dir_2 = self._docx_to_pdf(docx_path, rid)
+
+            # Keep the temp dir that actually contains the generated artifacts.
+            final_temp_dir = temp_dir_2 or temp_dir_1
 
             return ConversionResult(
                 pdf_path=pdf_path,
                 docx_path=docx_path,
-                temp_dir=temp_dir2 or temp_dir1,
-                source_type="doc->docx->pdf",
+                temp_dir=final_temp_dir,
+                source_type="doc->docx->pdf" if pdf_path else "doc->pdf-failed",
             )
 
-        warning_id(f"Unsupported extension for conversion: {ext}", rid)
-        return ConversionResult(pdf_path=None, source_type="unsupported")
+        warning_id(
+            f"[DocumentConversionService] Unsupported extension for conversion: {ext}",
+            rid,
+        )
+        return ConversionResult(
+            pdf_path=None,
+            source_type="unsupported",
+        )
 
     # ---------------------------------------------------------
     # Platform helpers
@@ -121,17 +141,21 @@ class DocumentConversionService:
     # DOCX -> PDF
     # ---------------------------------------------------------
 
-    def _docx_to_pdf(self, docx_path: str, rid: str) -> Tuple[Optional[str], Optional[str]]:
+    def _docx_to_pdf(
+        self,
+        docx_path: str,
+        rid: str,
+    ) -> Tuple[Optional[str], Optional[str]]:
         temp_dir = tempfile.mkdtemp(prefix="emtac_docx_pdf_")
         base = os.path.splitext(os.path.basename(docx_path))[0]
         pdf_path = os.path.join(temp_dir, f"{base}.pdf")
 
         debug_id(f"[DOCX->PDF] docx={docx_path} pdf={pdf_path}", rid)
 
-        if self._is_non_windows():
-            return self._docx_to_pdf_libreoffice(docx_path, pdf_path, temp_dir, rid)
+        if self._is_windows():
+            return self._docx_to_pdf_windows(docx_path, pdf_path, temp_dir, rid)
 
-        return self._docx_to_pdf_windows(docx_path, pdf_path, temp_dir, rid)
+        return self._docx_to_pdf_libreoffice(docx_path, pdf_path, temp_dir, rid)
 
     def _docx_to_pdf_libreoffice(
         self,
@@ -165,7 +189,10 @@ class DocumentConversionService:
             return None, None
 
         except FileNotFoundError:
-            error_id("LibreOffice 'soffice' not found in PATH for DOCX->PDF conversion", rid)
+            error_id(
+                "[DOCX->PDF] LibreOffice 'soffice' not found in PATH",
+                rid,
+            )
             self._safe_rmtree(temp_dir, rid)
             return None, None
         except subprocess.CalledProcessError as e:
@@ -184,6 +211,9 @@ class DocumentConversionService:
         temp_dir: str,
         rid: str,
     ) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Uses docx2pdf, which relies on installed Microsoft Word on Windows.
+        """
         try:
             from docx2pdf import convert  # type: ignore
             import pythoncom  # type: ignore
@@ -205,8 +235,11 @@ class DocumentConversionService:
             self._safe_rmtree(temp_dir, rid)
             return None, None
 
-        except ImportError:
-            error_id("docx2pdf/pythoncom not installed for DOCX->PDF conversion", rid)
+        except ImportError as e:
+            error_id(
+                f"[DOCX->PDF] docx2pdf/pythoncom not installed: {e}",
+                rid,
+            )
             self._safe_rmtree(temp_dir, rid)
             return None, None
         except Exception as e:
@@ -218,26 +251,96 @@ class DocumentConversionService:
     # DOC -> DOCX
     # ---------------------------------------------------------
 
-    def _doc_to_docx(self, doc_path: str, rid: str) -> Tuple[Optional[str], Optional[str]]:
-        """
-        DOC -> DOCX conversion is only handled here for non-Windows systems
-        using LibreOffice.
-
-        On Windows, this service intentionally does not require LibreOffice.
-        """
+    def _doc_to_docx(
+        self,
+        doc_path: str,
+        rid: str,
+    ) -> Tuple[Optional[str], Optional[str]]:
         if self._is_windows():
-            warning_id(
-                "[DOC->DOCX] Windows path intentionally disabled in this service; "
-                "LibreOffice will not be required on Windows",
-                rid,
-            )
-            return None, None
+            return self._doc_to_docx_windows(doc_path, rid)
 
+        return self._doc_to_docx_libreoffice(doc_path, rid)
+
+    def _doc_to_docx_windows(
+        self,
+        doc_path: str,
+        rid: str,
+    ) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Converts legacy .doc -> .docx using Microsoft Word COM automation.
+
+        Requirements:
+          - pywin32 installed
+          - Microsoft Word installed
+        """
         temp_dir = tempfile.mkdtemp(prefix="emtac_doc_docx_")
         base = os.path.splitext(os.path.basename(doc_path))[0]
         out_docx = os.path.join(temp_dir, f"{base}.docx")
 
-        debug_id(f"[DOC->DOCX] doc={doc_path} outdir={temp_dir}", rid)
+        debug_id(f"[DOC->DOCX] Windows Word COM | doc={doc_path} out={out_docx}", rid)
+
+        word = None
+        doc = None
+
+        try:
+            import pythoncom  # type: ignore
+            import win32com.client  # type: ignore
+
+            pythoncom.CoInitialize()
+
+            # Word constants
+            wdFormatXMLDocument = 16
+
+            word = win32com.client.DispatchEx("Word.Application")
+            word.Visible = False
+            word.DisplayAlerts = 0
+
+            doc = word.Documents.Open(doc_path, ReadOnly=True)
+            doc.SaveAs(out_docx, FileFormat=wdFormatXMLDocument)
+            doc.Close(False)
+            doc = None
+
+            word.Quit()
+            word = None
+
+            try:
+                pythoncom.CoUninitialize()
+            except Exception:
+                pass
+
+            if os.path.exists(out_docx):
+                info_id(f"[DOC->DOCX] Word COM converted ok: {out_docx}", rid)
+                return out_docx, temp_dir
+
+            warning_id("[DOC->DOCX] Word COM produced no output file", rid)
+            self._safe_rmtree(temp_dir, rid)
+            return None, None
+
+        except ImportError as e:
+            error_id(
+                f"[DOC->DOCX] pywin32/pythoncom not installed for Word COM conversion: {e}",
+                rid,
+            )
+            self._safe_word_cleanup(word, doc, rid)
+            self._safe_rmtree(temp_dir, rid)
+            return None, None
+
+        except Exception as e:
+            error_id(f"[DOC->DOCX] Word COM conversion failed: {e}", rid)
+            self._safe_word_cleanup(word, doc, rid)
+            self._safe_rmtree(temp_dir, rid)
+            return None, None
+
+    def _doc_to_docx_libreoffice(
+        self,
+        doc_path: str,
+        rid: str,
+    ) -> Tuple[Optional[str], Optional[str]]:
+        temp_dir = tempfile.mkdtemp(prefix="emtac_doc_docx_")
+        base = os.path.splitext(os.path.basename(doc_path))[0]
+        out_docx = os.path.join(temp_dir, f"{base}.docx")
+
+        debug_id(f"[DOC->DOCX] LibreOffice | doc={doc_path} outdir={temp_dir}", rid)
 
         try:
             subprocess.run(
@@ -256,15 +359,18 @@ class DocumentConversionService:
             )
 
             if os.path.exists(out_docx):
-                info_id(f"[DOC->DOCX] converted ok: {out_docx}", rid)
+                info_id(f"[DOC->DOCX] LibreOffice converted ok: {out_docx}", rid)
                 return out_docx, temp_dir
 
-            warning_id("[DOC->DOCX] conversion produced no output file", rid)
+            warning_id("[DOC->DOCX] LibreOffice produced no output file", rid)
             self._safe_rmtree(temp_dir, rid)
             return None, None
 
         except FileNotFoundError:
-            error_id("LibreOffice 'soffice' not found in PATH for DOC->DOCX conversion", rid)
+            error_id(
+                "[DOC->DOCX] LibreOffice 'soffice' not found in PATH",
+                rid,
+            )
             self._safe_rmtree(temp_dir, rid)
             return None, None
         except subprocess.CalledProcessError as e:
@@ -277,8 +383,39 @@ class DocumentConversionService:
             return None, None
 
     # ---------------------------------------------------------
-    # Cleanup helper
+    # Cleanup helpers
     # ---------------------------------------------------------
+
+    def _safe_word_cleanup(self, word, doc, rid: str) -> None:
+        try:
+            if doc is not None:
+                try:
+                    doc.Close(False)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        try:
+            if word is not None:
+                try:
+                    word.Quit()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        try:
+            import pythoncom  # type: ignore
+
+            try:
+                pythoncom.CoUninitialize()
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+        debug_id("[DOC->DOCX] Word cleanup completed", rid)
 
     def _safe_rmtree(self, path: str, rid: str) -> None:
         try:
