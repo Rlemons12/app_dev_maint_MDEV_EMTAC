@@ -3,7 +3,8 @@
 import os
 import imghdr
 from PIL import Image, UnidentifiedImageError
-from plugins.image_modules import CLIPModelHandler, NoImageModel
+from modules.ai.image.models.clip_model_handler import CLIPModelHandler
+from modules.ai.image.models.no_image_model import NoImageModel
 from modules.configuration.log_config import logger
 from modules.configuration.config_env import DatabaseConfig
 
