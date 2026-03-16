@@ -34,7 +34,7 @@ def fix_vector_search_issues():
         # 2. Check model name consistency
         print("\n2. Checking model name consistency...")
 
-        from plugins.ai_modules import ModelsConfig
+        from modules.ai.config.models_config import ModelsConfig
         current_model = ModelsConfig.get_config_value('embedding', 'CURRENT_MODEL', 'NoEmbeddingModel')
 
         model_counts = session.execute(text("""
@@ -106,7 +106,7 @@ def create_optimized_vector_search_client():
 
         def __init__(self):
             from modules.configuration.config_env import DatabaseConfig
-            from plugins.ai_modules import ModelsConfig
+            from modules.ai.config.models_config import ModelsConfig
 
             self.db_config = DatabaseConfig()
             self.current_model = ModelsConfig.get_config_value('embedding', 'CURRENT_MODEL', 'OpenAIEmbeddingModel')
