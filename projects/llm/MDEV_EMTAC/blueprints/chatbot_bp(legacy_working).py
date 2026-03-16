@@ -12,7 +12,7 @@ from flask import Blueprint, request, jsonify, current_app, url_for, redirect
 from sqlalchemy.exc import SQLAlchemyError
 from modules.emtacdb.emtacdb_fts import (QandA, ChatSession, KeywordSearch, CompleteDocument)
 from datetime import datetime
-from plugins.ai_modules.ai_models import ModelsConfig
+from modules.ai.config.models_config import ModelsConfig
 from modules.configuration.config_env import DatabaseConfig
 from modules.configuration.log_config import (logger, with_request_id, log_timed_operation, debug_id,
                                               info_id, error_id, warning_id)
