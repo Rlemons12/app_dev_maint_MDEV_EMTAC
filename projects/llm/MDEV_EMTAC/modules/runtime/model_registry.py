@@ -6,7 +6,7 @@ from typing import Dict, List
 
 from modules.configuration.log_config import logger
 from modules.configuration import config
-from plugins.ai_modules import ModelsConfig
+from modules.ai.config.models_config import ModelsConfig
 
 
 # ============================================================
