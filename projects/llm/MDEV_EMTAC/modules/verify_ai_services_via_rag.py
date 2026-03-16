@@ -26,7 +26,7 @@ from plugins.ai_modules.services.ai_model_image_service import AIModelImageServi
 from plugins.ai_modules.services.ai_models_embedding_service import (
     AIModelsEmbeddingService,
 )
-from plugins.ai_modules.ai_models import ModelsConfig
+from modules.ai.config.models_config import ModelsConfig
 
 
 # ---------------------------------------------------------
