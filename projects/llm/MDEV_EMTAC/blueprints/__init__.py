@@ -10,7 +10,12 @@ from modules.configuration.config import DATABASE_URL
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from modules.configuration import log_config
-from plugins import load_ai_model, load_embedding_model
+from modules.ai.loaders.model_loader import load_ai_model, load_embedding_model
+from modules.ai.loaders.model_loader import (
+    load_ai_model,
+    load_embedding_model,
+    load_image_model,
+)
 logger = log_config.logger
 from flask import Flask
 # Log that the application is starting
