@@ -66,7 +66,7 @@ _bootstrap()
 
 from modules.emtac_ai.intent_ner.configuration import ner_config
 from modules.services.ai_models_embedding_service import AIModelsEmbeddingService
-from plugins.ai_modules.ai_models import ModelsConfig   # correct location
+from modules.ai.config.models_config import ModelsConfig   # correct location
 
 
 # =============================================================================
