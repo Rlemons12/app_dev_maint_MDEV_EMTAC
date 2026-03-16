@@ -20,7 +20,7 @@ from modules.configuration.log_config import (
 
 class ImageService:
     """
-    Pure domain service for Imagea.
+    Pure domain service for Image.
 
     HARD RULES:
     - NEVER open sessions
