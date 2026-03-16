@@ -5,7 +5,7 @@ from modules.emtacdb.emtacdb_fts import (User, UserComments, UserLevel, UserLogi
 from sqlalchemy.orm import subqueryload
 from modules.configuration import config
 from modules.configuration.config_env import DatabaseConfig
-from plugins.ai_modules import ModelsConfig
+from modules.ai.config.models_config import ModelsConfig
 
 admin_bp = Blueprint('admin_bp', __name__)
 
