@@ -186,7 +186,7 @@ def preload_ai_models():
             print("Starting AI model preloading (IMAGE + EMBEDDING)...")
 
             # Import and preload models
-            from plugins.ai_modules.ai_models import ModelsConfig
+            from modules.ai.config.models_config import ModelsConfig
 
             # =========================
             # PRELOAD IMAGE MODEL (existing)
@@ -390,7 +390,7 @@ def create_app(request_id=None):
         #    - Ensures CURRENT_MODEL keys exist
         #    - Does NOT load any models
         # ------------------------------------------------------------
-        from plugins.ai_modules import ModelsConfig
+        from modules.ai.config.models_config import ModelsConfig
 
         ModelsConfig.initialize_models_config_table()
         info_id("[STARTUP] ModelsConfig table initialized", request_id)
@@ -488,7 +488,7 @@ def create_app(request_id=None):
             try:
                 with log_timed_operation("load_model_config", request_id):
                     # Load current AI model configuration
-                    from plugins.ai_modules import ModelsConfig
+                    from modules.ai.config.models_config import ModelsConfig
                     current_ai_model, current_embedding_model = ModelsConfig.load_config_from_db()
                     debug_id(f"Loaded models: AI={current_ai_model}, Embedding={current_embedding_model}", request_id)
             except Exception as e:
@@ -532,7 +532,7 @@ def create_app(request_id=None):
 
             # Get model cache stats if available
             try:
-                from plugins.ai_modules.ai_models import ModelsConfig
+                from modules.ai.config.models_config import ModelsConfig
                 model_handler = ModelsConfig.load_image_model()
                 if hasattr(model_handler, 'get_cache_stats'):
                     health_data["model_cache"] = model_handler.get_cache_stats()
@@ -553,7 +553,7 @@ def create_app(request_id=None):
 
             try:
                 with log_timed_operation("model_status_collection", request_id):
-                    from plugins.ai_modules.ai_models import ModelsConfig
+                    from modules.ai.config.models_config import ModelsConfig
 
                     status_data = {
                         "preload_status": _model_preload_status.copy(),
