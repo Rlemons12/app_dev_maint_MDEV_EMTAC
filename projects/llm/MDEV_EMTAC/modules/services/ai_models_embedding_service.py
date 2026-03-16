@@ -18,7 +18,7 @@ from modules.configuration.log_config import (
     error_id,
     with_request_id,
 )
-from plugins.ai_modules.ai_models import ModelsConfig
+from modules.ai.config.models_config import ModelsConfig
 
 
 class AIModelsEmbeddingService:
