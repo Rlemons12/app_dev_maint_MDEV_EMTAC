@@ -38,11 +38,6 @@ class FileProcessingCoordinator:
     # PUBLIC API
     # ------------------------------------------------------------
     @with_request_id
-    @trace_entrypoint(
-        deep_profile=True,
-        capture_args=True,
-        capture_return=True,
-    )
     def process_upload(
         self,
         *,
