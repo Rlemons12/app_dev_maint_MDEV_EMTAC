@@ -656,7 +656,7 @@ def add_image_embeddings(export_report, report_dir, batch_size):
     """
     from modules.emtacdb.emtacdb_fts import Image, ImageEmbedding
     from modules.configuration.config_env import DatabaseConfig
-    from plugins.ai_modules.ai_models import ModelsConfig
+    from modules.ai.config.models_config import ModelsConfig
     from modules.configuration.log_config import info_id, warning_id, error_id, get_request_id
 
     rid = get_request_id()
