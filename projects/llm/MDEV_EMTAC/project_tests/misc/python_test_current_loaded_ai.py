@@ -1,7 +1,7 @@
 # python_test_current_loaded_ai.py
 
 from modules.services import DBServices
-from plugins.ai_modules.ai_models import ModelsConfig
+from modules.ai.config.models_config import ModelsConfig
 
 print("\n==============================")
 print("=== AI SERVICE LOAD TEST =====")
