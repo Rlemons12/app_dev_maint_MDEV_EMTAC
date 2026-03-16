@@ -1,13 +1,14 @@
 # services/image_embedding_service.py
 
+from __future__ import annotations
+
 from typing import Optional, List, Dict, Any
+
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
 
 from modules.emtacdb.emtacdb_fts import ImageEmbedding
 from modules.configuration.log_config import (
     info_id,
-    error_id,
     debug_id,
     warning_id,
     with_request_id,
@@ -27,6 +28,58 @@ class ImageEmbeddingService:
     """
 
     # ---------------------------------------------------------
+    # INTERNAL HELPERS
+    # ---------------------------------------------------------
+
+    @staticmethod
+    def _require_session(session: Session, method_name: str) -> None:
+        if session is None:
+            raise RuntimeError(
+                f"Session required for ImageEmbeddingService.{method_name}"
+            )
+
+    @staticmethod
+    def _require_image_id(image_id: int) -> None:
+        if image_id is None:
+            raise ValueError("image_id is required")
+
+    @staticmethod
+    def _require_embedding_id(embedding_id: int) -> None:
+        if embedding_id is None:
+            raise ValueError("embedding_id is required")
+
+    @staticmethod
+    def _normalize_embedding(embedding: List[float]) -> List[float]:
+        if embedding is None:
+            raise ValueError("embedding is required")
+
+        if not isinstance(embedding, (list, tuple)):
+            raise TypeError("embedding must be a list or tuple")
+
+        normalized = [float(x) for x in embedding]
+
+        if not normalized:
+            raise ValueError("embedding must not be empty")
+
+        return normalized
+
+    @staticmethod
+    def serialize(embedding_obj: Optional[ImageEmbedding]) -> Optional[Dict[str, Any]]:
+        if embedding_obj is None:
+            return None
+
+        return {
+            "id": getattr(embedding_obj, "id", None),
+            "image_id": getattr(embedding_obj, "image_id", None),
+            "model_name": getattr(embedding_obj, "model_name", None),
+            "storage_type": embedding_obj.get_storage_type() if hasattr(embedding_obj, "get_storage_type") else None,
+            "has_pgvector": getattr(embedding_obj, "embedding_vector", None) is not None,
+            "has_legacy": getattr(embedding_obj, "model_embedding", None) is not None,
+            "created_at": getattr(embedding_obj, "created_at", None),
+            "updated_at": getattr(embedding_obj, "updated_at", None),
+        }
+
+    # ---------------------------------------------------------
     # CREATE
     # ---------------------------------------------------------
 
@@ -40,14 +93,18 @@ class ImageEmbeddingService:
         embedding: List[float],
         request_id: Optional[str] = None,
     ) -> ImageEmbedding:
+        self._require_session(session, "add_pgvector")
+        self._require_image_id(image_id)
 
-        if not session:
-            raise RuntimeError("Session required for add_pgvector")
+        if not model_name or not isinstance(model_name, str):
+            raise ValueError("model_name is required")
+
+        normalized_embedding = self._normalize_embedding(embedding)
 
         embedding_obj = ImageEmbedding.create_with_pgvector(
             image_id=image_id,
-            model_name=model_name,
-            embedding=embedding,
+            model_name=model_name.strip(),
+            embedding=normalized_embedding,
         )
 
         session.add(embedding_obj)
@@ -70,14 +127,18 @@ class ImageEmbeddingService:
         embedding: List[float],
         request_id: Optional[str] = None,
     ) -> ImageEmbedding:
+        self._require_session(session, "add_legacy")
+        self._require_image_id(image_id)
 
-        if not session:
-            raise RuntimeError("Session required for add_legacy")
+        if not model_name or not isinstance(model_name, str):
+            raise ValueError("model_name is required")
+
+        normalized_embedding = self._normalize_embedding(embedding)
 
         embedding_obj = ImageEmbedding.create_with_legacy(
             image_id=image_id,
-            model_name=model_name,
-            embedding=embedding,
+            model_name=model_name.strip(),
+            embedding=normalized_embedding,
         )
 
         session.add(embedding_obj)
@@ -102,8 +163,39 @@ class ImageEmbeddingService:
         embedding_id: int,
         request_id: Optional[str] = None,
     ) -> Optional[ImageEmbedding]:
+        self._require_session(session, "get")
+        self._require_embedding_id(embedding_id)
 
         return session.get(ImageEmbedding, embedding_id)
+
+    @with_request_id
+    def get_all_for_image(
+        self,
+        session: Session,
+        *,
+        image_id: int,
+        request_id: Optional[str] = None,
+    ) -> List[ImageEmbedding]:
+        self._require_session(session, "get_all_for_image")
+        self._require_image_id(image_id)
+
+        rows = (
+            session.query(ImageEmbedding)
+            .filter(ImageEmbedding.image_id == image_id)
+            .order_by(ImageEmbedding.id.asc())
+            .all()
+        )
+
+        debug_id(
+            f"[ImageEmbeddingService] get_all_for_image returned {len(rows)} row(s) for image_id={image_id}",
+            request_id,
+        )
+
+        return rows
+
+    # ---------------------------------------------------------
+    # DELETE
+    # ---------------------------------------------------------
 
     @with_request_id
     def remove(
@@ -113,6 +205,8 @@ class ImageEmbeddingService:
         embedding_id: int,
         request_id: Optional[str] = None,
     ) -> bool:
+        self._require_session(session, "remove")
+        self._require_embedding_id(embedding_id)
 
         embedding = session.get(ImageEmbedding, embedding_id)
 
@@ -121,10 +215,41 @@ class ImageEmbeddingService:
             return False
 
         session.delete(embedding)
+        session.flush()
 
         info_id(f"Embedding staged for deletion id={embedding_id}", request_id)
-
         return True
+
+    @with_request_id
+    def remove_all_for_image(
+        self,
+        session: Session,
+        *,
+        image_id: int,
+        request_id: Optional[str] = None,
+    ) -> int:
+        self._require_session(session, "remove_all_for_image")
+        self._require_image_id(image_id)
+
+        rows = (
+            session.query(ImageEmbedding)
+            .filter(ImageEmbedding.image_id == image_id)
+            .all()
+        )
+
+        removed_count = 0
+        for row in rows:
+            session.delete(row)
+            removed_count += 1
+
+        session.flush()
+
+        info_id(
+            f"[ImageEmbeddingService] Removed {removed_count} embedding row(s) for image_id={image_id}",
+            request_id,
+        )
+
+        return removed_count
 
     # ---------------------------------------------------------
     # MIGRATION
@@ -138,6 +263,8 @@ class ImageEmbeddingService:
         embedding_id: int,
         request_id: Optional[str] = None,
     ) -> bool:
+        self._require_session(session, "migrate")
+        self._require_embedding_id(embedding_id)
 
         embedding = session.get(ImageEmbedding, embedding_id)
 
@@ -164,6 +291,7 @@ class ImageEmbeddingService:
         *,
         request_id: Optional[str] = None,
     ) -> Dict[str, Any]:
+        self._require_session(session, "stats")
 
         total = session.query(ImageEmbedding).count()
 
@@ -198,10 +326,13 @@ class ImageEmbeddingService:
         threshold: float = 0.5,
         request_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
+        self._require_session(session, "similarity")
+
+        normalized_embedding = self._normalize_embedding(query_embedding)
 
         return ImageEmbedding.search_similar_images(
             session=session,
-            query_embedding=query_embedding,
+            query_embedding=normalized_embedding,
             model_name=model_name,
             limit=limit,
             similarity_threshold=threshold,
@@ -218,6 +349,8 @@ class ImageEmbeddingService:
         exclude_self: bool = True,
         request_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
+        self._require_session(session, "find_similar_to")
+        self._require_image_id(image_id)
 
         return ImageEmbedding.find_similar_to_image(
             session=session,
@@ -238,5 +371,5 @@ class ImageEmbeddingService:
         *,
         request_id: Optional[str] = None,
     ) -> bool:
-
+        self._require_session(session, "create_indexes")
         return ImageEmbedding.create_pgvector_indexes(session)
