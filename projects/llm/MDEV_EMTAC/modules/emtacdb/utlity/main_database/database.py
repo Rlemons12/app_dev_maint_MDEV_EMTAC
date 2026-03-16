@@ -30,12 +30,12 @@ from modules.emtacdb.emtacdb_fts import Area, EquipmentGroup, Model, AssetNumber
     ImageEmbedding, ImagePositionAssociation, ImageCompletedDocumentAssociation, \
     CompleteDocument, CompletedDocumentPositionAssociation, Document, VersionInfo, \
     DocumentEmbedding, ChatSession, PartsPositionImageAssociation
-from plugins import generate_embedding, store_embedding
-from plugins.image_modules.image_models import get_image_model_handler
+from modules.ai.utils.embedding_storage import generate_embedding, store_embedding
+from modules.ai.image.factories.model_handler_factory import get_image_model_handler
 from modules.emtacdb.utlity.revision_database.snapshot_utils import create_snapshot
 from modules.configuration.config_env import DatabaseConfig
 from modules.configuration.config import ENABLE_REVISION_CONTROL
-from plugins.ai_modules import ModelsConfig
+from modules.ai.config.models_config import ModelsConfig
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
