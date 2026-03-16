@@ -14155,10 +14155,11 @@ class ImageCompletedDocumentAssociation(Base):
 # Process Classes
 class FileLog(Base):
     __tablename__ = 'file_logs'
+
     log_id = Column(Integer, primary_key=True, autoincrement=True)
-    session = Column(Integer, nullable=False)
+    session = Column(String(32), nullable=False)
     session_datetime = Column(DateTime, nullable=False)
-    file_processed = Column(String)  # Added column for file processed
+    file_processed = Column(String)
     total_time = Column(String)
 
 class KeywordAction(Base):
