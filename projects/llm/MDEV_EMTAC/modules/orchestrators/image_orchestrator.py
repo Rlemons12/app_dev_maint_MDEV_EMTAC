@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import os
+import inspect
 from pathlib import Path
 from typing import Optional, Dict, Any, List
-
+from modules.configuration.config import DATABASE_DIR, DATABASE_PATH_IMAGES_FOLDER
+from modules.services.ai_model_image_service import AIModelImageService
 from werkzeug.utils import secure_filename
-
 from modules.orchestrators.base_orchestrator import BaseOrchestrator
 from modules.configuration.log_config import (
     with_request_id,
@@ -17,7 +18,7 @@ from modules.configuration.log_config import (
     warning_id,
     error_id,
 )
-from modules.configuration.config import DATABASE_PATH_IMAGES_FOLDER
+
 from modules.services.image_service import ImageService
 from modules.services.image_embedding_service import ImageEmbeddingService
 from modules.services.image_position_service import ImagePositionService
@@ -52,6 +53,7 @@ class ImageOrchestrator(BaseOrchestrator):
         self.document_assoc_service = ImageCompletedDocumentAssociationService()
         self.task_assoc_service = ImageTaskAssociationService()
         self.problem_assoc_service = ImageProblemAssociationService()
+        self.image_model_service = AIModelImageService()
 
     # ---------------------------------------------------------
     # INTERNAL HELPERS
@@ -59,11 +61,23 @@ class ImageOrchestrator(BaseOrchestrator):
 
     @staticmethod
     def _normalize_text(value: Optional[str], *, fallback: str = "") -> str:
+        """
+        Normalize text inputs and apply fallback when the incoming value is:
+        - None
+        - empty string
+        - whitespace-only string
+
+        This is important for upload metadata because UI forms often submit
+        empty strings instead of None.
+        """
         if value is None:
             return fallback
+
         if not isinstance(value, str):
-            return str(value).strip()
-        return value.strip()
+            value = str(value)
+
+        normalized = value.strip()
+        return normalized if normalized else fallback
 
     def _serialize_image(self, image_obj: Any) -> Optional[Dict[str, Any]]:
         """
@@ -531,6 +545,7 @@ class ImageOrchestrator(BaseOrchestrator):
         metadata = metadata or {}
 
         results: List[Dict[str, Any]] = []
+        pending_embeddings: List[Dict[str, Any]] = []
 
         if not files:
             return {
@@ -543,6 +558,9 @@ class ImageOrchestrator(BaseOrchestrator):
 
         os.makedirs(DATABASE_PATH_IMAGES_FOLDER, exist_ok=True)
 
+        # ---------------------------------------------------------
+        # PHASE 1: SAVE FILES + CREATE IMAGE ROWS
+        # ---------------------------------------------------------
         for file_obj in files:
             filename = secure_filename(getattr(file_obj, "filename", "") or "")
 
@@ -560,24 +578,40 @@ class ImageOrchestrator(BaseOrchestrator):
                 )
                 continue
 
-            file_path = os.path.join(DATABASE_PATH_IMAGES_FOLDER, filename)
+            absolute_file_path = os.path.join(DATABASE_PATH_IMAGES_FOLDER, filename)
+            db_relative_path: Optional[str] = None
 
             try:
-                title = self._normalize_text(metadata.get("title"), fallback=Path(filename).stem)
-                description = self._normalize_text(metadata.get("description"), fallback=title)
+                title = self._normalize_text(
+                    metadata.get("title"),
+                    fallback=Path(filename).stem,
+                )
+                description = self._normalize_text(
+                    metadata.get("description"),
+                    fallback=title,
+                )
 
-                # Pass through metadata for downstream page/document association if present
                 img_metadata = metadata.get("img_metadata")
                 if img_metadata is None:
                     img_metadata = {}
 
-                file_obj.save(file_path)
-                info_id(f"Saved image file to {file_path}", rid)
+                file_obj.save(absolute_file_path)
+                info_id(f"Saved image file to {absolute_file_path}", rid)
+
+                db_relative_path = os.path.normpath(
+                    os.path.relpath(absolute_file_path, DATABASE_DIR)
+                )
+
+                debug_id(
+                    f"[ImageOrchestrator] Saving standalone image path | "
+                    f"absolute='{absolute_file_path}' | relative='{db_relative_path}'",
+                    rid,
+                )
 
                 created = self.create_image(
                     title=title,
                     description=description,
-                    file_path=file_path,
+                    file_path=db_relative_path,
                     img_metadata=img_metadata,
                     request_id=rid,
                 )
@@ -585,19 +619,31 @@ class ImageOrchestrator(BaseOrchestrator):
                 image_payload = created.get("image") or {}
                 image_id = created.get("image_id") or image_payload.get("id")
 
+                result_payload = dict(created)
+
                 results.append(
                     self._build_upload_result(
                         success=True,
                         file_name=filename,
-                        file_path=file_path,
+                        file_path=db_relative_path,
                         image_id=image_id,
-                        result=created,
+                        result=result_payload,
                         http_status=200,
                     )
                 )
 
+                if image_id:
+                    pending_embeddings.append(
+                        {
+                            "image_id": image_id,
+                            "file_name": filename,
+                            "absolute_file_path": absolute_file_path,
+                            "db_relative_path": db_relative_path,
+                        }
+                    )
+
                 debug_id(
-                    f"[ImageOrchestrator] Upload processed successfully | file={filename} | image_id={image_id}",
+                    f"[ImageOrchestrator] Upload staged successfully | file={filename} | image_id={image_id}",
                     rid,
                 )
 
@@ -610,7 +656,7 @@ class ImageOrchestrator(BaseOrchestrator):
                     self._build_upload_result(
                         success=False,
                         file_name=filename,
-                        file_path=file_path,
+                        file_path=db_relative_path or absolute_file_path,
                         error="Validation error",
                         detail=str(exc),
                         http_status=400,
@@ -627,13 +673,125 @@ class ImageOrchestrator(BaseOrchestrator):
                     self._build_upload_result(
                         success=False,
                         file_name=filename,
-                        file_path=file_path,
+                        file_path=db_relative_path or absolute_file_path,
                         error="Image processing failed",
                         detail=str(exc),
                         http_status=500,
                     )
                 )
 
+        # ---------------------------------------------------------
+        # PHASE 2: EMBED ALL STAGED IMAGES IN BATCH
+        # ---------------------------------------------------------
+        if pending_embeddings:
+            current_model_name: Optional[str] = None
+            handler = None
+            batch_key = self._normalize_text(
+                metadata.get("_embedding_batch_key"),
+                fallback=f"image_upload:{rid}",
+            )
+
+            try:
+                current_model_name = self.image_model_service.get_current_model_name(
+                    request_id=rid,
+                )
+
+                handler = self._resolve_local_image_handler(
+                    model_name=current_model_name,
+                    request_id=rid,
+                )
+
+                image_paths = [row["absolute_file_path"] for row in pending_embeddings]
+
+                batch_vectors: Optional[List[Optional[List[float]]]] = None
+
+                if handler is not None:
+                    self._begin_embedding_batch_session(
+                        handler=handler,
+                        batch_key=batch_key,
+                        request_id=rid,
+                    )
+
+                    try:
+                        batch_vectors = self._get_batch_image_embeddings(
+                            handler=handler,
+                            image_paths=image_paths,
+                            batch_key=batch_key,
+                            request_id=rid,
+                        )
+                    finally:
+                        self._end_embedding_batch_session(
+                            handler=handler,
+                            batch_key=batch_key,
+                            request_id=rid,
+                        )
+
+                if batch_vectors is None:
+                    batch_vectors = self._get_single_image_embeddings_fallback(
+                        image_paths=image_paths,
+                        request_id=rid,
+                    )
+
+                stored_embeddings: Dict[int, Dict[str, Any]] = {}
+
+                with self.transaction() as session:
+                    for pending_row, embedding_vector in zip(pending_embeddings, batch_vectors):
+                        image_id = pending_row["image_id"]
+
+                        if embedding_vector is None:
+                            warning_id(
+                                f"[ImageOrchestrator] No embedding generated for image_id={image_id} "
+                                f"file={pending_row['file_name']}",
+                                rid,
+                            )
+                            continue
+
+                        try:
+                            embedding_obj = self.embedding_service.add_pgvector(
+                                session=session,
+                                image_id=image_id,
+                                model_name=current_model_name,
+                                embedding=embedding_vector,
+                                request_id=rid,
+                            )
+                            stored_embeddings[image_id] = self._serialize_embedding(embedding_obj)
+                        except Exception as exc:
+                            warning_id(
+                                f"[ImageOrchestrator] Failed storing embedding for image_id={image_id}: {exc}",
+                                rid,
+                            )
+
+                # Patch embedding payloads back into existing results
+                for result_row in results:
+                    if not result_row.get("success"):
+                        continue
+
+                    image_id = result_row.get("image_id")
+                    if not image_id:
+                        continue
+
+                    embedding_payload = stored_embeddings.get(image_id)
+                    if embedding_payload is not None:
+                        result_payload = result_row.get("result") or {}
+                        result_payload["embedding"] = embedding_payload
+                        result_row["result"] = result_payload
+
+                debug_id(
+                    f"[ImageOrchestrator] Batch embedding phase complete | "
+                    f"staged={len(pending_embeddings)} stored={len(stored_embeddings)} "
+                    f"model={current_model_name}",
+                    rid,
+                )
+
+            except Exception as embed_exc:
+                warning_id(
+                    f"[ImageOrchestrator] Batch embedding phase failed after image creation: {embed_exc}",
+                    rid,
+                )
+
+        # ---------------------------------------------------------
+        # FINAL STATUS
+        # ---------------------------------------------------------
         failed = [r for r in results if not r.get("success", False)]
         processed = len(results) - len(failed)
 
@@ -683,3 +841,220 @@ class ImageOrchestrator(BaseOrchestrator):
             metadata=metadata,
             request_id=request_id,
         )
+    @staticmethod
+    def _call_with_supported_kwargs(func, **kwargs):
+        """
+        Call a function while only passing kwargs it actually accepts.
+        """
+        sig = inspect.signature(func)
+        accepted = {}
+
+        for key, value in kwargs.items():
+            if key in sig.parameters:
+                accepted[key] = value
+
+        return func(**accepted)
+
+    def _resolve_local_image_handler(
+        self,
+        *,
+        model_name: str,
+        request_id: Optional[str] = None,
+    ):
+        """
+        Best-effort handler resolution for batch embedding support.
+
+        We keep this defensive because AIModelImageService may evolve and
+        may expose different loader methods over time.
+        """
+        rid = request_id or get_request_id()
+        svc = self.image_model_service
+
+        candidates = [
+            "get_model_handler",
+            "resolve_model_handler",
+            "load_local_model",
+            "_load_local_model",
+        ]
+
+        for method_name in candidates:
+            method = getattr(svc, method_name, None)
+            if not callable(method):
+                continue
+
+            try:
+                handler = self._call_with_supported_kwargs(
+                    method,
+                    model_name=model_name,
+                    request_id=rid,
+                )
+                if handler is not None:
+                    debug_id(
+                        f"[ImageOrchestrator] Resolved image handler via {method_name} | "
+                        f"model={model_name} | handler_type={type(handler).__name__}",
+                        rid,
+                    )
+                    return handler
+            except Exception as exc:
+                warning_id(
+                    f"[ImageOrchestrator] Handler resolution method '{method_name}' failed "
+                    f"for model '{model_name}': {exc}",
+                    rid,
+                )
+
+        warning_id(
+            f"[ImageOrchestrator] Could not resolve batch-capable handler for model '{model_name}'",
+            rid,
+        )
+        return None
+
+    def _begin_embedding_batch_session(
+        self,
+        *,
+        handler,
+        batch_key: str,
+        request_id: Optional[str] = None,
+    ) -> None:
+        rid = request_id or get_request_id()
+        begin_fn = getattr(handler, "begin_document_embedding_session", None)
+
+        if callable(begin_fn):
+            try:
+                self._call_with_supported_kwargs(
+                    begin_fn,
+                    document_key=batch_key,
+                    request_id=rid,
+                )
+                debug_id(
+                    f"[ImageOrchestrator] Began image embedding batch session | batch_key={batch_key}",
+                    rid,
+                )
+            except Exception as exc:
+                warning_id(
+                    f"[ImageOrchestrator] Failed to begin batch session '{batch_key}': {exc}",
+                    rid,
+                )
+
+    def _end_embedding_batch_session(
+        self,
+        *,
+        handler,
+        batch_key: str,
+        request_id: Optional[str] = None,
+    ) -> None:
+        rid = request_id or get_request_id()
+        end_fn = getattr(handler, "end_document_embedding_session", None)
+
+        if callable(end_fn):
+            try:
+                self._call_with_supported_kwargs(
+                    end_fn,
+                    document_key=batch_key,
+                    request_id=rid,
+                )
+                debug_id(
+                    f"[ImageOrchestrator] Ended image embedding batch session | batch_key={batch_key}",
+                    rid,
+                )
+            except Exception as exc:
+                warning_id(
+                    f"[ImageOrchestrator] Failed to end batch session '{batch_key}': {exc}",
+                    rid,
+                )
+
+    def _get_batch_image_embeddings(
+        self,
+        *,
+        handler,
+        image_paths: List[str],
+        batch_key: str,
+        request_id: Optional[str] = None,
+    ) -> Optional[List[Optional[List[float]]]]:
+        """
+        Try to use handler batch embedding if available.
+
+        Returns:
+            list of vectors (same order as image_paths), or None if not available.
+        """
+        rid = request_id or get_request_id()
+
+        batch_fn = getattr(handler, "get_image_embeddings_batch", None)
+        if not callable(batch_fn):
+            debug_id(
+                "[ImageOrchestrator] Handler does not expose get_image_embeddings_batch; "
+                "will fall back to single-image embedding",
+                rid,
+            )
+            return None
+
+        try:
+            vectors = self._call_with_supported_kwargs(
+                batch_fn,
+                images=image_paths,
+                image_paths=image_paths,
+                document_key=batch_key,
+                request_id=rid,
+            )
+
+            if vectors is None:
+                warning_id(
+                    "[ImageOrchestrator] Batch embedding returned None; falling back to singles",
+                    rid,
+                )
+                return None
+
+            if not isinstance(vectors, list):
+                warning_id(
+                    f"[ImageOrchestrator] Batch embedding returned unexpected type: {type(vectors)}",
+                    rid,
+                )
+                return None
+
+            if len(vectors) != len(image_paths):
+                warning_id(
+                    f"[ImageOrchestrator] Batch embedding count mismatch | "
+                    f"expected={len(image_paths)} returned={len(vectors)}",
+                    rid,
+                )
+                return None
+
+            debug_id(
+                f"[ImageOrchestrator] Batch image embeddings generated successfully | count={len(vectors)}",
+                rid,
+            )
+            return vectors
+
+        except Exception as exc:
+            warning_id(
+                f"[ImageOrchestrator] Batch image embedding failed; falling back to singles: {exc}",
+                rid,
+            )
+            return None
+
+    def _get_single_image_embeddings_fallback(
+        self,
+        *,
+        image_paths: List[str],
+        request_id: Optional[str] = None,
+    ) -> List[Optional[List[float]]]:
+        """
+        Conservative fallback path: use existing per-image service call.
+        """
+        rid = request_id or get_request_id()
+        vectors: List[Optional[List[float]]] = []
+
+        for image_path in image_paths:
+            try:
+                vector = self.image_model_service.get_image_embedding(
+                    image_path=image_path,
+                    request_id=rid,
+                )
+                vectors.append(vector)
+            except Exception as exc:
+                warning_id(
+                    f"[ImageOrchestrator] Single-image embedding fallback failed for '{image_path}': {exc}",
+                    rid,
+                )
+                vectors.append(None)
+
+        return vectors
