@@ -6,11 +6,11 @@ import numpy as np
 from PIL import Image as PILImage
 from werkzeug.utils import secure_filename
 from modules.emtacdb.emtacdb_fts import Image, ImageEmbedding
-from plugins.image_modules.image_models import get_image_model_handler
+from modules.ai.image.factories.model_handler_factory import get_image_model_handler
 from modules.configuration.config import DATABASE_PATH_IMAGES_FOLDER, DATABASE_DIR
 from modules.configuration.log_config import logger
 from modules.configuration.config_env import DatabaseConfig
-from plugins.ai_modules import ModelsConfig
+from modules.ai.config.models_config import ModelsConfig
 
 db_config = DatabaseConfig()
 
