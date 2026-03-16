@@ -5,7 +5,10 @@ import textwrap
 from pathlib import Path
 
 
-APP_PY = r'''import json
+APP_PY = r'''
+from __future__ import annotations
+
+import json
 import os
 from flask import Flask, jsonify, render_template
 from service_manager import ServiceManager
@@ -49,19 +52,22 @@ def get_services():
 @app.route("/api/services/<service_name>/start", methods=["POST"])
 def start_service(service_name):
     result = service_manager.start_service(service_name)
-    return jsonify(result)
+    status_code = 200 if result.get("success") else 400
+    return jsonify(result), status_code
 
 
 @app.route("/api/services/<service_name>/stop", methods=["POST"])
 def stop_service(service_name):
     result = service_manager.stop_service(service_name)
-    return jsonify(result)
+    status_code = 200 if result.get("success") else 400
+    return jsonify(result), status_code
 
 
 @app.route("/api/services/<service_name>/restart", methods=["POST"])
 def restart_service(service_name):
     result = service_manager.restart_service(service_name)
-    return jsonify(result)
+    status_code = 200 if result.get("success") else 400
+    return jsonify(result), status_code
 
 
 @app.route("/api/services/<service_name>/clear-output", methods=["POST"])
@@ -84,14 +90,17 @@ if __name__ == "__main__":
     app.run(debug=True, host="127.0.0.1", port=5050)
 '''
 
+SERVICE_MANAGER_PY = r'''
+from __future__ import annotations
 
-SERVICE_MANAGER_PY = r'''import os
+import os
 import signal
 import subprocess
 import threading
 import time
 from collections import deque
-from typing import Dict, Optional, Any
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 
 class ManagedService:
@@ -99,16 +108,23 @@ class ManagedService:
         self.name: str = config["name"]
         self.service_type: str = config.get("service_type", "process")
         self.cwd: Optional[str] = config.get("cwd")
+
         self.command: list[str] = config.get("command", [])
         self.start_command: list[str] = config.get("start_command", [])
         self.stop_command: list[str] = config.get("stop_command", [])
         self.status_command: list[str] = config.get("status_command", [])
 
+        self.log_file: Optional[str] = config.get("log_file")
+        self.auto_tail_log: bool = config.get("auto_tail_log", False)
+
         self.process: Optional[subprocess.Popen] = None
-        self.output_buffer = deque(maxlen=500)
+        self.output_buffer = deque(maxlen=1000)
         self.lock = threading.Lock()
         self.started_at: Optional[float] = None
         self.last_known_status: str = "stopped"
+
+        self.log_tail_thread: Optional[threading.Thread] = None
+        self.log_tail_stop_event = threading.Event()
 
     def append_output(self, line: str) -> None:
         with self.lock:
@@ -138,10 +154,9 @@ class ManagedService:
                     text=True,
                     shell=False
                 )
-                output = (result.stdout or "") + "\n" + (result.stderr or "")
-                output = output.lower()
 
-                # Common pg_ctl status patterns
+                output = ((result.stdout or "") + "\\n" + (result.stderr or "")).lower()
+
                 if result.returncode == 0:
                     self.last_known_status = "running"
                     return True
@@ -150,8 +165,11 @@ class ManagedService:
                     self.last_known_status = "running"
                     return True
 
-                self.last_known_status = "stopped"
-                return False
+                if "no server running" in output:
+                    self.last_known_status = "stopped"
+                    return False
+
+                return self.last_known_status == "running"
 
             except Exception as exc:
                 self.append_output(f"[SYSTEM] Status check failed: {exc}")
@@ -160,9 +178,8 @@ class ManagedService:
         return False
 
     def get_pid(self) -> Optional[int]:
-        if self.service_type == "process":
-            if self.process and self.is_running():
-                return self.process.pid
+        if self.service_type == "process" and self.process and self.is_running():
+            return self.process.pid
         return None
 
     def get_status(self) -> str:
@@ -172,6 +189,44 @@ class ManagedService:
         if self.started_at and self.is_running():
             return int(time.time() - self.started_at)
         return None
+
+    def start_log_tailing(self) -> None:
+        if not self.log_file or not self.auto_tail_log:
+            return
+
+        if self.log_tail_thread and self.log_tail_thread.is_alive():
+            return
+
+        self.log_tail_stop_event.clear()
+        self.log_tail_thread = threading.Thread(target=self._tail_log_file, daemon=True)
+        self.log_tail_thread.start()
+
+    def stop_log_tailing(self) -> None:
+        self.log_tail_stop_event.set()
+
+    def _tail_log_file(self) -> None:
+        log_path = Path(self.log_file)
+        self.append_output(f"[SYSTEM] Starting log tail: {log_path}")
+
+        while not self.log_tail_stop_event.is_set():
+            if not log_path.exists():
+                time.sleep(1)
+                continue
+
+            try:
+                with log_path.open("r", encoding="utf-8", errors="replace") as f:
+                    f.seek(0, os.SEEK_END)
+                    while not self.log_tail_stop_event.is_set():
+                        line = f.readline()
+                        if not line:
+                            time.sleep(0.5)
+                            continue
+                        self.append_output(line)
+            except Exception as exc:
+                self.append_output(f"[SYSTEM] Log tail error: {exc}")
+                time.sleep(2)
+
+        self.append_output(f"[SYSTEM] Stopped log tail: {log_path}")
 
 
 class ServiceManager:
@@ -193,11 +248,10 @@ class ServiceManager:
             shell=False
         )
 
-    def start_service(self, name: str) -> dict:
-        if name not in self.services:
+    def start_service(self, name: str) -> dict[str, Any]:
+        service = self.services.get(name)
+        if not service:
             return {"success": False, "message": f"Service '{name}' not found."}
-
-        service = self.services[name]
 
         if service.service_type == "process":
             return self._start_process_service(service)
@@ -207,11 +261,10 @@ class ServiceManager:
 
         return {"success": False, "message": f"Unknown service type for '{name}'."}
 
-    def stop_service(self, name: str) -> dict:
-        if name not in self.services:
+    def stop_service(self, name: str) -> dict[str, Any]:
+        service = self.services.get(name)
+        if not service:
             return {"success": False, "message": f"Service '{name}' not found."}
-
-        service = self.services[name]
 
         if service.service_type == "process":
             return self._stop_process_service(service)
@@ -221,22 +274,25 @@ class ServiceManager:
 
         return {"success": False, "message": f"Unknown service type for '{name}'."}
 
-    def restart_service(self, name: str) -> dict:
-        if name not in self.services:
+    def restart_service(self, name: str) -> dict[str, Any]:
+        service = self.services.get(name)
+        if not service:
             return {"success": False, "message": f"Service '{name}' not found."}
-
-        service = self.services[name]
 
         if service.is_running():
             stop_result = self.stop_service(name)
             if not stop_result["success"]:
                 return stop_result
+            time.sleep(1)
 
         return self.start_service(name)
 
-    def _start_process_service(self, service: ManagedService) -> dict:
+    def _start_process_service(self, service: ManagedService) -> dict[str, Any]:
         if service.is_running():
             return {"success": False, "message": f"Service '{service.name}' is already running."}
+
+        if not service.command:
+            return {"success": False, "message": f"No command defined for '{service.name}'."}
 
         try:
             creationflags = 0
@@ -271,12 +327,14 @@ class ServiceManager:
                 daemon=True
             ).start()
 
+            service.start_log_tailing()
+
             return {"success": True, "message": f"Service '{service.name}' started successfully."}
 
         except Exception as exc:
             return {"success": False, "message": f"Failed to start service '{service.name}': {exc}"}
 
-    def _stop_process_service(self, service: ManagedService) -> dict:
+    def _stop_process_service(self, service: ManagedService) -> dict[str, Any]:
         if not service.is_running():
             return {"success": False, "message": f"Service '{service.name}' is not running."}
 
@@ -297,6 +355,7 @@ class ServiceManager:
                 else:
                     os.killpg(os.getpgid(service.process.pid), signal.SIGKILL)
 
+            service.stop_log_tailing()
             service.append_output(f"[SYSTEM] Service '{service.name}' stopped.")
             service.process = None
             service.started_at = None
@@ -307,7 +366,7 @@ class ServiceManager:
         except Exception as exc:
             return {"success": False, "message": f"Failed to stop service '{service.name}': {exc}"}
 
-    def _start_command_service(self, service: ManagedService) -> dict:
+    def _start_command_service(self, service: ManagedService) -> dict[str, Any]:
         if service.is_running():
             return {"success": False, "message": f"Service '{service.name}' is already running."}
 
@@ -334,6 +393,7 @@ class ServiceManager:
             if result.returncode == 0:
                 service.started_at = time.time()
                 service.last_known_status = "running"
+                service.start_log_tailing()
                 return {"success": True, "message": f"Service '{service.name}' started successfully."}
 
             service.last_known_status = "stopped"
@@ -345,7 +405,7 @@ class ServiceManager:
         except Exception as exc:
             return {"success": False, "message": f"Failed to start service '{service.name}': {exc}"}
 
-    def _stop_command_service(self, service: ManagedService) -> dict:
+    def _stop_command_service(self, service: ManagedService) -> dict[str, Any]:
         if not service.is_running():
             return {"success": False, "message": f"Service '{service.name}' is not running."}
 
@@ -370,6 +430,7 @@ class ServiceManager:
                     service.append_output(line)
 
             if result.returncode == 0:
+                service.stop_log_tailing()
                 service.started_at = None
                 service.last_known_status = "stopped"
                 return {"success": True, "message": f"Service '{service.name}' stopped successfully."}
@@ -387,7 +448,7 @@ class ServiceManager:
             return
 
         try:
-            for line in iter(service.process.stdout.readline, ''):
+            for line in iter(service.process.stdout.readline, ""):
                 if not line:
                     break
                 service.append_output(line)
@@ -399,8 +460,9 @@ class ServiceManager:
             service.process = None
             service.started_at = None
             service.last_known_status = "stopped"
+            service.stop_log_tailing()
 
-    def get_service_data(self) -> list[dict]:
+    def get_service_data(self) -> list[dict[str, Any]]:
         data = []
         for name, service in self.services.items():
             data.append({
@@ -414,6 +476,7 @@ class ServiceManager:
                 "stop_command": " ".join(service.stop_command) if service.stop_command else "",
                 "status_command": " ".join(service.status_command) if service.status_command else "",
                 "cwd": service.cwd,
+                "log_file": service.log_file,
                 "output": service.get_output(),
             })
         return data
@@ -422,313 +485,19 @@ class ServiceManager:
         return self.services.get(name)
 '''
 
-
-HTML_TEMPLATE = r'''<!DOCTYPE html>
+HTML_TEMPLATE = r'''
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EMTAC Service Dashboard</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            margin: 0;
-            padding: 20px;
-        }
-
-        h1 {
-            margin-bottom: 10px;
-        }
-
-        .subheading {
-            margin-bottom: 20px;
-            color: #444;
-        }
-
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-            gap: 20px;
-        }
-
-        .service-card {
-            background: white;
-            border-radius: 10px;
-            padding: 16px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            border-left: 6px solid #999;
-        }
-
-        .service-card.running {
-            border-left-color: #28a745;
-        }
-
-        .service-card.stopped {
-            border-left-color: #dc3545;
-        }
-
-        .service-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .service-title {
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .status-badge {
-            padding: 6px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-            color: white;
-        }
-
-        .status-running {
-            background: #28a745;
-        }
-
-        .status-stopped {
-            background: #dc3545;
-        }
-
-        .service-meta {
-            margin-top: 10px;
-            font-size: 14px;
-            color: #333;
-            line-height: 1.6;
-        }
-
-        .service-actions {
-            margin-top: 14px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        button {
-            border: none;
-            border-radius: 6px;
-            padding: 10px 14px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .btn-start {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-stop {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-restart {
-            background: #007bff;
-            color: white;
-        }
-
-        .btn-clear {
-            background: #6c757d;
-            color: white;
-        }
-
-        .output-box {
-            margin-top: 16px;
-            background: #111;
-            color: #00ff88;
-            padding: 12px;
-            border-radius: 8px;
-            height: 300px;
-            overflow-y: auto;
-            font-family: Consolas, monospace;
-            font-size: 13px;
-            white-space: pre-wrap;
-            border: 1px solid #222;
-        }
-
-        .message-bar {
-            margin-bottom: 20px;
-            padding: 10px;
-            border-radius: 6px;
-            display: none;
-        }
-
-        .message-success {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .message-error {
-            background: #f8d7da;
-            color: #721c24;
-        }
-    </style>
 </head>
 <body>
-    <h1>EMTAC Service Dashboard</h1>
-    <div class="subheading">Start, stop, restart, and inspect service output.</div>
-
-    <div id="messageBar" class="message-bar"></div>
-    <div id="servicesContainer" class="services-grid"></div>
-
-    <script>
-        const servicesContainer = document.getElementById("servicesContainer");
-        const messageBar = document.getElementById("messageBar");
-
-        function showMessage(message, isSuccess = true) {
-            messageBar.textContent = message;
-            messageBar.className = "message-bar " + (isSuccess ? "message-success" : "message-error");
-            messageBar.style.display = "block";
-
-            setTimeout(() => {
-                messageBar.style.display = "none";
-            }, 3000);
-        }
-
-        function formatUptime(seconds) {
-            if (seconds === null || seconds === undefined) {
-                return "N/A";
-            }
-
-            const hrs = Math.floor(seconds / 3600);
-            const mins = Math.floor((seconds % 3600) / 60);
-            const secs = seconds % 60;
-            return `${hrs}h ${mins}m ${secs}s`;
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement("div");
-            div.innerText = text;
-            return div.innerHTML;
-        }
-
-        async function fetchServices() {
-            try {
-                const response = await fetch("/api/services");
-                const data = await response.json();
-
-                if (!data.success) {
-                    showMessage("Failed to fetch services.", false);
-                    return;
-                }
-
-                renderServices(data.services);
-            } catch (error) {
-                showMessage("Error loading services: " + error.message, false);
-            }
-        }
-
-        function renderServices(services) {
-            servicesContainer.innerHTML = "";
-
-            services.forEach(service => {
-                const card = document.createElement("div");
-                card.className = `service-card ${service.status}`;
-
-                const outputText = service.output.length
-                    ? service.output.join("\\n")
-                    : "No output yet.";
-
-                const commandText = service.service_type === "process"
-                    ? service.command
-                    : service.start_command;
-
-                card.innerHTML = `
-                    <div class="service-header">
-                        <div class="service-title">${service.name}</div>
-                        <div class="status-badge ${service.status === 'running' ? 'status-running' : 'status-stopped'}">
-                            ${service.status}
-                        </div>
-                    </div>
-
-                    <div class="service-meta">
-                        <div><strong>Type:</strong> ${service.service_type}</div>
-                        <div><strong>PID:</strong> ${service.pid ?? "N/A"}</div>
-                        <div><strong>Uptime:</strong> ${formatUptime(service.uptime_seconds)}</div>
-                        <div><strong>Command:</strong> ${commandText || "N/A"}</div>
-                        <div><strong>Working Dir:</strong> ${service.cwd ?? "N/A"}</div>
-                    </div>
-
-                    <div class="service-actions">
-                        <button class="btn-start" onclick="startService('${service.name}')">Start</button>
-                        <button class="btn-stop" onclick="stopService('${service.name}')">Stop</button>
-                        <button class="btn-restart" onclick="restartService('${service.name}')">Restart</button>
-                        <button class="btn-clear" onclick="clearOutput('${service.name}')">Clear Output</button>
-                    </div>
-
-                    <div class="output-box">${escapeHtml(outputText)}</div>
-                `;
-
-                servicesContainer.appendChild(card);
-            });
-        }
-
-        async function startService(serviceName) {
-            try {
-                const response = await fetch(`/api/services/${encodeURIComponent(serviceName)}/start`, {
-                    method: "POST"
-                });
-                const data = await response.json();
-                showMessage(data.message, data.success);
-                await fetchServices();
-            } catch (error) {
-                showMessage("Start failed: " + error.message, false);
-            }
-        }
-
-        async function stopService(serviceName) {
-            try {
-                const response = await fetch(`/api/services/${encodeURIComponent(serviceName)}/stop`, {
-                    method: "POST"
-                });
-                const data = await response.json();
-                showMessage(data.message, data.success);
-                await fetchServices();
-            } catch (error) {
-                showMessage("Stop failed: " + error.message, false);
-            }
-        }
-
-        async function restartService(serviceName) {
-            try {
-                const response = await fetch(`/api/services/${encodeURIComponent(serviceName)}/restart`, {
-                    method: "POST"
-                });
-                const data = await response.json();
-                showMessage(data.message, data.success);
-                await fetchServices();
-            } catch (error) {
-                showMessage("Restart failed: " + error.message, false);
-            }
-        }
-
-        async function clearOutput(serviceName) {
-            try {
-                const response = await fetch(`/api/services/${encodeURIComponent(serviceName)}/clear-output`, {
-                    method: "POST"
-                });
-                const data = await response.json();
-                showMessage(data.message, data.success);
-                await fetchServices();
-            } catch (error) {
-                showMessage("Clear failed: " + error.message, false);
-            }
-        }
-
-        fetchServices();
-        setInterval(fetchServices, 3000);
-    </script>
+    Replace this with the full HTML from the response.
 </body>
 </html>
 '''
-
 
 SERVICES_CONFIG = {
     "services": [
@@ -768,18 +537,21 @@ SERVICES_CONFIG = {
                 "-D",
                 r"E:\emtac\postgres\data"
             ],
-            "cwd": r"E:\emtac\services"
+            "cwd": r"E:\emtac\services",
+            "log_file": r"E:\emtac\postgres\logs\postgresql.log",
+            "auto_tail_log": True
         }
     ]
 }
 
-
-START_BAT = r'''@echo off
+START_BAT = r'''
+@echo off
 "E:\emtac\services\gpu\.venv_gpu\Scripts\python.exe" "E:\emtac\services\service_dashboard\app.py"
 pause
 '''
 
-CHECK_FLASK_BAT = r'''@echo off
+CHECK_FLASK_BAT = r'''
+@echo off
 "E:\emtac\services\gpu\.venv_gpu\Scripts\python.exe" -c "import flask; print('Flask OK:', flask.__version__)"
 pause
 '''
@@ -801,18 +573,9 @@ def main() -> None:
     templates_dir = dashboard_dir / "templates"
     logs_dir = dashboard_dir / "logs"
 
-    gpu_python = Path(r"E:\emtac\services\gpu\.venv_gpu\Scripts\python.exe")
-
-    print(f"[INFO] Root directory: {root_dir}")
-    print(f"[INFO] Dashboard directory: {dashboard_dir}")
-
     dashboard_dir.mkdir(exist_ok=True)
     templates_dir.mkdir(exist_ok=True)
     logs_dir.mkdir(exist_ok=True)
-
-    print(f"[OK] Ensured directory exists: {dashboard_dir}")
-    print(f"[OK] Ensured directory exists: {templates_dir}")
-    print(f"[OK] Ensured directory exists: {logs_dir}")
 
     write_text_file(dashboard_dir / "app.py", APP_PY)
     write_text_file(dashboard_dir / "service_manager.py", SERVICE_MANAGER_PY)
@@ -821,35 +584,7 @@ def main() -> None:
     write_text_file(dashboard_dir / "start_dashboard.bat", START_BAT)
     write_text_file(dashboard_dir / "check_flask_in_gpu_venv.bat", CHECK_FLASK_BAT)
 
-    if gpu_python.exists():
-        print(f"[OK] Found GPU venv python: {gpu_python}")
-    else:
-        print(f"[WARN] GPU venv python not found: {gpu_python}")
-
-    print()
-    print("=" * 70)
     print("[DONE] Service dashboard setup complete.")
-    print("=" * 70)
-    print()
-    print("Files created:")
-    print(f"  {dashboard_dir / 'app.py'}")
-    print(f"  {dashboard_dir / 'service_manager.py'}")
-    print(f"  {dashboard_dir / 'services_config.json'}")
-    print(f"  {dashboard_dir / 'templates' / 'service_dashboard.html'}")
-    print(f"  {dashboard_dir / 'start_dashboard.bat'}")
-    print()
-    print("IMPORTANT:")
-    print("Edit PostgreSQL paths in services_config.json before using the dashboard.")
-    print()
-    print("Next steps:")
-    print("1. Make sure Flask exists in E:\\emtac\\services\\gpu\\.venv_gpu")
-    print("2. Edit services_config.json if needed")
-    print("3. Start the dashboard by double-clicking:")
-    print(f"   {dashboard_dir / 'start_dashboard.bat'}")
-    print()
-    print("Then open:")
-    print("   http://127.0.0.1:5050")
-    print()
 
 
 if __name__ == "__main__":
