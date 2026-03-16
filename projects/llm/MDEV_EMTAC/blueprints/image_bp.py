@@ -21,7 +21,7 @@ from modules.configuration.log_config import (
 from modules.configuration.config_env import DatabaseConfig
 from modules.configuration.config import (DATABASE_DIR, DATABASE_URL,TEMPORARY_UPLOAD,
                                           DATABASE_PATH_IMAGES_FOLDER, ALLOWED_EXTENSIONS)
-from plugins.ai_modules.ai_models import ModelsConfig
+from modules.ai.config.models_config import ModelsConfig
 from modules.emtacdb.utlity.revision_database.auditlog import commit_audit_logs
 
 # Initialize database configuration
