@@ -11,7 +11,7 @@ from datetime import datetime
 from modules.configuration.log_config import logger, with_request_id
 from modules.configuration.config_env import DatabaseConfig
 from modules.emtac_ai.query_expansion import UnifiedSearch
-from plugins.ai_modules.ai_models import ModelsConfig
+from modules.ai.config.models_config import ModelsConfig
 
 
 
