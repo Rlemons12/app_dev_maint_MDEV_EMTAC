@@ -54,7 +54,7 @@ from flask import g  # Required for access to g.request_id in the methods
 from functools import wraps  # Required if you need to recreate with_request_id
 from modules.emtacdb.utlity.system_manager import SystemResourceManager
 from plugins import generate_embedding, CLIPModelHandler
-from plugins.ai_modules import ModelsConfig
+from modules.ai.config.models_config import ModelsConfig
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 
