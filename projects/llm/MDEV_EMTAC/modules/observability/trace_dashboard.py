@@ -1,36 +1,107 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
-from flask import Blueprint, jsonify, request, Response
+from typing import Any, Dict, List, Optional, Union
+from uuid import UUID
+
+from flask import Blueprint, jsonify, render_template, request, url_for
+from sqlalchemy import func
 
 from modules.configuration.config_env import get_db_config
 from modules.observability.models import TraceSession, TraceSpan
 
 db = get_db_config()
 
-TRACE_BP = Blueprint("trace_bp", __name__)
+# IMPORTANT:
+# This blueprint name matches the endpoint name seen in your logs:
+# "trace_dashboard.trace_dashboard"
+trace_dashboard_bp = Blueprint("trace_dashboard", __name__)
+
+
+# ---------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------
+
+def _safe_limit(
+    raw_value: Optional[str],
+    default: int = 50,
+    maximum: int = 200,
+) -> int:
+    try:
+        value = int(raw_value or default)
+    except (TypeError, ValueError):
+        return default
+
+    if value < 1:
+        return 1
+    if value > maximum:
+        return maximum
+    return value
+
+
+def _parse_trace_id(trace_id: str) -> Union[UUID, str]:
+    """
+    Normalize trace_id if it is a UUID string.
+    Falls back to raw string for compatibility if your DB column is not UUID.
+    """
+    try:
+        return UUID(trace_id)
+    except (TypeError, ValueError):
+        return trace_id
+
+
+def _iso(dt: Any) -> Optional[str]:
+    return dt.isoformat() if dt else None
+
+
+def _get_template_urls() -> Dict[str, str]:
+    """
+    Build template API URLs using url_for.
+    If url_for fails for any reason, provide safe fallbacks so the template
+    still renders instead of crashing.
+    """
+    try:
+        trace_recent_api_url = url_for("trace_dashboard.trace_recent")
+    except Exception:
+        trace_recent_api_url = "/dashboards/trace/api/recent"
+
+    try:
+        trace_graph_api_base = url_for(
+            "trace_dashboard.trace_graph",
+            trace_id="__TRACE_ID__",
+        )
+    except Exception:
+        trace_graph_api_base = "/dashboards/trace/api/graph/__TRACE_ID__"
+
+    return {
+        "trace_recent_api_url": trace_recent_api_url,
+        "trace_graph_api_base": trace_graph_api_base,
+    }
 
 
 # ---------------------------------------------------------
 # HTML UI
 # ---------------------------------------------------------
 
-@TRACE_BP.get("/trace")
-def trace_index() -> Response:
-    return Response(_TRACE_HTML, mimetype="text/html")
+@trace_dashboard_bp.get("/trace")
+def trace_dashboard():
+    template_urls = _get_template_urls()
+
+    return render_template(
+        "dashboards/trace_dashboard.html",
+        trace_recent_api_url=template_urls["trace_recent_api_url"],
+        trace_graph_api_base=template_urls["trace_graph_api_base"],
+    )
 
 
 # ---------------------------------------------------------
 # Recent Traces (from Postgres)
 # ---------------------------------------------------------
 
-@TRACE_BP.get("/trace/api/recent")
+@trace_dashboard_bp.get("/trace/api/recent")
 def trace_recent():
-
-    limit = int(request.args.get("limit", "50"))
+    limit = _safe_limit(request.args.get("limit"), default=50, maximum=200)
 
     with db.main_session() as session:
-
         traces: List[TraceSession] = (
             session.query(TraceSession)
             .order_by(TraceSession.started_at.desc())
@@ -38,20 +109,89 @@ def trace_recent():
             .all()
         )
 
-        results = []
+        trace_ids = [trace.id for trace in traces]
 
-        for t in traces:
-            span_count = (
-                session.query(TraceSpan)
-                .filter(TraceSpan.trace_id == t.id)
-                .count()
+        span_counts_map: Dict[Any, int] = {}
+        ok_counts_map: Dict[Any, int] = {}
+        error_counts_map: Dict[Any, int] = {}
+        duration_map: Dict[Any, Optional[float]] = {}
+
+        if trace_ids:
+            span_count_rows = (
+                session.query(
+                    TraceSpan.trace_id,
+                    func.count(TraceSpan.id).label("span_count"),
+                )
+                .filter(TraceSpan.trace_id.in_(trace_ids))
+                .group_by(TraceSpan.trace_id)
+                .all()
+            )
+            span_counts_map = {
+                row.trace_id: int(row.span_count)
+                for row in span_count_rows
+            }
+
+            status_rows = (
+                session.query(
+                    TraceSpan.trace_id,
+                    TraceSpan.status,
+                    func.count(TraceSpan.id).label("status_count"),
+                )
+                .filter(TraceSpan.trace_id.in_(trace_ids))
+                .group_by(TraceSpan.trace_id, TraceSpan.status)
+                .all()
             )
 
-            results.append({
-                "trace_id": str(t.id),
-                "last_seen": t.started_at.isoformat() if t.started_at else None,
-                "span_count": span_count,
-            })
+            for row in status_rows:
+                status_value = (row.status or "").lower()
+                if status_value == "error":
+                    error_counts_map[row.trace_id] = int(row.status_count)
+                else:
+                    ok_counts_map[row.trace_id] = (
+                        ok_counts_map.get(row.trace_id, 0) + int(row.status_count)
+                    )
+
+            duration_rows = (
+                session.query(
+                    TraceSpan.trace_id,
+                    func.max(TraceSpan.duration_ms).label("max_duration_ms"),
+                )
+                .filter(TraceSpan.trace_id.in_(trace_ids))
+                .filter(TraceSpan.parent_span_id.is_(None))
+                .group_by(TraceSpan.trace_id)
+                .all()
+            )
+            duration_map = {
+                row.trace_id: (
+                    float(row.max_duration_ms)
+                    if row.max_duration_ms is not None
+                    else None
+                )
+                for row in duration_rows
+            }
+
+        results: List[Dict[str, Any]] = []
+
+        for trace in traces:
+            trace_id_value = trace.id
+            span_count = span_counts_map.get(trace_id_value, 0)
+            error_count = error_counts_map.get(trace_id_value, 0)
+            ok_count = ok_counts_map.get(
+                trace_id_value,
+                max(span_count - error_count, 0),
+            )
+            total_duration_ms = duration_map.get(trace_id_value)
+
+            results.append(
+                {
+                    "trace_id": str(trace.id),
+                    "last_seen": _iso(trace.started_at),
+                    "span_count": span_count,
+                    "ok_count": ok_count,
+                    "error_count": error_count,
+                    "total_duration_ms": total_duration_ms,
+                }
+            )
 
     return jsonify({"recent": results})
 
@@ -60,177 +200,136 @@ def trace_recent():
 # Graph (tree nodes from Postgres)
 # ---------------------------------------------------------
 
-@TRACE_BP.get("/trace/api/graph/<trace_id>")
+@trace_dashboard_bp.get("/trace/api/graph/<trace_id>")
 def trace_graph(trace_id: str):
+    normalized_trace_id = _parse_trace_id(trace_id)
 
     with db.main_session() as session:
-
         spans: List[TraceSpan] = (
             session.query(TraceSpan)
-            .filter(TraceSpan.trace_id == trace_id)
-            .order_by(TraceSpan.started_at.asc())
+            .filter(TraceSpan.trace_id == normalized_trace_id)
+            .order_by(
+                TraceSpan.started_at.asc(),
+                TraceSpan.depth.asc(),
+                TraceSpan.id.asc(),
+            )
             .all()
         )
 
-        nodes = []
+        if not spans:
+            return jsonify(
+                {
+                    "trace_id": trace_id,
+                    "nodes": [],
+                    "summary": {
+                        "span_count": 0,
+                        "ok_count": 0,
+                        "error_count": 0,
+                        "total_duration_ms": 0,
+                        "started_at": None,
+                        "ended_at": None,
+                    },
+                }
+            )
 
-        for s in spans:
-            nodes.append({
-                "id": str(s.id),
-                "trace_id": str(s.trace_id),
-                "parent": str(s.parent_span_id) if s.parent_span_id else None,
-                "function": s.name,
-                "depth": s.depth,
-                "duration_ms": float(s.duration_ms) if s.duration_ms else None,
-                "status": s.status,
-                "request_id": s.request_id,
-                "exception": None,  # you can add this later if stored
-                "started_at": s.started_at.isoformat() if s.started_at else None,
-                "ended_at": s.ended_at.isoformat() if s.ended_at else None,
-            })
+        root_start = None
+        latest_end = None
 
-    return jsonify({"nodes": nodes})
+        for span in spans:
+            if span.started_at is not None:
+                if root_start is None or span.started_at < root_start:
+                    root_start = span.started_at
 
+            if span.ended_at is not None:
+                if latest_end is None or span.ended_at > latest_end:
+                    latest_end = span.ended_at
 
-# ---------------------------------------------------------
-# UI (unchanged)
-# ---------------------------------------------------------
+        nodes: List[Dict[str, Any]] = []
+        ok_count = 0
+        error_count = 0
 
-_TRACE_HTML = r"""
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8"/>
-  <title>Trace Dashboard</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 16px; }
-    .row { display: flex; gap: 16px; }
-    .panel { border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
-    .left { width: 360px; }
-    .right { flex: 1; }
-    .trace-item { cursor: pointer; padding: 6px; border-bottom: 1px solid #eee; }
-    .trace-item:hover { background: #f7f7f7; }
-    .tree ul { list-style: none; padding-left: 18px; margin: 4px 0; }
-    .node { margin: 2px 0; }
-    .node-header { cursor: pointer; user-select: none; }
-    .muted { color: #777; font-size: 12px; }
-    .badge { display: inline-block; padding: 2px 6px; border-radius: 8px; font-size: 12px; border: 1px solid #ddd; }
-    pre { white-space: pre-wrap; word-break: break-word; background: #fafafa; padding: 8px; border-radius: 8px; border: 1px solid #eee; }
-    .controls { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-    input { padding: 6px; border: 1px solid #ddd; border-radius: 6px; width: 100%; }
-    button { padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; }
-  </style>
-</head>
-<body>
-  <h2>Trace Dashboard</h2>
-  <div class="controls">
-    <button id="refreshBtn">Refresh</button>
-    <span class="muted">Click a trace to load.</span>
-  </div>
+        for span in spans:
+            status_value = (span.status or "ok").lower()
 
-  <div class="row">
-    <div class="panel left">
-      <div style="margin-bottom:8px;">
-        <input id="filterInput" placeholder="Filter by trace_id prefix..." />
-      </div>
-      <div id="traceList"></div>
-    </div>
+            if status_value == "error":
+                error_count += 1
+            else:
+                ok_count += 1
 
-    <div class="panel right">
-      <div id="meta" class="muted"></div>
-      <div class="tree" id="tree"></div>
-      <h4>Selected Node</h4>
-      <pre id="nodeDetails">(none)</pre>
-    </div>
-  </div>
+            relative_start_ms: Optional[float] = None
+            relative_end_ms: Optional[float] = None
 
-  <script>
-    let currentTraceId = null;
+            if root_start is not None and span.started_at is not None:
+                relative_start_ms = (
+                    (span.started_at - root_start).total_seconds() * 1000.0
+                )
 
-    const traceListEl = document.getElementById('traceList');
-    const treeEl = document.getElementById('tree');
-    const metaEl = document.getElementById('meta');
-    const nodeDetailsEl = document.getElementById('nodeDetails');
-    const filterInput = document.getElementById('filterInput');
+            if root_start is not None and span.ended_at is not None:
+                relative_end_ms = (
+                    (span.ended_at - root_start).total_seconds() * 1000.0
+                )
 
-    document.getElementById('refreshBtn').onclick = () => loadRecent();
-    filterInput.addEventListener('input', () => loadRecent());
+            duration_ms: Optional[float] = (
+                float(span.duration_ms)
+                if span.duration_ms is not None
+                else None
+            )
 
-    async function loadRecent() {
-      const res = await fetch('/trace/api/recent?limit=50');
-      const data = await res.json();
-      const filter = (filterInput.value || '').trim();
+            if (
+                duration_ms is None
+                and relative_start_ms is not None
+                and relative_end_ms is not None
+            ):
+                duration_ms = max(relative_end_ms - relative_start_ms, 0.0)
 
-      traceListEl.innerHTML = '';
+            nodes.append(
+                {
+                    "id": str(span.id),
+                    "trace_id": str(span.trace_id),
+                    "parent": str(span.parent_span_id) if span.parent_span_id else None,
+                    "function": span.name,
+                    "depth": span.depth or 0,
+                    "duration_ms": duration_ms,
+                    "status": status_value,
+                    "request_id": span.request_id,
+                    "exception": None,  # Add later if persisted in DB
+                    "started_at": _iso(span.started_at),
+                    "ended_at": _iso(span.ended_at),
+                    "relative_start_ms": relative_start_ms,
+                    "relative_end_ms": relative_end_ms,
+                }
+            )
 
-      const items = data.recent || [];
-      const filtered = filter ? items.filter(x => (x.trace_id || '').startsWith(filter)) : items;
+        total_duration_ms = 0.0
 
-      filtered.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'trace-item';
-        div.innerHTML = `
-          <div><b>${item.trace_id}</b></div>
-          <div class="muted">${item.last_seen || ''} | spans=${item.span_count}</div>
-        `;
-        div.onclick = () => loadTrace(item.trace_id);
-        traceListEl.appendChild(div);
-      });
-    }
+        if root_start is not None and latest_end is not None:
+            total_duration_ms = max(
+                (latest_end - root_start).total_seconds() * 1000.0,
+                0.0,
+            )
+        else:
+            root_spans = [
+                node
+                for node in nodes
+                if node["parent"] is None and node["duration_ms"] is not None
+            ]
+            if root_spans:
+                total_duration_ms = max(
+                    float(node["duration_ms"])
+                    for node in root_spans
+                )
 
-    async function loadTrace(traceId) {
-      currentTraceId = traceId;
-      const res = await fetch('/trace/api/graph/' + traceId);
-      const graph = await res.json();
-
-      metaEl.innerText = `trace_id=${traceId} nodes=${(graph.nodes||[]).length}`;
-
-      const tree = buildTree(graph.nodes || []);
-      renderTree(tree);
-    }
-
-    function buildTree(nodes) {
-      const byId = {};
-      nodes.forEach(n => byId[n.id] = {...n, children: []});
-      const roots = [];
-      nodes.forEach(n => {
-        if (n.parent && byId[n.parent]) {
-          byId[n.parent].children.push(byId[n.id]);
-        } else {
-          roots.push(byId[n.id]);
+    return jsonify(
+        {
+            "trace_id": trace_id,
+            "nodes": nodes,
+            "summary": {
+                "span_count": len(nodes),
+                "ok_count": ok_count,
+                "error_count": error_count,
+                "total_duration_ms": total_duration_ms,
+                "started_at": _iso(root_start),
+                "ended_at": _iso(latest_end),
+            },
         }
-      });
-      return roots;
-    }
-
-    function renderTree(roots) {
-      treeEl.innerHTML = '';
-      const ul = document.createElement('ul');
-      roots.forEach(r => ul.appendChild(renderNode(r)));
-      treeEl.appendChild(ul);
-    }
-
-    function renderNode(node) {
-      const li = document.createElement('li');
-      const header = document.createElement('div');
-      header.className = 'node-header';
-      header.innerHTML = `
-        <span class="badge">${node.duration_ms || ''}ms</span>
-        <b>${node.function}</b>
-      `;
-      header.onclick = () => {
-        nodeDetailsEl.innerText = JSON.stringify(node, null, 2);
-      };
-      li.appendChild(header);
-
-      const childUl = document.createElement('ul');
-      (node.children || []).forEach(c => childUl.appendChild(renderNode(c)));
-      li.appendChild(childUl);
-      return li;
-    }
-
-    loadRecent();
-  </script>
-</body>
-</html>
-"""
+    )
