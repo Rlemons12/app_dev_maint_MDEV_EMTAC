@@ -22,7 +22,7 @@ from modules.initial_setup.initializer_logger import (
 )
 from modules.configuration.config_env import DatabaseConfig
 from modules.emtacdb.emtacdb_fts import Image, ImageEmbedding
-from plugins.ai_modules.ai_models import ModelsConfig
+from modules.ai.config.models_config import ModelsConfig
 
 # Make sure truncated images won't crash PIL
 ImageFile.LOAD_TRUNCATED_IMAGES = True
