@@ -6,6 +6,7 @@ import os
 import re
 from typing import List, Dict, Any, Optional
 
+from modules.configuration.config import DATABASE_DIR
 from modules.configuration.log_config import (
     with_request_id,
     debug_id,
@@ -15,25 +16,33 @@ from modules.configuration.log_config import (
 )
 
 from modules.orchestrators.base_orchestrator import BaseOrchestrator
-from modules.emtacdb.emtacdb_fts import Position, Image, ImageCompletedDocumentAssociation
+from modules.emtacdb.emtacdb_fts import (
+    Position,
+    Image,
+    ImageCompletedDocumentAssociation,
+)
 
 from modules.services.complete_document_service import CompleteDocumentService
-from modules.services.completed_document_position_service import CompletedDocumentPositionService
+from modules.services.completed_document_position_service import (
+    CompletedDocumentPositionService,
+)
 from modules.services.document_service import DocumentService
 from modules.services.ai_models_embedding_service import AIModelsEmbeddingService
 from modules.services.document_embedding_service import DocumentEmbeddingService
-
 from modules.services.file_storage_service import FileStorageService
 from modules.services.content_extraction_service import ContentExtractionService
 from modules.services.search_index_service import SearchIndexService
-
 from modules.services.document_conversion_service import DocumentConversionService
-from modules.services.image_guided_association_service import ImageGuidedAssociationService
+from modules.services.image_guided_association_service import (
+    ImageGuidedAssociationService,
+)
 from modules.services.image_completed_document_association_service import (
     ImageCompletedDocumentAssociationService,
 )
 from modules.services.upload_idempotency_service import UploadIdempotencyService
-from modules.services.batch_embedding_optimization_service import BatchEmbeddingOptimizationService
+from modules.services.batch_embedding_optimization_service import (
+    BatchEmbeddingOptimizationService,
+)
 from modules.services.concurrent_processing_service import ConcurrentProcessingService
 from modules.services.ai_model_image_service import AIModelImageService
 
@@ -42,15 +51,23 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
     """
     CompleteDocument upload orchestrator.
 
-    Key updates:
-      - VLM "structured_pages" visuals are stored WITHOUT page_number association (per your latest direction).
-      - Native PDF extraction continues to store image.img_metadata.page_number (from extractor),
-        and then we associate images to the document using page_number (page-first, deterministic),
-        optionally enriching to chunks if chunk metadata contains page_number.
+    Behavior:
+      - Saves incoming files
+      - Converts to PDF when needed
+      - Extracts text / structured pages
+      - Creates or reuses a Position from metadata
+      - Persists CompleteDocument rows
+      - Ensures CompletedDocumentPositionAssociation exists
+      - Creates chunks + embeddings
+      - Indexes the document
+      - Stores VLM structured visuals
+      - Extracts PDF-native images
+      - Performs page-first image association / enrichment
 
     HARD RULES:
       - Orchestrator owns transaction boundaries
       - Services do not open sessions
+      - Services do not commit/rollback
     """
 
     def __init__(self):
@@ -78,14 +95,14 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
     # =========================================================
     # MAIN ENTRY
     # =========================================================
+
     @with_request_id
     def process_upload(
-            self,
-            files: List[Any],
-            metadata: Dict[str, Any],
-            request_id: Optional[str] = None,
+        self,
+        files: List[Any],
+        metadata: Dict[str, Any],
+        request_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-
         if not files:
             raise ValueError("No files provided")
 
@@ -150,7 +167,8 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                 prepared_docs.append(
                     {
                         "title": title,
-                        "file_path": effective_path,
+                        "stored_path": stored_path,
+                        "effective_path": effective_path,
                         "text": content_info.get("text") or "",
                         "pages": content_info.get("pages") or [],
                         "conversion": conversion,
@@ -159,6 +177,15 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                         "method": content_info.get("method"),
                         "scanned": bool(content_info.get("scanned", False)),
                     }
+                )
+
+                debug_id(
+                    f"[CompleteDocumentOrchestrator] Prepared doc | "
+                    f"title='{title}' | stored_path='{stored_path}' | "
+                    f"effective_path='{effective_path}' | "
+                    f"pages={len(content_info.get('pages') or [])} | "
+                    f"scanned={bool(content_info.get('scanned', False))}",
+                    request_id,
                 )
 
             except Exception as e:
@@ -200,15 +227,26 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
         # PHASE 2 — DATABASE PERSISTENCE (TXN)
         # ---------------------------------------
         with self.transaction() as session:
+            debug_id(
+                f"[CompleteDocumentOrchestrator] Incoming metadata for position resolution: {metadata}",
+                request_id,
+            )
 
             position_id = self._resolve_position(
                 metadata=metadata,
                 session=session,
+                request_id=request_id,
+            )
+
+            debug_id(
+                f"[CompleteDocumentOrchestrator] Resolved position_id={position_id}",
+                request_id,
             )
 
             for doc_data in prepared_docs:
                 title = doc_data["title"]
-                effective_path = doc_data["file_path"]
+                stored_path = doc_data["stored_path"]
+                effective_path = doc_data["effective_path"]
                 extracted_text = doc_data["text"]
                 structured_pages = doc_data.get("pages") or []
                 conversion = doc_data["conversion"]
@@ -218,40 +256,106 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                         file_path=effective_path
                     )
 
+                    file_sha256 = signature.get("file_sha256")
                     existing_id = self.idempotency_service.find_existing_complete_document_id(
                         session=session,
-                        file_sha256=signature.get("file_sha256"),
+                        file_sha256=file_sha256,
                     )
 
+                    debug_id(
+                        f"[CompleteDocumentOrchestrator] Signature lookup | "
+                        f"file='{effective_path}' | file_sha256='{file_sha256}' | "
+                        f"existing_id={existing_id}",
+                        request_id,
+                    )
+
+                    # -------------------------------------------------
+                    # DEDUPE PATH
+                    # IMPORTANT:
+                    # Even if document already exists, still ensure the
+                    # CompletedDocumentPositionAssociation exists.
+                    # -------------------------------------------------
                     if existing_id:
                         document_ids.append(existing_id)
                         deduped += 1
+
+                        debug_id(
+                            f"[CompleteDocumentOrchestrator] Deduped upload detected | "
+                            f"existing complete_document_id={existing_id} | "
+                            f"position_id={position_id}",
+                            request_id,
+                        )
+
+                        if position_id:
+                            assoc = self.completed_document_position_service.associate(
+                                session=session,
+                                position_id=position_id,
+                                complete_document_id=existing_id,
+                                request_id=request_id,
+                            )
+
+                            debug_id(
+                                f"[CompleteDocumentOrchestrator] Deduped association result | "
+                                f"complete_document_id={existing_id} | "
+                                f"position_id={position_id} | "
+                                f"assoc_id={getattr(assoc, 'id', None)}",
+                                request_id,
+                            )
+                        else:
+                            warning_id(
+                                f"[CompleteDocumentOrchestrator] Deduped doc {existing_id} "
+                                f"has no resolved position_id; skipping "
+                                f"completed_document_position_association",
+                                request_id,
+                            )
 
                         info_id(
                             f"[CompleteDocumentOrchestrator] Deduped upload -> existing complete_document_id={existing_id}",
                             request_id,
                         )
 
-                        if conversion and conversion.temp_dir:
-                            self._safe_cleanup_temp_dir(
-                                conversion.temp_dir,
-                                request_id=request_id,
-                            )
                         continue
+
+                    db_relative_path = os.path.normpath(
+                        os.path.relpath(stored_path, DATABASE_DIR)
+                    )
+
+                    debug_id(
+                        f"[CompleteDocumentOrchestrator] Saving complete_document path | "
+                        f"stored='{stored_path}' | effective='{effective_path}' | "
+                        f"db_relative='{db_relative_path}'",
+                        request_id,
+                    )
 
                     doc = self.complete_document_service.upsert(
                         session=session,
                         title=title,
-                        file_path=effective_path,
+                        file_path=db_relative_path,
                         content=extracted_text,
                         request_id=request_id,
                     )
 
                     if position_id:
-                        self.completed_document_position_service.associate(
+                        assoc = self.completed_document_position_service.associate(
                             session=session,
                             position_id=position_id,
                             complete_document_id=doc.id,
+                            request_id=request_id,
+                        )
+
+                        debug_id(
+                            f"[CompleteDocumentOrchestrator] New document association result | "
+                            f"complete_document_id={doc.id} | "
+                            f"position_id={position_id} | "
+                            f"assoc_id={getattr(assoc, 'id', None)}",
+                            request_id,
+                        )
+                    else:
+                        warning_id(
+                            f"[CompleteDocumentOrchestrator] No position resolved for "
+                            f"complete_document_id={doc.id}; skipping "
+                            f"completed_document_position_association",
+                            request_id,
                         )
 
                     document_ids.append(doc.id)
@@ -264,12 +368,13 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                         f"sample={structured_pages[:2] if structured_pages else []}",
                         request_id,
                     )
+
                     chunk_ids = self.document_service.create_chunks(
                         session=session,
                         complete_document_id=doc.id,
                         text=extracted_text,
                         pages=structured_pages if structured_pages else None,
-                        file_path=effective_path,
+                        file_path=db_relative_path,
                         request_id=request_id,
                     )
 
@@ -325,12 +430,9 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                         )
                         total_images += int(extracted or 0)
 
-
                         # -------------------------------------------------
                         # PAGE-FIRST ASSOCIATION / ENRICHMENT
-                        # IMPORTANT:
-                        # Only scope to images already linked to THIS document.
-                        # Do not query every unassociated image in the database.
+                        # Only scope to images already linked to THIS doc.
                         # -------------------------------------------------
                         try:
                             current_doc_image_id_rows = (
@@ -371,7 +473,8 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                             )
 
                             debug_id(
-                                f"[CompleteDocumentOrchestrator] Page-first image associations created={created_assocs} enriched={enriched_assocs}",
+                                f"[CompleteDocumentOrchestrator] Page-first image associations "
+                                f"created={created_assocs} enriched={enriched_assocs}",
                                 request_id,
                             )
 
@@ -381,6 +484,10 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                                 request_id,
                             )
 
+                    info_id(
+                        f"[CompleteDocumentOrchestrator] Persisted complete_document_id={doc.id}",
+                        request_id,
+                    )
 
                 except Exception as e:
                     error_id(
@@ -444,18 +551,14 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
         request_id: Optional[str],
     ) -> int:
         """
-        Stores VLM "visual elements" as synthetic image records WITHOUT page_number association.
-
-        Assumptions:
-          - ImageGuidedAssociationService has create_from_description() as in your orchestrator snippet.
-          - That method creates an Image record (and optionally embedding), and may create association rows.
-            For this path, we want NO page_number. If create_from_description creates associations,
-            it should create them with page_number=None.
+        Stores VLM visual elements as synthetic image records without
+        page-number association.
         """
         created = 0
 
         for page in structured_pages:
             visuals = page.get("visual_elements", []) or []
+
             for visual in visuals:
                 description = (visual.get("description") or "").strip()
                 label = (visual.get("label") or "Visual").strip()
@@ -486,11 +589,19 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
 
         return created
 
-    def _safe_cleanup_temp_dir(self, temp_dir: str, *, request_id: Optional[str]) -> None:
+    def _safe_cleanup_temp_dir(
+        self,
+        temp_dir: str,
+        *,
+        request_id: Optional[str],
+    ) -> None:
         try:
             self.conversion_service._safe_rmtree(temp_dir, self._rid())
         except Exception as e:
-            debug_id(f"[CompleteDocumentOrchestrator] Temp cleanup failed: {e}", request_id)
+            debug_id(
+                f"[CompleteDocumentOrchestrator] Temp cleanup failed: {e}",
+                request_id,
+            )
 
     # =========================================================
     # UTILITIES
@@ -516,11 +627,11 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
         *,
         metadata: Dict[str, Any],
         session,
+        request_id: Optional[str] = None,
     ) -> Optional[int]:
-
         filters = {
-            k: metadata.get(k)
-            for k in [
+            key: metadata.get(key)
+            for key in [
                 "site_location_id",
                 "area_id",
                 "equipment_group_id",
@@ -528,17 +639,31 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                 "asset_number_id",
                 "location_id",
             ]
-            if metadata.get(k)
+            if metadata.get(key)
         }
+
+        debug_id(
+            f"[CompleteDocumentOrchestrator] Position resolution filters={filters}",
+            request_id,
+        )
 
         if not filters:
             return None
 
         position = session.query(Position).filter_by(**filters).first()
         if position:
+            debug_id(
+                f"[CompleteDocumentOrchestrator] Reusing existing position id={position.id}",
+                request_id,
+            )
             return position.id
 
         position = Position(**filters)
         session.add(position)
         session.flush()
+
+        info_id(
+            f"[CompleteDocumentOrchestrator] Created new position id={position.id} from filters={filters}",
+            request_id,
+        )
         return position.id
