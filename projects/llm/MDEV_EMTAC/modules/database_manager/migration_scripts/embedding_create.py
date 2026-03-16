@@ -2,7 +2,7 @@ import os
 from sqlalchemy import exists
 from sqlalchemy.exc import SQLAlchemyError
 from modules.configuration.config_env import DatabaseConfig
-from plugins.ai_modules.ai_models import ModelsConfig
+from modules.ai.config.models_config import ModelsConfig
 from modules.configuration.log_config import info_id, error_id, get_request_id
 from modules.emtacdb.emtacdb_fts import Document, DocumentEmbedding
 import json 
