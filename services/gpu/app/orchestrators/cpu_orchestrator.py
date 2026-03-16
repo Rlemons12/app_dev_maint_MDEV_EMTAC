@@ -12,13 +12,19 @@ import time
 import threading
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 import fitz
 from PIL import Image
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from app.config.gpu_logger import gpu_info, gpu_debug, gpu_warning, gpu_phase
+from app.config.gpu_logger import (
+    gpu_info,
+    gpu_debug,
+    gpu_warning,
+    gpu_error,
+    gpu_phase,
+)
 from app.config.gpu_service_config import GPU_SERVICE_CONFIG
 from app.utils.text_utils import _normalize_text
 
@@ -48,6 +54,19 @@ class CPUPageWindow:
 # ============================================================
 
 class CPUOrchestrator:
+    """
+    CPU-side orchestration layer.
+
+    Responsibilities:
+      - Open PDFs safely on a per-thread basis
+      - Plan page windows
+      - Render pages and extract embedded images
+      - Persist page/chunk artifacts for downstream GPU + DB workflows
+
+    Important rule:
+      - This class does not decide anything about GPU model admission or eviction.
+      - It only prepares CPU-side data and persists CPU-side outputs.
+    """
 
     DIAGRAM_MIN_PX = 200
     DIAGRAM_MIN_BYTES = 10_000
@@ -118,7 +137,7 @@ class CPUOrchestrator:
                     CPUPageWindow(
                         pdf_path=pdf_path,
                         page_numbers=buf,
-                        page_items=[]
+                        page_items=[],
                     )
                 )
                 buf = []
@@ -128,11 +147,14 @@ class CPUOrchestrator:
                 CPUPageWindow(
                     pdf_path=pdf_path,
                     page_numbers=buf,
-                    page_items=[]
+                    page_items=[],
                 )
             )
 
-        gpu_debug(f"CPU plan_windows | windows={len(windows)} window_pages={window_pages}", rid)
+        gpu_debug(
+            f"CPU plan_windows | windows={len(windows)} window_pages={window_pages}",
+            rid,
+        )
 
         return windows
 
@@ -151,6 +173,14 @@ class CPUOrchestrator:
         rid: str,
     ) -> CPUPageWindow:
 
+        if not window.page_numbers:
+            gpu_warning("CPU prepare_window | empty page_numbers", rid)
+            return CPUPageWindow(
+                pdf_path=window.pdf_path,
+                page_numbers=[],
+                page_items=[],
+            )
+
         t0 = time.time()
 
         gpu_info(
@@ -167,7 +197,6 @@ class CPUOrchestrator:
         batches = self._split_pages_for_workers(window.page_numbers, max_workers)
 
         with ThreadPoolExecutor(max_workers=max_workers) as pool:
-
             futures = [
                 pool.submit(
                     self._render_and_extract_page_batch,
@@ -178,14 +207,15 @@ class CPUOrchestrator:
                     min_image_bytes,
                     rid,
                 )
-                for batch in batches if batch
+                for batch in batches
+                if batch
             ]
 
-            for f in as_completed(futures):
+            for future in as_completed(futures):
                 try:
-                    page_items.extend(f.result())
-                except Exception as e:
-                    gpu_warning(f"CPU page batch failed | err={e}", rid)
+                    page_items.extend(future.result())
+                except Exception as exc:
+                    gpu_warning(f"CPU page batch failed | err={exc}", rid)
 
         page_items.sort(key=lambda x: x.page_number)
 
@@ -208,10 +238,13 @@ class CPUOrchestrator:
     # Page batching
     # ------------------------------------------------------------
 
-    def _split_pages_for_workers(self, page_numbers: List[int], workers: int) -> List[List[int]]:
+    def _split_pages_for_workers(
+        self,
+        page_numbers: List[int],
+        workers: int,
+    ) -> List[List[int]]:
 
         workers = max(1, int(workers))
-
         batches: List[List[int]] = [[] for _ in range(workers)]
 
         for idx, pn in enumerate(page_numbers):
@@ -252,9 +285,7 @@ class CPUOrchestrator:
         doc = self._get_thread_doc(pdf_path)
 
         for page_number in page_numbers:
-
             try:
-
                 out.append(
                     self._render_and_extract_single_page_from_doc(
                         doc=doc,
@@ -266,13 +297,14 @@ class CPUOrchestrator:
                         rid=rid,
                     )
                 )
-
-            except Exception as e:
-
-                gpu_warning(f"CPU page worker error | page={page_number} err={e}", rid)
+            except Exception as exc:
+                gpu_warning(
+                    f"CPU page worker error | page={page_number} err={exc}",
+                    rid,
+                )
 
         gpu_debug(
-            f"CPU batch worker complete | pages={len(out)} time={time.time()-t0:.2f}s",
+            f"CPU batch worker complete | pages={len(out)} time={time.time() - t0:.2f}s",
             rid,
         )
 
@@ -297,7 +329,6 @@ class CPUOrchestrator:
         t0 = time.time()
 
         images: List[Dict[str, Any]] = []
-
         seen_hashes_local = set()
 
         page = doc.load_page(page_number - 1)
@@ -309,13 +340,9 @@ class CPUOrchestrator:
         img_list = page.get_images(full=True) or []
 
         for idx, img in enumerate(img_list, start=1):
-
             try:
-
                 xref = int(img[0])
-
                 extracted = doc.extract_image(xref)
-
                 img_bytes = extracted.get("image")
 
                 if not img_bytes:
@@ -332,16 +359,13 @@ class CPUOrchestrator:
                 seen_hashes_local.add(img_hash)
 
                 with Image.open(io.BytesIO(img_bytes)) as pil:
-
                     pil.load()
-
                     w, h = pil.size
 
                 if w < min_image_px or h < min_image_px:
                     continue
 
                 ext = extracted.get("ext", "png")
-
                 img_path = (
                     GPU_SERVICE_CONFIG.image_dir
                     / f"{rid}_page_{page_number:04d}_embedded_{idx:03d}.{ext}"
@@ -363,10 +387,9 @@ class CPUOrchestrator:
                     }
                 )
 
-            except Exception as e:
-
+            except Exception as exc:
                 gpu_warning(
-                    f"CPU embedded image error | page={page_number} idx={idx} err={e}",
+                    f"CPU embedded image error | page={page_number} idx={idx} err={exc}",
                     rid,
                 )
 
@@ -381,7 +404,6 @@ class CPUOrchestrator:
         )
 
         render_path = GPU_SERVICE_CONFIG.build_page_render_path(rid, page_number)
-
         pix.save(str(render_path))
 
         images.append(
@@ -397,7 +419,7 @@ class CPUOrchestrator:
 
         gpu_debug(
             f"CPU page complete | page={page_number} render={pix.width}x{pix.height} "
-            f"images={len(images)} time={time.time()-t0:.2f}s",
+            f"images={len(images)} time={time.time() - t0:.2f}s",
             rid,
         )
 
@@ -415,40 +437,31 @@ class CPUOrchestrator:
 
     @staticmethod
     def _is_real_diagram(*, width: int, height: int, size_bytes: int) -> bool:
-
         if width < CPUOrchestrator.DIAGRAM_MIN_PX:
             return False
-
         if height < CPUOrchestrator.DIAGRAM_MIN_PX:
             return False
-
         if size_bytes < CPUOrchestrator.DIAGRAM_MIN_BYTES:
             return False
-
         return True
 
     def _page_render_path(self, cpu_item: Optional[CPUPageItem]) -> Optional[str]:
-
         if not cpu_item:
             return None
 
         for img in cpu_item.images:
-
             if img.get("kind") == "page_render":
-
                 return str(img.get("path") or "")
 
         return None
 
     def _page_diagram_refs(self, cpu_item: Optional[CPUPageItem]) -> List[str]:
-
         if not cpu_item:
             return []
 
         refs: List[str] = []
 
         for img in cpu_item.images:
-
             if img.get("kind") != "embedded":
                 continue
 
@@ -460,12 +473,10 @@ class CPUOrchestrator:
                 continue
 
             p = img.get("path")
-
             if p:
                 refs.append(str(p))
 
         refs.sort()
-
         return refs
 
     # ------------------------------------------------------------
@@ -487,24 +498,17 @@ class CPUOrchestrator:
         cpu_by_page = {p.page_number: p for p in window.page_items}
 
         def split_markdown(md: str) -> List[str]:
-
             parts = [p.strip() for p in (md or "").split("\n\n") if p.strip()]
 
             merged: List[str] = []
-
             buf = ""
 
-            for p in parts:
-
+            for part in parts:
                 if len(buf) < 500:
-
-                    buf = (buf + "\n\n" + p).strip() if buf else p
-
+                    buf = (buf + "\n\n" + part).strip() if buf else part
                 else:
-
                     merged.append(buf)
-
-                    buf = p
+                    buf = part
 
             if buf:
                 merged.append(buf)
@@ -512,38 +516,30 @@ class CPUOrchestrator:
             return merged
 
         def detect_table(md: str) -> bool:
-
             if "|" in md and "---" in md:
                 return True
 
             for line in md.splitlines():
-
                 if line.count("|") >= 3:
                     return True
 
             return False
 
         for pr in page_results:
-
             pn = pr.page_number
-
             cpu_item = cpu_by_page.get(pn)
 
             if cpu_item:
                 images.extend(cpu_item.images)
 
             md = pr.markdown or ""
-
             page_chunks = split_markdown(md)
 
             diagram_refs = self._page_diagram_refs(cpu_item)
-
             page_render = self._page_render_path(cpu_item)
 
             for cidx, chunk_text in enumerate(page_chunks, start=1):
-
                 chunk_id = f"{rid}_p{pn:04d}_c{cidx:03d}"
-
                 md_path = GPU_SERVICE_CONFIG.markdown_dir / f"{chunk_id}.md"
 
                 with open(md_path, "w", encoding="utf-8") as f:
@@ -569,10 +565,13 @@ class CPUOrchestrator:
                 rid,
             )
 
+        gpu_debug(
+            f"CPU persist_window_results complete | images={len(images)} chunks={len(chunks)}",
+            rid,
+        )
+
         return images, chunks
 
 
-# Avoid circular import
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from app.orchestrators.gpu_orchestrator import GPUPageResult
