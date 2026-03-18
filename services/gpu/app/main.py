@@ -13,6 +13,7 @@ from app.models.model_manager import GPU_MODELS
 from app.config.gpu_logger import (gpu_info,
     install_dashboard_log_handler,)
 from app.api.vision import router as vision_router
+from app.api.mcp.tools.generate_code import router as generate_code_router
 # -------------------------------------------------
 # App
 # -------------------------------------------------
@@ -29,6 +30,7 @@ app.include_router(embed_router)
 app.include_router(generate_router)
 app.include_router(dashboard_router)
 app.include_router(vision_router)
+app.include_router(generate_code_router)
 # -------------------------------------------------
 # Install dashboard background services
 # MUST be called before startup executes
