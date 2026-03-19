@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EMTAC Dashboard{% endblock %}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/module_template/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/module_template/panel_layouts.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes/neppy_blue.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/service_dashboard.css') }}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="neppy-blue">
+    <div class="neppy-wrap">
+        <div id="messageBar" class="message-bar"></div>
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="{{ url_for('static', filename='js/service_dashboard.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
