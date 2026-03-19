@@ -1,53 +1,75 @@
-/* Red Banner Styles */
-.banner {
-    width: 100%;
-    background-color: red; /* Solid red background */
-    color: white; /* White text color */
-    text-align: center;
-    padding: 10px 0; /* Vertical padding */
-    position: fixed; /* Fixed position at the top */
-    top: 0;
-    left: 0;
-    z-index: 1002; /* Ensure it stays above other content */
-    font-weight: bold; /* Bold text */
-    font-size: 1.5em; /* Font size */
-    text-transform: uppercase; /* Capital letters */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional shadow for depth */
+/* Base Layout Styles */
+
+:root {
+    --app-banner-height: 80px;
+    --app-sidebar-width: 300px;
+
+    --app-banner-bg: red;
+    --app-banner-text: white;
+
+    --app-sidebar-bg: rgba(0, 0, 0, 0.8);
+    --app-sidebar-text: yellow;
+    --app-sidebar-hover: #39FF14;
+
+    --app-content-bg: transparent;
+
+    --app-popup-bg: grey;
+    --app-popup-text: white;
+
+    --app-results-text: white;
+    --app-drawing-list-text: white;
 }
 
-/* Ensure the rest of the content is below the banner */
+/* Banner */
+.banner {
+    width: 100%;
+    background-color: var(--app-banner-bg);
+    color: var(--app-banner-text);
+    text-align: center;
+    padding: 10px 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1002;
+    font-weight: bold;
+    font-size: 1.5em;
+    text-transform: uppercase;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Body spacing below banner */
 body {
-    padding-top: 80px; /* Adjust based on the banner height (80px here for banner height + spacing) */
+    padding-top: var(--app-banner-height);
     margin: 0;
 }
 
-/* Main Container (content and sidebar) */
+/* Main layout */
 .main-container {
     display: flex;
     flex-direction: row;
-    height: 100vh; /* Full height */
+    min-height: calc(100vh - var(--app-banner-height));
     width: 100%;
-    transition: margin-left 0.5s ease, width 0.5s ease; /* Smooth transition for layout changes */
-    padding-top: 10px; /* Additional padding to ensure space below banner */
+    transition: margin-left 0.5s ease, width 0.5s ease;
+    padding-top: 10px;
 }
 
-/* Sidebar Styling */
+/* Sidebar */
 .sidebar {
-    height: calc(100% - 80px); /* Full height minus the height of the banner */
-    background-color: rgba(0, 0, 0, 0.8);
+    height: calc(100vh - var(--app-banner-height));
+    background-color: var(--app-sidebar-bg);
     overflow-x: hidden;
-    transition: width 2.0 s ease; /* Smooth transition for sidebar */
+    transition: width 0.5s ease;
     position: fixed;
-    top: 80px; /* Below the banner */
+    top: var(--app-banner-height);
     left: 0;
-    width: 300px; /* Sidebar width when visible */
+    width: var(--app-sidebar-width);
     padding-top: 20px;
     font-size: 18px;
-    color: yellow;
-    z-index: 1000; /* Ensure it's above content */
+    color: var(--app-sidebar-text);
+    z-index: 1000;
 }
 
-/* Sidebar links and buttons */
+/* Sidebar controls */
 .sidebar a,
 .sidebar button,
 .sidebar select {
@@ -55,7 +77,7 @@ body {
     text-decoration: none;
     color: inherit;
     display: block;
-    transition: 0.3s;
+    transition: color 0.3s ease, background-color 0.3s ease;
     background: none;
     border: none;
     text-align: left;
@@ -66,82 +88,83 @@ body {
 .sidebar a:hover,
 .sidebar button:hover,
 .sidebar select:hover {
-    color: #39FF14; /* Bright green hover color */
+    color: var(--app-sidebar-hover);
 }
 
-/* Close Button for Sidebar (X button) */
+/* Close button */
 .sidebar .close-btn {
     position: absolute;
     top: 0;
-    right: -40px; /* Keep the close button outside the sidebar when collapsed */
+    right: -40px;
     font-size: 36px;
-    z-index: 1001; /* Ensure it stays on top */
+    z-index: 1001;
     cursor: pointer;
     color: white;
-    transition: right 0.5s ease; /* Smooth transition */
+    transition: right 0.5s ease;
 }
 
-/* Sidebar Collapse Button (Hamburger icon) */
+/* Sidebar collapse button */
 #sidebarCollapse {
-    font-size: 30px; /* Size of the hamburger icon */
+    font-size: 30px;
     cursor: pointer;
-    color: white; /* Make sure it's visible on the dark background */
+    color: white;
     position: fixed;
-    top: 70px; /* Adjusted to be just below the banner */
-    left: 10px; /* Positioned on the left */
-    z-index: 1001; /* Ensure it appears on top of other elements */
-    background: none; /* No background */
-    border: none; /* No border */
-    outline: none; /* No outline */
+    top: calc(var(--app-banner-height) - 10px);
+    left: 10px;
+    z-index: 1001;
+    background: none;
+    border: none;
+    outline: none;
 }
 
 #sidebarCollapse:hover {
-    color: #39FF14; /* Bright green on hover for visibility */
+    color: var(--app-sidebar-hover);
 }
 
-/* Ensure the button stays in place when the sidebar is collapsed */
 .main-container.collapsed #sidebarCollapse {
-    left: 10px; /* Keep it on the left when sidebar is collapsed */
+    left: 10px;
 }
 
 .main-container #sidebarCollapse {
-    left: 10px; /* Positioned outside the sidebar when expanded */
+    left: 10px;
 }
 
-
-/* Main Content Area */
+/* Content */
 .content {
-    margin-left: 250px; /* Align with sidebar width */
-    transition: margin-left 0.5s ease; /* Smooth transition for sidebar collapsing */
+    margin-left: var(--app-sidebar-width);
+    transition: margin-left 0.5s ease;
     padding: 16px;
-    padding-top: 20px; /* Ensure content is below the banner */
+    padding-top: 20px;
+    background-color: var(--app-content-bg);
+    min-width: 0;
 }
 
-/* Collapsed State Styling */
+/* Collapsed state */
 .main-container.collapsed .sidebar {
     width: 0;
-    padding: 0; /* Hide the sidebar */
-    overflow: hidden; /* Hide sidebar content */
+    padding: 0;
+    overflow: hidden;
 }
 
 .main-container.collapsed .content {
-    margin-left: 0; /* Adjust content to full width when sidebar is hidden */
+    margin-left: 0;
 }
 
-/* Comment Popup Styles */
+/* Comment popup */
 #commentPopup {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: grey; /* Ensure solid grey background */
-    opacity: 1; /* Ensure no transparency */
+    background-color: var(--app-popup-bg);
+    opacity: 1;
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* More pronounced shadow */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     z-index: 1000;
-    color: white; /* White text for contrast */
+    color: var(--app-popup-text);
     width: 400px;
+    max-width: calc(100vw - 32px);
 }
 
 #commentPopup textarea {
@@ -151,8 +174,8 @@ body {
     border-radius: 5px;
     border: none;
     outline: none;
-    background-color: #f0f0f0; /* Light grey for input field */
-    color: black; /* Black text inside textarea */
+    background-color: #f0f0f0;
+    color: black;
 }
 
 #commentPopup button {
@@ -175,14 +198,15 @@ body {
     text-decoration: underline;
     color: white;
 }
-/* Results Container */
+
+/* Results container */
 .results-container {
-    width: 100%; /* Adjust to desired width */
-    padding-left: 20px; /* Space between form and results */
-    color: white; /* Ensure text is visible */
+    width: 100%;
+    padding-left: 20px;
+    color: var(--app-results-text);
 }
 
-/* Additional Styles for Thumbnails and Drawing List */
+/* Thumbnail / drawing list */
 #thumbnails-section {
     width: 50%;
     display: inline-block;
@@ -194,7 +218,5 @@ body {
 }
 
 #drawingList {
-    color: white; /* Ensure visibility over dark backgrounds */
+    color: var(--app-drawing-list-text);
 }
-
-
