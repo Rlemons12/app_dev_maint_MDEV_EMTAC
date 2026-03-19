@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Efficient Maintenance and Technical Assistance Chatbot{% endblock %}</title>
+
     <link id="base-style" rel="stylesheet" href="{{ url_for('static', filename='css/module_template/base.css') }}">
     <link id="theme-style" rel="stylesheet" href="">
+
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -43,7 +45,7 @@
     <div class="main-container">
         <!-- Sidebar Component (Override or extend this block in child templates) -->
         {% block sidebar %}
-          {% include 'module_template_html/base_sidebar.html' %}
+            {% include 'module_template_html/base_sidebar.html' %}
         {% endblock %}
 
         <!-- Main Content -->
@@ -59,10 +61,11 @@
             <ul id="searchResults" style="color:white;">
                 <!-- Search results will be populated here -->
             </ul>
-            <!-- Thumbnails and Drawing List -->
+
             <div id="thumbnails-section">
                 <!-- Thumbnails will be dynamically added here -->
             </div>
+
             <div id="drawingList">
                 <!-- Drawing search results will be dynamically added here -->
             </div>
@@ -70,8 +73,10 @@
     </div>
 
     <!-- Include JavaScript -->
-    <script src="{{ url_for('static', filename='js/base_sidebar.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/comment_pop_up.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/module_template/base_sidebar.js', v='4') }}"></script>
+    <script src="{{ url_for('static', filename='js/comment_pop_up.js', v='2') }}"></script>
+    <script src="{{ url_for('static', filename='js/module_template/theme_selector.js', v='2') }}"></script>
+
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
