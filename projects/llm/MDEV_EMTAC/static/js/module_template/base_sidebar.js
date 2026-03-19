@@ -1,195 +1,252 @@
-document.addEventListener("DOMContentLoaded", function() {
-    // Get DOM elements
+console.log("[SIDEBAR] base_sidebar.js loaded");
+document.addEventListener("DOMContentLoaded", function () {
     const sidebarToggleBtn = document.getElementById("sidebarCollapse");
-    const closeSidebarBtn = document.getElementById("closeSidebar");
-    const mainContainer = document.querySelector(".main-container");
     const sidebar = document.getElementById("mainSidebar");
+    const content = document.querySelector(".content");
     const toggleVoiceBtn = document.getElementById("toggle-voice");
     const toggleTextToSpeechBtn = document.getElementById("toggle-text-to-speech");
-    const content = document.querySelector(".content");
 
-    // Toggle the sidebar collapse state
-    const toggleSidebar = () => {
-        if (mainContainer) {
-            mainContainer.classList.toggle("collapsed");
-
-            // For mobile view, toggle the active class on sidebar
-            if (window.innerWidth <= 768 && sidebar) {
-                sidebar.classList.toggle("active");
-            } else if (sidebar) {
-                // For desktop view
-                sidebar.classList.toggle("collapsed");
-
-                if (content) {
-                    content.classList.toggle("sidebar-collapsed");
-                }
-            }
-
-            // Update aria-expanded attribute for accessibility
-            if (sidebarToggleBtn) {
-                const isCollapsed = mainContainer.classList.contains("collapsed");
-                sidebarToggleBtn.setAttribute("aria-expanded", !isCollapsed);
-            }
+    function logSidebarState(context) {
+        if (!sidebar) {
+            console.warn(`[SIDEBAR] ${context} | sidebar not found`);
+            return;
         }
-    };
 
-    // Sidebar collapse button
-    if (sidebarToggleBtn) {
-        sidebarToggleBtn.onclick = toggleSidebar;
+        const computedStyle = window.getComputedStyle(sidebar);
+
+        console.log(`[SIDEBAR] ${context}`);
+        console.log("  window.innerWidth:", window.innerWidth);
+        console.log("  isMobileView:", isMobileView());
+        console.log("  body classes:", document.body.className);
+        console.log("  sidebar classes:", sidebar.className);
+        console.log("  sidebar transform:", computedStyle.transform);
+        console.log("  sidebar width:", computedStyle.width);
+        console.log("  sidebar left:", computedStyle.left);
+
+        if (content) {
+            const contentStyle = window.getComputedStyle(content);
+            console.log("  content classes:", content.className);
+            console.log("  content margin-left:", contentStyle.marginLeft);
+            console.log("  content width:", contentStyle.width);
+        } else {
+            console.log("  content not found");
+        }
+
+        if (sidebarToggleBtn) {
+            console.log("  hamburger aria-expanded:", sidebarToggleBtn.getAttribute("aria-expanded"));
+        } else {
+            console.log("  sidebar toggle button not found");
+        }
     }
 
-    // Close sidebar button (if one exists in your sidebar template)
-    if (closeSidebarBtn) {
-        closeSidebarBtn.onclick = toggleSidebar;
+    function isMobileView() {
+        return window.innerWidth <= 768;
     }
 
-    // Close sidebar when clicking outside on mobile
-    document.addEventListener('click', function(event) {
-        if (window.innerWidth <= 768 &&
-            sidebar &&
-            mainContainer &&
-            mainContainer.classList.contains("collapsed") &&
-            !sidebar.contains(event.target) &&
-            event.target !== sidebarToggleBtn) {
-            mainContainer.classList.remove("collapsed");
+    function setDesktopCollapsedState(collapsed) {
+        document.body.classList.toggle("sidebar-is-collapsed", collapsed);
+
+        if (sidebarToggleBtn) {
+            sidebarToggleBtn.setAttribute("aria-expanded", String(!collapsed));
+        }
+
+        logSidebarState(`setDesktopCollapsedState(${collapsed})`);
+    }
+
+    function setMobileSidebarState(open) {
+        if (!sidebar) {
+            console.warn("[SIDEBAR] setMobileSidebarState called but sidebar not found");
+            return;
+        }
+
+        sidebar.classList.toggle("active", open);
+
+        if (sidebarToggleBtn) {
+            sidebarToggleBtn.setAttribute("aria-expanded", String(open));
+        }
+
+        logSidebarState(`setMobileSidebarState(${open})`);
+    }
+
+    function toggleSidebar() {
+        console.log("[SIDEBAR] toggleSidebar called");
+
+        if (!sidebar) {
+            console.warn("[SIDEBAR] Sidebar not found");
+            return;
+        }
+
+        if (isMobileView()) {
+            const willOpen = !sidebar.classList.contains("active");
+            console.log("[SIDEBAR] Mobile toggle | willOpen =", willOpen);
+            setMobileSidebarState(willOpen);
+            return;
+        }
+
+        const willCollapse = !document.body.classList.contains("sidebar-is-collapsed");
+        console.log("[SIDEBAR] Desktop toggle | willCollapse =", willCollapse);
+        setDesktopCollapsedState(willCollapse);
+    }
+
+    function resetSidebarForViewport() {
+        console.log("[SIDEBAR] resetSidebarForViewport called");
+
+        if (!sidebar) {
+            console.warn("[SIDEBAR] resetSidebarForViewport | sidebar not found");
+            return;
+        }
+
+        if (isMobileView()) {
+            document.body.classList.remove("sidebar-is-collapsed");
             sidebar.classList.remove("active");
+
+            if (sidebarToggleBtn) {
+                sidebarToggleBtn.setAttribute("aria-expanded", "false");
+            }
+
+            logSidebarState("resetSidebarForViewport -> mobile");
+        } else {
+            sidebar.classList.remove("active");
+
+            if (sidebarToggleBtn) {
+                sidebarToggleBtn.setAttribute(
+                    "aria-expanded",
+                    String(!document.body.classList.contains("sidebar-is-collapsed"))
+                );
+            }
+
+            logSidebarState("resetSidebarForViewport -> desktop");
+        }
+    }
+
+    console.log("[SIDEBAR] DOMContentLoaded");
+    console.log("[SIDEBAR] sidebarToggleBtn found:", !!sidebarToggleBtn);
+    console.log("[SIDEBAR] sidebar found:", !!sidebar);
+    console.log("[SIDEBAR] content found:", !!content);
+
+    if (sidebarToggleBtn) {
+        sidebarToggleBtn.addEventListener("click", function (event) {
+            console.log("[SIDEBAR] hamburger click detected");
+            event.preventDefault();
+            event.stopPropagation();
+            toggleSidebar();
+        });
+    } else {
+        console.warn("[SIDEBAR] sidebarCollapse button not found");
+    }
+
+    document.addEventListener("click", function (event) {
+        if (!isMobileView() || !sidebar) {
+            return;
+        }
+
+        const clickedToggle = sidebarToggleBtn && (
+            event.target === sidebarToggleBtn || sidebarToggleBtn.contains(event.target)
+        );
+
+        if (!sidebar.contains(event.target) && !clickedToggle) {
+            console.log("[SIDEBAR] outside click on mobile -> closing sidebar");
+            setMobileSidebarState(false);
         }
     });
 
-    // Toggle Voice button
     if (toggleVoiceBtn) {
-        toggleVoiceBtn.onclick = function() {
+        toggleVoiceBtn.addEventListener("click", function () {
             this.classList.toggle("active");
-            console.log("Voice recognition toggled");
-            // Actual implementation would be added here
-        };
+            console.log("[SIDEBAR] Voice toggle clicked");
+        });
     }
 
-    // Toggle Text-to-Speech button
     if (toggleTextToSpeechBtn) {
-        toggleTextToSpeechBtn.onclick = function() {
+        toggleTextToSpeechBtn.addEventListener("click", function () {
             this.classList.toggle("active");
-            console.log("Text-to-speech toggled");
-            // Actual implementation would be added here
-        };
+            console.log("[SIDEBAR] Text-to-speech toggle clicked");
+        });
     }
 
-    // Function to show specific forms - make it globally available
-    window.showForm = function(formId) {
-        // Hide all forms first
-        const forms = document.querySelectorAll('.form-container');
-        forms.forEach(form => {
-            form.style.display = 'none';
+    window.showForm = function (formId) {
+        console.log("[SIDEBAR] showForm called with:", formId);
+
+        const forms = document.querySelectorAll(".form-container");
+        forms.forEach((form) => {
+            form.style.display = "none";
         });
 
-        // Show results container for search related forms
-        const resultsContainer = document.getElementById('results-container');
+        const resultsContainer = document.getElementById("results-container");
         if (resultsContainer) {
-            if (formId.includes('search')) {
-                resultsContainer.style.display = 'block';
-            } else {
-                resultsContainer.style.display = 'none';
-            }
+            resultsContainer.style.display = formId.includes("search") ? "block" : "none";
         }
 
-        // Show the selected form
         const selectedForm = document.getElementById(formId);
         if (selectedForm) {
-            selectedForm.style.display = 'block';
+            selectedForm.style.display = "block";
 
-            // Scroll to form on mobile
-            if (window.innerWidth <= 768) {
-                selectedForm.scrollIntoView({ behavior: 'smooth' });
-
-                // Close sidebar on mobile after selection
-                if (sidebar && mainContainer && mainContainer.classList.contains("collapsed")) {
-                    mainContainer.classList.remove("collapsed");
-                    sidebar.classList.remove("active");
-                }
+            if (isMobileView()) {
+                selectedForm.scrollIntoView({ behavior: "smooth" });
+                setMobileSidebarState(false);
             }
+        } else {
+            console.warn("[SIDEBAR] showForm could not find form:", formId);
         }
     };
 
-    // Initialize voice selection dropdown if available
     initializeVoiceSelection();
+    resetSidebarForViewport();
+
+    window.addEventListener("resize", function () {
+        console.log("[SIDEBAR] resize event");
+        resetSidebarForViewport();
+    });
 });
 
-// Function to initialize voice selection dropdown
 function initializeVoiceSelection() {
-    const voiceSelection = document.getElementById('voice-selection');
-    if (voiceSelection && window.speechSynthesis) {
-        // Get available voices and populate the dropdown
-        function populateVoiceList() {
-            const voices = window.speechSynthesis.getVoices();
+    const voiceSelection = document.getElementById("voice-selection");
 
-            // Clear existing options
-            voiceSelection.innerHTML = '';
+    if (!voiceSelection || !window.speechSynthesis) {
+        console.log("[SIDEBAR] Voice selection not initialized");
+        return;
+    }
 
-            // Add a default option
-            const defaultOption = document.createElement('option');
-            defaultOption.textContent = 'Select Voice';
-            voiceSelection.appendChild(defaultOption);
+    function populateVoiceList() {
+        const voices = window.speechSynthesis.getVoices();
 
-            // Add all available voices
-            voices.forEach(voice => {
-                const option = document.createElement('option');
-                option.textContent = `${voice.name} (${voice.lang})`;
-                option.setAttribute('data-lang', voice.lang);
-                option.setAttribute('data-name', voice.name);
-                voiceSelection.appendChild(option);
-            });
+        voiceSelection.innerHTML = "";
 
-            // Select previously used voice if any
-            const savedVoice = localStorage.getItem('selectedVoice');
-            if (savedVoice) {
-                for (let i = 0; i < voiceSelection.options.length; i++) {
-                    if (voiceSelection.options[i].getAttribute('data-name') === savedVoice) {
-                        voiceSelection.selectedIndex = i;
-                        break;
-                    }
+        const defaultOption = document.createElement("option");
+        defaultOption.textContent = "Select Voice";
+        defaultOption.value = "";
+        voiceSelection.appendChild(defaultOption);
+
+        voices.forEach((voice) => {
+            const option = document.createElement("option");
+            option.textContent = `${voice.name} (${voice.lang})`;
+            option.value = voice.name;
+            voiceSelection.appendChild(option);
+        });
+
+        const savedVoice = localStorage.getItem("selectedVoice");
+        if (savedVoice) {
+            for (let i = 0; i < voiceSelection.options.length; i += 1) {
+                if (voiceSelection.options[i].value === savedVoice) {
+                    voiceSelection.selectedIndex = i;
+                    break;
                 }
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-        const themeSelect = document.getElementById('theme-select');
-        const themeStyle = document.getElementById('theme-style');
+        console.log("[SIDEBAR] Voice list populated");
+    }
 
-        // On theme selection change, set the theme CSS
-        themeSelect.addEventListener('change', function() {
-            const themeFile = this.value;
-            themeStyle.href = themeFile
-                ? "{{ url_for('static', filename='css/module_template/themes/') }}" + themeFile
-                : "";
-            localStorage.setItem('selectedTheme', themeFile);
-        });
+    populateVoiceList();
 
-        // On load, restore the theme if previously selected
-        const savedTheme = localStorage.getItem('selectedTheme');
-        if (savedTheme) {
-            themeStyle.href = "{{ url_for('static', filename='css/module_template/themes/') }}" + savedTheme;
-            themeSelect.value = savedTheme;
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = populateVoiceList;
+    }
+
+    voiceSelection.addEventListener("change", function () {
+        if (this.value) {
+            localStorage.setItem("selectedVoice", this.value);
+            console.log("[SIDEBAR] Selected voice:", this.value);
         }
     });
-
-
-        // Initial population
-        populateVoiceList();
-
-        // Update when voices change (happens asynchronously in some browsers)
-        if (window.speechSynthesis.onvoiceschanged !== undefined) {
-            window.speechSynthesis.onvoiceschanged = populateVoiceList;
-        }
-
-        // Handle voice selection change
-        voiceSelection.addEventListener('change', function() {
-            if (this.selectedIndex > 0) {
-                const selectedOption = this.options[this.selectedIndex];
-                const voiceName = selectedOption.getAttribute('data-name');
-                console.log(`Selected voice: ${voiceName}`);
-                // Store the selected voice for later use
-                localStorage.setItem('selectedVoice', voiceName);
-            }
-        });
-    }
 }
