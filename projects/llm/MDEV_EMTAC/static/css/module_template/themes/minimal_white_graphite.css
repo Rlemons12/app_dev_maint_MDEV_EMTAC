@@ -1,0 +1,427 @@
+/* static/css/module_template/themes/minimal_white_graphite.css
+==================================
+MINIMAL WHITE GRAPHITE THEME
+Designed to sit on top of:
+static/css/module_template/base.css
+
+Role:
+- Override standardized base theme variables
+- Preserve layout ownership in base.css
+- Provide a clean Minimal White & Graphite visual identity
+- Support reusable neppy-* utility classes
+- Theme the standardized .mt-* module template layouts
+================================== */
+
+/* ==================================
+THEME VARIABLE OVERRIDES
+Apply by adding class="minimal-white-graphite" to body
+================================== */
+body.minimal-white-graphite {
+    --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    --app-page-bg: #FFFFFF;
+    --app-page-text: #2D2D2D;
+
+    --app-banner-bg: linear-gradient(90deg, #ececf1 0%, #F2F2F7 45%, #fafafe 100%);
+    --app-banner-text: #2D2D2D;
+    --app-banner-link: #6E8EF5;
+
+    --app-sidebar-bg: rgba(242, 242, 247, 0.94);
+    --app-sidebar-text: #2D2D2D;
+    --app-sidebar-link: #2D2D2D;
+    --app-sidebar-hover: #6E8EF5;
+    --app-sidebar-hover-bg: rgba(110, 142, 245, 0.10);
+    --app-sidebar-border: rgba(45, 45, 45, 0.10);
+
+    --app-content-bg: rgba(255, 255, 255, 0.86);
+    --app-content-text: #2D2D2D;
+
+    --app-control-bg: rgba(245, 246, 250, 0.96);
+    --app-control-text: #2D2D2D;
+    --app-control-border: rgba(45, 45, 45, 0.14);
+    --app-control-hover-bg: rgba(232, 236, 245, 0.98);
+
+    --app-popup-bg: rgba(255, 255, 255, 0.98);
+    --app-popup-text: #2D2D2D;
+    --app-popup-accent: #6E8EF5;
+    --app-popup-submit-text: #ffffff;
+
+    --app-results-bg: rgba(242, 242, 247, 0.72);
+    --app-results-text: #2D2D2D;
+
+    --app-thumbnail-border: rgba(45, 45, 45, 0.12);
+
+    --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.08);
+    --app-shadow-md: 0 16px 30px rgba(0, 0, 0, 0.12);
+
+    background: #FFFFFF;
+    background-image: url("/static/background_images/min_white_graphite.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    color: var(--app-page-text);
+    line-height: 1.45;
+}
+
+/* ==================================
+NEPPY TOKEN OVERRIDES
+Supports reusable neppy-* utility classes
+================================== */
+body.minimal-white-graphite {
+    --neppy-surface: rgba(255, 255, 255, 0.84);
+    --neppy-surface-2: rgba(247, 248, 252, 0.92);
+    --neppy-line: rgba(45, 45, 45, 0.12);
+    --neppy-line-strong: rgba(45, 45, 45, 0.20);
+
+    --neppy-text: #2D2D2D;
+    --neppy-muted: #6b7280;
+    --neppy-heading: #111827;
+
+    --neppy-accent: #6E8EF5;
+    --neppy-accent-soft: rgba(110, 142, 245, 0.14);
+    --neppy-accent-hover: #5878de;
+
+    --neppy-ok: #2fb36e;
+    --neppy-ok-soft: rgba(47, 179, 110, 0.14);
+
+    --neppy-warn: #d4a017;
+    --neppy-warn-soft: rgba(212, 160, 23, 0.16);
+
+    --neppy-bad: #d65c5c;
+    --neppy-bad-soft: rgba(214, 92, 92, 0.14);
+}
+
+/* ==================================
+GLOBAL POLISH
+================================== */
+body.minimal-white-graphite .banner {
+    letter-spacing: 0.02em;
+    box-shadow: var(--app-shadow-sm);
+}
+
+body.minimal-white-graphite .banner a {
+    font-weight: 600;
+}
+
+body.minimal-white-graphite .sidebar {
+    backdrop-filter: blur(6px);
+    box-shadow: inset -1px 0 0 rgba(45, 45, 45, 0.06);
+}
+
+body.minimal-white-graphite .sidebar h1 {
+    color: var(--neppy-heading);
+    letter-spacing: 0.02em;
+}
+
+body.minimal-white-graphite .welcome-message {
+    color: var(--app-sidebar-text);
+    font-weight: 600;
+}
+
+body.minimal-white-graphite .user-level,
+body.minimal-white-graphite .model-display-section {
+    color: #6b7280;
+}
+
+body.minimal-white-graphite .content {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(245, 246, 250, 0.94) 100%);
+    color: var(--app-content-text);
+}
+
+/* ==================================
+SIDEBAR NAV / INTERACTION POLISH
+================================== */
+body.minimal-white-graphite .nav-link,
+body.minimal-white-graphite .sidebar a,
+body.minimal-white-graphite .sidebar button,
+body.minimal-white-graphite .sidebar select {
+    color: var(--app-sidebar-link);
+}
+
+body.minimal-white-graphite .nav-link:hover,
+body.minimal-white-graphite .sidebar a:hover,
+body.minimal-white-graphite .sidebar button:hover,
+body.minimal-white-graphite .sidebar select:hover {
+    color: var(--app-sidebar-hover);
+    background-color: var(--app-sidebar-hover-bg);
+}
+
+body.minimal-white-graphite .nav-link.highlight {
+    color: var(--app-sidebar-hover);
+    background-color: rgba(110, 142, 245, 0.12);
+    border-left: 3px solid var(--app-sidebar-hover);
+}
+
+/* ==================================
+STANDARD CONTROLS
+================================== */
+body.minimal-white-graphite .toggle-button {
+    background: linear-gradient(180deg, #f3f5fa 0%, #e9edf5 100%) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+    font-weight: 600;
+}
+
+body.minimal-white-graphite .toggle-button:hover {
+    background: linear-gradient(180deg, #edf1fb 0%, #dde5f7 100%) !important;
+    border-color: rgba(110, 142, 245, 0.35) !important;
+}
+
+body.minimal-white-graphite #voice-selection,
+body.minimal-white-graphite .sidebar select {
+    background-color: #f7f8fc;
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 5px;
+}
+
+body.minimal-white-graphite #voice-selection:focus,
+body.minimal-white-graphite .sidebar select:focus {
+    outline: 2px solid rgba(110, 142, 245, 0.35);
+    outline-offset: 2px;
+}
+
+/* ==================================
+RESULTS / PANELS / THUMBNAILS
+================================== */
+body.minimal-white-graphite .results-container {
+    background: var(--app-results-bg);
+    border: 1px solid rgba(45, 45, 45, 0.08);
+    border-radius: 10px;
+    box-shadow: var(--app-shadow-md);
+    backdrop-filter: blur(4px);
+}
+
+body.minimal-white-graphite #drawingList {
+    color: var(--app-results-text);
+}
+
+body.minimal-white-graphite .thumbnail {
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid var(--app-thumbnail-border);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* ==================================
+COMMENT POPUP
+================================== */
+body.minimal-white-graphite #commentPopup {
+    background: var(--app-popup-bg);
+    border: 1px solid rgba(45, 45, 45, 0.10);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.14);
+}
+
+body.minimal-white-graphite #commentForm h2 {
+    color: var(--app-popup-accent);
+    letter-spacing: 0.02em;
+}
+
+body.minimal-white-graphite #commentForm textarea {
+    background: #f7f8fc;
+    color: var(--app-popup-text);
+    border: 1px solid rgba(45, 45, 45, 0.14);
+}
+
+body.minimal-white-graphite #commentForm textarea::placeholder {
+    color: rgba(45, 45, 45, 0.50);
+}
+
+body.minimal-white-graphite #commentForm textarea:focus {
+    border-color: rgba(110, 142, 245, 0.36);
+    box-shadow: 0 0 0 3px rgba(110, 142, 245, 0.12);
+}
+
+body.minimal-white-graphite #commentForm button {
+    background: linear-gradient(180deg, #f3f5fa 0%, #e9edf5 100%);
+    color: var(--app-popup-text);
+    border: 1px solid rgba(45, 45, 45, 0.12);
+}
+
+body.minimal-white-graphite #commentForm button:hover {
+    background: linear-gradient(180deg, #edf1fb 0%, #dde5f7 100%);
+}
+
+body.minimal-white-graphite #commentForm button[type="submit"] {
+    background: linear-gradient(180deg, #7a98f7 0%, #6E8EF5 100%);
+    color: var(--app-popup-submit-text);
+    border-color: rgba(110, 142, 245, 0.36);
+    font-weight: 700;
+}
+
+body.minimal-white-graphite #commentForm button[type="submit"]:hover {
+    background: linear-gradient(180deg, #88a4fb 0%, #5f81ef 100%);
+}
+
+/* ==================================
+LINKS / SPECIAL STATES
+================================== */
+body.minimal-white-graphite a {
+    color: #4f6fd9;
+}
+
+body.minimal-white-graphite a:hover {
+    color: var(--app-sidebar-hover);
+}
+
+body.minimal-white-graphite .logout-button {
+    color: #b7791f !important;
+}
+
+/* ==================================
+ACCESSIBILITY / FOCUS
+================================== */
+body.minimal-white-graphite .hamburger:focus-visible,
+body.minimal-white-graphite .toggle-button:focus-visible,
+body.minimal-white-graphite .sidebar button:focus-visible,
+body.minimal-white-graphite .sidebar a:focus-visible,
+body.minimal-white-graphite .sidebar select:focus-visible,
+body.minimal-white-graphite #commentForm textarea:focus-visible,
+body.minimal-white-graphite #commentForm button:focus-visible,
+body.minimal-white-graphite .mt-toggle-btn:focus-visible,
+body.minimal-white-graphite .neppy-btn:focus-visible,
+body.minimal-white-graphite .neppy-input:focus-visible,
+body.minimal-white-graphite .neppy-select:focus-visible,
+body.minimal-white-graphite .neppy-textarea:focus-visible {
+    outline: 2px solid rgba(110, 142, 245, 0.55);
+    outline-offset: 2px;
+}
+
+/* ==================================
+NEPPY UTILITY CLASS SUPPORT
+================================== */
+body.minimal-white-graphite .neppy-card,
+body.minimal-white-graphite .neppy-card-soft {
+    background: var(--neppy-surface);
+    border-color: var(--neppy-line);
+}
+
+body.minimal-white-graphite .neppy-title,
+body.minimal-white-graphite .neppy-panel-title {
+    color: var(--neppy-heading);
+}
+
+body.minimal-white-graphite .neppy-subtitle,
+body.minimal-white-graphite .neppy-label,
+body.minimal-white-graphite .neppy-text-muted {
+    color: var(--neppy-muted) !important;
+}
+
+body.minimal-white-graphite .neppy-btn {
+    background: linear-gradient(180deg, #f3f5fa 0%, #e9edf5 100%);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+body.minimal-white-graphite .neppy-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, #edf1fb 0%, #dde5f7 100%);
+}
+
+body.minimal-white-graphite .neppy-input,
+body.minimal-white-graphite .neppy-select,
+body.minimal-white-graphite .neppy-textarea,
+body.minimal-white-graphite .neppy-mono,
+body.minimal-white-graphite .neppy-code {
+    background: #f7f8fc;
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+body.minimal-white-graphite .neppy-input:focus,
+body.minimal-white-graphite .neppy-select:focus,
+body.minimal-white-graphite .neppy-textarea:focus {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
+}
+
+/* ==================================
+MODULE TEMPLATE PANEL LAYOUT THEME
+Styles the standardized .mt-* module templates
+================================== */
+body.minimal-white-graphite .mt-layout {
+    color: var(--neppy-text);
+}
+
+body.minimal-white-graphite .mt-layout-header {
+    border-bottom: 2px solid rgba(110, 142, 245, 0.20);
+}
+
+body.minimal-white-graphite .mt-layout-title {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+}
+
+body.minimal-white-graphite .mt-layout-description {
+    color: var(--neppy-muted);
+}
+
+body.minimal-white-graphite .mt-panel {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg, 14px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(4px);
+}
+
+body.minimal-white-graphite .mt-panel:hover {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12);
+}
+
+body.minimal-white-graphite .mt-panel-header {
+    background: rgba(0, 0, 0, 0.02);
+    border-bottom: 1px solid var(--neppy-line);
+}
+
+body.minimal-white-graphite .mt-panel-title {
+    color: var(--neppy-accent);
+}
+
+body.minimal-white-graphite .mt-toggle-btn {
+    background: linear-gradient(180deg, #f3f5fa 0%, #e9edf5 100%);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+body.minimal-white-graphite .mt-toggle-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, #edf1fb 0%, #dde5f7 100%);
+    color: var(--neppy-text);
+}
+
+body.minimal-white-graphite .mt-panel.is-collapsed .mt-toggle-btn {
+    background: linear-gradient(180deg, #d69090 0%, #c77979 100%);
+    border-color: rgba(214, 92, 92, 0.28);
+    color: #ffffff;
+}
+
+body.minimal-white-graphite .mt-panel-body {
+    color: var(--neppy-text);
+}
+
+body.minimal-white-graphite .mt-panel-content {
+    gap: 12px;
+}
+
+body.minimal-white-graphite .mt-item {
+    background: rgba(247, 248, 252, 0.96);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+}
+
+body.minimal-white-graphite .mt-item:hover {
+    background: rgba(110, 142, 245, 0.08);
+    border-color: var(--neppy-accent);
+}
+
+body.minimal-white-graphite .mt-item.is-active {
+    background: rgba(110, 142, 245, 0.14);
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 1px rgba(110, 142, 245, 0.10);
+}
