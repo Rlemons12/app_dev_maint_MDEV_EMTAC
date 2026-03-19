@@ -1,0 +1,427 @@
+/* static/css/module_template/themes/slate_teal.css
+==================================
+SLATE TEAL THEME
+Designed to sit on top of:
+static/css/module_template/base.css
+
+Role:
+- Override standardized base theme variables
+- Preserve layout ownership in base.css
+- Provide a complete Slate Teal visual identity
+- Support reusable neppy-* utility classes
+- Theme the standardized .mt-* module template layouts
+================================== */
+
+/* ==================================
+THEME VARIABLE OVERRIDES
+Apply by adding class="slate-teal" to body
+================================== */
+body.slate-teal {
+    --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    --app-page-bg: #0E1A1C;
+    --app-page-text: #E2F0F1;
+
+    --app-banner-bg: linear-gradient(90deg, #0D3640 0%, #145260 45%, #1A6678 100%);
+    --app-banner-text: #E2F0F1;
+    --app-banner-link: #52E8D8;
+
+    --app-sidebar-bg: rgba(10, 26, 30, 0.94);
+    --app-sidebar-text: #8ABEC4;
+    --app-sidebar-link: #E2F0F1;
+    --app-sidebar-hover: #2DD4C8;
+    --app-sidebar-hover-bg: rgba(45, 212, 200, 0.12);
+    --app-sidebar-border: rgba(226, 240, 241, 0.14);
+
+    --app-content-bg: rgba(14, 26, 28, 0.84);
+    --app-content-text: #E2F0F1;
+
+    --app-control-bg: rgba(10, 20, 22, 0.94);
+    --app-control-text: #E2F0F1;
+    --app-control-border: rgba(138, 190, 196, 0.22);
+    --app-control-hover-bg: rgba(18, 32, 36, 0.96);
+
+    --app-popup-bg: rgba(14, 26, 28, 0.97);
+    --app-popup-text: #E2F0F1;
+    --app-popup-accent: #2DD4C8;
+    --app-popup-submit-text: #0E1A1C;
+
+    --app-results-bg: rgba(14, 26, 28, 0.78);
+    --app-results-text: #E2F0F1;
+
+    --app-thumbnail-border: rgba(138, 190, 196, 0.20);
+
+    --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.24);
+    --app-shadow-md: 0 16px 30px rgba(0, 0, 0, 0.38);
+
+    background: #0E1A1C;
+    background-image: url("/static/background_images/slate_teal.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    color: var(--app-page-text);
+    line-height: 1.45;
+}
+
+/* ==================================
+NEPPY TOKEN OVERRIDES
+Supports reusable neppy-* utility classes
+================================== */
+body.slate-teal {
+    --neppy-surface: rgba(14, 26, 28, 0.80);
+    --neppy-surface-2: rgba(10, 20, 22, 0.90);
+    --neppy-line: rgba(138, 190, 196, 0.22);
+    --neppy-line-strong: rgba(226, 240, 241, 0.30);
+
+    --neppy-text: #E2F0F1;
+    --neppy-muted: #8ABEC4;
+    --neppy-heading: #FFFFFF;
+
+    --neppy-accent: #2DD4C8;
+    --neppy-accent-soft: rgba(45, 212, 200, 0.14);
+    --neppy-accent-hover: #52E8D8;
+
+    --neppy-ok: #6EE7A0;
+    --neppy-ok-soft: rgba(110, 231, 160, 0.16);
+
+    --neppy-warn: #FFD670;
+    --neppy-warn-soft: rgba(255, 214, 112, 0.18);
+
+    --neppy-bad: #FF8E8E;
+    --neppy-bad-soft: rgba(255, 142, 142, 0.16);
+}
+
+/* ==================================
+GLOBAL POLISH
+================================== */
+body.slate-teal .banner {
+    letter-spacing: 0.03em;
+    box-shadow: var(--app-shadow-sm);
+}
+
+body.slate-teal .banner a {
+    font-weight: 600;
+}
+
+body.slate-teal .sidebar {
+    backdrop-filter: blur(5px);
+    box-shadow: inset -1px 0 0 rgba(226, 240, 241, 0.08);
+}
+
+body.slate-teal .sidebar h1 {
+    color: #E2F0F1;
+    letter-spacing: 0.02em;
+}
+
+body.slate-teal .welcome-message {
+    color: #C0DCE0;
+    font-weight: 600;
+}
+
+body.slate-teal .user-level,
+body.slate-teal .model-display-section {
+    color: rgba(226, 240, 241, 0.66);
+}
+
+body.slate-teal .content {
+    background: linear-gradient(180deg, rgba(14, 26, 28, 0.84) 0%, rgba(8, 16, 18, 0.92) 100%);
+    color: var(--app-content-text);
+}
+
+/* ==================================
+SIDEBAR NAV / INTERACTION POLISH
+================================== */
+body.slate-teal .nav-link,
+body.slate-teal .sidebar a,
+body.slate-teal .sidebar button,
+body.slate-teal .sidebar select {
+    color: var(--app-sidebar-link);
+}
+
+body.slate-teal .nav-link:hover,
+body.slate-teal .sidebar a:hover,
+body.slate-teal .sidebar button:hover,
+body.slate-teal .sidebar select:hover {
+    color: var(--app-sidebar-hover);
+    background-color: var(--app-sidebar-hover-bg);
+}
+
+body.slate-teal .nav-link.highlight {
+    color: var(--app-sidebar-hover);
+    background-color: rgba(45, 212, 200, 0.10);
+    border-left: 3px solid var(--app-sidebar-hover);
+}
+
+/* ==================================
+STANDARD CONTROLS
+================================== */
+body.slate-teal .toggle-button {
+    background: linear-gradient(180deg, rgba(18, 34, 38, 0.98) 0%, rgba(10, 20, 22, 0.98) 100%) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
+    font-weight: 600;
+}
+
+body.slate-teal .toggle-button:hover {
+    background: linear-gradient(180deg, rgba(26, 46, 52, 0.98) 0%, rgba(14, 28, 32, 0.98) 100%) !important;
+    border-color: rgba(45, 212, 200, 0.35) !important;
+}
+
+body.slate-teal #voice-selection,
+body.slate-teal .sidebar select {
+    background-color: rgba(10, 20, 22, 0.95);
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 5px;
+}
+
+body.slate-teal #voice-selection:focus,
+body.slate-teal .sidebar select:focus {
+    outline: 2px solid rgba(45, 212, 200, 0.35);
+    outline-offset: 2px;
+}
+
+/* ==================================
+RESULTS / PANELS / THUMBNAILS
+================================== */
+body.slate-teal .results-container {
+    background: var(--app-results-bg);
+    border: 1px solid rgba(226, 240, 241, 0.10);
+    border-radius: 10px;
+    box-shadow: var(--app-shadow-md);
+    backdrop-filter: blur(4px);
+}
+
+body.slate-teal #drawingList {
+    color: var(--app-results-text);
+}
+
+body.slate-teal .thumbnail {
+    background: rgba(10, 20, 22, 0.90);
+    border: 1px solid var(--app-thumbnail-border);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.20);
+}
+
+/* ==================================
+COMMENT POPUP
+================================== */
+body.slate-teal #commentPopup {
+    background: var(--app-popup-bg);
+    border: 1px solid rgba(226, 240, 241, 0.12);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.40);
+}
+
+body.slate-teal #commentForm h2 {
+    color: var(--app-popup-accent);
+    letter-spacing: 0.02em;
+}
+
+body.slate-teal #commentForm textarea {
+    background: rgba(10, 20, 22, 0.96);
+    color: var(--app-popup-text);
+    border: 1px solid rgba(138, 190, 196, 0.24);
+}
+
+body.slate-teal #commentForm textarea::placeholder {
+    color: rgba(226, 240, 241, 0.46);
+}
+
+body.slate-teal #commentForm textarea:focus {
+    border-color: rgba(45, 212, 200, 0.38);
+    box-shadow: 0 0 0 3px rgba(45, 212, 200, 0.12);
+}
+
+body.slate-teal #commentForm button {
+    background: linear-gradient(180deg, rgba(18, 34, 38, 0.98) 0%, rgba(10, 20, 22, 0.98) 100%);
+    color: var(--app-popup-text);
+    border: 1px solid rgba(138, 190, 196, 0.16);
+}
+
+body.slate-teal #commentForm button:hover {
+    background: linear-gradient(180deg, rgba(26, 46, 52, 0.98) 0%, rgba(14, 28, 32, 0.98) 100%);
+}
+
+body.slate-teal #commentForm button[type="submit"] {
+    background: linear-gradient(180deg, #52e8d8 0%, #2DD4C8 100%);
+    color: var(--app-popup-submit-text);
+    border-color: rgba(45, 212, 200, 0.35);
+    font-weight: 700;
+}
+
+body.slate-teal #commentForm button[type="submit"]:hover {
+    background: linear-gradient(180deg, #74ece0 0%, #26c0b5 100%);
+}
+
+/* ==================================
+LINKS / SPECIAL STATES
+================================== */
+body.slate-teal a {
+    color: #A0E4EC;
+}
+
+body.slate-teal a:hover {
+    color: #2DD4C8;
+}
+
+body.slate-teal .logout-button {
+    color: #FFB36B !important;
+}
+
+/* ==================================
+ACCESSIBILITY / FOCUS
+================================== */
+body.slate-teal .hamburger:focus-visible,
+body.slate-teal .toggle-button:focus-visible,
+body.slate-teal .sidebar button:focus-visible,
+body.slate-teal .sidebar a:focus-visible,
+body.slate-teal .sidebar select:focus-visible,
+body.slate-teal #commentForm textarea:focus-visible,
+body.slate-teal #commentForm button:focus-visible,
+body.slate-teal .mt-toggle-btn:focus-visible,
+body.slate-teal .neppy-btn:focus-visible,
+body.slate-teal .neppy-input:focus-visible,
+body.slate-teal .neppy-select:focus-visible,
+body.slate-teal .neppy-textarea:focus-visible {
+    outline: 2px solid rgba(45, 212, 200, 0.55);
+    outline-offset: 2px;
+}
+
+/* ==================================
+NEPPY UTILITY CLASS SUPPORT
+================================== */
+body.slate-teal .neppy-card,
+body.slate-teal .neppy-card-soft {
+    background: var(--neppy-surface);
+    border-color: var(--neppy-line);
+}
+
+body.slate-teal .neppy-title,
+body.slate-teal .neppy-panel-title {
+    color: var(--neppy-heading);
+}
+
+body.slate-teal .neppy-subtitle,
+body.slate-teal .neppy-label,
+body.slate-teal .neppy-text-muted {
+    color: var(--neppy-muted) !important;
+}
+
+body.slate-teal .neppy-btn {
+    background: linear-gradient(180deg, rgba(18, 34, 38, 0.98) 0%, rgba(10, 20, 22, 0.98) 100%);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+body.slate-teal .neppy-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, rgba(26, 46, 52, 0.98) 0%, rgba(14, 28, 32, 0.98) 100%);
+}
+
+body.slate-teal .neppy-input,
+body.slate-teal .neppy-select,
+body.slate-teal .neppy-textarea,
+body.slate-teal .neppy-mono,
+body.slate-teal .neppy-code {
+    background: rgba(10, 20, 22, 0.96);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+body.slate-teal .neppy-input:focus,
+body.slate-teal .neppy-select:focus,
+body.slate-teal .neppy-textarea:focus {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
+}
+
+/* ==================================
+MODULE TEMPLATE PANEL LAYOUT THEME
+Styles the standardized .mt-* module templates
+================================== */
+body.slate-teal .mt-layout {
+    color: var(--neppy-text);
+}
+
+body.slate-teal .mt-layout-header {
+    border-bottom: 2px solid rgba(45, 212, 200, 0.22);
+}
+
+body.slate-teal .mt-layout-title {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+}
+
+body.slate-teal .mt-layout-description {
+    color: var(--neppy-muted);
+}
+
+body.slate-teal .mt-panel {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg, 14px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.20);
+    backdrop-filter: blur(4px);
+}
+
+body.slate-teal .mt-panel:hover {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32);
+}
+
+body.slate-teal .mt-panel-header {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--neppy-line);
+}
+
+body.slate-teal .mt-panel-title {
+    color: var(--neppy-accent);
+}
+
+body.slate-teal .mt-toggle-btn {
+    background: linear-gradient(180deg, rgba(18, 34, 38, 0.98) 0%, rgba(10, 20, 22, 0.98) 100%);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.20);
+}
+
+body.slate-teal .mt-toggle-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, rgba(26, 46, 52, 0.98) 0%, rgba(14, 28, 32, 0.98) 100%);
+    color: var(--neppy-text);
+}
+
+body.slate-teal .mt-panel.is-collapsed .mt-toggle-btn {
+    background: linear-gradient(180deg, #7a3020 0%, #5e2418 100%);
+    border-color: rgba(255, 142, 142, 0.35);
+    color: #ffffff;
+}
+
+body.slate-teal .mt-panel-body {
+    color: var(--neppy-text);
+}
+
+body.slate-teal .mt-panel-content {
+    gap: 12px;
+}
+
+body.slate-teal .mt-item {
+    background: rgba(10, 20, 22, 0.92);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+}
+
+body.slate-teal .mt-item:hover {
+    background: rgba(45, 212, 200, 0.08);
+    border-color: var(--neppy-accent);
+}
+
+body.slate-teal .mt-item.is-active {
+    background: rgba(45, 212, 200, 0.16);
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 1px rgba(45, 212, 200, 0.10);
+}
