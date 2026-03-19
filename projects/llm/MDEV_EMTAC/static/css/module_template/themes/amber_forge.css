@@ -1,0 +1,427 @@
+/* static/css/module_template/themes/amber_forge.css
+==================================
+AMBER FORGE THEME
+Designed to sit on top of:
+static/css/module_template/base.css
+
+Role:
+- Override standardized base theme variables
+- Preserve layout ownership in base.css
+- Provide a complete Amber Forge visual identity
+- Support reusable neppy-* utility classes
+- Theme the standardized .mt-* module template layouts
+================================== */
+
+/* ==================================
+THEME VARIABLE OVERRIDES
+Apply by adding class="amber-forge" to body
+================================== */
+body.amber-forge {
+    --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    --app-page-bg: #1C1000;
+    --app-page-text: #FFF3DC;
+
+    --app-banner-bg: linear-gradient(90deg, #7A3A00 0%, #9C5000 45%, #B86200 100%);
+    --app-banner-text: #FFF3DC;
+    --app-banner-link: #FFD080;
+
+    --app-sidebar-bg: rgba(36, 18, 0, 0.94);
+    --app-sidebar-text: #D4A86A;
+    --app-sidebar-link: #FFF3DC;
+    --app-sidebar-hover: #FFAE42;
+    --app-sidebar-hover-bg: rgba(255, 174, 66, 0.12);
+    --app-sidebar-border: rgba(255, 243, 220, 0.14);
+
+    --app-content-bg: rgba(28, 16, 0, 0.84);
+    --app-content-text: #FFF3DC;
+
+    --app-control-bg: rgba(22, 12, 0, 0.94);
+    --app-control-text: #FFF3DC;
+    --app-control-border: rgba(212, 168, 106, 0.22);
+    --app-control-hover-bg: rgba(40, 22, 0, 0.96);
+
+    --app-popup-bg: rgba(28, 16, 0, 0.97);
+    --app-popup-text: #FFF3DC;
+    --app-popup-accent: #FFAE42;
+    --app-popup-submit-text: #1C1000;
+
+    --app-results-bg: rgba(28, 16, 0, 0.78);
+    --app-results-text: #FFF3DC;
+
+    --app-thumbnail-border: rgba(212, 168, 106, 0.20);
+
+    --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.28);
+    --app-shadow-md: 0 16px 30px rgba(0, 0, 0, 0.42);
+
+    background: #1C1000;
+    background-image: url("/static/background_images/amber_forge.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    color: var(--app-page-text);
+    line-height: 1.45;
+}
+
+/* ==================================
+NEPPY TOKEN OVERRIDES
+Supports reusable neppy-* utility classes
+================================== */
+body.amber-forge {
+    --neppy-surface: rgba(28, 16, 0, 0.80);
+    --neppy-surface-2: rgba(22, 12, 0, 0.90);
+    --neppy-line: rgba(212, 168, 106, 0.22);
+    --neppy-line-strong: rgba(255, 243, 220, 0.30);
+
+    --neppy-text: #FFF3DC;
+    --neppy-muted: #D4A86A;
+    --neppy-heading: #FFFFFF;
+
+    --neppy-accent: #FFAE42;
+    --neppy-accent-soft: rgba(255, 174, 66, 0.14);
+    --neppy-accent-hover: #FFD080;
+
+    --neppy-ok: #72E8A0;
+    --neppy-ok-soft: rgba(114, 232, 160, 0.16);
+
+    --neppy-warn: #FFE878;
+    --neppy-warn-soft: rgba(255, 232, 120, 0.18);
+
+    --neppy-bad: #FF7878;
+    --neppy-bad-soft: rgba(255, 120, 120, 0.16);
+}
+
+/* ==================================
+GLOBAL POLISH
+================================== */
+body.amber-forge .banner {
+    letter-spacing: 0.03em;
+    box-shadow: var(--app-shadow-sm);
+}
+
+body.amber-forge .banner a {
+    font-weight: 600;
+}
+
+body.amber-forge .sidebar {
+    backdrop-filter: blur(5px);
+    box-shadow: inset -1px 0 0 rgba(255, 243, 220, 0.08);
+}
+
+body.amber-forge .sidebar h1 {
+    color: #FFF3DC;
+    letter-spacing: 0.02em;
+}
+
+body.amber-forge .welcome-message {
+    color: #EEDD9A;
+    font-weight: 600;
+}
+
+body.amber-forge .user-level,
+body.amber-forge .model-display-section {
+    color: rgba(255, 243, 220, 0.66);
+}
+
+body.amber-forge .content {
+    background: linear-gradient(180deg, rgba(28, 16, 0, 0.84) 0%, rgba(16, 8, 0, 0.92) 100%);
+    color: var(--app-content-text);
+}
+
+/* ==================================
+SIDEBAR NAV / INTERACTION POLISH
+================================== */
+body.amber-forge .nav-link,
+body.amber-forge .sidebar a,
+body.amber-forge .sidebar button,
+body.amber-forge .sidebar select {
+    color: var(--app-sidebar-link);
+}
+
+body.amber-forge .nav-link:hover,
+body.amber-forge .sidebar a:hover,
+body.amber-forge .sidebar button:hover,
+body.amber-forge .sidebar select:hover {
+    color: var(--app-sidebar-hover);
+    background-color: var(--app-sidebar-hover-bg);
+}
+
+body.amber-forge .nav-link.highlight {
+    color: var(--app-sidebar-hover);
+    background-color: rgba(255, 174, 66, 0.10);
+    border-left: 3px solid var(--app-sidebar-hover);
+}
+
+/* ==================================
+STANDARD CONTROLS
+================================== */
+body.amber-forge .toggle-button {
+    background: linear-gradient(180deg, rgba(48, 26, 0, 0.98) 0%, rgba(22, 12, 0, 0.98) 100%) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.24);
+    font-weight: 600;
+}
+
+body.amber-forge .toggle-button:hover {
+    background: linear-gradient(180deg, rgba(68, 36, 0, 0.98) 0%, rgba(30, 16, 0, 0.98) 100%) !important;
+    border-color: rgba(255, 174, 66, 0.35) !important;
+}
+
+body.amber-forge #voice-selection,
+body.amber-forge .sidebar select {
+    background-color: rgba(22, 12, 0, 0.95);
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 5px;
+}
+
+body.amber-forge #voice-selection:focus,
+body.amber-forge .sidebar select:focus {
+    outline: 2px solid rgba(255, 174, 66, 0.35);
+    outline-offset: 2px;
+}
+
+/* ==================================
+RESULTS / PANELS / THUMBNAILS
+================================== */
+body.amber-forge .results-container {
+    background: var(--app-results-bg);
+    border: 1px solid rgba(255, 243, 220, 0.10);
+    border-radius: 10px;
+    box-shadow: var(--app-shadow-md);
+    backdrop-filter: blur(4px);
+}
+
+body.amber-forge #drawingList {
+    color: var(--app-results-text);
+}
+
+body.amber-forge .thumbnail {
+    background: rgba(22, 12, 0, 0.90);
+    border: 1px solid var(--app-thumbnail-border);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
+}
+
+/* ==================================
+COMMENT POPUP
+================================== */
+body.amber-forge #commentPopup {
+    background: var(--app-popup-bg);
+    border: 1px solid rgba(255, 243, 220, 0.12);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.44);
+}
+
+body.amber-forge #commentForm h2 {
+    color: var(--app-popup-accent);
+    letter-spacing: 0.02em;
+}
+
+body.amber-forge #commentForm textarea {
+    background: rgba(22, 12, 0, 0.96);
+    color: var(--app-popup-text);
+    border: 1px solid rgba(212, 168, 106, 0.24);
+}
+
+body.amber-forge #commentForm textarea::placeholder {
+    color: rgba(255, 243, 220, 0.46);
+}
+
+body.amber-forge #commentForm textarea:focus {
+    border-color: rgba(255, 174, 66, 0.38);
+    box-shadow: 0 0 0 3px rgba(255, 174, 66, 0.12);
+}
+
+body.amber-forge #commentForm button {
+    background: linear-gradient(180deg, rgba(48, 26, 0, 0.98) 0%, rgba(22, 12, 0, 0.98) 100%);
+    color: var(--app-popup-text);
+    border: 1px solid rgba(212, 168, 106, 0.16);
+}
+
+body.amber-forge #commentForm button:hover {
+    background: linear-gradient(180deg, rgba(68, 36, 0, 0.98) 0%, rgba(30, 16, 0, 0.98) 100%);
+}
+
+body.amber-forge #commentForm button[type="submit"] {
+    background: linear-gradient(180deg, #ffd080 0%, #FFAE42 100%);
+    color: var(--app-popup-submit-text);
+    border-color: rgba(255, 174, 66, 0.35);
+    font-weight: 700;
+}
+
+body.amber-forge #commentForm button[type="submit"]:hover {
+    background: linear-gradient(180deg, #ffe09e 0%, #f09e30 100%);
+}
+
+/* ==================================
+LINKS / SPECIAL STATES
+================================== */
+body.amber-forge a {
+    color: #FFD9A0;
+}
+
+body.amber-forge a:hover {
+    color: #FFAE42;
+}
+
+body.amber-forge .logout-button {
+    color: #FF8C8C !important;
+}
+
+/* ==================================
+ACCESSIBILITY / FOCUS
+================================== */
+body.amber-forge .hamburger:focus-visible,
+body.amber-forge .toggle-button:focus-visible,
+body.amber-forge .sidebar button:focus-visible,
+body.amber-forge .sidebar a:focus-visible,
+body.amber-forge .sidebar select:focus-visible,
+body.amber-forge #commentForm textarea:focus-visible,
+body.amber-forge #commentForm button:focus-visible,
+body.amber-forge .mt-toggle-btn:focus-visible,
+body.amber-forge .neppy-btn:focus-visible,
+body.amber-forge .neppy-input:focus-visible,
+body.amber-forge .neppy-select:focus-visible,
+body.amber-forge .neppy-textarea:focus-visible {
+    outline: 2px solid rgba(255, 174, 66, 0.55);
+    outline-offset: 2px;
+}
+
+/* ==================================
+NEPPY UTILITY CLASS SUPPORT
+================================== */
+body.amber-forge .neppy-card,
+body.amber-forge .neppy-card-soft {
+    background: var(--neppy-surface);
+    border-color: var(--neppy-line);
+}
+
+body.amber-forge .neppy-title,
+body.amber-forge .neppy-panel-title {
+    color: var(--neppy-heading);
+}
+
+body.amber-forge .neppy-subtitle,
+body.amber-forge .neppy-label,
+body.amber-forge .neppy-text-muted {
+    color: var(--neppy-muted) !important;
+}
+
+body.amber-forge .neppy-btn {
+    background: linear-gradient(180deg, rgba(48, 26, 0, 0.98) 0%, rgba(22, 12, 0, 0.98) 100%);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+body.amber-forge .neppy-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, rgba(68, 36, 0, 0.98) 0%, rgba(30, 16, 0, 0.98) 100%);
+}
+
+body.amber-forge .neppy-input,
+body.amber-forge .neppy-select,
+body.amber-forge .neppy-textarea,
+body.amber-forge .neppy-mono,
+body.amber-forge .neppy-code {
+    background: rgba(22, 12, 0, 0.96);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+body.amber-forge .neppy-input:focus,
+body.amber-forge .neppy-select:focus,
+body.amber-forge .neppy-textarea:focus {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
+}
+
+/* ==================================
+MODULE TEMPLATE PANEL LAYOUT THEME
+Styles the standardized .mt-* module templates
+================================== */
+body.amber-forge .mt-layout {
+    color: var(--neppy-text);
+}
+
+body.amber-forge .mt-layout-header {
+    border-bottom: 2px solid rgba(255, 174, 66, 0.22);
+}
+
+body.amber-forge .mt-layout-title {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+}
+
+body.amber-forge .mt-layout-description {
+    color: var(--neppy-muted);
+}
+
+body.amber-forge .mt-panel {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg, 14px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(4px);
+}
+
+body.amber-forge .mt-panel:hover {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.36);
+}
+
+body.amber-forge .mt-panel-header {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--neppy-line);
+}
+
+body.amber-forge .mt-panel-title {
+    color: var(--neppy-accent);
+}
+
+body.amber-forge .mt-toggle-btn {
+    background: linear-gradient(180deg, rgba(48, 26, 0, 0.98) 0%, rgba(22, 12, 0, 0.98) 100%);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
+}
+
+body.amber-forge .mt-toggle-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, rgba(68, 36, 0, 0.98) 0%, rgba(30, 16, 0, 0.98) 100%);
+    color: var(--neppy-text);
+}
+
+body.amber-forge .mt-panel.is-collapsed .mt-toggle-btn {
+    background: linear-gradient(180deg, #2a3060 0%, #1e2448 100%);
+    border-color: rgba(120, 140, 255, 0.35);
+    color: #ffffff;
+}
+
+body.amber-forge .mt-panel-body {
+    color: var(--neppy-text);
+}
+
+body.amber-forge .mt-panel-content {
+    gap: 12px;
+}
+
+body.amber-forge .mt-item {
+    background: rgba(22, 12, 0, 0.92);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+}
+
+body.amber-forge .mt-item:hover {
+    background: rgba(255, 174, 66, 0.08);
+    border-color: var(--neppy-accent);
+}
+
+body.amber-forge .mt-item.is-active {
+    background: rgba(255, 174, 66, 0.16);
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 1px rgba(255, 174, 66, 0.10);
+}
