@@ -1,9 +1,9 @@
-{% extends "module_template_html/base_template_1_0_0_converted.html" %}
+{% extends "module_template_html/base_template_2_0_0.html" %}
 
 {% block title %}EMTAC Assistant{% endblock %}
 
 {% block content %}
-    {% include 'index_partial/index_partial_5_3_1_sidebar.html' %}
+    {% include "module_template_html/partials/index_chatbot_five331.html" %}
 {% endblock %}
 
 {% block extra_scripts %}
@@ -21,4 +21,3 @@
 <script src="{{ url_for('static', filename='js/update_qanda_table.js') }}"></script>
 
 {% endblock %}
-
