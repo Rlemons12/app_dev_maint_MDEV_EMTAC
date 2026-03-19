@@ -1,18 +1,427 @@
-body {
+/* static/css/module_template/themes/yellow_steel.css
+==================================
+YELLOW STEEL THEME
+Designed to sit on top of:
+static/css/module_template/base.css
+
+Role:
+- Override standardized base theme variables
+- Preserve layout ownership in base.css
+- Provide a complete Yellow Steel visual identity
+- Support reusable neppy-* utility classes
+- Theme the standardized .mt-* module template layouts
+================================== */
+
+/* ==================================
+THEME VARIABLE OVERRIDES
+Apply by adding class="yellow-steel" to body
+================================== */
+body.yellow-steel {
+    --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    --app-page-bg: #232323;
+    --app-page-text: #E7E9EC;
+
+    --app-banner-bg: linear-gradient(90deg, #E6C000 0%, #FFD600 45%, #FFE033 100%);
+    --app-banner-text: #232323;
+    --app-banner-link: #232323;
+
+    --app-sidebar-bg: rgba(255, 214, 0, 0.97);
+    --app-sidebar-text: #3A2E00;
+    --app-sidebar-link: #FF8500;
+    --app-sidebar-hover: #232323;
+    --app-sidebar-hover-bg: rgba(35, 35, 35, 0.12);
+    --app-sidebar-border: rgba(35, 35, 35, 0.20);
+
+    --app-content-bg: rgba(35, 35, 35, 0.84);
+    --app-content-text: #E7E9EC;
+
+    --app-control-bg: rgba(28, 28, 28, 0.94);
+    --app-control-text: #E7E9EC;
+    --app-control-border: rgba(231, 233, 236, 0.20);
+    --app-control-hover-bg: rgba(42, 42, 42, 0.96);
+
+    --app-popup-bg: rgba(30, 30, 30, 0.97);
+    --app-popup-text: #E7E9EC;
+    --app-popup-accent: #FFD600;
+    --app-popup-submit-text: #232323;
+
+    --app-results-bg: rgba(35, 35, 35, 0.80);
+    --app-results-text: #E7E9EC;
+
+    --app-thumbnail-border: rgba(231, 233, 236, 0.18);
+
+    --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.30);
+    --app-shadow-md: 0 16px 30px rgba(0, 0, 0, 0.44);
+
     background: #232323;
-    background-image: url("/static/background_images/yellow_steel.jpg"); /* Replace with your image */
+    background-image: url("/static/background_images/yellow_steel.jpg");
     background-size: cover;
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-position: center;
-    color: #E7E9EC;
+    color: var(--app-page-text);
+    line-height: 1.45;
 }
-.banner, .sidebar {
-    background-color: #FFD600;
+
+/* ==================================
+NEPPY TOKEN OVERRIDES
+Supports reusable neppy-* utility classes
+================================== */
+body.yellow-steel {
+    --neppy-surface: rgba(35, 35, 35, 0.82);
+    --neppy-surface-2: rgba(28, 28, 28, 0.92);
+    --neppy-line: rgba(231, 233, 236, 0.18);
+    --neppy-line-strong: rgba(231, 233, 236, 0.32);
+
+    --neppy-text: #E7E9EC;
+    --neppy-muted: #A8AAAD;
+    --neppy-heading: #FFFFFF;
+
+    --neppy-accent: #FFD600;
+    --neppy-accent-soft: rgba(255, 214, 0, 0.14);
+    --neppy-accent-hover: #FFE033;
+
+    --neppy-ok: #6EE7A0;
+    --neppy-ok-soft: rgba(110, 231, 160, 0.16);
+
+    --neppy-warn: #FF8500;
+    --neppy-warn-soft: rgba(255, 133, 0, 0.18);
+
+    --neppy-bad: #FF6B6B;
+    --neppy-bad-soft: rgba(255, 107, 107, 0.16);
+}
+
+/* ==================================
+GLOBAL POLISH
+================================== */
+body.yellow-steel .banner {
+    letter-spacing: 0.03em;
+    box-shadow: var(--app-shadow-sm);
+}
+
+body.yellow-steel .banner a {
+    font-weight: 700;
+}
+
+body.yellow-steel .sidebar {
+    backdrop-filter: blur(5px);
+    box-shadow: inset -1px 0 0 rgba(35, 35, 35, 0.16), 2px 0 14px rgba(255, 214, 0, 0.20);
+}
+
+body.yellow-steel .sidebar h1 {
     color: #232323;
+    letter-spacing: 0.02em;
 }
-.nav-link,
-.sidebar a,
-.sidebar button {
+
+body.yellow-steel .welcome-message {
+    color: #3A2E00;
+    font-weight: 600;
+}
+
+body.yellow-steel .user-level,
+body.yellow-steel .model-display-section {
+    color: rgba(35, 35, 35, 0.68);
+}
+
+body.yellow-steel .content {
+    background: linear-gradient(180deg, rgba(35, 35, 35, 0.84) 0%, rgba(22, 22, 22, 0.92) 100%);
+    color: var(--app-content-text);
+}
+
+/* ==================================
+SIDEBAR NAV / INTERACTION POLISH
+================================== */
+body.yellow-steel .nav-link,
+body.yellow-steel .sidebar a,
+body.yellow-steel .sidebar button,
+body.yellow-steel .sidebar select {
+    color: var(--app-sidebar-link);
+}
+
+body.yellow-steel .nav-link:hover,
+body.yellow-steel .sidebar a:hover,
+body.yellow-steel .sidebar button:hover,
+body.yellow-steel .sidebar select:hover {
+    color: var(--app-sidebar-hover);
+    background-color: var(--app-sidebar-hover-bg);
+}
+
+body.yellow-steel .nav-link.highlight {
+    color: #232323;
+    background-color: rgba(35, 35, 35, 0.14);
+    border-left: 3px solid #232323;
+}
+
+/* ==================================
+STANDARD CONTROLS
+================================== */
+body.yellow-steel .toggle-button {
+    background: linear-gradient(180deg, rgba(48, 48, 48, 0.98) 0%, rgba(28, 28, 28, 0.98) 100%) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.26);
+    font-weight: 600;
+}
+
+body.yellow-steel .toggle-button:hover {
+    background: linear-gradient(180deg, rgba(64, 64, 64, 0.98) 0%, rgba(38, 38, 38, 0.98) 100%) !important;
+    border-color: rgba(255, 214, 0, 0.40) !important;
+}
+
+body.yellow-steel #voice-selection,
+body.yellow-steel .sidebar select {
+    background-color: rgba(35, 35, 35, 0.18);
+    color: #232323;
+    border: 1px solid rgba(35, 35, 35, 0.22);
+    border-radius: 5px;
+}
+
+body.yellow-steel #voice-selection:focus,
+body.yellow-steel .sidebar select:focus {
+    outline: 2px solid rgba(35, 35, 35, 0.40);
+    outline-offset: 2px;
+}
+
+/* ==================================
+RESULTS / PANELS / THUMBNAILS
+================================== */
+body.yellow-steel .results-container {
+    background: var(--app-results-bg);
+    border: 1px solid rgba(231, 233, 236, 0.10);
+    border-radius: 10px;
+    box-shadow: var(--app-shadow-md);
+    backdrop-filter: blur(4px);
+}
+
+body.yellow-steel #drawingList {
+    color: var(--app-results-text);
+}
+
+body.yellow-steel .thumbnail {
+    background: rgba(28, 28, 28, 0.92);
+    border: 1px solid var(--app-thumbnail-border);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.24);
+}
+
+/* ==================================
+COMMENT POPUP
+================================== */
+body.yellow-steel #commentPopup {
+    background: var(--app-popup-bg);
+    border: 1px solid rgba(231, 233, 236, 0.12);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.48);
+}
+
+body.yellow-steel #commentForm h2 {
+    color: var(--app-popup-accent);
+    letter-spacing: 0.02em;
+}
+
+body.yellow-steel #commentForm textarea {
+    background: rgba(22, 22, 22, 0.96);
+    color: var(--app-popup-text);
+    border: 1px solid rgba(231, 233, 236, 0.20);
+}
+
+body.yellow-steel #commentForm textarea::placeholder {
+    color: rgba(231, 233, 236, 0.40);
+}
+
+body.yellow-steel #commentForm textarea:focus {
+    border-color: rgba(255, 214, 0, 0.40);
+    box-shadow: 0 0 0 3px rgba(255, 214, 0, 0.12);
+}
+
+body.yellow-steel #commentForm button {
+    background: linear-gradient(180deg, rgba(48, 48, 48, 0.98) 0%, rgba(28, 28, 28, 0.98) 100%);
+    color: var(--app-popup-text);
+    border: 1px solid rgba(231, 233, 236, 0.16);
+}
+
+body.yellow-steel #commentForm button:hover {
+    background: linear-gradient(180deg, rgba(64, 64, 64, 0.98) 0%, rgba(38, 38, 38, 0.98) 100%);
+}
+
+body.yellow-steel #commentForm button[type="submit"] {
+    background: linear-gradient(180deg, #FFE033 0%, #FFD600 100%);
+    color: var(--app-popup-submit-text);
+    border-color: rgba(255, 214, 0, 0.40);
+    font-weight: 700;
+}
+
+body.yellow-steel #commentForm button[type="submit"]:hover {
+    background: linear-gradient(180deg, #FFE84D 0%, #F0C800 100%);
+}
+
+/* ==================================
+LINKS / SPECIAL STATES
+================================== */
+body.yellow-steel a {
+    color: #FFD600;
+}
+
+body.yellow-steel a:hover {
     color: #FF8500;
+}
+
+body.yellow-steel .logout-button {
+    color: #FF8500 !important;
+}
+
+/* ==================================
+ACCESSIBILITY / FOCUS
+================================== */
+body.yellow-steel .hamburger:focus-visible,
+body.yellow-steel .toggle-button:focus-visible,
+body.yellow-steel .sidebar button:focus-visible,
+body.yellow-steel .sidebar a:focus-visible,
+body.yellow-steel .sidebar select:focus-visible,
+body.yellow-steel #commentForm textarea:focus-visible,
+body.yellow-steel #commentForm button:focus-visible,
+body.yellow-steel .mt-toggle-btn:focus-visible,
+body.yellow-steel .neppy-btn:focus-visible,
+body.yellow-steel .neppy-input:focus-visible,
+body.yellow-steel .neppy-select:focus-visible,
+body.yellow-steel .neppy-textarea:focus-visible {
+    outline: 2px solid rgba(255, 214, 0, 0.60);
+    outline-offset: 2px;
+}
+
+/* ==================================
+NEPPY UTILITY CLASS SUPPORT
+================================== */
+body.yellow-steel .neppy-card,
+body.yellow-steel .neppy-card-soft {
+    background: var(--neppy-surface);
+    border-color: var(--neppy-line);
+}
+
+body.yellow-steel .neppy-title,
+body.yellow-steel .neppy-panel-title {
+    color: var(--neppy-heading);
+}
+
+body.yellow-steel .neppy-subtitle,
+body.yellow-steel .neppy-label,
+body.yellow-steel .neppy-text-muted {
+    color: var(--neppy-muted) !important;
+}
+
+body.yellow-steel .neppy-btn {
+    background: linear-gradient(180deg, rgba(48, 48, 48, 0.98) 0%, rgba(28, 28, 28, 0.98) 100%);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+body.yellow-steel .neppy-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, rgba(64, 64, 64, 0.98) 0%, rgba(38, 38, 38, 0.98) 100%);
+}
+
+body.yellow-steel .neppy-input,
+body.yellow-steel .neppy-select,
+body.yellow-steel .neppy-textarea,
+body.yellow-steel .neppy-mono,
+body.yellow-steel .neppy-code {
+    background: rgba(22, 22, 22, 0.96);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+body.yellow-steel .neppy-input:focus,
+body.yellow-steel .neppy-select:focus,
+body.yellow-steel .neppy-textarea:focus {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
+}
+
+/* ==================================
+MODULE TEMPLATE PANEL LAYOUT THEME
+Styles the standardized .mt-* module templates
+================================== */
+body.yellow-steel .mt-layout {
+    color: var(--neppy-text);
+}
+
+body.yellow-steel .mt-layout-header {
+    border-bottom: 2px solid rgba(255, 214, 0, 0.28);
+}
+
+body.yellow-steel .mt-layout-title {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+}
+
+body.yellow-steel .mt-layout-description {
+    color: var(--neppy-muted);
+}
+
+body.yellow-steel .mt-panel {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg, 14px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.24);
+    backdrop-filter: blur(4px);
+}
+
+body.yellow-steel .mt-panel:hover {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.38);
+}
+
+body.yellow-steel .mt-panel-header {
+    background: rgba(255, 214, 0, 0.05);
+    border-bottom: 1px solid var(--neppy-line);
+}
+
+body.yellow-steel .mt-panel-title {
+    color: var(--neppy-accent);
+}
+
+body.yellow-steel .mt-toggle-btn {
+    background: linear-gradient(180deg, rgba(48, 48, 48, 0.98) 0%, rgba(28, 28, 28, 0.98) 100%);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.24);
+}
+
+body.yellow-steel .mt-toggle-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, rgba(64, 64, 64, 0.98) 0%, rgba(38, 38, 38, 0.98) 100%);
+    color: var(--neppy-text);
+}
+
+body.yellow-steel .mt-panel.is-collapsed .mt-toggle-btn {
+    background: linear-gradient(180deg, #7a2f20 0%, #5e2418 100%);
+    border-color: rgba(255, 107, 107, 0.38);
+    color: #ffffff;
+}
+
+body.yellow-steel .mt-panel-body {
+    color: var(--neppy-text);
+}
+
+body.yellow-steel .mt-panel-content {
+    gap: 12px;
+}
+
+body.yellow-steel .mt-item {
+    background: rgba(22, 22, 22, 0.92);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+}
+
+body.yellow-steel .mt-item:hover {
+    background: rgba(255, 214, 0, 0.08);
+    border-color: var(--neppy-accent);
+}
+
+body.yellow-steel .mt-item.is-active {
+    background: rgba(255, 214, 0, 0.15);
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 1px rgba(255, 214, 0, 0.10);
 }
