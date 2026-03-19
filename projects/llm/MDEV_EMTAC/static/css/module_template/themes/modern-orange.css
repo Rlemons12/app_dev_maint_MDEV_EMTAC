@@ -1,0 +1,427 @@
+/* static/css/module_template/themes/modern_orange.css
+==================================
+MODERN ORANGE THEME
+Designed to sit on top of:
+static/css/module_template/base.css
+
+Role:
+- Override standardized base theme variables
+- Preserve layout ownership in base.css
+- Provide a complete Modern Orange visual identity
+- Support reusable neppy-* utility classes
+- Theme the standardized .mt-* module template layouts
+================================== */
+
+/* ==================================
+THEME VARIABLE OVERRIDES
+Apply by adding class="modern-orange" to body
+================================== */
+body.modern-orange {
+    --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    --app-page-bg: #F5F5F5;
+    --app-page-text: #424242;
+
+    --app-banner-bg: linear-gradient(90deg, #b71c1c 0%, #d32f2f 45%, #e53935 100%);
+    --app-banner-text: #FFFFFF;
+    --app-banner-link: #FFD54F;
+
+    --app-sidebar-bg: rgba(255, 111, 0, 0.97);
+    --app-sidebar-text: rgba(255, 255, 255, 0.85);
+    --app-sidebar-link: #FFFFFF;
+    --app-sidebar-hover: #1565C0;
+    --app-sidebar-hover-bg: rgba(25, 118, 210, 0.14);
+    --app-sidebar-border: rgba(255, 255, 255, 0.22);
+
+    --app-content-bg: rgba(255, 255, 255, 0.96);
+    --app-content-text: #424242;
+
+    --app-control-bg: rgba(255, 255, 255, 0.96);
+    --app-control-text: #424242;
+    --app-control-border: rgba(66, 66, 66, 0.20);
+    --app-control-hover-bg: rgba(245, 245, 245, 0.98);
+
+    --app-popup-bg: rgba(255, 255, 255, 0.99);
+    --app-popup-text: #424242;
+    --app-popup-accent: #1976D2;
+    --app-popup-submit-text: #FFFFFF;
+
+    --app-results-bg: rgba(255, 255, 255, 0.88);
+    --app-results-text: #424242;
+
+    --app-thumbnail-border: rgba(66, 66, 66, 0.16);
+
+    --app-shadow-sm: 0 4px 14px rgba(66, 66, 66, 0.10);
+    --app-shadow-md: 0 10px 28px rgba(66, 66, 66, 0.16);
+
+    background: #F5F5F5;
+    background-image: url("/static/background_images/modern_orange.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    color: var(--app-page-text);
+    line-height: 1.45;
+}
+
+/* ==================================
+NEPPY TOKEN OVERRIDES
+Supports reusable neppy-* utility classes
+================================== */
+body.modern-orange {
+    --neppy-surface: rgba(255, 255, 255, 0.90);
+    --neppy-surface-2: rgba(245, 245, 245, 0.96);
+    --neppy-line: rgba(66, 66, 66, 0.14);
+    --neppy-line-strong: rgba(66, 66, 66, 0.28);
+
+    --neppy-text: #424242;
+    --neppy-muted: #757575;
+    --neppy-heading: #212121;
+
+    --neppy-accent: #1976D2;
+    --neppy-accent-soft: rgba(25, 118, 210, 0.12);
+    --neppy-accent-hover: #1E88E5;
+
+    --neppy-ok: #2E7D32;
+    --neppy-ok-soft: rgba(46, 125, 50, 0.12);
+
+    --neppy-warn: #E65100;
+    --neppy-warn-soft: rgba(230, 81, 0, 0.12);
+
+    --neppy-bad: #C62828;
+    --neppy-bad-soft: rgba(198, 40, 40, 0.12);
+}
+
+/* ==================================
+GLOBAL POLISH
+================================== */
+body.modern-orange .banner {
+    letter-spacing: 0.03em;
+    box-shadow: var(--app-shadow-sm);
+}
+
+body.modern-orange .banner a {
+    font-weight: 600;
+}
+
+body.modern-orange .sidebar {
+    backdrop-filter: blur(5px);
+    box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.18), 2px 0 12px rgba(255, 111, 0, 0.18);
+}
+
+body.modern-orange .sidebar h1 {
+    color: #FFFFFF;
+    letter-spacing: 0.02em;
+}
+
+body.modern-orange .welcome-message {
+    color: #FFFFFF;
+    font-weight: 600;
+}
+
+body.modern-orange .user-level,
+body.modern-orange .model-display-section {
+    color: rgba(255, 255, 255, 0.76);
+}
+
+body.modern-orange .content {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 248, 248, 0.98) 100%);
+    color: var(--app-content-text);
+}
+
+/* ==================================
+SIDEBAR NAV / INTERACTION POLISH
+================================== */
+body.modern-orange .nav-link,
+body.modern-orange .sidebar a,
+body.modern-orange .sidebar button,
+body.modern-orange .sidebar select {
+    color: var(--app-sidebar-link);
+}
+
+body.modern-orange .nav-link:hover,
+body.modern-orange .sidebar a:hover,
+body.modern-orange .sidebar button:hover,
+body.modern-orange .sidebar select:hover {
+    color: var(--app-sidebar-hover);
+    background-color: var(--app-sidebar-hover-bg);
+}
+
+body.modern-orange .nav-link.highlight {
+    color: #FFFFFF;
+    background-color: rgba(25, 118, 210, 0.20);
+    border-left: 3px solid #1976D2;
+}
+
+/* ==================================
+STANDARD CONTROLS
+================================== */
+body.modern-orange .toggle-button {
+    background: linear-gradient(180deg, #FF9800 0%, #F57C00 100%) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 167, 38, 0.50) !important;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(255, 111, 0, 0.22);
+    font-weight: 600;
+}
+
+body.modern-orange .toggle-button:hover {
+    background: linear-gradient(180deg, #FFA726 0%, #FB8C00 100%) !important;
+    border-color: rgba(255, 193, 80, 0.55) !important;
+}
+
+body.modern-orange #voice-selection,
+body.modern-orange .sidebar select {
+    background-color: rgba(255, 152, 0, 0.20);
+    color: #FFFFFF;
+    border: 1px solid rgba(255, 255, 255, 0.30);
+    border-radius: 5px;
+}
+
+body.modern-orange #voice-selection:focus,
+body.modern-orange .sidebar select:focus {
+    outline: 2px solid rgba(25, 118, 210, 0.45);
+    outline-offset: 2px;
+}
+
+/* ==================================
+RESULTS / PANELS / THUMBNAILS
+================================== */
+body.modern-orange .results-container {
+    background: var(--app-results-bg);
+    border: 1px solid rgba(66, 66, 66, 0.12);
+    border-radius: 10px;
+    box-shadow: var(--app-shadow-md);
+    backdrop-filter: blur(4px);
+}
+
+body.modern-orange #drawingList {
+    color: var(--app-results-text);
+}
+
+body.modern-orange .thumbnail {
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid var(--app-thumbnail-border);
+    box-shadow: 0 2px 8px rgba(66, 66, 66, 0.10);
+}
+
+/* ==================================
+COMMENT POPUP
+================================== */
+body.modern-orange #commentPopup {
+    background: var(--app-popup-bg);
+    border: 1px solid rgba(66, 66, 66, 0.14);
+    box-shadow: 0 18px 36px rgba(66, 66, 66, 0.18);
+}
+
+body.modern-orange #commentForm h2 {
+    color: var(--app-popup-accent);
+    letter-spacing: 0.02em;
+}
+
+body.modern-orange #commentForm textarea {
+    background: rgba(245, 245, 245, 0.98);
+    color: var(--app-popup-text);
+    border: 1px solid rgba(66, 66, 66, 0.20);
+}
+
+body.modern-orange #commentForm textarea::placeholder {
+    color: rgba(66, 66, 66, 0.44);
+}
+
+body.modern-orange #commentForm textarea:focus {
+    border-color: rgba(25, 118, 210, 0.40);
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.12);
+}
+
+body.modern-orange #commentForm button {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 245, 245, 0.98) 100%);
+    color: var(--app-popup-text);
+    border: 1px solid rgba(66, 66, 66, 0.18);
+}
+
+body.modern-orange #commentForm button:hover {
+    background: linear-gradient(180deg, rgba(240, 240, 240, 0.98) 0%, rgba(228, 228, 228, 0.98) 100%);
+}
+
+body.modern-orange #commentForm button[type="submit"] {
+    background: linear-gradient(180deg, #42A5F5 0%, #1976D2 100%);
+    color: var(--app-popup-submit-text);
+    border-color: rgba(25, 118, 210, 0.35);
+    font-weight: 700;
+}
+
+body.modern-orange #commentForm button[type="submit"]:hover {
+    background: linear-gradient(180deg, #64B5F6 0%, #1565C0 100%);
+}
+
+/* ==================================
+LINKS / SPECIAL STATES
+================================== */
+body.modern-orange a {
+    color: #1565C0;
+}
+
+body.modern-orange a:hover {
+    color: #1976D2;
+}
+
+body.modern-orange .logout-button {
+    color: #BF360C !important;
+}
+
+/* ==================================
+ACCESSIBILITY / FOCUS
+================================== */
+body.modern-orange .hamburger:focus-visible,
+body.modern-orange .toggle-button:focus-visible,
+body.modern-orange .sidebar button:focus-visible,
+body.modern-orange .sidebar a:focus-visible,
+body.modern-orange .sidebar select:focus-visible,
+body.modern-orange #commentForm textarea:focus-visible,
+body.modern-orange #commentForm button:focus-visible,
+body.modern-orange .mt-toggle-btn:focus-visible,
+body.modern-orange .neppy-btn:focus-visible,
+body.modern-orange .neppy-input:focus-visible,
+body.modern-orange .neppy-select:focus-visible,
+body.modern-orange .neppy-textarea:focus-visible {
+    outline: 2px solid rgba(25, 118, 210, 0.55);
+    outline-offset: 2px;
+}
+
+/* ==================================
+NEPPY UTILITY CLASS SUPPORT
+================================== */
+body.modern-orange .neppy-card,
+body.modern-orange .neppy-card-soft {
+    background: var(--neppy-surface);
+    border-color: var(--neppy-line);
+}
+
+body.modern-orange .neppy-title,
+body.modern-orange .neppy-panel-title {
+    color: var(--neppy-heading);
+}
+
+body.modern-orange .neppy-subtitle,
+body.modern-orange .neppy-label,
+body.modern-orange .neppy-text-muted {
+    color: var(--neppy-muted) !important;
+}
+
+body.modern-orange .neppy-btn {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 245, 245, 0.98) 100%);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+body.modern-orange .neppy-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, rgba(232, 240, 253, 0.98) 0%, rgba(218, 232, 250, 0.98) 100%);
+}
+
+body.modern-orange .neppy-input,
+body.modern-orange .neppy-select,
+body.modern-orange .neppy-textarea,
+body.modern-orange .neppy-mono,
+body.modern-orange .neppy-code {
+    background: rgba(245, 245, 245, 0.98);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+body.modern-orange .neppy-input:focus,
+body.modern-orange .neppy-select:focus,
+body.modern-orange .neppy-textarea:focus {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
+}
+
+/* ==================================
+MODULE TEMPLATE PANEL LAYOUT THEME
+Styles the standardized .mt-* module templates
+================================== */
+body.modern-orange .mt-layout {
+    color: var(--neppy-text);
+}
+
+body.modern-orange .mt-layout-header {
+    border-bottom: 2px solid rgba(255, 111, 0, 0.22);
+}
+
+body.modern-orange .mt-layout-title {
+    color: #FF6F00;
+    letter-spacing: 0.02em;
+}
+
+body.modern-orange .mt-layout-description {
+    color: var(--neppy-muted);
+}
+
+body.modern-orange .mt-panel {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg, 14px);
+    box-shadow: 0 4px 12px rgba(66, 66, 66, 0.10);
+    backdrop-filter: blur(4px);
+}
+
+body.modern-orange .mt-panel:hover {
+    border-color: #FF9800;
+    box-shadow: 0 10px 24px rgba(66, 66, 66, 0.16);
+}
+
+body.modern-orange .mt-panel-header {
+    background: rgba(255, 111, 0, 0.05);
+    border-bottom: 1px solid var(--neppy-line);
+}
+
+body.modern-orange .mt-panel-title {
+    color: #E65100;
+}
+
+body.modern-orange .mt-toggle-btn {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 245, 245, 0.98) 100%);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(66, 66, 66, 0.10);
+}
+
+body.modern-orange .mt-toggle-btn:hover {
+    border-color: #FF9800;
+    background: linear-gradient(180deg, rgba(255, 243, 224, 0.98) 0%, rgba(255, 232, 194, 0.98) 100%);
+    color: var(--neppy-text);
+}
+
+body.modern-orange .mt-panel.is-collapsed .mt-toggle-btn {
+    background: linear-gradient(180deg, #c62828 0%, #a81f1f 100%);
+    border-color: rgba(230, 74, 74, 0.40);
+    color: #ffffff;
+}
+
+body.modern-orange .mt-panel-body {
+    color: var(--neppy-text);
+}
+
+body.modern-orange .mt-panel-content {
+    gap: 12px;
+}
+
+body.modern-orange .mt-item {
+    background: rgba(245, 245, 245, 0.96);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+}
+
+body.modern-orange .mt-item:hover {
+    background: rgba(255, 152, 0, 0.08);
+    border-color: #FF9800;
+}
+
+body.modern-orange .mt-item.is-active {
+    background: rgba(255, 152, 0, 0.14);
+    border-color: #FF9800;
+    box-shadow: 0 0 0 1px rgba(255, 152, 0, 0.10);
+}
