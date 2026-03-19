@@ -32,12 +32,17 @@ class GPUServiceClient:
         ).rstrip("/")
         self.timeout = timeout
         self.max_retries = max_retries
+        self.default_generation_model = (
+            os.getenv("PYCHARM_GPU_DEFAULT_MODEL", "").strip()
+            or "qwen2.5-coder-7b-instruct"
+        )
 
         logger.info(
-            "GPUServiceClient initialized | base_url=%s | timeout=%s | retries=%s",
+            "GPUServiceClient initialized | base_url=%s | timeout=%s | retries=%s | default_model=%s",
             self.base_url,
             self.timeout,
             self.max_retries,
+            self.default_generation_model,
         )
 
     def health(self) -> bool:
@@ -80,15 +85,17 @@ class GPUServiceClient:
         self,
         *,
         prompt: str,
-        model: str = "qwen",
+        model: Optional[str] = None,
         max_new_tokens: int = 512,
         temperature: float = 0.2,
         top_p: float = 0.95,
         system_prompt: Optional[str] = None,
     ) -> str:
+        resolved_model = (model or "").strip() or self.default_generation_model
+
         payload = {
             "prompt": prompt,
-            "model": model,
+            "model": resolved_model,
             "max_tokens": max_new_tokens,
             "temperature": temperature,
             "top_p": top_p,
@@ -97,9 +104,17 @@ class GPUServiceClient:
         if system_prompt:
             payload["system_prompt"] = system_prompt
 
+        logger.info(
+            "Sending generation request | model=%s | max_tokens=%s | temperature=%s | top_p=%s",
+            resolved_model,
+            max_new_tokens,
+            temperature,
+            top_p,
+        )
+
         data = self._post("/mcp/tools/generate_code", payload)
 
-        text = data.get("text")
+        text = data.get("text") or data.get("output")
         if not text:
             raise RuntimeError("GPU service returned empty generation result")
 
