@@ -591,7 +591,7 @@ async def chat_completions(request: Request):
         prompt = build_commit_prompt(messages)
         temperature = 0.0
         top_p = 1.0
-        max_tokens = min(max_tokens, 180)
+        max_tokens = min(max_tokens, 95)
 
         logger.info(
             "Commit prompt prepared | chars=%s | preview=%r",
