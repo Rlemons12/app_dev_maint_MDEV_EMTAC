@@ -60,6 +60,15 @@ SERVICE_GPU_BASE_URL: str = get_env("SERVICE_GPU_BASE_URL", "http://127.0.0.1:50
 
 
 # ---------------------------------------------------------
+# AI Gateway service config
+# ---------------------------------------------------------
+SERVICE_AI_GATEWAY_PYTHON: Path = as_path(get_env("SERVICE_AI_GATEWAY_PYTHON"))
+SERVICE_AI_GATEWAY_CWD: Path = as_path(get_env("SERVICE_AI_GATEWAY_CWD"))
+SERVICE_AI_GATEWAY_ENTRY: str = get_env("SERVICE_AI_GATEWAY_ENTRY")
+SERVICE_AI_GATEWAY_BASE_URL: str = get_env("SERVICE_AI_GATEWAY_BASE_URL", "http://127.0.0.1:9000")
+
+
+# ---------------------------------------------------------
 # PostgreSQL service control config
 # ---------------------------------------------------------
 POSTGRES_BIN_DIR: Path = as_path(get_env("POSTGRES_BIN_DIR"))
@@ -70,7 +79,6 @@ PG_CTL_EXE: Path = POSTGRES_BIN_DIR / "pg_ctl.exe"
 
 # ---------------------------------------------------------
 # Optional application DB connection values
-# These are available if the dashboard ever needs them.
 # ---------------------------------------------------------
 POSTGRES_USER: str | None = get_optional_env("POSTGRES_USER")
 POSTGRES_PASSWORD: str | None = get_optional_env("POSTGRES_PASSWORD")
@@ -93,6 +101,16 @@ if not SERVICE_GPU_CWD.exists():
 gpu_launcher_path = SERVICE_GPU_CWD / SERVICE_GPU_ENTRY
 if not gpu_launcher_path.exists():
     raise FileNotFoundError(f"SERVICE_GPU_ENTRY not found: {gpu_launcher_path}")
+
+if not SERVICE_AI_GATEWAY_PYTHON.exists():
+    raise FileNotFoundError(f"SERVICE_AI_GATEWAY_PYTHON not found: {SERVICE_AI_GATEWAY_PYTHON}")
+
+if not SERVICE_AI_GATEWAY_CWD.exists():
+    raise FileNotFoundError(f"SERVICE_AI_GATEWAY_CWD not found: {SERVICE_AI_GATEWAY_CWD}")
+
+ai_gateway_launcher_path = SERVICE_AI_GATEWAY_CWD / SERVICE_AI_GATEWAY_ENTRY
+if not ai_gateway_launcher_path.exists():
+    raise FileNotFoundError(f"SERVICE_AI_GATEWAY_ENTRY not found: {ai_gateway_launcher_path}")
 
 if not POSTGRES_BIN_DIR.exists():
     raise FileNotFoundError(f"POSTGRES_BIN_DIR not found: {POSTGRES_BIN_DIR}")
