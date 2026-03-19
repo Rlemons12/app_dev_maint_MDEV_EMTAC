@@ -1,0 +1,422 @@
+/* static/css/module_template/themes/futuristic_teal_black.css
+==================================
+FUTURISTIC TEAL BLACK THEME
+Designed to sit on top of:
+static/css/module_template/base.css
+
+Role:
+- Override standardized base theme variables
+- Preserve layout ownership in base.css
+- Provide a Futuristic Teal & Black visual identity
+- Support reusable neppy-* utility classes
+- Theme the standardized .mt-* module template layouts
+================================== */
+
+/* ==================================
+THEME VARIABLE OVERRIDES
+Apply by adding class="futuristic-teal-black" to body
+================================== */
+body.futuristic-teal-black {
+    --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    --app-page-bg: #000000;
+    --app-page-text: #dffcf8;
+
+    --app-banner-bg: linear-gradient(90deg, #002f2a 0%, #004d40 45%, #00695c 100%);
+    --app-banner-text: #dffcf8;
+    --app-banner-link: #00ffff;
+
+    --app-sidebar-bg: rgba(0, 77, 64, 0.95);
+    --app-sidebar-text: #80cbc4;
+    --app-sidebar-link: #dffcf8;
+    --app-sidebar-hover: #00ffff;
+    --app-sidebar-hover-bg: rgba(0, 255, 255, 0.10);
+    --app-sidebar-border: rgba(0, 255, 255, 0.16);
+
+    --app-content-bg: #1a1a1a;
+    --app-content-text: #dffcf8;
+
+    --app-control-bg: #00695c;
+    --app-control-text: #dffcf8;
+    --app-control-border: #00796b;
+    --app-control-hover-bg: #00796b;
+
+    --app-popup-bg: rgba(0, 35, 31, 0.97);
+    --app-popup-text: #dffcf8;
+    --app-popup-accent: #00ffff;
+    --app-popup-submit-text: #001917;
+
+    --app-results-bg: rgba(0, 121, 107, 0.24);
+    --app-results-text: #dffcf8;
+
+    --app-thumbnail-border: rgba(0, 255, 255, 0.14);
+
+    --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.28);
+    --app-shadow-md: 0 16px 30px rgba(0, 0, 0, 0.42);
+
+    background-color: #000000;
+    color: var(--app-page-text);
+    line-height: 1.45;
+}
+
+/* ==================================
+NEPPY TOKEN OVERRIDES
+Supports reusable neppy-* utility classes
+================================== */
+body.futuristic-teal-black {
+    --neppy-surface: rgba(0, 77, 64, 0.30);
+    --neppy-surface-2: rgba(0, 105, 92, 0.26);
+    --neppy-line: rgba(0, 255, 255, 0.18);
+    --neppy-line-strong: rgba(0, 255, 255, 0.30);
+
+    --neppy-text: #dffcf8;
+    --neppy-muted: #8fd9d1;
+    --neppy-heading: #f2fffd;
+
+    --neppy-accent: #00ffff;
+    --neppy-accent-soft: rgba(0, 255, 255, 0.14);
+    --neppy-accent-hover: #66ffff;
+
+    --neppy-ok: #6fffd9;
+    --neppy-ok-soft: rgba(111, 255, 217, 0.14);
+
+    --neppy-warn: #ffd166;
+    --neppy-warn-soft: rgba(255, 209, 102, 0.18);
+
+    --neppy-bad: #ff8fab;
+    --neppy-bad-soft: rgba(255, 143, 171, 0.16);
+}
+
+/* ==================================
+GLOBAL POLISH
+================================== */
+body.futuristic-teal-black .banner {
+    letter-spacing: 0.04em;
+    box-shadow: var(--app-shadow-sm);
+}
+
+body.futuristic-teal-black .banner a {
+    font-weight: 600;
+}
+
+body.futuristic-teal-black .sidebar {
+    backdrop-filter: blur(6px);
+    box-shadow: inset -1px 0 0 rgba(0, 255, 255, 0.10);
+}
+
+body.futuristic-teal-black .sidebar h1 {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+}
+
+body.futuristic-teal-black .welcome-message {
+    color: var(--app-sidebar-text);
+    font-weight: 600;
+}
+
+body.futuristic-teal-black .user-level,
+body.futuristic-teal-black .model-display-section {
+    color: #9be6dd;
+}
+
+body.futuristic-teal-black .content {
+    background: linear-gradient(180deg, #1a1a1a 0%, #101515 100%);
+    color: var(--app-content-text);
+}
+
+/* ==================================
+SIDEBAR NAV / INTERACTION POLISH
+================================== */
+body.futuristic-teal-black .nav-link,
+body.futuristic-teal-black .sidebar a,
+body.futuristic-teal-black .sidebar button,
+body.futuristic-teal-black .sidebar select {
+    color: var(--app-sidebar-link);
+}
+
+body.futuristic-teal-black .nav-link:hover,
+body.futuristic-teal-black .sidebar a:hover,
+body.futuristic-teal-black .sidebar button:hover,
+body.futuristic-teal-black .sidebar select:hover {
+    color: var(--app-sidebar-hover);
+    background-color: var(--app-sidebar-hover-bg);
+}
+
+body.futuristic-teal-black .nav-link.highlight {
+    color: var(--app-sidebar-hover);
+    background-color: rgba(0, 255, 255, 0.20);
+    border-left: 3px solid var(--app-sidebar-hover);
+}
+
+/* ==================================
+STANDARD CONTROLS
+================================== */
+body.futuristic-teal-black .toggle-button {
+    background: linear-gradient(180deg, #00695c 0%, #00554b 100%) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.24);
+    font-weight: 600;
+}
+
+body.futuristic-teal-black .toggle-button:hover {
+    background: linear-gradient(180deg, #00796b 0%, #00695c 100%) !important;
+    border-color: rgba(0, 255, 255, 0.35) !important;
+}
+
+body.futuristic-teal-black #voice-selection,
+body.futuristic-teal-black .sidebar select {
+    background-color: #004d40;
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 5px;
+}
+
+body.futuristic-teal-black #voice-selection:focus,
+body.futuristic-teal-black .sidebar select:focus {
+    outline: 2px solid rgba(0, 255, 255, 0.35);
+    outline-offset: 2px;
+}
+
+/* ==================================
+RESULTS / PANELS / THUMBNAILS
+================================== */
+body.futuristic-teal-black .results-container {
+    background: var(--app-results-bg);
+    border: 1px solid #00695c;
+    border-radius: 10px;
+    box-shadow: var(--app-shadow-md);
+    backdrop-filter: blur(4px);
+}
+
+body.futuristic-teal-black #drawingList {
+    color: var(--app-results-text);
+}
+
+body.futuristic-teal-black .thumbnail {
+    background: rgba(0, 77, 64, 0.90);
+    border: 1px solid var(--app-thumbnail-border);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+
+/* ==================================
+COMMENT POPUP
+================================== */
+body.futuristic-teal-black #commentPopup {
+    background: var(--app-popup-bg);
+    border: 1px solid rgba(0, 255, 255, 0.14);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.40);
+}
+
+body.futuristic-teal-black #commentForm h2 {
+    color: var(--app-popup-accent);
+    letter-spacing: 0.02em;
+}
+
+body.futuristic-teal-black #commentForm textarea {
+    background: #003c34;
+    color: var(--app-popup-text);
+    border: 1px solid rgba(0, 255, 255, 0.20);
+}
+
+body.futuristic-teal-black #commentForm textarea::placeholder {
+    color: rgba(223, 252, 248, 0.54);
+}
+
+body.futuristic-teal-black #commentForm textarea:focus {
+    border-color: rgba(0, 255, 255, 0.36);
+    box-shadow: 0 0 0 3px rgba(0, 255, 255, 0.12);
+}
+
+body.futuristic-teal-black #commentForm button {
+    background: linear-gradient(180deg, #00695c 0%, #00554b 100%);
+    color: var(--app-popup-text);
+    border: 1px solid rgba(0, 255, 255, 0.14);
+}
+
+body.futuristic-teal-black #commentForm button:hover {
+    background: linear-gradient(180deg, #00796b 0%, #00695c 100%);
+}
+
+body.futuristic-teal-black #commentForm button[type="submit"] {
+    background: linear-gradient(180deg, #5cffff 0%, #00ffff 100%);
+    color: var(--app-popup-submit-text);
+    border-color: rgba(0, 255, 255, 0.35);
+    font-weight: 700;
+}
+
+body.futuristic-teal-black #commentForm button[type="submit"]:hover {
+    background: linear-gradient(180deg, #8affff 0%, #00e6e6 100%);
+}
+
+/* ==================================
+LINKS / SPECIAL STATES
+================================== */
+body.futuristic-teal-black a {
+    color: #8ef7ef;
+}
+
+body.futuristic-teal-black a:hover {
+    color: var(--app-sidebar-hover);
+}
+
+body.futuristic-teal-black .logout-button {
+    color: #ffcc80 !important;
+}
+
+/* ==================================
+ACCESSIBILITY / FOCUS
+================================== */
+body.futuristic-teal-black .hamburger:focus-visible,
+body.futuristic-teal-black .toggle-button:focus-visible,
+body.futuristic-teal-black .sidebar button:focus-visible,
+body.futuristic-teal-black .sidebar a:focus-visible,
+body.futuristic-teal-black .sidebar select:focus-visible,
+body.futuristic-teal-black #commentForm textarea:focus-visible,
+body.futuristic-teal-black #commentForm button:focus-visible,
+body.futuristic-teal-black .mt-toggle-btn:focus-visible,
+body.futuristic-teal-black .neppy-btn:focus-visible,
+body.futuristic-teal-black .neppy-input:focus-visible,
+body.futuristic-teal-black .neppy-select:focus-visible,
+body.futuristic-teal-black .neppy-textarea:focus-visible {
+    outline: 2px solid rgba(0, 255, 255, 0.55);
+    outline-offset: 2px;
+}
+
+/* ==================================
+NEPPY UTILITY CLASS SUPPORT
+================================== */
+body.futuristic-teal-black .neppy-card,
+body.futuristic-teal-black .neppy-card-soft {
+    background: var(--neppy-surface);
+    border-color: var(--neppy-line);
+}
+
+body.futuristic-teal-black .neppy-title,
+body.futuristic-teal-black .neppy-panel-title {
+    color: var(--neppy-heading);
+}
+
+body.futuristic-teal-black .neppy-subtitle,
+body.futuristic-teal-black .neppy-label,
+body.futuristic-teal-black .neppy-text-muted {
+    color: var(--neppy-muted) !important;
+}
+
+body.futuristic-teal-black .neppy-btn {
+    background: linear-gradient(180deg, #00695c 0%, #00554b 100%);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+body.futuristic-teal-black .neppy-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, #00796b 0%, #00695c 100%);
+}
+
+body.futuristic-teal-black .neppy-input,
+body.futuristic-teal-black .neppy-select,
+body.futuristic-teal-black .neppy-textarea,
+body.futuristic-teal-black .neppy-mono,
+body.futuristic-teal-black .neppy-code {
+    background: #003c34;
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+body.futuristic-teal-black .neppy-input:focus,
+body.futuristic-teal-black .neppy-select:focus,
+body.futuristic-teal-black .neppy-textarea:focus {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
+}
+
+/* ==================================
+MODULE TEMPLATE PANEL LAYOUT THEME
+Styles the standardized .mt-* module templates
+================================== */
+body.futuristic-teal-black .mt-layout {
+    color: var(--neppy-text);
+}
+
+body.futuristic-teal-black .mt-layout-header {
+    border-bottom: 2px solid rgba(0, 255, 255, 0.22);
+}
+
+body.futuristic-teal-black .mt-layout-title {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+}
+
+body.futuristic-teal-black .mt-layout-description {
+    color: var(--neppy-muted);
+}
+
+body.futuristic-teal-black .mt-panel {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg, 14px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(4px);
+}
+
+body.futuristic-teal-black .mt-panel:hover {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32);
+}
+
+body.futuristic-teal-black .mt-panel-header {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--neppy-line);
+}
+
+body.futuristic-teal-black .mt-panel-title {
+    color: var(--neppy-accent);
+}
+
+body.futuristic-teal-black .mt-toggle-btn {
+    background: linear-gradient(180deg, #00695c 0%, #00554b 100%);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
+}
+
+body.futuristic-teal-black .mt-toggle-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, #00796b 0%, #00695c 100%);
+    color: var(--neppy-text);
+}
+
+body.futuristic-teal-black .mt-panel.is-collapsed .mt-toggle-btn {
+    background: linear-gradient(180deg, #7a2f3f 0%, #5e2431 100%);
+    border-color: rgba(255, 143, 171, 0.35);
+    color: #ffffff;
+}
+
+body.futuristic-teal-black .mt-panel-body {
+    color: var(--neppy-text);
+}
+
+body.futuristic-teal-black .mt-panel-content {
+    gap: 12px;
+}
+
+body.futuristic-teal-black .mt-item {
+    background: rgba(0, 77, 64, 0.92);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+}
+
+body.futuristic-teal-black .mt-item:hover {
+    background: rgba(0, 255, 255, 0.08);
+    border-color: var(--neppy-accent);
+}
+
+body.futuristic-teal-black .mt-item.is-active {
+    background: rgba(0, 255, 255, 0.16);
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 1px rgba(0, 255, 255, 0.10);
+}
