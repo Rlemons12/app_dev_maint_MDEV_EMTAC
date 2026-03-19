@@ -22,6 +22,7 @@ from flask import Flask
 logger.info("Starting the Flask application")
 
 # Import blueprints
+from blueprints.ui.theme_utils_bp import theme_utils_bp
 from blueprints.chatbot.panel_parts import panel_parts_bp
 from blueprints.media_routes import media_bp
 from blueprints.upload_search_db.upload_document_list_data import get_upload_document_list_data_bp
@@ -153,6 +154,7 @@ def register_blueprints(app):
     app.register_blueprint(panel_parts_bp)
 
     app.register_blueprint(trace_dashboard_bp, url_prefix="/dashboards")
+    app.register_blueprint(theme_utils_bp)
 
 app = Flask(__name__)
 app.secret_key = '1234'
