@@ -1,0 +1,412 @@
+/* ==========================================================================
+   Neppy Blue Theme
+   Shared reusable UI component layer for EMTAC dashboards
+   Use alongside:
+     1) base layout CSS
+     2) theme-specific override CSS
+   ========================================================================== */
+
+:root {
+    /* ----------------------------------------------------------
+       Core Neppy tokens
+       These may be overridden by theme files
+       ---------------------------------------------------------- */
+    --neppy-bg: radial-gradient(circle at 20% 20%, #122a45 0%, #071522 50%, #02080f 100%);
+    --neppy-surface: rgba(8, 20, 34, 0.88);
+    --neppy-surface-2: rgba(12, 28, 46, 0.92);
+    --neppy-line: rgba(122, 150, 182, 0.30);
+    --neppy-line-strong: rgba(122, 150, 182, 0.50);
+
+    --neppy-text: #e7eef7;
+    --neppy-muted: #9bb0c9;
+    --neppy-heading: #ffffff;
+
+    --neppy-accent: #36c8f6;
+    --neppy-accent-soft: rgba(54, 200, 246, 0.18);
+    --neppy-accent-hover: #67d7fb;
+
+    --neppy-ok: #2ac77a;
+    --neppy-ok-soft: rgba(42, 199, 122, 0.16);
+
+    --neppy-warn: #ffc857;
+    --neppy-warn-soft: rgba(255, 200, 87, 0.18);
+
+    --neppy-bad: #ff6b6b;
+    --neppy-bad-soft: rgba(255, 107, 107, 0.16);
+
+    --neppy-shadow-sm: 0 6px 14px rgba(0, 0, 0, 0.18);
+    --neppy-shadow-md: 0 14px 28px rgba(0, 0, 0, 0.28);
+    --neppy-shadow-lg: 0 18px 36px rgba(0, 0, 0, 0.35);
+
+    --neppy-radius-sm: 8px;
+    --neppy-radius-md: 10px;
+    --neppy-radius-lg: 14px;
+    --neppy-radius-xl: 18px;
+
+    --neppy-space-1: 4px;
+    --neppy-space-2: 8px;
+    --neppy-space-3: 12px;
+    --neppy-space-4: 16px;
+    --neppy-space-5: 20px;
+    --neppy-space-6: 24px;
+
+    --neppy-font-ui: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --neppy-font-mono: Consolas, "Courier New", monospace;
+}
+
+/* ----------------------------------------------------------
+   Global normalization
+   ---------------------------------------------------------- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    min-height: 100%;
+}
+
+body.neppy-blue {
+    color: var(--neppy-text);
+    background: var(--neppy-bg);
+    font-family: var(--neppy-font-ui);
+    line-height: 1.45;
+}
+
+/* Optional helper wrapper */
+.neppy-wrap {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--neppy-space-4);
+}
+
+/* ----------------------------------------------------------
+   Typography helpers
+   ---------------------------------------------------------- */
+.neppy-title {
+    margin: 0 0 var(--neppy-space-3) 0;
+    color: var(--neppy-heading);
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.neppy-subtitle {
+    margin: 0 0 var(--neppy-space-4) 0;
+    color: var(--neppy-muted);
+    font-size: 0.98rem;
+}
+
+.neppy-label {
+    display: inline-block;
+    margin-bottom: 6px;
+    color: var(--neppy-muted);
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+/* ----------------------------------------------------------
+   Shared surface / card styling
+   ---------------------------------------------------------- */
+.neppy-card {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg);
+    padding: var(--neppy-space-4);
+    box-shadow: var(--neppy-shadow-md);
+    backdrop-filter: blur(4px);
+}
+
+.neppy-card-soft {
+    background: var(--neppy-surface-2);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg);
+    padding: var(--neppy-space-4);
+}
+
+.neppy-panel-title {
+    margin: 0 0 var(--neppy-space-3) 0;
+    color: var(--neppy-heading);
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+/* ----------------------------------------------------------
+   Layout helpers
+   ---------------------------------------------------------- */
+.neppy-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--neppy-space-2);
+    align-items: center;
+}
+
+.neppy-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--neppy-space-3);
+}
+
+.neppy-grid {
+    display: grid;
+    gap: var(--neppy-space-3);
+}
+
+.neppy-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.neppy-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.neppy-grid-auto {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+@media (max-width: 900px) {
+    .neppy-grid-2,
+    .neppy-grid-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ----------------------------------------------------------
+   Buttons
+   ---------------------------------------------------------- */
+.neppy-btn {
+    appearance: none;
+    border: 1px solid var(--neppy-line);
+    background: linear-gradient(180deg, #0d2944 0%, #091d31 100%);
+    color: var(--neppy-text);
+    border-radius: var(--neppy-radius-md);
+    padding: 9px 14px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        transform 0.08s ease,
+        box-shadow 0.15s ease;
+    box-shadow: var(--neppy-shadow-sm);
+}
+
+.neppy-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, #123454 0%, #0b2339 100%);
+}
+
+.neppy-btn:active {
+    transform: translateY(1px);
+}
+
+.neppy-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.neppy-btn-primary {
+    border-color: rgba(54, 200, 246, 0.35);
+    box-shadow: 0 0 0 1px rgba(54, 200, 246, 0.08), var(--neppy-shadow-sm);
+}
+
+.neppy-btn-success {
+    border-color: rgba(42, 199, 122, 0.35);
+}
+
+.neppy-btn-danger {
+    border-color: rgba(255, 107, 107, 0.35);
+}
+
+/* ----------------------------------------------------------
+   Form controls
+   ---------------------------------------------------------- */
+.neppy-input,
+.neppy-select,
+.neppy-textarea {
+    width: 100%;
+    background: #061523;
+    color: var(--neppy-text);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-sm);
+    padding: 10px 12px;
+    font: inherit;
+    font-family: var(--neppy-font-mono);
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background 0.15s ease;
+}
+
+.neppy-input::placeholder,
+.neppy-textarea::placeholder {
+    color: #7f97b3;
+}
+
+.neppy-select {
+    cursor: pointer;
+}
+
+.neppy-textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.neppy-input:hover,
+.neppy-select:hover,
+.neppy-textarea:hover {
+    border-color: var(--neppy-line-strong);
+}
+
+.neppy-input:focus,
+.neppy-select:focus,
+.neppy-textarea:focus {
+    outline: none;
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
+    background: #081a2a;
+}
+
+/* ----------------------------------------------------------
+   Output / code / status blocks
+   ---------------------------------------------------------- */
+.neppy-mono {
+    font-family: var(--neppy-font-mono);
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: #04101b;
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-md);
+    padding: var(--neppy-space-3);
+    min-height: 90px;
+    color: #cde0f4;
+    overflow-x: auto;
+}
+
+.neppy-code {
+    font-family: var(--neppy-font-mono);
+    white-space: pre;
+    overflow-x: auto;
+    background: #03101a;
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-md);
+    padding: var(--neppy-space-4);
+    color: #d8e7f6;
+}
+
+.neppy-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+/* ----------------------------------------------------------
+   Pills / badges
+   ---------------------------------------------------------- */
+.neppy-pill {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.neppy-pill-ok {
+    color: var(--neppy-ok);
+    background: var(--neppy-ok-soft);
+}
+
+.neppy-pill-warn {
+    color: var(--neppy-warn);
+    background: var(--neppy-warn-soft);
+}
+
+.neppy-pill-bad {
+    color: var(--neppy-bad);
+    background: var(--neppy-bad-soft);
+}
+
+/* ----------------------------------------------------------
+   Utility helpers
+   ---------------------------------------------------------- */
+.neppy-hidden {
+    display: none !important;
+}
+
+.neppy-text-muted {
+    color: var(--neppy-muted) !important;
+}
+
+.neppy-text-accent {
+    color: var(--neppy-accent) !important;
+}
+
+.neppy-center {
+    text-align: center;
+}
+
+.neppy-w-100 {
+    width: 100%;
+}
+
+.neppy-mt-0 { margin-top: 0 !important; }
+.neppy-mt-1 { margin-top: var(--neppy-space-1) !important; }
+.neppy-mt-2 { margin-top: var(--neppy-space-2) !important; }
+.neppy-mt-3 { margin-top: var(--neppy-space-3) !important; }
+.neppy-mt-4 { margin-top: var(--neppy-space-4) !important; }
+
+.neppy-mb-0 { margin-bottom: 0 !important; }
+.neppy-mb-1 { margin-bottom: var(--neppy-space-1) !important; }
+.neppy-mb-2 { margin-bottom: var(--neppy-space-2) !important; }
+.neppy-mb-3 { margin-bottom: var(--neppy-space-3) !important; }
+.neppy-mb-4 { margin-bottom: var(--neppy-space-4) !important; }
+
+/* ----------------------------------------------------------
+   Accessibility focus states
+   ---------------------------------------------------------- */
+.neppy-btn:focus-visible,
+.neppy-input:focus-visible,
+.neppy-select:focus-visible,
+.neppy-textarea:focus-visible,
+a.neppy-btn:focus-visible,
+button.neppy-btn:focus-visible {
+    outline: 2px solid var(--neppy-accent);
+    outline-offset: 2px;
+}
+
+/* ----------------------------------------------------------
+   Optional bridging for legacy EMTAC selectors
+   This helps your older pages adopt Neppy styling gradually
+   without needing immediate HTML rewrites.
+   ---------------------------------------------------------- */
+
+/* Existing containers can visually behave like Neppy cards */
+.voice-controls-container,
+.model-display-container,
+.theme-container,
+.results-container {
+    border-radius: var(--neppy-radius-lg);
+}
+
+/* Existing buttons can inherit Neppy visual style if desired */
+.toggle-button {
+    border-radius: var(--neppy-radius-md);
+}
+
+/* Existing popup can feel more like Neppy while layout still
+   remains controlled by the base CSS */
+#commentPopup {
+    border: 1px solid var(--neppy-line);
+    box-shadow: var(--neppy-shadow-lg);
+}
+
+/* Optional styling for textarea inside popup */
+#commentPopup textarea {
+    font-family: var(--neppy-font-mono);
+}
