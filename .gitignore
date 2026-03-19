@@ -276,22 +276,17 @@ models/plugins/**
 !project_documention/**
 
 # ===========================================================
-# TOOLS FOLDER (TRACK SCRIPTS, IGNORE INSTALLERS)
+# TOOLS FOLDER
+# Track only custom scripts and placeholder files
+# Ignore everything else
 # ===========================================================
-!tools/custom_scripts/**
-tools/dbeaver/**
-!tools/dbeaver/.gitkeep
-tools/git/**
-!tools/git/.gitkeep
-tools/git-lfs-3.7.0/**
-!tools/git-lfs-3.7.0/.gitkeep
-tools/pycharm/**
-!tools/pycharm/.gitkeep
-tools/python/**
-!tools/python/.gitkeep
-tools/utilities/**
-!tools/utilities/.gitkeep
+tools/**
 
+!tools/
+!tools/.gitkeep
+!tools/custom_scripts/
+!tools/custom_scripts/**
+!tools/**/.gitkeep
 # ===========================================================
 # SUBPROJECT: projects/llm/MDEV_EMTAC
 # ===========================================================
@@ -392,3 +387,7 @@ services/gpu/artifacts/pdf/*
 !services/gpu/artifacts/json/.gitkeep
 !services/gpu/artifacts/markdown/.gitkeep
 !services/gpu/artifacts/pdf/.gitkeep
+
+# Local DVC application install
+DVC (Data Version Control)/**
+!DVC (Data Version Control)/.gitkeep
