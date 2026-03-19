@@ -38,8 +38,16 @@ app = FastAPI(title="EMTAC PyCharm MCP Gateway")
 # Config
 # ---------------------------------------------------------
 GPU_SERVICE_URL = os.getenv("GPU_SERVICE_URL", "http://127.0.0.1:5050").rstrip("/")
+
+# Gateway-facing model alias for OpenAI-compatible clients like PyCharm
 MODEL_NAME = os.getenv("EMTAC_LOCAL_MODEL_NAME", "emtac-gpu-qwen")
-DEFAULT_GPU_MODEL = os.getenv("MCP_DEFAULT_GPU_MODEL", "qwen")
+
+# Actual GPU service generation model to use when a request does not specify one
+DEFAULT_GPU_MODEL = os.getenv(
+    "MCP_DEFAULT_GPU_MODEL",
+    "qwen2.5-coder-7b-instruct",
+).strip()
+
 GPU_TIMEOUT = int(os.getenv("MCP_GPU_TIMEOUT", "300"))
 GPU_MAX_RETRIES = int(os.getenv("MCP_GPU_MAX_RETRIES", "2"))
 
@@ -57,20 +65,26 @@ DEFAULT_SYSTEM_PROMPT = os.getenv(
 COMMIT_SYSTEM_PROMPT = os.getenv(
     "MCP_COMMIT_SYSTEM_PROMPT",
     (
-        "You generate git commit messages based on the current code diff.\n"
-        "Prioritize the current diff over commit history.\n"
-        "Use commit history only as a light style reference.\n"
-        "Do not repeat earlier commit messages unless the same change is actually being made again.\n"
-        "Return only the commit message.\n"
-        "Do not greet the user.\n"
-        "Do not explain your reasoning.\n"
-        "Do not ask follow-up questions.\n"
-        "Do not wrap the response in quotes.\n"
+        "Generate a git commit message from the provided diff.\n"
+        "Return only the commit message text.\n"
         "Use imperative mood.\n"
-        "Write a clear and detailed commit message that captures the main change and important supporting updates.\n"
-        "Prefer a short subject line followed by a blank line and a concise body when the change is substantial."
+        "Prefer a short subject line.\n"
+        "Optionally include a blank line and 1-3 short body lines if needed.\n"
+        "Do not add quotes.\n"
+        "Do not add labels.\n"
+        "Do not explain your reasoning.\n"
+        "Do not greet the user.\n"
     ),
 )
+
+# Optional extra model aliases to advertise through /v1/models
+ADVERTISED_MODELS = [
+    MODEL_NAME,
+    DEFAULT_GPU_MODEL,
+    "qwen7b",
+    "qwen-coder-7b",
+    "qwen2.5-coder-7b-instruct",
+]
 
 # ---------------------------------------------------------
 # GPU Service Client
@@ -90,16 +104,22 @@ class GPUServiceClient:
         base_url: str,
         timeout: int = 300,
         max_retries: int = 2,
+        default_generation_model: Optional[str] = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.max_retries = max_retries
+        self.default_generation_model = (
+            (default_generation_model or "").strip()
+            or DEFAULT_GPU_MODEL
+        )
 
         logger.info(
-            "GPUServiceClient initialized | base_url=%s | timeout=%s | max_retries=%s",
+            "GPUServiceClient initialized | base_url=%s | timeout=%s | max_retries=%s | default_generation_model=%s",
             self.base_url,
             self.timeout,
             self.max_retries,
+            self.default_generation_model,
         )
 
     def health(self) -> bool:
@@ -142,15 +162,17 @@ class GPUServiceClient:
         self,
         *,
         prompt: str,
-        model: str = "qwen",
+        model: Optional[str] = None,
         max_new_tokens: int = 512,
         temperature: float = 0.2,
         top_p: float = 0.95,
         system_prompt: Optional[str] = None,
     ) -> str:
+        resolved_model = (model or "").strip() or self.default_generation_model
+
         payload: Dict[str, Any] = {
             "prompt": prompt,
-            "model": model,
+            "model": resolved_model,
             "max_tokens": max_new_tokens,
             "temperature": temperature,
             "top_p": top_p,
@@ -161,14 +183,14 @@ class GPUServiceClient:
 
         logger.info(
             "Forwarding generate_code request | model=%s | max_tokens=%s | prompt_len=%s",
-            model,
+            resolved_model,
             max_new_tokens,
             len(prompt),
         )
 
         data = self._post("/mcp/tools/generate_code", payload)
 
-        text = data.get("text")
+        text = data.get("text") or data.get("output")
         if not text:
             raise RuntimeError("GPU service returned empty generation result")
 
@@ -179,6 +201,7 @@ gpu_client = GPUServiceClient(
     base_url=GPU_SERVICE_URL,
     timeout=GPU_TIMEOUT,
     max_retries=GPU_MAX_RETRIES,
+    default_generation_model=DEFAULT_GPU_MODEL,
 )
 
 # ---------------------------------------------------------
@@ -304,6 +327,26 @@ def looks_like_commit_request(messages: List[Dict[str, Any]]) -> bool:
     )
 
 
+def resolve_requested_model(requested_model: Optional[str]) -> str:
+    """
+    Resolve the incoming OpenAI-compatible model name into the actual GPU model name.
+
+    Rules:
+    - If missing, use DEFAULT_GPU_MODEL
+    - If the request uses the gateway alias MODEL_NAME, map to DEFAULT_GPU_MODEL
+    - Otherwise pass the requested model through directly
+    """
+    value = (requested_model or "").strip()
+
+    if not value:
+        return DEFAULT_GPU_MODEL
+
+    if value == MODEL_NAME:
+        return DEFAULT_GPU_MODEL
+
+    return value
+
+
 def build_chat_completion_response(content: str, model_name: str) -> Dict[str, Any]:
     return {
         "id": "chatcmpl-local",
@@ -385,6 +428,7 @@ async def startup_event():
     else:
         logger.warning("GPU service is not reachable at startup")
 
+
 # ---------------------------------------------------------
 # Routes
 # ---------------------------------------------------------
@@ -396,6 +440,7 @@ async def health():
         "gpu_service_url": GPU_SERVICE_URL,
         "gpu_service_available": gpu_client.health(),
         "model_name": MODEL_NAME,
+        "default_gpu_model": DEFAULT_GPU_MODEL,
     }
 
 
@@ -421,10 +466,13 @@ async def mcp_chat(request: Request):
     if not content:
         content = "Hello"
 
+    requested_model = str(payload.get("model", "")).strip()
+    resolved_model = resolve_requested_model(requested_model)
+
     try:
         reply = gpu_client.generate_code(
             prompt=content,
-            model=DEFAULT_GPU_MODEL,
+            model=resolved_model,
             max_new_tokens=512,
             temperature=0.2,
             top_p=0.95,
@@ -442,17 +490,59 @@ async def mcp_chat(request: Request):
 
 @app.get("/v1/models")
 async def list_models():
-    return {
-        "object": "list",
-        "data": [
+    seen = set()
+    data = []
+
+    for model_id in ADVERTISED_MODELS:
+        model_id = str(model_id).strip()
+        if not model_id or model_id in seen:
+            continue
+        seen.add(model_id)
+        data.append(
             {
-                "id": MODEL_NAME,
+                "id": model_id,
                 "object": "model",
                 "owned_by": "emtac-gpu-service",
             }
-        ],
+        )
+
+    return {
+        "object": "list",
+        "data": data,
     }
 
+
+def build_commit_prompt(messages: List[Dict[str, Any]]) -> str:
+    diff_text = ""
+    history_text = ""
+    message_text = ""
+
+    for message in messages:
+        text = content_to_text(message.get("content"))
+        if not text:
+            continue
+
+        lower = text.lower()
+
+        if "[diff]" in lower:
+            diff_text = text
+        elif "[commits history]" in lower:
+            history_text = text
+        elif "[message]" in lower:
+            message_text = text
+
+    parts = []
+
+    if diff_text:
+        parts.append(diff_text[:8000])
+
+    if history_text:
+        parts.append(history_text[:2000])
+
+    if message_text:
+        parts.append(message_text[:500])
+
+    return "\n\n".join(parts).strip()
 
 @app.post("/v1/chat/completions")
 async def chat_completions(request: Request):
@@ -463,7 +553,10 @@ async def chat_completions(request: Request):
 
     messages = payload.get("messages", [])
     stream = bool(payload.get("stream", False))
-    model = payload.get("model", MODEL_NAME)
+
+    requested_model = str(payload.get("model", "")).strip() or MODEL_NAME
+    resolved_model = resolve_requested_model(requested_model)
+
     max_tokens = int(payload.get("max_tokens", 512))
     temperature = float(payload.get("temperature", 0.2))
     top_p = float(payload.get("top_p", 0.95))
@@ -483,15 +576,28 @@ async def chat_completions(request: Request):
             text[:300],
         )
 
+    logger.info(
+        "Model routing | requested_model=%s | resolved_gpu_model=%s",
+        requested_model,
+        resolved_model,
+    )
+
     system_prompt = extract_system_message(messages) or DEFAULT_SYSTEM_PROMPT
     prompt = build_forward_prompt(messages)
 
     if looks_like_commit_request(messages):
         logger.info("Detected commit-message style request")
         system_prompt = COMMIT_SYSTEM_PROMPT
-        temperature = 0.15
-        top_p = 0.95
-        max_tokens = min(max_tokens, 160)
+        prompt = build_commit_prompt(messages)
+        temperature = 0.0
+        top_p = 1.0
+        max_tokens = min(max_tokens, 96)
+
+        logger.info(
+            "Commit prompt prepared | chars=%s | preview=%r",
+            len(prompt),
+            prompt[:500],
+        )
 
     if not prompt.strip():
         reply_text = "No valid user message was provided."
@@ -499,7 +605,7 @@ async def chat_completions(request: Request):
         try:
             reply_text = gpu_client.generate_code(
                 prompt=prompt,
-                model=DEFAULT_GPU_MODEL,
+                model=resolved_model,
                 max_new_tokens=max_tokens,
                 temperature=temperature,
                 top_p=top_p,
@@ -512,12 +618,21 @@ async def chat_completions(request: Request):
                 content={"error": f"Chat completion failed: {exc}"},
             )
 
+    reply_text = (reply_text or "").strip()
+
+    logger.info(
+        "Returning chat completion | requested_model=%s | reply_len=%s | preview=%r",
+        requested_model,
+        len(reply_text),
+        reply_text[:300],
+    )
+
     if stream:
         return StreamingResponse(
-            build_streaming_response(reply_text, model_name=model),
+            build_streaming_response(reply_text, model_name=requested_model),
             media_type="text/event-stream",
         )
 
     return JSONResponse(
-        content=build_chat_completion_response(reply_text, model_name=model)
+        content=build_chat_completion_response(reply_text, model_name=requested_model)
     )
