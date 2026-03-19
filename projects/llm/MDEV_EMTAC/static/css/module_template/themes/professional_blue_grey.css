@@ -1,0 +1,422 @@
+/* static/css/module_template/themes/professional_blue_grey.css
+==================================
+PROFESSIONAL BLUE GREY THEME
+Designed to sit on top of:
+static/css/module_template/base.css
+
+Role:
+- Override standardized base theme variables
+- Preserve layout ownership in base.css
+- Provide a Professional Blue Grey visual identity
+- Support reusable neppy-* utility classes
+- Theme the standardized .mt-* module template layouts
+================================== */
+
+/* ==================================
+THEME VARIABLE OVERRIDES
+Apply by adding class="professional-blue-grey" to body
+================================== */
+body.professional-blue-grey {
+    --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    --app-page-bg: #263238;
+    --app-page-text: #e3f2fd;
+
+    --app-banner-bg: linear-gradient(90deg, #b71c1c 0%, #c62828 45%, #d32f2f 100%);
+    --app-banner-text: #ffffff;
+    --app-banner-link: #b3e5fc;
+
+    --app-sidebar-bg: rgba(55, 71, 79, 0.95);
+    --app-sidebar-text: #b3e5fc;
+    --app-sidebar-link: #e3f2fd;
+    --app-sidebar-hover: #81c784;
+    --app-sidebar-hover-bg: rgba(129, 199, 132, 0.10);
+    --app-sidebar-border: rgba(120, 144, 156, 0.28);
+
+    --app-content-bg: #37474f;
+    --app-content-text: #e3f2fd;
+
+    --app-control-bg: #546e7a;
+    --app-control-text: #e3f2fd;
+    --app-control-border: #78909c;
+    --app-control-hover-bg: #78909c;
+
+    --app-popup-bg: rgba(55, 71, 79, 0.97);
+    --app-popup-text: #e3f2fd;
+    --app-popup-accent: #81c784;
+    --app-popup-submit-text: #102027;
+
+    --app-results-bg: rgba(84, 110, 122, 0.30);
+    --app-results-text: #e3f2fd;
+
+    --app-thumbnail-border: rgba(120, 144, 156, 0.30);
+
+    --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.20);
+    --app-shadow-md: 0 16px 30px rgba(0, 0, 0, 0.32);
+
+    background-color: #263238;
+    color: var(--app-page-text);
+    line-height: 1.45;
+}
+
+/* ==================================
+NEPPY TOKEN OVERRIDES
+Supports reusable neppy-* utility classes
+================================== */
+body.professional-blue-grey {
+    --neppy-surface: rgba(55, 71, 79, 0.88);
+    --neppy-surface-2: rgba(69, 90, 100, 0.90);
+    --neppy-line: rgba(120, 144, 156, 0.28);
+    --neppy-line-strong: rgba(176, 190, 197, 0.34);
+
+    --neppy-text: #e3f2fd;
+    --neppy-muted: #b0bec5;
+    --neppy-heading: #f5fbff;
+
+    --neppy-accent: #81c784;
+    --neppy-accent-soft: rgba(129, 199, 132, 0.14);
+    --neppy-accent-hover: #9ad6a0;
+
+    --neppy-ok: #81c784;
+    --neppy-ok-soft: rgba(129, 199, 132, 0.16);
+
+    --neppy-warn: #ffd54f;
+    --neppy-warn-soft: rgba(255, 213, 79, 0.18);
+
+    --neppy-bad: #ef9a9a;
+    --neppy-bad-soft: rgba(239, 154, 154, 0.16);
+}
+
+/* ==================================
+GLOBAL POLISH
+================================== */
+body.professional-blue-grey .banner {
+    letter-spacing: 0.03em;
+    box-shadow: var(--app-shadow-sm);
+}
+
+body.professional-blue-grey .banner a {
+    font-weight: 600;
+}
+
+body.professional-blue-grey .sidebar {
+    backdrop-filter: blur(5px);
+    box-shadow: inset -1px 0 0 rgba(176, 190, 197, 0.12);
+}
+
+body.professional-blue-grey .sidebar h1 {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+}
+
+body.professional-blue-grey .welcome-message {
+    color: var(--app-sidebar-text);
+    font-weight: 600;
+}
+
+body.professional-blue-grey .user-level,
+body.professional-blue-grey .model-display-section {
+    color: #cfd8dc;
+}
+
+body.professional-blue-grey .content {
+    background: linear-gradient(180deg, #37474f 0%, #2f3d43 100%);
+    color: var(--app-content-text);
+}
+
+/* ==================================
+SIDEBAR NAV / INTERACTION POLISH
+================================== */
+body.professional-blue-grey .nav-link,
+body.professional-blue-grey .sidebar a,
+body.professional-blue-grey .sidebar button,
+body.professional-blue-grey .sidebar select {
+    color: var(--app-sidebar-link);
+}
+
+body.professional-blue-grey .nav-link:hover,
+body.professional-blue-grey .sidebar a:hover,
+body.professional-blue-grey .sidebar button:hover,
+body.professional-blue-grey .sidebar select:hover {
+    color: var(--app-sidebar-hover);
+    background-color: var(--app-sidebar-hover-bg);
+}
+
+body.professional-blue-grey .nav-link.highlight {
+    color: var(--app-sidebar-hover);
+    background-color: rgba(129, 199, 132, 0.20);
+    border-left: 3px solid var(--app-sidebar-hover);
+}
+
+/* ==================================
+STANDARD CONTROLS
+================================== */
+body.professional-blue-grey .toggle-button {
+    background: linear-gradient(180deg, #546e7a 0%, #455a64 100%) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+    font-weight: 600;
+}
+
+body.professional-blue-grey .toggle-button:hover {
+    background: linear-gradient(180deg, #78909c 0%, #607d8b 100%) !important;
+    border-color: rgba(129, 199, 132, 0.35) !important;
+}
+
+body.professional-blue-grey #voice-selection,
+body.professional-blue-grey .sidebar select {
+    background-color: #455a64;
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 5px;
+}
+
+body.professional-blue-grey #voice-selection:focus,
+body.professional-blue-grey .sidebar select:focus {
+    outline: 2px solid rgba(129, 199, 132, 0.35);
+    outline-offset: 2px;
+}
+
+/* ==================================
+RESULTS / PANELS / THUMBNAILS
+================================== */
+body.professional-blue-grey .results-container {
+    background: var(--app-results-bg);
+    border: 1px solid #546e7a;
+    border-radius: 10px;
+    box-shadow: var(--app-shadow-md);
+    backdrop-filter: blur(4px);
+}
+
+body.professional-blue-grey #drawingList {
+    color: var(--app-results-text);
+}
+
+body.professional-blue-grey .thumbnail {
+    background: rgba(69, 90, 100, 0.92);
+    border: 1px solid var(--app-thumbnail-border);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+
+/* ==================================
+COMMENT POPUP
+================================== */
+body.professional-blue-grey #commentPopup {
+    background: var(--app-popup-bg);
+    border: 1px solid rgba(176, 190, 197, 0.16);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
+}
+
+body.professional-blue-grey #commentForm h2 {
+    color: var(--app-popup-accent);
+    letter-spacing: 0.02em;
+}
+
+body.professional-blue-grey #commentForm textarea {
+    background: #455a64;
+    color: var(--app-popup-text);
+    border: 1px solid rgba(176, 190, 197, 0.22);
+}
+
+body.professional-blue-grey #commentForm textarea::placeholder {
+    color: rgba(227, 242, 253, 0.58);
+}
+
+body.professional-blue-grey #commentForm textarea:focus {
+    border-color: rgba(129, 199, 132, 0.38);
+    box-shadow: 0 0 0 3px rgba(129, 199, 132, 0.12);
+}
+
+body.professional-blue-grey #commentForm button {
+    background: linear-gradient(180deg, #546e7a 0%, #455a64 100%);
+    color: var(--app-popup-text);
+    border: 1px solid rgba(176, 190, 197, 0.16);
+}
+
+body.professional-blue-grey #commentForm button:hover {
+    background: linear-gradient(180deg, #78909c 0%, #607d8b 100%);
+}
+
+body.professional-blue-grey #commentForm button[type="submit"] {
+    background: linear-gradient(180deg, #9ad6a0 0%, #81c784 100%);
+    color: var(--app-popup-submit-text);
+    border-color: rgba(129, 199, 132, 0.35);
+    font-weight: 700;
+}
+
+body.professional-blue-grey #commentForm button[type="submit"]:hover {
+    background: linear-gradient(180deg, #aedcb3 0%, #74be79 100%);
+}
+
+/* ==================================
+LINKS / SPECIAL STATES
+================================== */
+body.professional-blue-grey a {
+    color: #b3e5fc;
+}
+
+body.professional-blue-grey a:hover {
+    color: var(--app-sidebar-hover);
+}
+
+body.professional-blue-grey .logout-button {
+    color: #ffcc80 !important;
+}
+
+/* ==================================
+ACCESSIBILITY / FOCUS
+================================== */
+body.professional-blue-grey .hamburger:focus-visible,
+body.professional-blue-grey .toggle-button:focus-visible,
+body.professional-blue-grey .sidebar button:focus-visible,
+body.professional-blue-grey .sidebar a:focus-visible,
+body.professional-blue-grey .sidebar select:focus-visible,
+body.professional-blue-grey #commentForm textarea:focus-visible,
+body.professional-blue-grey #commentForm button:focus-visible,
+body.professional-blue-grey .mt-toggle-btn:focus-visible,
+body.professional-blue-grey .neppy-btn:focus-visible,
+body.professional-blue-grey .neppy-input:focus-visible,
+body.professional-blue-grey .neppy-select:focus-visible,
+body.professional-blue-grey .neppy-textarea:focus-visible {
+    outline: 2px solid rgba(129, 199, 132, 0.55);
+    outline-offset: 2px;
+}
+
+/* ==================================
+NEPPY UTILITY CLASS SUPPORT
+================================== */
+body.professional-blue-grey .neppy-card,
+body.professional-blue-grey .neppy-card-soft {
+    background: var(--neppy-surface);
+    border-color: var(--neppy-line);
+}
+
+body.professional-blue-grey .neppy-title,
+body.professional-blue-grey .neppy-panel-title {
+    color: var(--neppy-heading);
+}
+
+body.professional-blue-grey .neppy-subtitle,
+body.professional-blue-grey .neppy-label,
+body.professional-blue-grey .neppy-text-muted {
+    color: var(--neppy-muted) !important;
+}
+
+body.professional-blue-grey .neppy-btn {
+    background: linear-gradient(180deg, #546e7a 0%, #455a64 100%);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+body.professional-blue-grey .neppy-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, #78909c 0%, #607d8b 100%);
+}
+
+body.professional-blue-grey .neppy-input,
+body.professional-blue-grey .neppy-select,
+body.professional-blue-grey .neppy-textarea,
+body.professional-blue-grey .neppy-mono,
+body.professional-blue-grey .neppy-code {
+    background: #455a64;
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+body.professional-blue-grey .neppy-input:focus,
+body.professional-blue-grey .neppy-select:focus,
+body.professional-blue-grey .neppy-textarea:focus {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
+}
+
+/* ==================================
+MODULE TEMPLATE PANEL LAYOUT THEME
+Styles the standardized .mt-* module templates
+================================== */
+body.professional-blue-grey .mt-layout {
+    color: var(--neppy-text);
+}
+
+body.professional-blue-grey .mt-layout-header {
+    border-bottom: 2px solid rgba(129, 199, 132, 0.22);
+}
+
+body.professional-blue-grey .mt-layout-title {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+}
+
+body.professional-blue-grey .mt-layout-description {
+    color: var(--neppy-muted);
+}
+
+body.professional-blue-grey .mt-panel {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg, 14px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(4px);
+}
+
+body.professional-blue-grey .mt-panel:hover {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+}
+
+body.professional-blue-grey .mt-panel-header {
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--neppy-line);
+}
+
+body.professional-blue-grey .mt-panel-title {
+    color: var(--neppy-accent);
+}
+
+body.professional-blue-grey .mt-toggle-btn {
+    background: linear-gradient(180deg, #546e7a 0%, #455a64 100%);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+}
+
+body.professional-blue-grey .mt-toggle-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, #78909c 0%, #607d8b 100%);
+    color: var(--neppy-text);
+}
+
+body.professional-blue-grey .mt-panel.is-collapsed .mt-toggle-btn {
+    background: linear-gradient(180deg, #7a2f3f 0%, #5e2431 100%);
+    border-color: rgba(239, 154, 154, 0.35);
+    color: #ffffff;
+}
+
+body.professional-blue-grey .mt-panel-body {
+    color: var(--neppy-text);
+}
+
+body.professional-blue-grey .mt-panel-content {
+    gap: 12px;
+}
+
+body.professional-blue-grey .mt-item {
+    background: rgba(69, 90, 100, 0.92);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+}
+
+body.professional-blue-grey .mt-item:hover {
+    background: rgba(129, 199, 132, 0.08);
+    border-color: var(--neppy-accent);
+}
+
+body.professional-blue-grey .mt-item.is-active {
+    background: rgba(129, 199, 132, 0.16);
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 1px rgba(129, 199, 132, 0.10);
+}
