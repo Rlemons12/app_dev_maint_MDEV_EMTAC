@@ -1,0 +1,427 @@
+/* static/css/module_template/themes/green_modern.css
+==================================
+GREEN MODERN THEME
+Designed to sit on top of:
+static/css/module_template/base.css
+
+Role:
+- Override standardized base theme variables
+- Preserve layout ownership in base.css
+- Provide a complete Green Modern visual identity
+- Support reusable neppy-* utility classes
+- Theme the standardized .mt-* module template layouts
+================================== */
+
+/* ==================================
+THEME VARIABLE OVERRIDES
+Apply by adding class="green-modern" to body
+================================== */
+body.green-modern {
+    --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    --app-page-bg: #123524;
+    --app-page-text: #D8E1E9;
+
+    --app-banner-bg: linear-gradient(90deg, #2f9e44 0%, #3BC14A 45%, #5cd65c 100%);
+    --app-banner-text: #123524;
+    --app-banner-link: #123524;
+
+    --app-sidebar-bg: rgba(59, 193, 74, 0.94);
+    --app-sidebar-text: #123524;
+    --app-sidebar-link: #123524;
+    --app-sidebar-hover: #C3FF00;
+    --app-sidebar-hover-bg: rgba(195, 255, 0, 0.14);
+    --app-sidebar-border: rgba(18, 53, 36, 0.25);
+
+    --app-content-bg: rgba(18, 53, 36, 0.82);
+    --app-content-text: #D8E1E9;
+
+    --app-control-bg: rgba(18, 53, 36, 0.92);
+    --app-control-text: #D8E1E9;
+    --app-control-border: rgba(216, 225, 233, 0.18);
+    --app-control-hover-bg: rgba(26, 74, 49, 0.95);
+
+    --app-popup-bg: rgba(18, 53, 36, 0.96);
+    --app-popup-text: #D8E1E9;
+    --app-popup-accent: #C3FF00;
+    --app-popup-submit-text: #123524;
+
+    --app-results-bg: rgba(18, 53, 36, 0.78);
+    --app-results-text: #D8E1E9;
+
+    --app-thumbnail-border: rgba(216, 225, 233, 0.18);
+
+    --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.20);
+    --app-shadow-md: 0 16px 30px rgba(0, 0, 0, 0.32);
+
+    background-color: #123524;
+    background-image: url("/static/background_images/greenmodern.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    color: var(--app-page-text);
+    line-height: 1.45;
+}
+
+/* ==================================
+NEPPY TOKEN OVERRIDES
+Supports reusable neppy-* utility classes
+================================== */
+body.green-modern {
+    --neppy-surface: rgba(18, 53, 36, 0.78);
+    --neppy-surface-2: rgba(14, 43, 27, 0.90);
+    --neppy-line: rgba(216, 225, 233, 0.18);
+    --neppy-line-strong: rgba(216, 225, 233, 0.32);
+
+    --neppy-text: #D8E1E9;
+    --neppy-muted: #b9c8b8;
+    --neppy-heading: #f3fff4;
+
+    --neppy-accent: #C3FF00;
+    --neppy-accent-soft: rgba(195, 255, 0, 0.14);
+    --neppy-accent-hover: #d6ff4d;
+
+    --neppy-ok: #72e08d;
+    --neppy-ok-soft: rgba(114, 224, 141, 0.16);
+
+    --neppy-warn: #ffe36e;
+    --neppy-warn-soft: rgba(255, 227, 110, 0.18);
+
+    --neppy-bad: #ff8b8b;
+    --neppy-bad-soft: rgba(255, 139, 139, 0.16);
+}
+
+/* ==================================
+GLOBAL POLISH
+================================== */
+body.green-modern .banner {
+    letter-spacing: 0.03em;
+    box-shadow: var(--app-shadow-sm);
+}
+
+body.green-modern .banner a {
+    font-weight: 600;
+}
+
+body.green-modern .sidebar {
+    backdrop-filter: blur(5px);
+    box-shadow: inset -1px 0 0 rgba(18, 53, 36, 0.14);
+}
+
+body.green-modern .sidebar h1 {
+    color: #0b2216;
+    letter-spacing: 0.02em;
+}
+
+body.green-modern .welcome-message {
+    color: #123524;
+    font-weight: 600;
+}
+
+body.green-modern .user-level,
+body.green-modern .model-display-section {
+    color: rgba(18, 53, 36, 0.78);
+}
+
+body.green-modern .content {
+    background: linear-gradient(180deg, rgba(18, 53, 36, 0.82) 0%, rgba(10, 31, 20, 0.90) 100%);
+    color: var(--app-content-text);
+}
+
+/* ==================================
+SIDEBAR NAV / INTERACTION POLISH
+================================== */
+body.green-modern .nav-link,
+body.green-modern .sidebar a,
+body.green-modern .sidebar button,
+body.green-modern .sidebar select {
+    color: var(--app-sidebar-link);
+}
+
+body.green-modern .nav-link:hover,
+body.green-modern .sidebar a:hover,
+body.green-modern .sidebar button:hover,
+body.green-modern .sidebar select:hover {
+    color: var(--app-sidebar-hover);
+    background-color: var(--app-sidebar-hover-bg);
+}
+
+body.green-modern .nav-link.highlight {
+    color: var(--app-sidebar-hover);
+    background-color: rgba(195, 255, 0, 0.12);
+    border-left: 3px solid var(--app-sidebar-hover);
+}
+
+/* ==================================
+STANDARD CONTROLS
+================================== */
+body.green-modern .toggle-button {
+    background: linear-gradient(180deg, rgba(23, 67, 42, 0.98) 0%, rgba(14, 43, 27, 0.98) 100%) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+    font-weight: 600;
+}
+
+body.green-modern .toggle-button:hover {
+    background: linear-gradient(180deg, rgba(32, 87, 54, 0.98) 0%, rgba(18, 57, 35, 0.98) 100%) !important;
+    border-color: rgba(195, 255, 0, 0.35) !important;
+}
+
+body.green-modern #voice-selection,
+body.green-modern .sidebar select {
+    background-color: rgba(14, 43, 27, 0.95);
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 5px;
+}
+
+body.green-modern #voice-selection:focus,
+body.green-modern .sidebar select:focus {
+    outline: 2px solid rgba(195, 255, 0, 0.35);
+    outline-offset: 2px;
+}
+
+/* ==================================
+RESULTS / PANELS / THUMBNAILS
+================================== */
+body.green-modern .results-container {
+    background: var(--app-results-bg);
+    border: 1px solid rgba(216, 225, 233, 0.12);
+    border-radius: 10px;
+    box-shadow: var(--app-shadow-md);
+    backdrop-filter: blur(4px);
+}
+
+body.green-modern #drawingList {
+    color: var(--app-results-text);
+}
+
+body.green-modern .thumbnail {
+    background: rgba(15, 43, 28, 0.90);
+    border: 1px solid var(--app-thumbnail-border);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+
+/* ==================================
+COMMENT POPUP
+================================== */
+body.green-modern #commentPopup {
+    background: var(--app-popup-bg);
+    border: 1px solid rgba(216, 225, 233, 0.14);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
+}
+
+body.green-modern #commentForm h2 {
+    color: var(--app-popup-accent);
+    letter-spacing: 0.02em;
+}
+
+body.green-modern #commentForm textarea {
+    background: rgba(14, 43, 27, 0.96);
+    color: var(--app-popup-text);
+    border: 1px solid rgba(216, 225, 233, 0.18);
+}
+
+body.green-modern #commentForm textarea::placeholder {
+    color: rgba(216, 225, 233, 0.58);
+}
+
+body.green-modern #commentForm textarea:focus {
+    border-color: rgba(195, 255, 0, 0.38);
+    box-shadow: 0 0 0 3px rgba(195, 255, 0, 0.12);
+}
+
+body.green-modern #commentForm button {
+    background: linear-gradient(180deg, rgba(23, 67, 42, 0.98) 0%, rgba(14, 43, 27, 0.98) 100%);
+    color: var(--app-popup-text);
+    border: 1px solid rgba(216, 225, 233, 0.14);
+}
+
+body.green-modern #commentForm button:hover {
+    background: linear-gradient(180deg, rgba(32, 87, 54, 0.98) 0%, rgba(18, 57, 35, 0.98) 100%);
+}
+
+body.green-modern #commentForm button[type="submit"] {
+    background: linear-gradient(180deg, #d3ff4d 0%, #C3FF00 100%);
+    color: var(--app-popup-submit-text);
+    border-color: rgba(195, 255, 0, 0.35);
+    font-weight: 700;
+}
+
+body.green-modern #commentForm button[type="submit"]:hover {
+    background: linear-gradient(180deg, #dfff6a 0%, #b4f000 100%);
+}
+
+/* ==================================
+LINKS / SPECIAL STATES
+================================== */
+body.green-modern a {
+    color: #b7f5c3;
+}
+
+body.green-modern a:hover {
+    color: #C3FF00;
+}
+
+body.green-modern .logout-button {
+    color: #fff3a3 !important;
+}
+
+/* ==================================
+ACCESSIBILITY / FOCUS
+================================== */
+body.green-modern .hamburger:focus-visible,
+body.green-modern .toggle-button:focus-visible,
+body.green-modern .sidebar button:focus-visible,
+body.green-modern .sidebar a:focus-visible,
+body.green-modern .sidebar select:focus-visible,
+body.green-modern #commentForm textarea:focus-visible,
+body.green-modern #commentForm button:focus-visible,
+body.green-modern .mt-toggle-btn:focus-visible,
+body.green-modern .neppy-btn:focus-visible,
+body.green-modern .neppy-input:focus-visible,
+body.green-modern .neppy-select:focus-visible,
+body.green-modern .neppy-textarea:focus-visible {
+    outline: 2px solid rgba(195, 255, 0, 0.55);
+    outline-offset: 2px;
+}
+
+/* ==================================
+NEPPY UTILITY CLASS SUPPORT
+================================== */
+body.green-modern .neppy-card,
+body.green-modern .neppy-card-soft {
+    background: var(--neppy-surface);
+    border-color: var(--neppy-line);
+}
+
+body.green-modern .neppy-title,
+body.green-modern .neppy-panel-title {
+    color: var(--neppy-heading);
+}
+
+body.green-modern .neppy-subtitle,
+body.green-modern .neppy-label,
+body.green-modern .neppy-text-muted {
+    color: var(--neppy-muted) !important;
+}
+
+body.green-modern .neppy-btn {
+    background: linear-gradient(180deg, rgba(23, 67, 42, 0.98) 0%, rgba(14, 43, 27, 0.98) 100%);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+body.green-modern .neppy-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, rgba(32, 87, 54, 0.98) 0%, rgba(18, 57, 35, 0.98) 100%);
+}
+
+body.green-modern .neppy-input,
+body.green-modern .neppy-select,
+body.green-modern .neppy-textarea,
+body.green-modern .neppy-mono,
+body.green-modern .neppy-code {
+    background: rgba(14, 43, 27, 0.96);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+body.green-modern .neppy-input:focus,
+body.green-modern .neppy-select:focus,
+body.green-modern .neppy-textarea:focus {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
+}
+
+/* ==================================
+MODULE TEMPLATE PANEL LAYOUT THEME
+Styles the standardized .mt-* module templates
+================================== */
+body.green-modern .mt-layout {
+    color: var(--neppy-text);
+}
+
+body.green-modern .mt-layout-header {
+    border-bottom: 2px solid rgba(195, 255, 0, 0.22);
+}
+
+body.green-modern .mt-layout-title {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+}
+
+body.green-modern .mt-layout-description {
+    color: var(--neppy-muted);
+}
+
+body.green-modern .mt-panel {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg, 14px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(4px);
+}
+
+body.green-modern .mt-panel:hover {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+}
+
+body.green-modern .mt-panel-header {
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--neppy-line);
+}
+
+body.green-modern .mt-panel-title {
+    color: var(--neppy-accent);
+}
+
+body.green-modern .mt-toggle-btn {
+    background: linear-gradient(180deg, rgba(23, 67, 42, 0.98) 0%, rgba(14, 43, 27, 0.98) 100%);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+}
+
+body.green-modern .mt-toggle-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, rgba(32, 87, 54, 0.98) 0%, rgba(18, 57, 35, 0.98) 100%);
+    color: var(--neppy-text);
+}
+
+body.green-modern .mt-panel.is-collapsed .mt-toggle-btn {
+    background: linear-gradient(180deg, #6f2f2f 0%, #572525 100%);
+    border-color: rgba(255, 139, 139, 0.35);
+    color: #ffffff;
+}
+
+body.green-modern .mt-panel-body {
+    color: var(--neppy-text);
+}
+
+body.green-modern .mt-panel-content {
+    gap: 12px;
+}
+
+body.green-modern .mt-item {
+    background: rgba(14, 43, 27, 0.92);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+}
+
+body.green-modern .mt-item:hover {
+    background: rgba(195, 255, 0, 0.08);
+    border-color: var(--neppy-accent);
+}
+
+body.green-modern .mt-item.is-active {
+    background: rgba(195, 255, 0, 0.16);
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 1px rgba(195, 255, 0, 0.10);
+}
