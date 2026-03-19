@@ -1,18 +1,427 @@
-body {
+/* static/css/module_template/themes/purple_indigo.css
+==================================
+PURPLE INDIGO THEME
+Designed to sit on top of:
+static/css/module_template/base.css
+
+Role:
+- Override standardized base theme variables
+- Preserve layout ownership in base.css
+- Provide a complete Purple Indigo visual identity
+- Support reusable neppy-* utility classes
+- Theme the standardized .mt-* module template layouts
+================================== */
+
+/* ==================================
+THEME VARIABLE OVERRIDES
+Apply by adding class="purple-indigo" to body
+================================== */
+body.purple-indigo {
+    --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    --app-page-bg: #3D246C;
+    --app-page-text: #F8F7FF;
+
+    --app-banner-bg: linear-gradient(90deg, #4c0a6e 0%, #5F0A87 45%, #7a1fa2 100%);
+    --app-banner-text: #F8F7FF;
+    --app-banner-link: #00F0FF;
+
+    --app-sidebar-bg: rgba(95, 10, 135, 0.94);
+    --app-sidebar-text: #B983FF;
+    --app-sidebar-link: #F8F7FF;
+    --app-sidebar-hover: #00F0FF;
+    --app-sidebar-hover-bg: rgba(0, 240, 255, 0.12);
+    --app-sidebar-border: rgba(185, 131, 255, 0.24);
+
+    --app-content-bg: rgba(61, 36, 108, 0.84);
+    --app-content-text: #F8F7FF;
+
+    --app-control-bg: rgba(72, 35, 122, 0.95);
+    --app-control-text: #F8F7FF;
+    --app-control-border: rgba(185, 131, 255, 0.24);
+    --app-control-hover-bg: rgba(86, 42, 145, 0.96);
+
+    --app-popup-bg: rgba(61, 36, 108, 0.97);
+    --app-popup-text: #F8F7FF;
+    --app-popup-accent: #00F0FF;
+    --app-popup-submit-text: #1a1330;
+
+    --app-results-bg: rgba(61, 36, 108, 0.76);
+    --app-results-text: #F8F7FF;
+
+    --app-thumbnail-border: rgba(185, 131, 255, 0.22);
+
+    --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.22);
+    --app-shadow-md: 0 16px 30px rgba(0, 0, 0, 0.34);
+
     background: #3D246C;
-    background-image: url("/static/background_images/purple_indigo.jpg"); /* Replace with your image */
+    background-image: url("/static/background_images/purple_indigo.jpg");
     background-size: cover;
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-position: center;
-    color: #F8F7FF;
+    color: var(--app-page-text);
+    line-height: 1.45;
 }
-.banner, .sidebar {
-    background-color: #5F0A87;
-    color: #B983FF;
+
+/* ==================================
+NEPPY TOKEN OVERRIDES
+Supports reusable neppy-* utility classes
+================================== */
+body.purple-indigo {
+    --neppy-surface: rgba(61, 36, 108, 0.80);
+    --neppy-surface-2: rgba(72, 35, 122, 0.90);
+    --neppy-line: rgba(185, 131, 255, 0.22);
+    --neppy-line-strong: rgba(248, 247, 255, 0.30);
+
+    --neppy-text: #F8F7FF;
+    --neppy-muted: #d2c3ef;
+    --neppy-heading: #FFFFFF;
+
+    --neppy-accent: #00F0FF;
+    --neppy-accent-soft: rgba(0, 240, 255, 0.14);
+    --neppy-accent-hover: #5cf5ff;
+
+    --neppy-ok: #8df0b3;
+    --neppy-ok-soft: rgba(141, 240, 179, 0.16);
+
+    --neppy-warn: #ffd970;
+    --neppy-warn-soft: rgba(255, 217, 112, 0.18);
+
+    --neppy-bad: #ff9db7;
+    --neppy-bad-soft: rgba(255, 157, 183, 0.16);
 }
-.nav-link,
-.sidebar a,
-.sidebar button {
+
+/* ==================================
+GLOBAL POLISH
+================================== */
+body.purple-indigo .banner {
+    letter-spacing: 0.03em;
+    box-shadow: var(--app-shadow-sm);
+}
+
+body.purple-indigo .banner a {
+    font-weight: 600;
+}
+
+body.purple-indigo .sidebar {
+    backdrop-filter: blur(5px);
+    box-shadow: inset -1px 0 0 rgba(185, 131, 255, 0.12);
+}
+
+body.purple-indigo .sidebar h1 {
+    color: #f2e9ff;
+    letter-spacing: 0.02em;
+}
+
+body.purple-indigo .welcome-message {
+    color: var(--app-sidebar-text);
+    font-weight: 600;
+}
+
+body.purple-indigo .user-level,
+body.purple-indigo .model-display-section {
+    color: rgba(248, 247, 255, 0.72);
+}
+
+body.purple-indigo .content {
+    background: linear-gradient(180deg, rgba(61, 36, 108, 0.84) 0%, rgba(42, 24, 74, 0.92) 100%);
+    color: var(--app-content-text);
+}
+
+/* ==================================
+SIDEBAR NAV / INTERACTION POLISH
+================================== */
+body.purple-indigo .nav-link,
+body.purple-indigo .sidebar a,
+body.purple-indigo .sidebar button,
+body.purple-indigo .sidebar select {
+    color: var(--app-sidebar-link);
+}
+
+body.purple-indigo .nav-link:hover,
+body.purple-indigo .sidebar a:hover,
+body.purple-indigo .sidebar button:hover,
+body.purple-indigo .sidebar select:hover {
+    color: var(--app-sidebar-hover);
+    background-color: var(--app-sidebar-hover-bg);
+}
+
+body.purple-indigo .nav-link.highlight {
+    color: var(--app-sidebar-hover);
+    background-color: rgba(0, 240, 255, 0.10);
+    border-left: 3px solid var(--app-sidebar-hover);
+}
+
+/* ==================================
+STANDARD CONTROLS
+================================== */
+body.purple-indigo .toggle-button {
+    background: linear-gradient(180deg, rgba(86, 42, 145, 0.98) 0%, rgba(61, 36, 108, 0.98) 100%) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.20);
+    font-weight: 600;
+}
+
+body.purple-indigo .toggle-button:hover {
+    background: linear-gradient(180deg, rgba(103, 58, 183, 0.98) 0%, rgba(78, 42, 135, 0.98) 100%) !important;
+    border-color: rgba(0, 240, 255, 0.35) !important;
+}
+
+body.purple-indigo #voice-selection,
+body.purple-indigo .sidebar select {
+    background-color: rgba(72, 35, 122, 0.95);
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 5px;
+}
+
+body.purple-indigo #voice-selection:focus,
+body.purple-indigo .sidebar select:focus {
+    outline: 2px solid rgba(0, 240, 255, 0.35);
+    outline-offset: 2px;
+}
+
+/* ==================================
+RESULTS / PANELS / THUMBNAILS
+================================== */
+body.purple-indigo .results-container {
+    background: var(--app-results-bg);
+    border: 1px solid rgba(185, 131, 255, 0.18);
+    border-radius: 10px;
+    box-shadow: var(--app-shadow-md);
+    backdrop-filter: blur(4px);
+}
+
+body.purple-indigo #drawingList {
+    color: var(--app-results-text);
+}
+
+body.purple-indigo .thumbnail {
+    background: rgba(72, 35, 122, 0.92);
+    border: 1px solid var(--app-thumbnail-border);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+
+/* ==================================
+COMMENT POPUP
+================================== */
+body.purple-indigo #commentPopup {
+    background: var(--app-popup-bg);
+    border: 1px solid rgba(185, 131, 255, 0.18);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
+}
+
+body.purple-indigo #commentForm h2 {
+    color: var(--app-popup-accent);
+    letter-spacing: 0.02em;
+}
+
+body.purple-indigo #commentForm textarea {
+    background: rgba(72, 35, 122, 0.96);
+    color: var(--app-popup-text);
+    border: 1px solid rgba(185, 131, 255, 0.24);
+}
+
+body.purple-indigo #commentForm textarea::placeholder {
+    color: rgba(248, 247, 255, 0.58);
+}
+
+body.purple-indigo #commentForm textarea:focus {
+    border-color: rgba(0, 240, 255, 0.38);
+    box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.12);
+}
+
+body.purple-indigo #commentForm button {
+    background: linear-gradient(180deg, rgba(86, 42, 145, 0.98) 0%, rgba(61, 36, 108, 0.98) 100%);
+    color: var(--app-popup-text);
+    border: 1px solid rgba(185, 131, 255, 0.18);
+}
+
+body.purple-indigo #commentForm button:hover {
+    background: linear-gradient(180deg, rgba(103, 58, 183, 0.98) 0%, rgba(78, 42, 135, 0.98) 100%);
+}
+
+body.purple-indigo #commentForm button[type="submit"] {
+    background: linear-gradient(180deg, #6cf6ff 0%, #00F0FF 100%);
+    color: var(--app-popup-submit-text);
+    border-color: rgba(0, 240, 255, 0.35);
+    font-weight: 700;
+}
+
+body.purple-indigo #commentForm button[type="submit"]:hover {
+    background: linear-gradient(180deg, #8ef8ff 0%, #00d8e6 100%);
+}
+
+/* ==================================
+LINKS / SPECIAL STATES
+================================== */
+body.purple-indigo a {
+    color: #d8c9ff;
+}
+
+body.purple-indigo a:hover {
     color: #00F0FF;
+}
+
+body.purple-indigo .logout-button {
+    color: #ffbfdf !important;
+}
+
+/* ==================================
+ACCESSIBILITY / FOCUS
+================================== */
+body.purple-indigo .hamburger:focus-visible,
+body.purple-indigo .toggle-button:focus-visible,
+body.purple-indigo .sidebar button:focus-visible,
+body.purple-indigo .sidebar a:focus-visible,
+body.purple-indigo .sidebar select:focus-visible,
+body.purple-indigo #commentForm textarea:focus-visible,
+body.purple-indigo #commentForm button:focus-visible,
+body.purple-indigo .mt-toggle-btn:focus-visible,
+body.purple-indigo .neppy-btn:focus-visible,
+body.purple-indigo .neppy-input:focus-visible,
+body.purple-indigo .neppy-select:focus-visible,
+body.purple-indigo .neppy-textarea:focus-visible {
+    outline: 2px solid rgba(0, 240, 255, 0.55);
+    outline-offset: 2px;
+}
+
+/* ==================================
+NEPPY UTILITY CLASS SUPPORT
+================================== */
+body.purple-indigo .neppy-card,
+body.purple-indigo .neppy-card-soft {
+    background: var(--neppy-surface);
+    border-color: var(--neppy-line);
+}
+
+body.purple-indigo .neppy-title,
+body.purple-indigo .neppy-panel-title {
+    color: var(--neppy-heading);
+}
+
+body.purple-indigo .neppy-subtitle,
+body.purple-indigo .neppy-label,
+body.purple-indigo .neppy-text-muted {
+    color: var(--neppy-muted) !important;
+}
+
+body.purple-indigo .neppy-btn {
+    background: linear-gradient(180deg, rgba(86, 42, 145, 0.98) 0%, rgba(61, 36, 108, 0.98) 100%);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+body.purple-indigo .neppy-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, rgba(103, 58, 183, 0.98) 0%, rgba(78, 42, 135, 0.98) 100%);
+}
+
+body.purple-indigo .neppy-input,
+body.purple-indigo .neppy-select,
+body.purple-indigo .neppy-textarea,
+body.purple-indigo .neppy-mono,
+body.purple-indigo .neppy-code {
+    background: rgba(72, 35, 122, 0.96);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+body.purple-indigo .neppy-input:focus,
+body.purple-indigo .neppy-select:focus,
+body.purple-indigo .neppy-textarea:focus {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
+}
+
+/* ==================================
+MODULE TEMPLATE PANEL LAYOUT THEME
+Styles the standardized .mt-* module templates
+================================== */
+body.purple-indigo .mt-layout {
+    color: var(--neppy-text);
+}
+
+body.purple-indigo .mt-layout-header {
+    border-bottom: 2px solid rgba(0, 240, 255, 0.22);
+}
+
+body.purple-indigo .mt-layout-title {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+}
+
+body.purple-indigo .mt-layout-description {
+    color: var(--neppy-muted);
+}
+
+body.purple-indigo .mt-panel {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg, 14px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(4px);
+}
+
+body.purple-indigo .mt-panel:hover {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+}
+
+body.purple-indigo .mt-panel-header {
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--neppy-line);
+}
+
+body.purple-indigo .mt-panel-title {
+    color: var(--neppy-accent);
+}
+
+body.purple-indigo .mt-toggle-btn {
+    background: linear-gradient(180deg, rgba(86, 42, 145, 0.98) 0%, rgba(61, 36, 108, 0.98) 100%);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+}
+
+body.purple-indigo .mt-toggle-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, rgba(103, 58, 183, 0.98) 0%, rgba(78, 42, 135, 0.98) 100%);
+    color: var(--neppy-text);
+}
+
+body.purple-indigo .mt-panel.is-collapsed .mt-toggle-btn {
+    background: linear-gradient(180deg, #7b2b50 0%, #60203d 100%);
+    border-color: rgba(255, 157, 183, 0.35);
+    color: #ffffff;
+}
+
+body.purple-indigo .mt-panel-body {
+    color: var(--neppy-text);
+}
+
+body.purple-indigo .mt-panel-content {
+    gap: 12px;
+}
+
+body.purple-indigo .mt-item {
+    background: rgba(72, 35, 122, 0.92);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+}
+
+body.purple-indigo .mt-item:hover {
+    background: rgba(0, 240, 255, 0.08);
+    border-color: var(--neppy-accent);
+}
+
+body.purple-indigo .mt-item.is-active {
+    background: rgba(0, 240, 255, 0.16);
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 1px rgba(0, 240, 255, 0.10);
 }
