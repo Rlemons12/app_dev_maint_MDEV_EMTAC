@@ -1,4 +1,4 @@
-{% extends "module_template_html/base_template.html" %}
+{% extends "module_template_html/base_template_2_0_0.html" %}
 
 {% block title %}Bill of Materials{% endblock %}
 
@@ -10,90 +10,11 @@
 <!-- ORIGINAL CDN: <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" /> -->
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/select2/select2.min.css') }}"/>
 
-    <!-- 2. Custom Stylesheets -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/search_bill_of_material.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bill_of_materials.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bill_of_materials/edit_part_search.css') }}">
+
 
     <!-- 3. Critical Styling for Advanced Search Form -->
-    <style>
-        /* Main container for advanced search */
-        #advancedSearchForm {
-            background-color: rgba(0, 0, 0, 0.9) !important;
-            padding: 20px !important;
-            border: 3px solid red !important;
-            margin-top: 15px !important;
-            position: relative !important;
-            z-index: 9999 !important;
-            display: none;
-        }
 
-        /* Target the form within advancedSearchForm as well */
-        #advancedSearchFilterForm {
-            width: 100%;
-        }
 
-        /* Form labels - target both forms */
-        #advancedSearchForm label, #advancedSearchFilterForm label {
-            display: block !important;
-            color: yellow !important;
-            font-size: 16px !important;
-            font-weight: bold !important;
-            margin-bottom: 8px !important;
-        }
-
-        /* Select elements - direct styling - target both forms */
-        #advancedSearchForm select, #advancedSearchFilterForm select {
-            display: block !important;
-            visibility: visible !important;
-            width: 100% !important;
-            max-width: 600px !important;
-            min-height: 38px !important;
-            margin-bottom: 15px !important;
-            padding: 8px !important;
-            background-color: white !important;
-            color: black !important;
-            border: 2px solid green !important;
-            position: relative !important;
-            opacity: 1 !important;
-            z-index: 10000 !important;
-        }
-
-        /* Select2 container */
-        .select2-container {
-            display: block !important;
-            visibility: visible !important;
-            width: 100% !important;
-            max-width: 600px !important;
-            margin-bottom: 15px !important;
-            z-index: 10001 !important;
-        }
-
-        /* Force Select2 dropdown to be visible */
-        .select2-container--open .select2-dropdown {
-            display: block !important;
-            visibility: visible !important;
-            z-index: 10002 !important;
-            background-color: white !important;
-            color: black !important;
-            border: 2px solid blue !important;
-        }
-
-        /* Filter button styling */
-        .filter-btn, #advancedSearchFilterForm input[type="submit"] {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .filter-btn:hover, #advancedSearchFilterForm input[type="submit"]:hover {
-            background-color: #0056b3;
-        }
-    </style>
 
     <!-- 4. Load Select2 JS -->
 <!-- ORIGINAL CDN: <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> -->
