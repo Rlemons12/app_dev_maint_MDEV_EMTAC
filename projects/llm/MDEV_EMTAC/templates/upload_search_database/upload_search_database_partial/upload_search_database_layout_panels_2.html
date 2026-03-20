@@ -1,0 +1,62 @@
+<div class="mt-layout" data-mt-layout="panels-2">
+
+    <div class="mt-grid mt-grid--2">
+        <section
+            id="upload-search-panel"
+            class="mt-panel"
+            data-panel="search-upload"
+        >
+            <div class="mt-panel-header">
+                <h3 class="mt-panel-title">Search / Upload</h3>
+                <button
+                    class="mt-toggle-btn"
+                    type="button"
+                    aria-label="Toggle Search and Upload Panel"
+                    aria-controls="upload-search-panel-body"
+                    aria-expanded="true"
+                    data-panel-toggle="search-upload"
+                >
+                    ⚙
+                </button>
+            </div>
+
+            <div
+                id="upload-search-panel-body"
+                class="mt-panel-body"
+            >
+                <div class="mt-panel-content upload-search-panel-content">
+                    {% include 'upload_search_database/upload_search_database_partial/upload_search_database_forms_partial.html' %}
+                </div>
+            </div>
+        </section>
+
+        <section
+            id="results-panel"
+            class="mt-panel"
+            data-panel="results"
+        >
+            <div class="mt-panel-header">
+                <h3 class="mt-panel-title">Results</h3>
+                <button
+                    class="mt-toggle-btn"
+                    type="button"
+                    aria-label="Toggle Results Panel"
+                    aria-controls="results-panel-body"
+                    aria-expanded="true"
+                    data-panel-toggle="results"
+                >
+                    📊
+                </button>
+            </div>
+
+            <div
+                id="results-panel-body"
+                class="mt-panel-body"
+            >
+                <div class="mt-panel-content results-panel-content">
+                    {% include 'upload_search_database/upload_search_database_partial/upload_search_database_results_partial.html' %}
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
