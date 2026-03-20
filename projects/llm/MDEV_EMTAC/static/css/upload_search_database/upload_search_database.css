@@ -1,0 +1,265 @@
+.drop-zone {
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    color: #aaa;
+    box-sizing: border-box;
+}
+
+.drop-zone.dragover {
+    border-color: white;
+    color: yellow;
+}
+
+.image-details {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.thumbnail {
+    max-width: 100px;
+    max-height: 100px;
+    margin-right: 20px;
+}
+
+.results-message {
+    color: white;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+/* ============================================================
+   RESULTS CONTAINER
+   ============================================================ */
+.results-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    width: 100%;
+    height: 400px;              /* fixed visible area */
+    max-height: 400px;          /* only show limited results before scrolling */
+    overflow: hidden;
+    border: 1px solid var(--app-thumbnail-border);
+    border-radius: var(--app-radius-lg);
+    background: rgba(255, 255, 255, 0.03);
+    box-sizing: border-box;
+}
+
+.results-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 12px 16px;
+    box-sizing: border-box;
+
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.22) rgba(255, 255, 255, 0.04);
+}
+
+/* Chrome / Edge / Safari */
+.results-scroll::-webkit-scrollbar {
+    width: 10px;
+}
+
+.results-scroll::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+}
+
+.results-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 10px;
+}
+
+.results-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+/* Reset spacing inside the scroll area */
+.results-scroll ul,
+.results-scroll .drawing-results-container {
+    margin: 0;
+    box-sizing: border-box;
+}
+
+/* Clean up UL defaults */
+.results-scroll ul {
+    padding-left: 22px;
+}
+
+.results-scroll li {
+    margin-bottom: 10px;
+    word-break: break-word;
+}
+
+#documents-list:not(:empty),
+#image-results:not(:empty),
+#image-compare-results:not(:empty),
+#drawing-results:not(:empty) {
+    margin-bottom: 16px;
+}
+
+#image-results:not(:empty),
+#image-compare-results:not(:empty),
+#drawing-results:not(:empty) {
+    padding-top: 12px;
+}
+
+#documents-list:not(:empty) + #image-results:not(:empty),
+#image-results:not(:empty) + #image-compare-results:not(:empty),
+#image-compare-results:not(:empty) + #drawing-results:not(:empty),
+#documents-list:not(:empty) + #drawing-results:not(:empty),
+#image-results:not(:empty) + #drawing-results:not(:empty) {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================================
+   DRAWING / IMAGE RESULT CARDS
+   ============================================================ */
+.drawing-result {
+    border: 1px solid var(--app-thumbnail-border);
+    border-radius: var(--app-radius-lg);
+    padding: 15px;
+    margin-bottom: 15px;
+    background: rgba(255, 255, 255, 0.04);
+    box-sizing: border-box;
+}
+
+.drawing-details p {
+    margin: 4px 0;
+}
+
+.part-images {
+    margin-top: 15px;
+}
+
+.image-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.image-item {
+    border: 1px solid var(--app-thumbnail-border);
+    border-radius: var(--app-radius-sm);
+    padding: 10px;
+    max-width: 220px;
+    background: rgba(255, 255, 255, 0.04);
+    box-sizing: border-box;
+}
+
+.image-item img {
+    display: block;
+    margin: 0 auto 10px auto;
+    max-width: 150px;
+    max-height: 150px;
+    width: auto;
+    height: auto;
+}
+
+.image-caption p {
+    margin: 4px 0;
+}
+
+/* ============================================================
+   FORM / SEARCH SECTION
+   ============================================================ */
+.form-container {
+    margin-bottom: 20px;
+}
+
+.upload-search-section {
+    text-align: left;
+    cursor: default;
+}
+
+.upload-search-section:hover {
+    background-color: rgba(0, 0, 0, 0.18);
+    border-color: var(--app-thumbnail-border);
+}
+
+.upload-search-section-header {
+    margin-bottom: 16px;
+    text-align: left;
+}
+
+.upload-search-section-title {
+    margin: 0 0 6px 0;
+    color: var(--app-sidebar-hover);
+    font-size: 18px;
+}
+
+.upload-search-section-description {
+    margin: 0;
+    opacity: 0.8;
+    font-size: 14px;
+}
+
+.upload-search-section-body {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.upload-search-form-block {
+    text-align: left;
+}
+
+.upload-search-form-block h2 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: var(--app-sidebar-hover);
+    font-size: 16px;
+}
+
+.upload-search-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.upload-search-form label {
+    color: yellow;
+    font-weight: 600;
+}
+
+.uploaded-image-preview {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.uploaded-image-preview h3 {
+    color: yellow;
+}
+
+/* ============================================================
+   SAFETY / LAYOUT STABILITY
+   ============================================================ */
+.mt-panel-body,
+.form-container,
+.upload-search-section,
+.results-container,
+.results-scroll {
+    min-height: 0;
+}
+
+.mt-panel-body input,
+.mt-panel-body select,
+.mt-panel-body textarea,
+.mt-panel-body button {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.mt-panel-body img {
+    max-width: 100%;
+    height: auto;
+}
