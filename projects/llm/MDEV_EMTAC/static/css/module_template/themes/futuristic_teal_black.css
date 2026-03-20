@@ -14,8 +14,9 @@ Role:
 
 /* ==================================
 THEME VARIABLE OVERRIDES
-Apply by adding class="futuristic-teal-black" to body
+Apply by adding class="futuristic-teal-black" to html or body
 ================================== */
+html.futuristic-teal-black,
 body.futuristic-teal-black {
     --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
@@ -63,6 +64,7 @@ body.futuristic-teal-black {
 NEPPY TOKEN OVERRIDES
 Supports reusable neppy-* utility classes
 ================================== */
+html.futuristic-teal-black,
 body.futuristic-teal-black {
     --neppy-surface: rgba(0, 77, 64, 0.30);
     --neppy-surface-2: rgba(0, 105, 92, 0.26);
@@ -90,35 +92,43 @@ body.futuristic-teal-black {
 /* ==================================
 GLOBAL POLISH
 ================================== */
+html.futuristic-teal-black .banner,
 body.futuristic-teal-black .banner {
     letter-spacing: 0.04em;
     box-shadow: var(--app-shadow-sm);
 }
 
+html.futuristic-teal-black .banner a,
 body.futuristic-teal-black .banner a {
     font-weight: 600;
 }
 
+html.futuristic-teal-black .sidebar,
 body.futuristic-teal-black .sidebar {
     backdrop-filter: blur(6px);
     box-shadow: inset -1px 0 0 rgba(0, 255, 255, 0.10);
 }
 
+html.futuristic-teal-black .sidebar h1,
 body.futuristic-teal-black .sidebar h1 {
     color: var(--neppy-accent);
     letter-spacing: 0.02em;
 }
 
+html.futuristic-teal-black .welcome-message,
 body.futuristic-teal-black .welcome-message {
     color: var(--app-sidebar-text);
     font-weight: 600;
 }
 
+html.futuristic-teal-black .user-level,
+html.futuristic-teal-black .model-display-section,
 body.futuristic-teal-black .user-level,
 body.futuristic-teal-black .model-display-section {
     color: #9be6dd;
 }
 
+html.futuristic-teal-black .content,
 body.futuristic-teal-black .content {
     background: linear-gradient(180deg, #1a1a1a 0%, #101515 100%);
     color: var(--app-content-text);
@@ -127,6 +137,10 @@ body.futuristic-teal-black .content {
 /* ==================================
 SIDEBAR NAV / INTERACTION POLISH
 ================================== */
+html.futuristic-teal-black .nav-link,
+html.futuristic-teal-black .sidebar a,
+html.futuristic-teal-black .sidebar button,
+html.futuristic-teal-black .sidebar select,
 body.futuristic-teal-black .nav-link,
 body.futuristic-teal-black .sidebar a,
 body.futuristic-teal-black .sidebar button,
@@ -134,6 +148,10 @@ body.futuristic-teal-black .sidebar select {
     color: var(--app-sidebar-link);
 }
 
+html.futuristic-teal-black .nav-link:hover,
+html.futuristic-teal-black .sidebar a:hover,
+html.futuristic-teal-black .sidebar button:hover,
+html.futuristic-teal-black .sidebar select:hover,
 body.futuristic-teal-black .nav-link:hover,
 body.futuristic-teal-black .sidebar a:hover,
 body.futuristic-teal-black .sidebar button:hover,
@@ -142,6 +160,7 @@ body.futuristic-teal-black .sidebar select:hover {
     background-color: var(--app-sidebar-hover-bg);
 }
 
+html.futuristic-teal-black .nav-link.highlight,
 body.futuristic-teal-black .nav-link.highlight {
     color: var(--app-sidebar-hover);
     background-color: rgba(0, 255, 255, 0.20);
@@ -151,6 +170,7 @@ body.futuristic-teal-black .nav-link.highlight {
 /* ==================================
 STANDARD CONTROLS
 ================================== */
+html.futuristic-teal-black .toggle-button,
 body.futuristic-teal-black .toggle-button {
     background: linear-gradient(180deg, #00695c 0%, #00554b 100%) !important;
     color: var(--app-control-text) !important;
@@ -160,11 +180,14 @@ body.futuristic-teal-black .toggle-button {
     font-weight: 600;
 }
 
+html.futuristic-teal-black .toggle-button:hover,
 body.futuristic-teal-black .toggle-button:hover {
     background: linear-gradient(180deg, #00796b 0%, #00695c 100%) !important;
     border-color: rgba(0, 255, 255, 0.35) !important;
 }
 
+html.futuristic-teal-black #voice-selection,
+html.futuristic-teal-black .sidebar select,
 body.futuristic-teal-black #voice-selection,
 body.futuristic-teal-black .sidebar select {
     background-color: #004d40;
@@ -173,6 +196,8 @@ body.futuristic-teal-black .sidebar select {
     border-radius: 5px;
 }
 
+html.futuristic-teal-black #voice-selection:focus,
+html.futuristic-teal-black .sidebar select:focus,
 body.futuristic-teal-black #voice-selection:focus,
 body.futuristic-teal-black .sidebar select:focus {
     outline: 2px solid rgba(0, 255, 255, 0.35);
@@ -182,6 +207,7 @@ body.futuristic-teal-black .sidebar select:focus {
 /* ==================================
 RESULTS / PANELS / THUMBNAILS
 ================================== */
+html.futuristic-teal-black .results-container,
 body.futuristic-teal-black .results-container {
     background: var(--app-results-bg);
     border: 1px solid #00695c;
@@ -190,10 +216,12 @@ body.futuristic-teal-black .results-container {
     backdrop-filter: blur(4px);
 }
 
+html.futuristic-teal-black #drawingList,
 body.futuristic-teal-black #drawingList {
     color: var(--app-results-text);
 }
 
+html.futuristic-teal-black .thumbnail,
 body.futuristic-teal-black .thumbnail {
     background: rgba(0, 77, 64, 0.90);
     border: 1px solid var(--app-thumbnail-border);
@@ -203,42 +231,50 @@ body.futuristic-teal-black .thumbnail {
 /* ==================================
 COMMENT POPUP
 ================================== */
+html.futuristic-teal-black #commentPopup,
 body.futuristic-teal-black #commentPopup {
     background: var(--app-popup-bg);
     border: 1px solid rgba(0, 255, 255, 0.14);
     box-shadow: 0 18px 36px rgba(0, 0, 0, 0.40);
 }
 
+html.futuristic-teal-black #commentForm h2,
 body.futuristic-teal-black #commentForm h2 {
     color: var(--app-popup-accent);
     letter-spacing: 0.02em;
 }
 
+html.futuristic-teal-black #commentForm textarea,
 body.futuristic-teal-black #commentForm textarea {
     background: #003c34;
     color: var(--app-popup-text);
     border: 1px solid rgba(0, 255, 255, 0.20);
 }
 
+html.futuristic-teal-black #commentForm textarea::placeholder,
 body.futuristic-teal-black #commentForm textarea::placeholder {
     color: rgba(223, 252, 248, 0.54);
 }
 
+html.futuristic-teal-black #commentForm textarea:focus,
 body.futuristic-teal-black #commentForm textarea:focus {
     border-color: rgba(0, 255, 255, 0.36);
     box-shadow: 0 0 0 3px rgba(0, 255, 255, 0.12);
 }
 
+html.futuristic-teal-black #commentForm button,
 body.futuristic-teal-black #commentForm button {
     background: linear-gradient(180deg, #00695c 0%, #00554b 100%);
     color: var(--app-popup-text);
     border: 1px solid rgba(0, 255, 255, 0.14);
 }
 
+html.futuristic-teal-black #commentForm button:hover,
 body.futuristic-teal-black #commentForm button:hover {
     background: linear-gradient(180deg, #00796b 0%, #00695c 100%);
 }
 
+html.futuristic-teal-black #commentForm button[type="submit"],
 body.futuristic-teal-black #commentForm button[type="submit"] {
     background: linear-gradient(180deg, #5cffff 0%, #00ffff 100%);
     color: var(--app-popup-submit-text);
@@ -246,6 +282,7 @@ body.futuristic-teal-black #commentForm button[type="submit"] {
     font-weight: 700;
 }
 
+html.futuristic-teal-black #commentForm button[type="submit"]:hover,
 body.futuristic-teal-black #commentForm button[type="submit"]:hover {
     background: linear-gradient(180deg, #8affff 0%, #00e6e6 100%);
 }
@@ -253,14 +290,17 @@ body.futuristic-teal-black #commentForm button[type="submit"]:hover {
 /* ==================================
 LINKS / SPECIAL STATES
 ================================== */
+html.futuristic-teal-black a,
 body.futuristic-teal-black a {
     color: #8ef7ef;
 }
 
+html.futuristic-teal-black a:hover,
 body.futuristic-teal-black a:hover {
     color: var(--app-sidebar-hover);
 }
 
+html.futuristic-teal-black .logout-button,
 body.futuristic-teal-black .logout-button {
     color: #ffcc80 !important;
 }
@@ -268,6 +308,18 @@ body.futuristic-teal-black .logout-button {
 /* ==================================
 ACCESSIBILITY / FOCUS
 ================================== */
+html.futuristic-teal-black .hamburger:focus-visible,
+html.futuristic-teal-black .toggle-button:focus-visible,
+html.futuristic-teal-black .sidebar button:focus-visible,
+html.futuristic-teal-black .sidebar a:focus-visible,
+html.futuristic-teal-black .sidebar select:focus-visible,
+html.futuristic-teal-black #commentForm textarea:focus-visible,
+html.futuristic-teal-black #commentForm button:focus-visible,
+html.futuristic-teal-black .mt-toggle-btn:focus-visible,
+html.futuristic-teal-black .neppy-btn:focus-visible,
+html.futuristic-teal-black .neppy-input:focus-visible,
+html.futuristic-teal-black .neppy-select:focus-visible,
+html.futuristic-teal-black .neppy-textarea:focus-visible,
 body.futuristic-teal-black .hamburger:focus-visible,
 body.futuristic-teal-black .toggle-button:focus-visible,
 body.futuristic-teal-black .sidebar button:focus-visible,
@@ -287,34 +339,48 @@ body.futuristic-teal-black .neppy-textarea:focus-visible {
 /* ==================================
 NEPPY UTILITY CLASS SUPPORT
 ================================== */
+html.futuristic-teal-black .neppy-card,
+html.futuristic-teal-black .neppy-card-soft,
 body.futuristic-teal-black .neppy-card,
 body.futuristic-teal-black .neppy-card-soft {
     background: var(--neppy-surface);
     border-color: var(--neppy-line);
 }
 
+html.futuristic-teal-black .neppy-title,
+html.futuristic-teal-black .neppy-panel-title,
 body.futuristic-teal-black .neppy-title,
 body.futuristic-teal-black .neppy-panel-title {
     color: var(--neppy-heading);
 }
 
+html.futuristic-teal-black .neppy-subtitle,
+html.futuristic-teal-black .neppy-label,
+html.futuristic-teal-black .neppy-text-muted,
 body.futuristic-teal-black .neppy-subtitle,
 body.futuristic-teal-black .neppy-label,
 body.futuristic-teal-black .neppy-text-muted {
     color: var(--neppy-muted) !important;
 }
 
+html.futuristic-teal-black .neppy-btn,
 body.futuristic-teal-black .neppy-btn {
     background: linear-gradient(180deg, #00695c 0%, #00554b 100%);
     color: var(--neppy-text);
     border-color: var(--neppy-line);
 }
 
+html.futuristic-teal-black .neppy-btn:hover,
 body.futuristic-teal-black .neppy-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, #00796b 0%, #00695c 100%);
 }
 
+html.futuristic-teal-black .neppy-input,
+html.futuristic-teal-black .neppy-select,
+html.futuristic-teal-black .neppy-textarea,
+html.futuristic-teal-black .neppy-mono,
+html.futuristic-teal-black .neppy-code,
 body.futuristic-teal-black .neppy-input,
 body.futuristic-teal-black .neppy-select,
 body.futuristic-teal-black .neppy-textarea,
@@ -325,6 +391,9 @@ body.futuristic-teal-black .neppy-code {
     border-color: var(--neppy-line);
 }
 
+html.futuristic-teal-black .neppy-input:focus,
+html.futuristic-teal-black .neppy-select:focus,
+html.futuristic-teal-black .neppy-textarea:focus,
 body.futuristic-teal-black .neppy-input:focus,
 body.futuristic-teal-black .neppy-select:focus,
 body.futuristic-teal-black .neppy-textarea:focus {
@@ -336,23 +405,28 @@ body.futuristic-teal-black .neppy-textarea:focus {
 MODULE TEMPLATE PANEL LAYOUT THEME
 Styles the standardized .mt-* module templates
 ================================== */
+html.futuristic-teal-black .mt-layout,
 body.futuristic-teal-black .mt-layout {
     color: var(--neppy-text);
 }
 
+html.futuristic-teal-black .mt-layout-header,
 body.futuristic-teal-black .mt-layout-header {
     border-bottom: 2px solid rgba(0, 255, 255, 0.22);
 }
 
+html.futuristic-teal-black .mt-layout-title,
 body.futuristic-teal-black .mt-layout-title {
     color: var(--neppy-accent);
     letter-spacing: 0.02em;
 }
 
+html.futuristic-teal-black .mt-layout-description,
 body.futuristic-teal-black .mt-layout-description {
     color: var(--neppy-muted);
 }
 
+html.futuristic-teal-black .mt-panel,
 body.futuristic-teal-black .mt-panel {
     background: var(--neppy-surface);
     border: 1px solid var(--neppy-line);
@@ -361,20 +435,24 @@ body.futuristic-teal-black .mt-panel {
     backdrop-filter: blur(4px);
 }
 
+html.futuristic-teal-black .mt-panel:hover,
 body.futuristic-teal-black .mt-panel:hover {
     border-color: var(--neppy-accent);
     box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32);
 }
 
+html.futuristic-teal-black .mt-panel-header,
 body.futuristic-teal-black .mt-panel-header {
     background: rgba(255, 255, 255, 0.03);
     border-bottom: 1px solid var(--neppy-line);
 }
 
+html.futuristic-teal-black .mt-panel-title,
 body.futuristic-teal-black .mt-panel-title {
     color: var(--neppy-accent);
 }
 
+html.futuristic-teal-black .mt-toggle-btn,
 body.futuristic-teal-black .mt-toggle-btn {
     background: linear-gradient(180deg, #00695c 0%, #00554b 100%);
     border: 1px solid var(--neppy-line);
@@ -383,26 +461,31 @@ body.futuristic-teal-black .mt-toggle-btn {
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
 }
 
+html.futuristic-teal-black .mt-toggle-btn:hover,
 body.futuristic-teal-black .mt-toggle-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, #00796b 0%, #00695c 100%);
     color: var(--neppy-text);
 }
 
+html.futuristic-teal-black .mt-panel.is-collapsed .mt-toggle-btn,
 body.futuristic-teal-black .mt-panel.is-collapsed .mt-toggle-btn {
     background: linear-gradient(180deg, #7a2f3f 0%, #5e2431 100%);
     border-color: rgba(255, 143, 171, 0.35);
     color: #ffffff;
 }
 
+html.futuristic-teal-black .mt-panel-body,
 body.futuristic-teal-black .mt-panel-body {
     color: var(--neppy-text);
 }
 
+html.futuristic-teal-black .mt-panel-content,
 body.futuristic-teal-black .mt-panel-content {
     gap: 12px;
 }
 
+html.futuristic-teal-black .mt-item,
 body.futuristic-teal-black .mt-item {
     background: rgba(0, 77, 64, 0.92);
     border: 1px solid var(--neppy-line);
@@ -410,11 +493,13 @@ body.futuristic-teal-black .mt-item {
     border-radius: 8px;
 }
 
+html.futuristic-teal-black .mt-item:hover,
 body.futuristic-teal-black .mt-item:hover {
     background: rgba(0, 255, 255, 0.08);
     border-color: var(--neppy-accent);
 }
 
+html.futuristic-teal-black .mt-item.is-active,
 body.futuristic-teal-black .mt-item.is-active {
     background: rgba(0, 255, 255, 0.16);
     border-color: var(--neppy-accent);

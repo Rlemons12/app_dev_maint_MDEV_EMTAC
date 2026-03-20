@@ -14,8 +14,9 @@ Role:
 
 /* ==================================
 THEME VARIABLE OVERRIDES
-Apply by adding class="purple-indigo" to body
+Apply by adding class="purple-indigo" to html or body
 ================================== */
+html.purple-indigo,
 body.purple-indigo {
     --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
@@ -68,6 +69,7 @@ body.purple-indigo {
 NEPPY TOKEN OVERRIDES
 Supports reusable neppy-* utility classes
 ================================== */
+html.purple-indigo,
 body.purple-indigo {
     --neppy-surface: rgba(61, 36, 108, 0.80);
     --neppy-surface-2: rgba(72, 35, 122, 0.90);
@@ -95,35 +97,43 @@ body.purple-indigo {
 /* ==================================
 GLOBAL POLISH
 ================================== */
+html.purple-indigo .banner,
 body.purple-indigo .banner {
     letter-spacing: 0.03em;
     box-shadow: var(--app-shadow-sm);
 }
 
+html.purple-indigo .banner a,
 body.purple-indigo .banner a {
     font-weight: 600;
 }
 
+html.purple-indigo .sidebar,
 body.purple-indigo .sidebar {
     backdrop-filter: blur(5px);
     box-shadow: inset -1px 0 0 rgba(185, 131, 255, 0.12);
 }
 
+html.purple-indigo .sidebar h1,
 body.purple-indigo .sidebar h1 {
     color: #f2e9ff;
     letter-spacing: 0.02em;
 }
 
+html.purple-indigo .welcome-message,
 body.purple-indigo .welcome-message {
     color: var(--app-sidebar-text);
     font-weight: 600;
 }
 
+html.purple-indigo .user-level,
+html.purple-indigo .model-display-section,
 body.purple-indigo .user-level,
 body.purple-indigo .model-display-section {
     color: rgba(248, 247, 255, 0.72);
 }
 
+html.purple-indigo .content,
 body.purple-indigo .content {
     background: linear-gradient(180deg, rgba(61, 36, 108, 0.84) 0%, rgba(42, 24, 74, 0.92) 100%);
     color: var(--app-content-text);
@@ -132,6 +142,10 @@ body.purple-indigo .content {
 /* ==================================
 SIDEBAR NAV / INTERACTION POLISH
 ================================== */
+html.purple-indigo .nav-link,
+html.purple-indigo .sidebar a,
+html.purple-indigo .sidebar button,
+html.purple-indigo .sidebar select,
 body.purple-indigo .nav-link,
 body.purple-indigo .sidebar a,
 body.purple-indigo .sidebar button,
@@ -139,6 +153,10 @@ body.purple-indigo .sidebar select {
     color: var(--app-sidebar-link);
 }
 
+html.purple-indigo .nav-link:hover,
+html.purple-indigo .sidebar a:hover,
+html.purple-indigo .sidebar button:hover,
+html.purple-indigo .sidebar select:hover,
 body.purple-indigo .nav-link:hover,
 body.purple-indigo .sidebar a:hover,
 body.purple-indigo .sidebar button:hover,
@@ -147,6 +165,7 @@ body.purple-indigo .sidebar select:hover {
     background-color: var(--app-sidebar-hover-bg);
 }
 
+html.purple-indigo .nav-link.highlight,
 body.purple-indigo .nav-link.highlight {
     color: var(--app-sidebar-hover);
     background-color: rgba(0, 240, 255, 0.10);
@@ -156,6 +175,7 @@ body.purple-indigo .nav-link.highlight {
 /* ==================================
 STANDARD CONTROLS
 ================================== */
+html.purple-indigo .toggle-button,
 body.purple-indigo .toggle-button {
     background: linear-gradient(180deg, rgba(86, 42, 145, 0.98) 0%, rgba(61, 36, 108, 0.98) 100%) !important;
     color: var(--app-control-text) !important;
@@ -165,11 +185,14 @@ body.purple-indigo .toggle-button {
     font-weight: 600;
 }
 
+html.purple-indigo .toggle-button:hover,
 body.purple-indigo .toggle-button:hover {
     background: linear-gradient(180deg, rgba(103, 58, 183, 0.98) 0%, rgba(78, 42, 135, 0.98) 100%) !important;
     border-color: rgba(0, 240, 255, 0.35) !important;
 }
 
+html.purple-indigo #voice-selection,
+html.purple-indigo .sidebar select,
 body.purple-indigo #voice-selection,
 body.purple-indigo .sidebar select {
     background-color: rgba(72, 35, 122, 0.95);
@@ -178,6 +201,8 @@ body.purple-indigo .sidebar select {
     border-radius: 5px;
 }
 
+html.purple-indigo #voice-selection:focus,
+html.purple-indigo .sidebar select:focus,
 body.purple-indigo #voice-selection:focus,
 body.purple-indigo .sidebar select:focus {
     outline: 2px solid rgba(0, 240, 255, 0.35);
@@ -187,6 +212,7 @@ body.purple-indigo .sidebar select:focus {
 /* ==================================
 RESULTS / PANELS / THUMBNAILS
 ================================== */
+html.purple-indigo .results-container,
 body.purple-indigo .results-container {
     background: var(--app-results-bg);
     border: 1px solid rgba(185, 131, 255, 0.18);
@@ -195,10 +221,12 @@ body.purple-indigo .results-container {
     backdrop-filter: blur(4px);
 }
 
+html.purple-indigo #drawingList,
 body.purple-indigo #drawingList {
     color: var(--app-results-text);
 }
 
+html.purple-indigo .thumbnail,
 body.purple-indigo .thumbnail {
     background: rgba(72, 35, 122, 0.92);
     border: 1px solid var(--app-thumbnail-border);
@@ -208,42 +236,50 @@ body.purple-indigo .thumbnail {
 /* ==================================
 COMMENT POPUP
 ================================== */
+html.purple-indigo #commentPopup,
 body.purple-indigo #commentPopup {
     background: var(--app-popup-bg);
     border: 1px solid rgba(185, 131, 255, 0.18);
     box-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
 }
 
+html.purple-indigo #commentForm h2,
 body.purple-indigo #commentForm h2 {
     color: var(--app-popup-accent);
     letter-spacing: 0.02em;
 }
 
+html.purple-indigo #commentForm textarea,
 body.purple-indigo #commentForm textarea {
     background: rgba(72, 35, 122, 0.96);
     color: var(--app-popup-text);
     border: 1px solid rgba(185, 131, 255, 0.24);
 }
 
+html.purple-indigo #commentForm textarea::placeholder,
 body.purple-indigo #commentForm textarea::placeholder {
     color: rgba(248, 247, 255, 0.58);
 }
 
+html.purple-indigo #commentForm textarea:focus,
 body.purple-indigo #commentForm textarea:focus {
     border-color: rgba(0, 240, 255, 0.38);
     box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.12);
 }
 
+html.purple-indigo #commentForm button,
 body.purple-indigo #commentForm button {
     background: linear-gradient(180deg, rgba(86, 42, 145, 0.98) 0%, rgba(61, 36, 108, 0.98) 100%);
     color: var(--app-popup-text);
     border: 1px solid rgba(185, 131, 255, 0.18);
 }
 
+html.purple-indigo #commentForm button:hover,
 body.purple-indigo #commentForm button:hover {
     background: linear-gradient(180deg, rgba(103, 58, 183, 0.98) 0%, rgba(78, 42, 135, 0.98) 100%);
 }
 
+html.purple-indigo #commentForm button[type="submit"],
 body.purple-indigo #commentForm button[type="submit"] {
     background: linear-gradient(180deg, #6cf6ff 0%, #00F0FF 100%);
     color: var(--app-popup-submit-text);
@@ -251,6 +287,7 @@ body.purple-indigo #commentForm button[type="submit"] {
     font-weight: 700;
 }
 
+html.purple-indigo #commentForm button[type="submit"]:hover,
 body.purple-indigo #commentForm button[type="submit"]:hover {
     background: linear-gradient(180deg, #8ef8ff 0%, #00d8e6 100%);
 }
@@ -258,14 +295,17 @@ body.purple-indigo #commentForm button[type="submit"]:hover {
 /* ==================================
 LINKS / SPECIAL STATES
 ================================== */
+html.purple-indigo a,
 body.purple-indigo a {
     color: #d8c9ff;
 }
 
+html.purple-indigo a:hover,
 body.purple-indigo a:hover {
     color: #00F0FF;
 }
 
+html.purple-indigo .logout-button,
 body.purple-indigo .logout-button {
     color: #ffbfdf !important;
 }
@@ -273,6 +313,18 @@ body.purple-indigo .logout-button {
 /* ==================================
 ACCESSIBILITY / FOCUS
 ================================== */
+html.purple-indigo .hamburger:focus-visible,
+html.purple-indigo .toggle-button:focus-visible,
+html.purple-indigo .sidebar button:focus-visible,
+html.purple-indigo .sidebar a:focus-visible,
+html.purple-indigo .sidebar select:focus-visible,
+html.purple-indigo #commentForm textarea:focus-visible,
+html.purple-indigo #commentForm button:focus-visible,
+html.purple-indigo .mt-toggle-btn:focus-visible,
+html.purple-indigo .neppy-btn:focus-visible,
+html.purple-indigo .neppy-input:focus-visible,
+html.purple-indigo .neppy-select:focus-visible,
+html.purple-indigo .neppy-textarea:focus-visible,
 body.purple-indigo .hamburger:focus-visible,
 body.purple-indigo .toggle-button:focus-visible,
 body.purple-indigo .sidebar button:focus-visible,
@@ -292,34 +344,48 @@ body.purple-indigo .neppy-textarea:focus-visible {
 /* ==================================
 NEPPY UTILITY CLASS SUPPORT
 ================================== */
+html.purple-indigo .neppy-card,
+html.purple-indigo .neppy-card-soft,
 body.purple-indigo .neppy-card,
 body.purple-indigo .neppy-card-soft {
     background: var(--neppy-surface);
     border-color: var(--neppy-line);
 }
 
+html.purple-indigo .neppy-title,
+html.purple-indigo .neppy-panel-title,
 body.purple-indigo .neppy-title,
 body.purple-indigo .neppy-panel-title {
     color: var(--neppy-heading);
 }
 
+html.purple-indigo .neppy-subtitle,
+html.purple-indigo .neppy-label,
+html.purple-indigo .neppy-text-muted,
 body.purple-indigo .neppy-subtitle,
 body.purple-indigo .neppy-label,
 body.purple-indigo .neppy-text-muted {
     color: var(--neppy-muted) !important;
 }
 
+html.purple-indigo .neppy-btn,
 body.purple-indigo .neppy-btn {
     background: linear-gradient(180deg, rgba(86, 42, 145, 0.98) 0%, rgba(61, 36, 108, 0.98) 100%);
     color: var(--neppy-text);
     border-color: var(--neppy-line);
 }
 
+html.purple-indigo .neppy-btn:hover,
 body.purple-indigo .neppy-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, rgba(103, 58, 183, 0.98) 0%, rgba(78, 42, 135, 0.98) 100%);
 }
 
+html.purple-indigo .neppy-input,
+html.purple-indigo .neppy-select,
+html.purple-indigo .neppy-textarea,
+html.purple-indigo .neppy-mono,
+html.purple-indigo .neppy-code,
 body.purple-indigo .neppy-input,
 body.purple-indigo .neppy-select,
 body.purple-indigo .neppy-textarea,
@@ -330,6 +396,9 @@ body.purple-indigo .neppy-code {
     border-color: var(--neppy-line);
 }
 
+html.purple-indigo .neppy-input:focus,
+html.purple-indigo .neppy-select:focus,
+html.purple-indigo .neppy-textarea:focus,
 body.purple-indigo .neppy-input:focus,
 body.purple-indigo .neppy-select:focus,
 body.purple-indigo .neppy-textarea:focus {
@@ -341,23 +410,28 @@ body.purple-indigo .neppy-textarea:focus {
 MODULE TEMPLATE PANEL LAYOUT THEME
 Styles the standardized .mt-* module templates
 ================================== */
+html.purple-indigo .mt-layout,
 body.purple-indigo .mt-layout {
     color: var(--neppy-text);
 }
 
+html.purple-indigo .mt-layout-header,
 body.purple-indigo .mt-layout-header {
     border-bottom: 2px solid rgba(0, 240, 255, 0.22);
 }
 
+html.purple-indigo .mt-layout-title,
 body.purple-indigo .mt-layout-title {
     color: var(--neppy-accent);
     letter-spacing: 0.02em;
 }
 
+html.purple-indigo .mt-layout-description,
 body.purple-indigo .mt-layout-description {
     color: var(--neppy-muted);
 }
 
+html.purple-indigo .mt-panel,
 body.purple-indigo .mt-panel {
     background: var(--neppy-surface);
     border: 1px solid var(--neppy-line);
@@ -366,20 +440,24 @@ body.purple-indigo .mt-panel {
     backdrop-filter: blur(4px);
 }
 
+html.purple-indigo .mt-panel:hover,
 body.purple-indigo .mt-panel:hover {
     border-color: var(--neppy-accent);
     box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
 }
 
+html.purple-indigo .mt-panel-header,
 body.purple-indigo .mt-panel-header {
     background: rgba(255, 255, 255, 0.04);
     border-bottom: 1px solid var(--neppy-line);
 }
 
+html.purple-indigo .mt-panel-title,
 body.purple-indigo .mt-panel-title {
     color: var(--neppy-accent);
 }
 
+html.purple-indigo .mt-toggle-btn,
 body.purple-indigo .mt-toggle-btn {
     background: linear-gradient(180deg, rgba(86, 42, 145, 0.98) 0%, rgba(61, 36, 108, 0.98) 100%);
     border: 1px solid var(--neppy-line);
@@ -388,26 +466,31 @@ body.purple-indigo .mt-toggle-btn {
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
 }
 
+html.purple-indigo .mt-toggle-btn:hover,
 body.purple-indigo .mt-toggle-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, rgba(103, 58, 183, 0.98) 0%, rgba(78, 42, 135, 0.98) 100%);
     color: var(--neppy-text);
 }
 
+html.purple-indigo .mt-panel.is-collapsed .mt-toggle-btn,
 body.purple-indigo .mt-panel.is-collapsed .mt-toggle-btn {
     background: linear-gradient(180deg, #7b2b50 0%, #60203d 100%);
     border-color: rgba(255, 157, 183, 0.35);
     color: #ffffff;
 }
 
+html.purple-indigo .mt-panel-body,
 body.purple-indigo .mt-panel-body {
     color: var(--neppy-text);
 }
 
+html.purple-indigo .mt-panel-content,
 body.purple-indigo .mt-panel-content {
     gap: 12px;
 }
 
+html.purple-indigo .mt-item,
 body.purple-indigo .mt-item {
     background: rgba(72, 35, 122, 0.92);
     border: 1px solid var(--neppy-line);
@@ -415,11 +498,13 @@ body.purple-indigo .mt-item {
     border-radius: 8px;
 }
 
+html.purple-indigo .mt-item:hover,
 body.purple-indigo .mt-item:hover {
     background: rgba(0, 240, 255, 0.08);
     border-color: var(--neppy-accent);
 }
 
+html.purple-indigo .mt-item.is-active,
 body.purple-indigo .mt-item.is-active {
     background: rgba(0, 240, 255, 0.16);
     border-color: var(--neppy-accent);

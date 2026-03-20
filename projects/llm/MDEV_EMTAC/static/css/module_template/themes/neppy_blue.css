@@ -15,7 +15,9 @@ Role:
 /* ==================================
 THEME VARIABLE OVERRIDES
 These override the defaults defined in base.css
+Apply by adding class="neppy-blue" to html or body
 ================================== */
+html.neppy-blue,
 body.neppy-blue {
     --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
@@ -59,6 +61,7 @@ body.neppy-blue {
 NEPPY-SPECIFIC TOKENS
 Used by reusable neppy-* utility classes
 ================================== */
+html.neppy-blue,
 body.neppy-blue {
     --neppy-surface: rgba(8, 20, 34, 0.88);
     --neppy-surface-2: rgba(12, 28, 46, 0.92);
@@ -107,46 +110,56 @@ GLOBAL THEME POLISH
 These enhance the base layout visually
 without taking over structure.
 ================================== */
+html.neppy-blue,
 body.neppy-blue {
     color: var(--neppy-text);
     background: var(--app-page-bg);
     line-height: 1.45;
 }
 
+html.neppy-blue .banner,
 body.neppy-blue .banner {
     letter-spacing: 0.04em;
     box-shadow: var(--app-shadow-sm);
 }
 
+html.neppy-blue .banner a,
 body.neppy-blue .banner a {
     font-weight: 600;
 }
 
+html.neppy-blue .sidebar,
 body.neppy-blue .sidebar {
     backdrop-filter: blur(6px);
     box-shadow: inset -1px 0 0 rgba(122, 150, 182, 0.18);
 }
 
+html.neppy-blue .sidebar h1,
 body.neppy-blue .sidebar h1 {
     color: var(--neppy-heading);
     letter-spacing: 0.02em;
 }
 
+html.neppy-blue .welcome-message,
 body.neppy-blue .welcome-message {
     color: var(--app-sidebar-text);
 }
 
+html.neppy-blue .user-level,
+html.neppy-blue .model-display-section,
 body.neppy-blue .user-level,
 body.neppy-blue .model-display-section {
     color: var(--neppy-muted);
 }
 
+html.neppy-blue .nav-link.highlight,
 body.neppy-blue .nav-link.highlight {
     color: var(--neppy-accent);
     background-color: rgba(54, 200, 246, 0.10);
     border-left: 3px solid var(--neppy-accent);
 }
 
+html.neppy-blue .content,
 body.neppy-blue .content {
     background: linear-gradient(180deg, rgba(7, 21, 34, 0.96) 0%, rgba(5, 16, 27, 0.98) 100%);
 }
@@ -154,6 +167,7 @@ body.neppy-blue .content {
 /* ==================================
 REUSABLE NEPPY WRAPPERS
 ================================== */
+html.neppy-blue .neppy-wrap,
 body.neppy-blue .neppy-wrap {
     width: 100%;
     max-width: 1400px;
@@ -161,6 +175,7 @@ body.neppy-blue .neppy-wrap {
     padding: var(--neppy-space-4);
 }
 
+html.neppy-blue .neppy-section,
 body.neppy-blue .neppy-section {
     margin-bottom: var(--neppy-space-5);
 }
@@ -168,6 +183,7 @@ body.neppy-blue .neppy-section {
 /* ==================================
 TYPOGRAPHY HELPERS
 ================================== */
+html.neppy-blue .neppy-title,
 body.neppy-blue .neppy-title {
     margin: 0 0 var(--neppy-space-3) 0;
     color: var(--neppy-heading);
@@ -176,12 +192,14 @@ body.neppy-blue .neppy-title {
     letter-spacing: 0.02em;
 }
 
+html.neppy-blue .neppy-subtitle,
 body.neppy-blue .neppy-subtitle {
     margin: 0 0 var(--neppy-space-4) 0;
     color: var(--neppy-muted);
     font-size: 0.98rem;
 }
 
+html.neppy-blue .neppy-panel-title,
 body.neppy-blue .neppy-panel-title {
     margin: 0 0 var(--neppy-space-3) 0;
     color: var(--neppy-heading);
@@ -189,6 +207,7 @@ body.neppy-blue .neppy-panel-title {
     font-weight: 700;
 }
 
+html.neppy-blue .neppy-label,
 body.neppy-blue .neppy-label {
     display: inline-block;
     margin-bottom: 6px;
@@ -200,6 +219,7 @@ body.neppy-blue .neppy-label {
 /* ==================================
 CARDS / PANELS
 ================================== */
+html.neppy-blue .neppy-card,
 body.neppy-blue .neppy-card {
     background: var(--neppy-surface);
     border: 1px solid var(--neppy-line);
@@ -209,6 +229,7 @@ body.neppy-blue .neppy-card {
     backdrop-filter: blur(4px);
 }
 
+html.neppy-blue .neppy-card-soft,
 body.neppy-blue .neppy-card-soft {
     background: var(--neppy-surface-2);
     border: 1px solid var(--neppy-line);
@@ -219,6 +240,7 @@ body.neppy-blue .neppy-card-soft {
 /* ==================================
 LAYOUT UTILITIES
 ================================== */
+html.neppy-blue .neppy-row,
 body.neppy-blue .neppy-row {
     display: flex;
     flex-wrap: wrap;
@@ -226,30 +248,37 @@ body.neppy-blue .neppy-row {
     align-items: center;
 }
 
+html.neppy-blue .neppy-col,
 body.neppy-blue .neppy-col {
     display: flex;
     flex-direction: column;
     gap: var(--neppy-space-3);
 }
 
+html.neppy-blue .neppy-grid,
 body.neppy-blue .neppy-grid {
     display: grid;
     gap: var(--neppy-space-3);
 }
 
+html.neppy-blue .neppy-grid-2,
 body.neppy-blue .neppy-grid-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+html.neppy-blue .neppy-grid-3,
 body.neppy-blue .neppy-grid-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+html.neppy-blue .neppy-grid-auto,
 body.neppy-blue .neppy-grid-auto {
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
 
 @media (max-width: 900px) {
+    html.neppy-blue .neppy-grid-2,
+    html.neppy-blue .neppy-grid-3,
     body.neppy-blue .neppy-grid-2,
     body.neppy-blue .neppy-grid-3 {
         grid-template-columns: 1fr;
@@ -259,6 +288,7 @@ body.neppy-blue .neppy-grid-auto {
 /* ==================================
 BUTTONS
 ================================== */
+html.neppy-blue .neppy-btn,
 body.neppy-blue .neppy-btn {
     appearance: none;
     border: 1px solid var(--neppy-line);
@@ -277,29 +307,35 @@ body.neppy-blue .neppy-btn {
     box-shadow: var(--neppy-shadow-sm);
 }
 
+html.neppy-blue .neppy-btn:hover,
 body.neppy-blue .neppy-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, #123454 0%, #0b2339 100%);
 }
 
+html.neppy-blue .neppy-btn:active,
 body.neppy-blue .neppy-btn:active {
     transform: translateY(1px);
 }
 
+html.neppy-blue .neppy-btn:disabled,
 body.neppy-blue .neppy-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
 
+html.neppy-blue .neppy-btn-primary,
 body.neppy-blue .neppy-btn-primary {
     border-color: rgba(54, 200, 246, 0.35);
     box-shadow: 0 0 0 1px rgba(54, 200, 246, 0.08), var(--neppy-shadow-sm);
 }
 
+html.neppy-blue .neppy-btn-success,
 body.neppy-blue .neppy-btn-success {
     border-color: rgba(42, 199, 122, 0.35);
 }
 
+html.neppy-blue .neppy-btn-danger,
 body.neppy-blue .neppy-btn-danger {
     border-color: rgba(255, 107, 107, 0.35);
 }
@@ -307,6 +343,9 @@ body.neppy-blue .neppy-btn-danger {
 /* ==================================
 FORM CONTROLS
 ================================== */
+html.neppy-blue .neppy-input,
+html.neppy-blue .neppy-select,
+html.neppy-blue .neppy-textarea,
 body.neppy-blue .neppy-input,
 body.neppy-blue .neppy-select,
 body.neppy-blue .neppy-textarea {
@@ -324,26 +363,36 @@ body.neppy-blue .neppy-textarea {
         background 0.15s ease;
 }
 
+html.neppy-blue .neppy-input::placeholder,
+html.neppy-blue .neppy-textarea::placeholder,
 body.neppy-blue .neppy-input::placeholder,
 body.neppy-blue .neppy-textarea::placeholder {
     color: #7f97b3;
 }
 
+html.neppy-blue .neppy-select,
 body.neppy-blue .neppy-select {
     cursor: pointer;
 }
 
+html.neppy-blue .neppy-textarea,
 body.neppy-blue .neppy-textarea {
     min-height: 120px;
     resize: vertical;
 }
 
+html.neppy-blue .neppy-input:hover,
+html.neppy-blue .neppy-select:hover,
+html.neppy-blue .neppy-textarea:hover,
 body.neppy-blue .neppy-input:hover,
 body.neppy-blue .neppy-select:hover,
 body.neppy-blue .neppy-textarea:hover {
     border-color: var(--neppy-line-strong);
 }
 
+html.neppy-blue .neppy-input:focus,
+html.neppy-blue .neppy-select:focus,
+html.neppy-blue .neppy-textarea:focus,
 body.neppy-blue .neppy-input:focus,
 body.neppy-blue .neppy-select:focus,
 body.neppy-blue .neppy-textarea:focus {
@@ -356,6 +405,7 @@ body.neppy-blue .neppy-textarea:focus {
 /* ==================================
 OUTPUT / STATUS BLOCKS
 ================================== */
+html.neppy-blue .neppy-mono,
 body.neppy-blue .neppy-mono {
     font-family: var(--neppy-font-mono);
     white-space: pre-wrap;
@@ -369,6 +419,7 @@ body.neppy-blue .neppy-mono {
     overflow-x: auto;
 }
 
+html.neppy-blue .neppy-code,
 body.neppy-blue .neppy-code {
     font-family: var(--neppy-font-mono);
     white-space: pre;
@@ -380,6 +431,7 @@ body.neppy-blue .neppy-code {
     color: #d8e7f6;
 }
 
+html.neppy-blue .neppy-status,
 body.neppy-blue .neppy-status {
     display: inline-flex;
     align-items: center;
@@ -391,6 +443,7 @@ body.neppy-blue .neppy-status {
 /* ==================================
 PILLS / BADGES
 ================================== */
+html.neppy-blue .neppy-pill,
 body.neppy-blue .neppy-pill {
     display: inline-block;
     border-radius: 999px;
@@ -400,16 +453,19 @@ body.neppy-blue .neppy-pill {
     line-height: 1.2;
 }
 
+html.neppy-blue .neppy-pill-ok,
 body.neppy-blue .neppy-pill-ok {
     color: var(--neppy-ok);
     background: var(--neppy-ok-soft);
 }
 
+html.neppy-blue .neppy-pill-warn,
 body.neppy-blue .neppy-pill-warn {
     color: var(--neppy-warn);
     background: var(--neppy-warn-soft);
 }
 
+html.neppy-blue .neppy-pill-bad,
 body.neppy-blue .neppy-pill-bad {
     color: var(--neppy-bad);
     background: var(--neppy-bad-soft);
@@ -418,41 +474,66 @@ body.neppy-blue .neppy-pill-bad {
 /* ==================================
 UTILITY HELPERS
 ================================== */
+html.neppy-blue .neppy-hidden,
 body.neppy-blue .neppy-hidden {
     display: none !important;
 }
 
+html.neppy-blue .neppy-text-muted,
 body.neppy-blue .neppy-text-muted {
     color: var(--neppy-muted) !important;
 }
 
+html.neppy-blue .neppy-text-accent,
 body.neppy-blue .neppy-text-accent {
     color: var(--neppy-accent) !important;
 }
 
+html.neppy-blue .neppy-center,
 body.neppy-blue .neppy-center {
     text-align: center;
 }
 
+html.neppy-blue .neppy-w-100,
 body.neppy-blue .neppy-w-100 {
     width: 100%;
 }
 
+html.neppy-blue .neppy-mt-0,
 body.neppy-blue .neppy-mt-0 { margin-top: 0 !important; }
+html.neppy-blue .neppy-mt-1,
 body.neppy-blue .neppy-mt-1 { margin-top: var(--neppy-space-1) !important; }
+html.neppy-blue .neppy-mt-2,
 body.neppy-blue .neppy-mt-2 { margin-top: var(--neppy-space-2) !important; }
+html.neppy-blue .neppy-mt-3,
 body.neppy-blue .neppy-mt-3 { margin-top: var(--neppy-space-3) !important; }
+html.neppy-blue .neppy-mt-4,
 body.neppy-blue .neppy-mt-4 { margin-top: var(--neppy-space-4) !important; }
 
+html.neppy-blue .neppy-mb-0,
 body.neppy-blue .neppy-mb-0 { margin-bottom: 0 !important; }
+html.neppy-blue .neppy-mb-1,
 body.neppy-blue .neppy-mb-1 { margin-bottom: var(--neppy-space-1) !important; }
+html.neppy-blue .neppy-mb-2,
 body.neppy-blue .neppy-mb-2 { margin-bottom: var(--neppy-space-2) !important; }
+html.neppy-blue .neppy-mb-3,
 body.neppy-blue .neppy-mb-3 { margin-bottom: var(--neppy-space-3) !important; }
+html.neppy-blue .neppy-mb-4,
 body.neppy-blue .neppy-mb-4 { margin-bottom: var(--neppy-space-4) !important; }
 
 /* ==================================
 ACCESSIBILITY / FOCUS
 ================================== */
+html.neppy-blue .neppy-btn:focus-visible,
+html.neppy-blue .neppy-input:focus-visible,
+html.neppy-blue .neppy-select:focus-visible,
+html.neppy-blue .neppy-textarea:focus-visible,
+html.neppy-blue a.neppy-btn:focus-visible,
+html.neppy-blue button.neppy-btn:focus-visible,
+html.neppy-blue .sidebar button:focus-visible,
+html.neppy-blue .sidebar a:focus-visible,
+html.neppy-blue .sidebar select:focus-visible,
+html.neppy-blue .mt-toggle-btn:focus-visible,
 body.neppy-blue .neppy-btn:focus-visible,
 body.neppy-blue .neppy-input:focus-visible,
 body.neppy-blue .neppy-select:focus-visible,
@@ -471,23 +552,28 @@ body.neppy-blue .mt-toggle-btn:focus-visible {
 MODULE TEMPLATE PANEL LAYOUT THEME
 Styles the standardized .mt-* module templates
 ================================== */
+html.neppy-blue .mt-layout,
 body.neppy-blue .mt-layout {
     color: var(--neppy-text);
 }
 
+html.neppy-blue .mt-layout-header,
 body.neppy-blue .mt-layout-header {
     border-bottom: 2px solid rgba(54, 200, 246, 0.25);
 }
 
+html.neppy-blue .mt-layout-title,
 body.neppy-blue .mt-layout-title {
     color: var(--neppy-accent);
     letter-spacing: 0.02em;
 }
 
+html.neppy-blue .mt-layout-description,
 body.neppy-blue .mt-layout-description {
     color: var(--neppy-muted);
 }
 
+html.neppy-blue .mt-panel,
 body.neppy-blue .mt-panel {
     background: var(--neppy-surface);
     border: 1px solid var(--neppy-line);
@@ -496,20 +582,24 @@ body.neppy-blue .mt-panel {
     backdrop-filter: blur(4px);
 }
 
+html.neppy-blue .mt-panel:hover,
 body.neppy-blue .mt-panel:hover {
     border-color: var(--neppy-accent);
     box-shadow: var(--neppy-shadow-md);
 }
 
+html.neppy-blue .mt-panel-header,
 body.neppy-blue .mt-panel-header {
     background: rgba(255, 255, 255, 0.04);
     border-bottom: 1px solid var(--neppy-line);
 }
 
+html.neppy-blue .mt-panel-title,
 body.neppy-blue .mt-panel-title {
     color: var(--neppy-accent);
 }
 
+html.neppy-blue .mt-toggle-btn,
 body.neppy-blue .mt-toggle-btn {
     background: linear-gradient(180deg, #0d2944 0%, #091d31 100%);
     border: 1px solid var(--neppy-line);
@@ -518,26 +608,31 @@ body.neppy-blue .mt-toggle-btn {
     box-shadow: var(--neppy-shadow-sm);
 }
 
+html.neppy-blue .mt-toggle-btn:hover,
 body.neppy-blue .mt-toggle-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, #123454 0%, #0b2339 100%);
     color: var(--neppy-text);
 }
 
+html.neppy-blue .mt-panel.is-collapsed .mt-toggle-btn,
 body.neppy-blue .mt-panel.is-collapsed .mt-toggle-btn {
     background: linear-gradient(180deg, #7a1f2b 0%, #5e1721 100%);
     border-color: rgba(255, 107, 107, 0.40);
     color: #ffffff;
 }
 
+html.neppy-blue .mt-panel-body,
 body.neppy-blue .mt-panel-body {
     color: var(--neppy-text);
 }
 
+html.neppy-blue .mt-panel-content,
 body.neppy-blue .mt-panel-content {
     gap: var(--neppy-space-3);
 }
 
+html.neppy-blue .mt-item,
 body.neppy-blue .mt-item {
     background: rgba(4, 16, 27, 0.85);
     border: 1px solid var(--neppy-line);
@@ -545,11 +640,13 @@ body.neppy-blue .mt-item {
     border-radius: var(--neppy-radius-sm);
 }
 
+html.neppy-blue .mt-item:hover,
 body.neppy-blue .mt-item:hover {
     background: rgba(54, 200, 246, 0.08);
     border-color: var(--neppy-accent);
 }
 
+html.neppy-blue .mt-item.is-active,
 body.neppy-blue .mt-item.is-active {
     background: rgba(54, 200, 246, 0.16);
     border-color: var(--neppy-accent);

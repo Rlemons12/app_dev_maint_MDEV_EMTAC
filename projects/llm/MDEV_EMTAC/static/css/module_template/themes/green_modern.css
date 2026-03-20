@@ -14,8 +14,9 @@ Role:
 
 /* ==================================
 THEME VARIABLE OVERRIDES
-Apply by adding class="green-modern" to body
+Apply by adding class="green-modern" to html or body
 ================================== */
+html.green-modern,
 body.green-modern {
     --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
@@ -68,6 +69,7 @@ body.green-modern {
 NEPPY TOKEN OVERRIDES
 Supports reusable neppy-* utility classes
 ================================== */
+html.green-modern,
 body.green-modern {
     --neppy-surface: rgba(18, 53, 36, 0.78);
     --neppy-surface-2: rgba(14, 43, 27, 0.90);
@@ -95,35 +97,43 @@ body.green-modern {
 /* ==================================
 GLOBAL POLISH
 ================================== */
+html.green-modern .banner,
 body.green-modern .banner {
     letter-spacing: 0.03em;
     box-shadow: var(--app-shadow-sm);
 }
 
+html.green-modern .banner a,
 body.green-modern .banner a {
     font-weight: 600;
 }
 
+html.green-modern .sidebar,
 body.green-modern .sidebar {
     backdrop-filter: blur(5px);
     box-shadow: inset -1px 0 0 rgba(18, 53, 36, 0.14);
 }
 
+html.green-modern .sidebar h1,
 body.green-modern .sidebar h1 {
     color: #0b2216;
     letter-spacing: 0.02em;
 }
 
+html.green-modern .welcome-message,
 body.green-modern .welcome-message {
     color: #123524;
     font-weight: 600;
 }
 
+html.green-modern .user-level,
+html.green-modern .model-display-section,
 body.green-modern .user-level,
 body.green-modern .model-display-section {
     color: rgba(18, 53, 36, 0.78);
 }
 
+html.green-modern .content,
 body.green-modern .content {
     background: linear-gradient(180deg, rgba(18, 53, 36, 0.82) 0%, rgba(10, 31, 20, 0.90) 100%);
     color: var(--app-content-text);
@@ -132,6 +142,10 @@ body.green-modern .content {
 /* ==================================
 SIDEBAR NAV / INTERACTION POLISH
 ================================== */
+html.green-modern .nav-link,
+html.green-modern .sidebar a,
+html.green-modern .sidebar button,
+html.green-modern .sidebar select,
 body.green-modern .nav-link,
 body.green-modern .sidebar a,
 body.green-modern .sidebar button,
@@ -139,6 +153,10 @@ body.green-modern .sidebar select {
     color: var(--app-sidebar-link);
 }
 
+html.green-modern .nav-link:hover,
+html.green-modern .sidebar a:hover,
+html.green-modern .sidebar button:hover,
+html.green-modern .sidebar select:hover,
 body.green-modern .nav-link:hover,
 body.green-modern .sidebar a:hover,
 body.green-modern .sidebar button:hover,
@@ -147,6 +165,7 @@ body.green-modern .sidebar select:hover {
     background-color: var(--app-sidebar-hover-bg);
 }
 
+html.green-modern .nav-link.highlight,
 body.green-modern .nav-link.highlight {
     color: var(--app-sidebar-hover);
     background-color: rgba(195, 255, 0, 0.12);
@@ -156,6 +175,7 @@ body.green-modern .nav-link.highlight {
 /* ==================================
 STANDARD CONTROLS
 ================================== */
+html.green-modern .toggle-button,
 body.green-modern .toggle-button {
     background: linear-gradient(180deg, rgba(23, 67, 42, 0.98) 0%, rgba(14, 43, 27, 0.98) 100%) !important;
     color: var(--app-control-text) !important;
@@ -165,11 +185,14 @@ body.green-modern .toggle-button {
     font-weight: 600;
 }
 
+html.green-modern .toggle-button:hover,
 body.green-modern .toggle-button:hover {
     background: linear-gradient(180deg, rgba(32, 87, 54, 0.98) 0%, rgba(18, 57, 35, 0.98) 100%) !important;
     border-color: rgba(195, 255, 0, 0.35) !important;
 }
 
+html.green-modern #voice-selection,
+html.green-modern .sidebar select,
 body.green-modern #voice-selection,
 body.green-modern .sidebar select {
     background-color: rgba(14, 43, 27, 0.95);
@@ -178,6 +201,8 @@ body.green-modern .sidebar select {
     border-radius: 5px;
 }
 
+html.green-modern #voice-selection:focus,
+html.green-modern .sidebar select:focus,
 body.green-modern #voice-selection:focus,
 body.green-modern .sidebar select:focus {
     outline: 2px solid rgba(195, 255, 0, 0.35);
@@ -187,6 +212,7 @@ body.green-modern .sidebar select:focus {
 /* ==================================
 RESULTS / PANELS / THUMBNAILS
 ================================== */
+html.green-modern .results-container,
 body.green-modern .results-container {
     background: var(--app-results-bg);
     border: 1px solid rgba(216, 225, 233, 0.12);
@@ -195,10 +221,12 @@ body.green-modern .results-container {
     backdrop-filter: blur(4px);
 }
 
+html.green-modern #drawingList,
 body.green-modern #drawingList {
     color: var(--app-results-text);
 }
 
+html.green-modern .thumbnail,
 body.green-modern .thumbnail {
     background: rgba(15, 43, 28, 0.90);
     border: 1px solid var(--app-thumbnail-border);
@@ -208,42 +236,50 @@ body.green-modern .thumbnail {
 /* ==================================
 COMMENT POPUP
 ================================== */
+html.green-modern #commentPopup,
 body.green-modern #commentPopup {
     background: var(--app-popup-bg);
     border: 1px solid rgba(216, 225, 233, 0.14);
     box-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
 }
 
+html.green-modern #commentForm h2,
 body.green-modern #commentForm h2 {
     color: var(--app-popup-accent);
     letter-spacing: 0.02em;
 }
 
+html.green-modern #commentForm textarea,
 body.green-modern #commentForm textarea {
     background: rgba(14, 43, 27, 0.96);
     color: var(--app-popup-text);
     border: 1px solid rgba(216, 225, 233, 0.18);
 }
 
+html.green-modern #commentForm textarea::placeholder,
 body.green-modern #commentForm textarea::placeholder {
     color: rgba(216, 225, 233, 0.58);
 }
 
+html.green-modern #commentForm textarea:focus,
 body.green-modern #commentForm textarea:focus {
     border-color: rgba(195, 255, 0, 0.38);
     box-shadow: 0 0 0 3px rgba(195, 255, 0, 0.12);
 }
 
+html.green-modern #commentForm button,
 body.green-modern #commentForm button {
     background: linear-gradient(180deg, rgba(23, 67, 42, 0.98) 0%, rgba(14, 43, 27, 0.98) 100%);
     color: var(--app-popup-text);
     border: 1px solid rgba(216, 225, 233, 0.14);
 }
 
+html.green-modern #commentForm button:hover,
 body.green-modern #commentForm button:hover {
     background: linear-gradient(180deg, rgba(32, 87, 54, 0.98) 0%, rgba(18, 57, 35, 0.98) 100%);
 }
 
+html.green-modern #commentForm button[type="submit"],
 body.green-modern #commentForm button[type="submit"] {
     background: linear-gradient(180deg, #d3ff4d 0%, #C3FF00 100%);
     color: var(--app-popup-submit-text);
@@ -251,6 +287,7 @@ body.green-modern #commentForm button[type="submit"] {
     font-weight: 700;
 }
 
+html.green-modern #commentForm button[type="submit"]:hover,
 body.green-modern #commentForm button[type="submit"]:hover {
     background: linear-gradient(180deg, #dfff6a 0%, #b4f000 100%);
 }
@@ -258,14 +295,17 @@ body.green-modern #commentForm button[type="submit"]:hover {
 /* ==================================
 LINKS / SPECIAL STATES
 ================================== */
+html.green-modern a,
 body.green-modern a {
     color: #b7f5c3;
 }
 
+html.green-modern a:hover,
 body.green-modern a:hover {
     color: #C3FF00;
 }
 
+html.green-modern .logout-button,
 body.green-modern .logout-button {
     color: #fff3a3 !important;
 }
@@ -273,6 +313,18 @@ body.green-modern .logout-button {
 /* ==================================
 ACCESSIBILITY / FOCUS
 ================================== */
+html.green-modern .hamburger:focus-visible,
+html.green-modern .toggle-button:focus-visible,
+html.green-modern .sidebar button:focus-visible,
+html.green-modern .sidebar a:focus-visible,
+html.green-modern .sidebar select:focus-visible,
+html.green-modern #commentForm textarea:focus-visible,
+html.green-modern #commentForm button:focus-visible,
+html.green-modern .mt-toggle-btn:focus-visible,
+html.green-modern .neppy-btn:focus-visible,
+html.green-modern .neppy-input:focus-visible,
+html.green-modern .neppy-select:focus-visible,
+html.green-modern .neppy-textarea:focus-visible,
 body.green-modern .hamburger:focus-visible,
 body.green-modern .toggle-button:focus-visible,
 body.green-modern .sidebar button:focus-visible,
@@ -292,34 +344,48 @@ body.green-modern .neppy-textarea:focus-visible {
 /* ==================================
 NEPPY UTILITY CLASS SUPPORT
 ================================== */
+html.green-modern .neppy-card,
+html.green-modern .neppy-card-soft,
 body.green-modern .neppy-card,
 body.green-modern .neppy-card-soft {
     background: var(--neppy-surface);
     border-color: var(--neppy-line);
 }
 
+html.green-modern .neppy-title,
+html.green-modern .neppy-panel-title,
 body.green-modern .neppy-title,
 body.green-modern .neppy-panel-title {
     color: var(--neppy-heading);
 }
 
+html.green-modern .neppy-subtitle,
+html.green-modern .neppy-label,
+html.green-modern .neppy-text-muted,
 body.green-modern .neppy-subtitle,
 body.green-modern .neppy-label,
 body.green-modern .neppy-text-muted {
     color: var(--neppy-muted) !important;
 }
 
+html.green-modern .neppy-btn,
 body.green-modern .neppy-btn {
     background: linear-gradient(180deg, rgba(23, 67, 42, 0.98) 0%, rgba(14, 43, 27, 0.98) 100%);
     color: var(--neppy-text);
     border-color: var(--neppy-line);
 }
 
+html.green-modern .neppy-btn:hover,
 body.green-modern .neppy-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, rgba(32, 87, 54, 0.98) 0%, rgba(18, 57, 35, 0.98) 100%);
 }
 
+html.green-modern .neppy-input,
+html.green-modern .neppy-select,
+html.green-modern .neppy-textarea,
+html.green-modern .neppy-mono,
+html.green-modern .neppy-code,
 body.green-modern .neppy-input,
 body.green-modern .neppy-select,
 body.green-modern .neppy-textarea,
@@ -330,6 +396,9 @@ body.green-modern .neppy-code {
     border-color: var(--neppy-line);
 }
 
+html.green-modern .neppy-input:focus,
+html.green-modern .neppy-select:focus,
+html.green-modern .neppy-textarea:focus,
 body.green-modern .neppy-input:focus,
 body.green-modern .neppy-select:focus,
 body.green-modern .neppy-textarea:focus {
@@ -341,23 +410,28 @@ body.green-modern .neppy-textarea:focus {
 MODULE TEMPLATE PANEL LAYOUT THEME
 Styles the standardized .mt-* module templates
 ================================== */
+html.green-modern .mt-layout,
 body.green-modern .mt-layout {
     color: var(--neppy-text);
 }
 
+html.green-modern .mt-layout-header,
 body.green-modern .mt-layout-header {
     border-bottom: 2px solid rgba(195, 255, 0, 0.22);
 }
 
+html.green-modern .mt-layout-title,
 body.green-modern .mt-layout-title {
     color: var(--neppy-accent);
     letter-spacing: 0.02em;
 }
 
+html.green-modern .mt-layout-description,
 body.green-modern .mt-layout-description {
     color: var(--neppy-muted);
 }
 
+html.green-modern .mt-panel,
 body.green-modern .mt-panel {
     background: var(--neppy-surface);
     border: 1px solid var(--neppy-line);
@@ -366,20 +440,24 @@ body.green-modern .mt-panel {
     backdrop-filter: blur(4px);
 }
 
+html.green-modern .mt-panel:hover,
 body.green-modern .mt-panel:hover {
     border-color: var(--neppy-accent);
     box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
 }
 
+html.green-modern .mt-panel-header,
 body.green-modern .mt-panel-header {
     background: rgba(255, 255, 255, 0.04);
     border-bottom: 1px solid var(--neppy-line);
 }
 
+html.green-modern .mt-panel-title,
 body.green-modern .mt-panel-title {
     color: var(--neppy-accent);
 }
 
+html.green-modern .mt-toggle-btn,
 body.green-modern .mt-toggle-btn {
     background: linear-gradient(180deg, rgba(23, 67, 42, 0.98) 0%, rgba(14, 43, 27, 0.98) 100%);
     border: 1px solid var(--neppy-line);
@@ -388,26 +466,31 @@ body.green-modern .mt-toggle-btn {
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
 }
 
+html.green-modern .mt-toggle-btn:hover,
 body.green-modern .mt-toggle-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, rgba(32, 87, 54, 0.98) 0%, rgba(18, 57, 35, 0.98) 100%);
     color: var(--neppy-text);
 }
 
+html.green-modern .mt-panel.is-collapsed .mt-toggle-btn,
 body.green-modern .mt-panel.is-collapsed .mt-toggle-btn {
     background: linear-gradient(180deg, #6f2f2f 0%, #572525 100%);
     border-color: rgba(255, 139, 139, 0.35);
     color: #ffffff;
 }
 
+html.green-modern .mt-panel-body,
 body.green-modern .mt-panel-body {
     color: var(--neppy-text);
 }
 
+html.green-modern .mt-panel-content,
 body.green-modern .mt-panel-content {
     gap: 12px;
 }
 
+html.green-modern .mt-item,
 body.green-modern .mt-item {
     background: rgba(14, 43, 27, 0.92);
     border: 1px solid var(--neppy-line);
@@ -415,11 +498,13 @@ body.green-modern .mt-item {
     border-radius: 8px;
 }
 
+html.green-modern .mt-item:hover,
 body.green-modern .mt-item:hover {
     background: rgba(195, 255, 0, 0.08);
     border-color: var(--neppy-accent);
 }
 
+html.green-modern .mt-item.is-active,
 body.green-modern .mt-item.is-active {
     background: rgba(195, 255, 0, 0.16);
     border-color: var(--neppy-accent);

@@ -14,47 +14,48 @@ Role:
 
 /* ==================================
 THEME VARIABLE OVERRIDES
-Apply by adding class="minimal-white-graphite" to body
+Apply by adding class="minimal-white-graphite" to html or body
 ================================== */
+html.minimal-white-graphite,
 body.minimal-white-graphite {
     --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
-    --app-page-bg: #FFFFFF;
-    --app-page-text: #2D2D2D;
+    --app-page-bg: #F3F3F3;
+    --app-page-text: #1A1A1A;
 
-    --app-banner-bg: linear-gradient(90deg, #ececf1 0%, #F2F2F7 45%, #fafafe 100%);
-    --app-banner-text: #2D2D2D;
-    --app-banner-link: #6E8EF5;
+    --app-banner-bg: linear-gradient(90deg, #f0f0f0 0%, #F5F5F5 45%, #fafafa 100%);
+    --app-banner-text: #1A1A1A;
+    --app-banner-link: #0078D4;
 
-    --app-sidebar-bg: rgba(242, 242, 247, 0.94);
-    --app-sidebar-text: #2D2D2D;
-    --app-sidebar-link: #2D2D2D;
-    --app-sidebar-hover: #6E8EF5;
-    --app-sidebar-hover-bg: rgba(110, 142, 245, 0.10);
-    --app-sidebar-border: rgba(45, 45, 45, 0.10);
+    --app-sidebar-bg: rgba(243, 243, 243, 0.98);
+    --app-sidebar-text: #1A1A1A;
+    --app-sidebar-link: #1A1A1A;
+    --app-sidebar-hover: #0078D4;
+    --app-sidebar-hover-bg: rgba(0, 120, 212, 0.08);
+    --app-sidebar-border: rgba(0, 0, 0, 0.08);
 
-    --app-content-bg: rgba(255, 255, 255, 0.86);
-    --app-content-text: #2D2D2D;
+    --app-content-bg: rgba(255, 255, 255, 0.96);
+    --app-content-text: #1A1A1A;
 
-    --app-control-bg: rgba(245, 246, 250, 0.96);
-    --app-control-text: #2D2D2D;
-    --app-control-border: rgba(45, 45, 45, 0.14);
-    --app-control-hover-bg: rgba(232, 236, 245, 0.98);
+    --app-control-bg: rgba(255, 255, 255, 0.98);
+    --app-control-text: #1A1A1A;
+    --app-control-border: rgba(0, 0, 0, 0.12);
+    --app-control-hover-bg: rgba(243, 243, 243, 0.98);
 
-    --app-popup-bg: rgba(255, 255, 255, 0.98);
-    --app-popup-text: #2D2D2D;
-    --app-popup-accent: #6E8EF5;
+    --app-popup-bg: rgba(255, 255, 255, 0.99);
+    --app-popup-text: #1A1A1A;
+    --app-popup-accent: #0078D4;
     --app-popup-submit-text: #ffffff;
 
-    --app-results-bg: rgba(242, 242, 247, 0.72);
-    --app-results-text: #2D2D2D;
+    --app-results-bg: rgba(255, 255, 255, 0.92);
+    --app-results-text: #1A1A1A;
 
-    --app-thumbnail-border: rgba(45, 45, 45, 0.12);
+    --app-thumbnail-border: rgba(0, 0, 0, 0.10);
 
-    --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.08);
-    --app-shadow-md: 0 16px 30px rgba(0, 0, 0, 0.12);
+    --app-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.06);
+    --app-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.10), 0 0 1px rgba(0, 0, 0, 0.08);
 
-    background: #FFFFFF;
+    background: #F3F3F3;
     background-image: url("/static/background_images/min_white_graphite.jpg");
     background-size: cover;
     background-repeat: no-repeat;
@@ -68,70 +69,85 @@ body.minimal-white-graphite {
 NEPPY TOKEN OVERRIDES
 Supports reusable neppy-* utility classes
 ================================== */
+html.minimal-white-graphite,
 body.minimal-white-graphite {
-    --neppy-surface: rgba(255, 255, 255, 0.84);
-    --neppy-surface-2: rgba(247, 248, 252, 0.92);
-    --neppy-line: rgba(45, 45, 45, 0.12);
-    --neppy-line-strong: rgba(45, 45, 45, 0.20);
+    --neppy-surface: rgba(255, 255, 255, 0.96);
+    --neppy-surface-2: rgba(243, 243, 243, 0.98);
+    --neppy-line: rgba(0, 0, 0, 0.10);
+    --neppy-line-strong: rgba(0, 0, 0, 0.18);
 
-    --neppy-text: #2D2D2D;
-    --neppy-muted: #6b7280;
-    --neppy-heading: #111827;
+    --neppy-text: #1A1A1A;
+    --neppy-muted: #605E5C;
+    --neppy-heading: #000000;
 
-    --neppy-accent: #6E8EF5;
-    --neppy-accent-soft: rgba(110, 142, 245, 0.14);
-    --neppy-accent-hover: #5878de;
+    --neppy-accent: #0078D4;
+    --neppy-accent-soft: rgba(0, 120, 212, 0.10);
+    --neppy-accent-hover: #106EBE;
 
-    --neppy-ok: #2fb36e;
-    --neppy-ok-soft: rgba(47, 179, 110, 0.14);
+    --neppy-ok: #107C10;
+    --neppy-ok-soft: rgba(16, 124, 16, 0.12);
 
-    --neppy-warn: #d4a017;
-    --neppy-warn-soft: rgba(212, 160, 23, 0.16);
+    --neppy-warn: #D83B01;
+    --neppy-warn-soft: rgba(216, 59, 1, 0.10);
 
-    --neppy-bad: #d65c5c;
-    --neppy-bad-soft: rgba(214, 92, 92, 0.14);
+    --neppy-bad: #A4262C;
+    --neppy-bad-soft: rgba(164, 38, 44, 0.10);
 }
 
 /* ==================================
 GLOBAL POLISH
 ================================== */
+html.minimal-white-graphite .banner,
 body.minimal-white-graphite .banner {
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
     box-shadow: var(--app-shadow-sm);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
+html.minimal-white-graphite .banner a,
 body.minimal-white-graphite .banner a {
     font-weight: 600;
 }
 
+html.minimal-white-graphite .sidebar,
 body.minimal-white-graphite .sidebar {
-    backdrop-filter: blur(6px);
-    box-shadow: inset -1px 0 0 rgba(45, 45, 45, 0.06);
+    backdrop-filter: blur(20px);
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.06);
 }
 
+html.minimal-white-graphite .sidebar h1,
 body.minimal-white-graphite .sidebar h1 {
     color: var(--neppy-heading);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
+    font-weight: 600;
 }
 
+html.minimal-white-graphite .welcome-message,
 body.minimal-white-graphite .welcome-message {
     color: var(--app-sidebar-text);
     font-weight: 600;
 }
 
+html.minimal-white-graphite .user-level,
+html.minimal-white-graphite .model-display-section,
 body.minimal-white-graphite .user-level,
 body.minimal-white-graphite .model-display-section {
-    color: #6b7280;
+    color: #605E5C;
 }
 
+html.minimal-white-graphite .content,
 body.minimal-white-graphite .content {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(245, 246, 250, 0.94) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(249, 249, 249, 0.98) 100%);
     color: var(--app-content-text);
 }
 
 /* ==================================
 SIDEBAR NAV / INTERACTION POLISH
 ================================== */
+html.minimal-white-graphite .nav-link,
+html.minimal-white-graphite .sidebar a,
+html.minimal-white-graphite .sidebar button,
+html.minimal-white-graphite .sidebar select,
 body.minimal-white-graphite .nav-link,
 body.minimal-white-graphite .sidebar a,
 body.minimal-white-graphite .sidebar button,
@@ -139,6 +155,10 @@ body.minimal-white-graphite .sidebar select {
     color: var(--app-sidebar-link);
 }
 
+html.minimal-white-graphite .nav-link:hover,
+html.minimal-white-graphite .sidebar a:hover,
+html.minimal-white-graphite .sidebar button:hover,
+html.minimal-white-graphite .sidebar select:hover,
 body.minimal-white-graphite .nav-link:hover,
 body.minimal-white-graphite .sidebar a:hover,
 body.minimal-white-graphite .sidebar button:hover,
@@ -147,132 +167,169 @@ body.minimal-white-graphite .sidebar select:hover {
     background-color: var(--app-sidebar-hover-bg);
 }
 
+html.minimal-white-graphite .nav-link.highlight,
 body.minimal-white-graphite .nav-link.highlight {
     color: var(--app-sidebar-hover);
-    background-color: rgba(110, 142, 245, 0.12);
+    background-color: rgba(0, 120, 212, 0.08);
     border-left: 3px solid var(--app-sidebar-hover);
 }
 
 /* ==================================
 STANDARD CONTROLS
 ================================== */
+html.minimal-white-graphite .toggle-button,
 body.minimal-white-graphite .toggle-button {
-    background: linear-gradient(180deg, #f3f5fa 0%, #e9edf5 100%) !important;
+    background: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%) !important;
     color: var(--app-control-text) !important;
     border: 1px solid var(--app-control-border) !important;
-    border-radius: 6px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
     font-weight: 600;
 }
 
+html.minimal-white-graphite .toggle-button:hover,
 body.minimal-white-graphite .toggle-button:hover {
-    background: linear-gradient(180deg, #edf1fb 0%, #dde5f7 100%) !important;
-    border-color: rgba(110, 142, 245, 0.35) !important;
+    background: linear-gradient(180deg, #f0f6fc 0%, #e6f1fb 100%) !important;
+    border-color: rgba(0, 120, 212, 0.40) !important;
 }
 
+html.minimal-white-graphite #voice-selection,
+html.minimal-white-graphite .sidebar select,
 body.minimal-white-graphite #voice-selection,
 body.minimal-white-graphite .sidebar select {
-    background-color: #f7f8fc;
+    background-color: #ffffff;
     color: var(--app-control-text);
     border: 1px solid var(--app-control-border);
-    border-radius: 5px;
+    border-radius: 4px;
 }
 
+html.minimal-white-graphite #voice-selection:focus,
+html.minimal-white-graphite .sidebar select:focus,
 body.minimal-white-graphite #voice-selection:focus,
 body.minimal-white-graphite .sidebar select:focus {
-    outline: 2px solid rgba(110, 142, 245, 0.35);
+    outline: 2px solid rgba(0, 120, 212, 0.50);
     outline-offset: 2px;
 }
 
 /* ==================================
 RESULTS / PANELS / THUMBNAILS
 ================================== */
+html.minimal-white-graphite .results-container,
 body.minimal-white-graphite .results-container {
     background: var(--app-results-bg);
-    border: 1px solid rgba(45, 45, 45, 0.08);
-    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
     box-shadow: var(--app-shadow-md);
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(20px);
 }
 
+html.minimal-white-graphite #drawingList,
 body.minimal-white-graphite #drawingList {
     color: var(--app-results-text);
 }
 
+html.minimal-white-graphite .thumbnail,
 body.minimal-white-graphite .thumbnail {
-    background: rgba(255, 255, 255, 0.94);
+    background: rgba(255, 255, 255, 0.98);
     border: 1px solid var(--app-thumbnail-border);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 /* ==================================
 COMMENT POPUP
 ================================== */
+html.minimal-white-graphite #commentPopup,
 body.minimal-white-graphite #commentPopup {
     background: var(--app-popup-bg);
-    border: 1px solid rgba(45, 45, 45, 0.10);
-    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.14);
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
+html.minimal-white-graphite #commentForm h2,
 body.minimal-white-graphite #commentForm h2 {
     color: var(--app-popup-accent);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
 }
 
+html.minimal-white-graphite #commentForm textarea,
 body.minimal-white-graphite #commentForm textarea {
-    background: #f7f8fc;
+    background: #fafafa;
     color: var(--app-popup-text);
-    border: 1px solid rgba(45, 45, 45, 0.14);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
 }
 
+html.minimal-white-graphite #commentForm textarea::placeholder,
 body.minimal-white-graphite #commentForm textarea::placeholder {
-    color: rgba(45, 45, 45, 0.50);
+    color: rgba(0, 0, 0, 0.40);
 }
 
+html.minimal-white-graphite #commentForm textarea:focus,
 body.minimal-white-graphite #commentForm textarea:focus {
-    border-color: rgba(110, 142, 245, 0.36);
-    box-shadow: 0 0 0 3px rgba(110, 142, 245, 0.12);
+    border-color: rgba(0, 120, 212, 0.50);
+    box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.10);
 }
 
+html.minimal-white-graphite #commentForm button,
 body.minimal-white-graphite #commentForm button {
-    background: linear-gradient(180deg, #f3f5fa 0%, #e9edf5 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
     color: var(--app-popup-text);
-    border: 1px solid rgba(45, 45, 45, 0.12);
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    border-radius: 4px;
 }
 
+html.minimal-white-graphite #commentForm button:hover,
 body.minimal-white-graphite #commentForm button:hover {
-    background: linear-gradient(180deg, #edf1fb 0%, #dde5f7 100%);
+    background: linear-gradient(180deg, #f0f6fc 0%, #e6f1fb 100%);
 }
 
+html.minimal-white-graphite #commentForm button[type="submit"],
 body.minimal-white-graphite #commentForm button[type="submit"] {
-    background: linear-gradient(180deg, #7a98f7 0%, #6E8EF5 100%);
+    background: linear-gradient(180deg, #0084E8 0%, #0078D4 100%);
     color: var(--app-popup-submit-text);
-    border-color: rgba(110, 142, 245, 0.36);
-    font-weight: 700;
+    border-color: rgba(0, 90, 158, 0.60);
+    font-weight: 600;
+    border-radius: 4px;
 }
 
+html.minimal-white-graphite #commentForm button[type="submit"]:hover,
 body.minimal-white-graphite #commentForm button[type="submit"]:hover {
-    background: linear-gradient(180deg, #88a4fb 0%, #5f81ef 100%);
+    background: linear-gradient(180deg, #106EBE 0%, #005A9E 100%);
 }
 
 /* ==================================
 LINKS / SPECIAL STATES
 ================================== */
+html.minimal-white-graphite a,
 body.minimal-white-graphite a {
-    color: #4f6fd9;
+    color: #0078D4;
 }
 
+html.minimal-white-graphite a:hover,
 body.minimal-white-graphite a:hover {
-    color: var(--app-sidebar-hover);
+    color: #106EBE;
 }
 
+html.minimal-white-graphite .logout-button,
 body.minimal-white-graphite .logout-button {
-    color: #b7791f !important;
+    color: #D83B01 !important;
 }
 
 /* ==================================
 ACCESSIBILITY / FOCUS
 ================================== */
+html.minimal-white-graphite .hamburger:focus-visible,
+html.minimal-white-graphite .toggle-button:focus-visible,
+html.minimal-white-graphite .sidebar button:focus-visible,
+html.minimal-white-graphite .sidebar a:focus-visible,
+html.minimal-white-graphite .sidebar select:focus-visible,
+html.minimal-white-graphite #commentForm textarea:focus-visible,
+html.minimal-white-graphite #commentForm button:focus-visible,
+html.minimal-white-graphite .mt-toggle-btn:focus-visible,
+html.minimal-white-graphite .neppy-btn:focus-visible,
+html.minimal-white-graphite .neppy-input:focus-visible,
+html.minimal-white-graphite .neppy-select:focus-visible,
+html.minimal-white-graphite .neppy-textarea:focus-visible,
 body.minimal-white-graphite .hamburger:focus-visible,
 body.minimal-white-graphite .toggle-button:focus-visible,
 body.minimal-white-graphite .sidebar button:focus-visible,
@@ -285,51 +342,70 @@ body.minimal-white-graphite .neppy-btn:focus-visible,
 body.minimal-white-graphite .neppy-input:focus-visible,
 body.minimal-white-graphite .neppy-select:focus-visible,
 body.minimal-white-graphite .neppy-textarea:focus-visible {
-    outline: 2px solid rgba(110, 142, 245, 0.55);
+    outline: 2px solid rgba(0, 120, 212, 0.60);
     outline-offset: 2px;
 }
 
 /* ==================================
 NEPPY UTILITY CLASS SUPPORT
 ================================== */
+html.minimal-white-graphite .neppy-card,
+html.minimal-white-graphite .neppy-card-soft,
 body.minimal-white-graphite .neppy-card,
 body.minimal-white-graphite .neppy-card-soft {
     background: var(--neppy-surface);
     border-color: var(--neppy-line);
 }
 
+html.minimal-white-graphite .neppy-title,
+html.minimal-white-graphite .neppy-panel-title,
 body.minimal-white-graphite .neppy-title,
 body.minimal-white-graphite .neppy-panel-title {
     color: var(--neppy-heading);
 }
 
+html.minimal-white-graphite .neppy-subtitle,
+html.minimal-white-graphite .neppy-label,
+html.minimal-white-graphite .neppy-text-muted,
 body.minimal-white-graphite .neppy-subtitle,
 body.minimal-white-graphite .neppy-label,
 body.minimal-white-graphite .neppy-text-muted {
     color: var(--neppy-muted) !important;
 }
 
+html.minimal-white-graphite .neppy-btn,
 body.minimal-white-graphite .neppy-btn {
-    background: linear-gradient(180deg, #f3f5fa 0%, #e9edf5 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
     color: var(--neppy-text);
     border-color: var(--neppy-line);
+    border-radius: 4px;
 }
 
+html.minimal-white-graphite .neppy-btn:hover,
 body.minimal-white-graphite .neppy-btn:hover {
     border-color: var(--neppy-accent);
-    background: linear-gradient(180deg, #edf1fb 0%, #dde5f7 100%);
+    background: linear-gradient(180deg, #f0f6fc 0%, #e6f1fb 100%);
 }
 
+html.minimal-white-graphite .neppy-input,
+html.minimal-white-graphite .neppy-select,
+html.minimal-white-graphite .neppy-textarea,
+html.minimal-white-graphite .neppy-mono,
+html.minimal-white-graphite .neppy-code,
 body.minimal-white-graphite .neppy-input,
 body.minimal-white-graphite .neppy-select,
 body.minimal-white-graphite .neppy-textarea,
 body.minimal-white-graphite .neppy-mono,
 body.minimal-white-graphite .neppy-code {
-    background: #f7f8fc;
+    background: #fafafa;
     color: var(--neppy-text);
     border-color: var(--neppy-line);
+    border-radius: 4px;
 }
 
+html.minimal-white-graphite .neppy-input:focus,
+html.minimal-white-graphite .neppy-select:focus,
+html.minimal-white-graphite .neppy-textarea:focus,
 body.minimal-white-graphite .neppy-input:focus,
 body.minimal-white-graphite .neppy-select:focus,
 body.minimal-white-graphite .neppy-textarea:focus {
@@ -341,87 +417,103 @@ body.minimal-white-graphite .neppy-textarea:focus {
 MODULE TEMPLATE PANEL LAYOUT THEME
 Styles the standardized .mt-* module templates
 ================================== */
+html.minimal-white-graphite .mt-layout,
 body.minimal-white-graphite .mt-layout {
     color: var(--neppy-text);
 }
 
+html.minimal-white-graphite .mt-layout-header,
 body.minimal-white-graphite .mt-layout-header {
-    border-bottom: 2px solid rgba(110, 142, 245, 0.20);
+    border-bottom: 2px solid rgba(0, 120, 212, 0.20);
 }
 
+html.minimal-white-graphite .mt-layout-title,
 body.minimal-white-graphite .mt-layout-title {
     color: var(--neppy-accent);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
 }
 
+html.minimal-white-graphite .mt-layout-description,
 body.minimal-white-graphite .mt-layout-description {
     color: var(--neppy-muted);
 }
 
+html.minimal-white-graphite .mt-panel,
 body.minimal-white-graphite .mt-panel {
     background: var(--neppy-surface);
     border: 1px solid var(--neppy-line);
-    border-radius: var(--neppy-radius-lg, 14px);
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
-    backdrop-filter: blur(4px);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.06);
+    backdrop-filter: blur(20px);
 }
 
+html.minimal-white-graphite .mt-panel:hover,
 body.minimal-white-graphite .mt-panel:hover {
-    border-color: var(--neppy-accent);
-    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12);
+    border-color: rgba(0, 120, 212, 0.40);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10), 0 0 1px rgba(0, 0, 0, 0.06);
 }
 
+html.minimal-white-graphite .mt-panel-header,
 body.minimal-white-graphite .mt-panel-header {
     background: rgba(0, 0, 0, 0.02);
     border-bottom: 1px solid var(--neppy-line);
 }
 
+html.minimal-white-graphite .mt-panel-title,
 body.minimal-white-graphite .mt-panel-title {
     color: var(--neppy-accent);
 }
 
+html.minimal-white-graphite .mt-toggle-btn,
 body.minimal-white-graphite .mt-toggle-btn {
-    background: linear-gradient(180deg, #f3f5fa 0%, #e9edf5 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
     border: 1px solid var(--neppy-line);
     color: var(--neppy-text);
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
+html.minimal-white-graphite .mt-toggle-btn:hover,
 body.minimal-white-graphite .mt-toggle-btn:hover {
-    border-color: var(--neppy-accent);
-    background: linear-gradient(180deg, #edf1fb 0%, #dde5f7 100%);
+    border-color: rgba(0, 120, 212, 0.40);
+    background: linear-gradient(180deg, #f0f6fc 0%, #e6f1fb 100%);
     color: var(--neppy-text);
 }
 
+html.minimal-white-graphite .mt-panel.is-collapsed .mt-toggle-btn,
 body.minimal-white-graphite .mt-panel.is-collapsed .mt-toggle-btn {
-    background: linear-gradient(180deg, #d69090 0%, #c77979 100%);
-    border-color: rgba(214, 92, 92, 0.28);
+    background: linear-gradient(180deg, #c84b4b 0%, #a83030 100%);
+    border-color: rgba(164, 38, 44, 0.30);
     color: #ffffff;
 }
 
+html.minimal-white-graphite .mt-panel-body,
 body.minimal-white-graphite .mt-panel-body {
     color: var(--neppy-text);
 }
 
+html.minimal-white-graphite .mt-panel-content,
 body.minimal-white-graphite .mt-panel-content {
     gap: 12px;
 }
 
+html.minimal-white-graphite .mt-item,
 body.minimal-white-graphite .mt-item {
-    background: rgba(247, 248, 252, 0.96);
+    background: rgba(249, 249, 249, 0.98);
     border: 1px solid var(--neppy-line);
     color: var(--neppy-text);
-    border-radius: 8px;
+    border-radius: 4px;
 }
 
+html.minimal-white-graphite .mt-item:hover,
 body.minimal-white-graphite .mt-item:hover {
-    background: rgba(110, 142, 245, 0.08);
-    border-color: var(--neppy-accent);
+    background: rgba(0, 120, 212, 0.06);
+    border-color: rgba(0, 120, 212, 0.30);
 }
 
+html.minimal-white-graphite .mt-item.is-active,
 body.minimal-white-graphite .mt-item.is-active {
-    background: rgba(110, 142, 245, 0.14);
-    border-color: var(--neppy-accent);
-    box-shadow: 0 0 0 1px rgba(110, 142, 245, 0.10);
+    background: rgba(0, 120, 212, 0.10);
+    border-color: rgba(0, 120, 212, 0.40);
+    box-shadow: 0 0 0 1px rgba(0, 120, 212, 0.10);
 }

@@ -14,8 +14,9 @@ Role:
 
 /* ==================================
 THEME VARIABLE OVERRIDES
-Apply by adding class="crimson-night" to body
+Apply by adding class="crimson-night" to html or body
 ================================== */
+html.crimson-night,
 body.crimson-night {
     --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
@@ -68,6 +69,7 @@ body.crimson-night {
 NEPPY TOKEN OVERRIDES
 Supports reusable neppy-* utility classes
 ================================== */
+html.crimson-night,
 body.crimson-night {
     --neppy-surface: rgba(26, 10, 10, 0.80);
     --neppy-surface-2: rgba(20, 6, 8, 0.90);
@@ -95,35 +97,43 @@ body.crimson-night {
 /* ==================================
 GLOBAL POLISH
 ================================== */
+html.crimson-night .banner,
 body.crimson-night .banner {
     letter-spacing: 0.03em;
     box-shadow: var(--app-shadow-sm);
 }
 
+html.crimson-night .banner a,
 body.crimson-night .banner a {
     font-weight: 600;
 }
 
+html.crimson-night .sidebar,
 body.crimson-night .sidebar {
     backdrop-filter: blur(5px);
     box-shadow: inset -1px 0 0 rgba(245, 232, 232, 0.08);
 }
 
+html.crimson-night .sidebar h1,
 body.crimson-night .sidebar h1 {
     color: #F5E8E8;
     letter-spacing: 0.02em;
 }
 
+html.crimson-night .welcome-message,
 body.crimson-night .welcome-message {
     color: #E8C8CC;
     font-weight: 600;
 }
 
+html.crimson-night .user-level,
+html.crimson-night .model-display-section,
 body.crimson-night .user-level,
 body.crimson-night .model-display-section {
     color: rgba(245, 232, 232, 0.68);
 }
 
+html.crimson-night .content,
 body.crimson-night .content {
     background: linear-gradient(180deg, rgba(26, 10, 10, 0.84) 0%, rgba(16, 4, 6, 0.92) 100%);
     color: var(--app-content-text);
@@ -132,6 +142,10 @@ body.crimson-night .content {
 /* ==================================
 SIDEBAR NAV / INTERACTION POLISH
 ================================== */
+html.crimson-night .nav-link,
+html.crimson-night .sidebar a,
+html.crimson-night .sidebar button,
+html.crimson-night .sidebar select,
 body.crimson-night .nav-link,
 body.crimson-night .sidebar a,
 body.crimson-night .sidebar button,
@@ -139,6 +153,10 @@ body.crimson-night .sidebar select {
     color: var(--app-sidebar-link);
 }
 
+html.crimson-night .nav-link:hover,
+html.crimson-night .sidebar a:hover,
+html.crimson-night .sidebar button:hover,
+html.crimson-night .sidebar select:hover,
 body.crimson-night .nav-link:hover,
 body.crimson-night .sidebar a:hover,
 body.crimson-night .sidebar button:hover,
@@ -147,6 +165,7 @@ body.crimson-night .sidebar select:hover {
     background-color: var(--app-sidebar-hover-bg);
 }
 
+html.crimson-night .nav-link.highlight,
 body.crimson-night .nav-link.highlight {
     color: var(--app-sidebar-hover);
     background-color: rgba(255, 92, 122, 0.10);
@@ -156,6 +175,7 @@ body.crimson-night .nav-link.highlight {
 /* ==================================
 STANDARD CONTROLS
 ================================== */
+html.crimson-night .toggle-button,
 body.crimson-night .toggle-button {
     background: linear-gradient(180deg, rgba(48, 12, 16, 0.98) 0%, rgba(20, 6, 8, 0.98) 100%) !important;
     color: var(--app-control-text) !important;
@@ -165,11 +185,14 @@ body.crimson-night .toggle-button {
     font-weight: 600;
 }
 
+html.crimson-night .toggle-button:hover,
 body.crimson-night .toggle-button:hover {
     background: linear-gradient(180deg, rgba(68, 18, 24, 0.98) 0%, rgba(30, 10, 12, 0.98) 100%) !important;
     border-color: rgba(255, 92, 122, 0.35) !important;
 }
 
+html.crimson-night #voice-selection,
+html.crimson-night .sidebar select,
 body.crimson-night #voice-selection,
 body.crimson-night .sidebar select {
     background-color: rgba(20, 6, 8, 0.95);
@@ -178,6 +201,8 @@ body.crimson-night .sidebar select {
     border-radius: 5px;
 }
 
+html.crimson-night #voice-selection:focus,
+html.crimson-night .sidebar select:focus,
 body.crimson-night #voice-selection:focus,
 body.crimson-night .sidebar select:focus {
     outline: 2px solid rgba(255, 92, 122, 0.35);
@@ -187,6 +212,7 @@ body.crimson-night .sidebar select:focus {
 /* ==================================
 RESULTS / PANELS / THUMBNAILS
 ================================== */
+html.crimson-night .results-container,
 body.crimson-night .results-container {
     background: var(--app-results-bg);
     border: 1px solid rgba(245, 232, 232, 0.10);
@@ -195,10 +221,12 @@ body.crimson-night .results-container {
     backdrop-filter: blur(4px);
 }
 
+html.crimson-night #drawingList,
 body.crimson-night #drawingList {
     color: var(--app-results-text);
 }
 
+html.crimson-night .thumbnail,
 body.crimson-night .thumbnail {
     background: rgba(20, 6, 8, 0.90);
     border: 1px solid var(--app-thumbnail-border);
@@ -208,42 +236,50 @@ body.crimson-night .thumbnail {
 /* ==================================
 COMMENT POPUP
 ================================== */
+html.crimson-night #commentPopup,
 body.crimson-night #commentPopup {
     background: var(--app-popup-bg);
     border: 1px solid rgba(245, 232, 232, 0.12);
     box-shadow: 0 18px 36px rgba(0, 0, 0, 0.45);
 }
 
+html.crimson-night #commentForm h2,
 body.crimson-night #commentForm h2 {
     color: var(--app-popup-accent);
     letter-spacing: 0.02em;
 }
 
+html.crimson-night #commentForm textarea,
 body.crimson-night #commentForm textarea {
     background: rgba(20, 6, 8, 0.96);
     color: var(--app-popup-text);
     border: 1px solid rgba(201, 168, 174, 0.24);
 }
 
+html.crimson-night #commentForm textarea::placeholder,
 body.crimson-night #commentForm textarea::placeholder {
     color: rgba(245, 232, 232, 0.50);
 }
 
+html.crimson-night #commentForm textarea:focus,
 body.crimson-night #commentForm textarea:focus {
     border-color: rgba(255, 92, 122, 0.38);
     box-shadow: 0 0 0 3px rgba(255, 92, 122, 0.12);
 }
 
+html.crimson-night #commentForm button,
 body.crimson-night #commentForm button {
     background: linear-gradient(180deg, rgba(48, 12, 16, 0.98) 0%, rgba(20, 6, 8, 0.98) 100%);
     color: var(--app-popup-text);
     border: 1px solid rgba(201, 168, 174, 0.16);
 }
 
+html.crimson-night #commentForm button:hover,
 body.crimson-night #commentForm button:hover {
     background: linear-gradient(180deg, rgba(68, 18, 24, 0.98) 0%, rgba(30, 10, 12, 0.98) 100%);
 }
 
+html.crimson-night #commentForm button[type="submit"],
 body.crimson-night #commentForm button[type="submit"] {
     background: linear-gradient(180deg, #ff8fab 0%, #FF5C7A 100%);
     color: var(--app-popup-submit-text);
@@ -251,6 +287,7 @@ body.crimson-night #commentForm button[type="submit"] {
     font-weight: 700;
 }
 
+html.crimson-night #commentForm button[type="submit"]:hover,
 body.crimson-night #commentForm button[type="submit"]:hover {
     background: linear-gradient(180deg, #ffadc4 0%, #e04d6a 100%);
 }
@@ -258,14 +295,17 @@ body.crimson-night #commentForm button[type="submit"]:hover {
 /* ==================================
 LINKS / SPECIAL STATES
 ================================== */
+html.crimson-night a,
 body.crimson-night a {
     color: #FFBECE;
 }
 
+html.crimson-night a:hover,
 body.crimson-night a:hover {
     color: #FF5C7A;
 }
 
+html.crimson-night .logout-button,
 body.crimson-night .logout-button {
     color: #FFB36B !important;
 }
@@ -273,6 +313,18 @@ body.crimson-night .logout-button {
 /* ==================================
 ACCESSIBILITY / FOCUS
 ================================== */
+html.crimson-night .hamburger:focus-visible,
+html.crimson-night .toggle-button:focus-visible,
+html.crimson-night .sidebar button:focus-visible,
+html.crimson-night .sidebar a:focus-visible,
+html.crimson-night .sidebar select:focus-visible,
+html.crimson-night #commentForm textarea:focus-visible,
+html.crimson-night #commentForm button:focus-visible,
+html.crimson-night .mt-toggle-btn:focus-visible,
+html.crimson-night .neppy-btn:focus-visible,
+html.crimson-night .neppy-input:focus-visible,
+html.crimson-night .neppy-select:focus-visible,
+html.crimson-night .neppy-textarea:focus-visible,
 body.crimson-night .hamburger:focus-visible,
 body.crimson-night .toggle-button:focus-visible,
 body.crimson-night .sidebar button:focus-visible,
@@ -292,34 +344,48 @@ body.crimson-night .neppy-textarea:focus-visible {
 /* ==================================
 NEPPY UTILITY CLASS SUPPORT
 ================================== */
+html.crimson-night .neppy-card,
+html.crimson-night .neppy-card-soft,
 body.crimson-night .neppy-card,
 body.crimson-night .neppy-card-soft {
     background: var(--neppy-surface);
     border-color: var(--neppy-line);
 }
 
+html.crimson-night .neppy-title,
+html.crimson-night .neppy-panel-title,
 body.crimson-night .neppy-title,
 body.crimson-night .neppy-panel-title {
     color: var(--neppy-heading);
 }
 
+html.crimson-night .neppy-subtitle,
+html.crimson-night .neppy-label,
+html.crimson-night .neppy-text-muted,
 body.crimson-night .neppy-subtitle,
 body.crimson-night .neppy-label,
 body.crimson-night .neppy-text-muted {
     color: var(--neppy-muted) !important;
 }
 
+html.crimson-night .neppy-btn,
 body.crimson-night .neppy-btn {
     background: linear-gradient(180deg, rgba(48, 12, 16, 0.98) 0%, rgba(20, 6, 8, 0.98) 100%);
     color: var(--neppy-text);
     border-color: var(--neppy-line);
 }
 
+html.crimson-night .neppy-btn:hover,
 body.crimson-night .neppy-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, rgba(68, 18, 24, 0.98) 0%, rgba(30, 10, 12, 0.98) 100%);
 }
 
+html.crimson-night .neppy-input,
+html.crimson-night .neppy-select,
+html.crimson-night .neppy-textarea,
+html.crimson-night .neppy-mono,
+html.crimson-night .neppy-code,
 body.crimson-night .neppy-input,
 body.crimson-night .neppy-select,
 body.crimson-night .neppy-textarea,
@@ -330,6 +396,9 @@ body.crimson-night .neppy-code {
     border-color: var(--neppy-line);
 }
 
+html.crimson-night .neppy-input:focus,
+html.crimson-night .neppy-select:focus,
+html.crimson-night .neppy-textarea:focus,
 body.crimson-night .neppy-input:focus,
 body.crimson-night .neppy-select:focus,
 body.crimson-night .neppy-textarea:focus {
@@ -341,23 +410,28 @@ body.crimson-night .neppy-textarea:focus {
 MODULE TEMPLATE PANEL LAYOUT THEME
 Styles the standardized .mt-* module templates
 ================================== */
+html.crimson-night .mt-layout,
 body.crimson-night .mt-layout {
     color: var(--neppy-text);
 }
 
+html.crimson-night .mt-layout-header,
 body.crimson-night .mt-layout-header {
     border-bottom: 2px solid rgba(255, 92, 122, 0.22);
 }
 
+html.crimson-night .mt-layout-title,
 body.crimson-night .mt-layout-title {
     color: var(--neppy-accent);
     letter-spacing: 0.02em;
 }
 
+html.crimson-night .mt-layout-description,
 body.crimson-night .mt-layout-description {
     color: var(--neppy-muted);
 }
 
+html.crimson-night .mt-panel,
 body.crimson-night .mt-panel {
     background: var(--neppy-surface);
     border: 1px solid var(--neppy-line);
@@ -366,20 +440,24 @@ body.crimson-night .mt-panel {
     backdrop-filter: blur(4px);
 }
 
+html.crimson-night .mt-panel:hover,
 body.crimson-night .mt-panel:hover {
     border-color: var(--neppy-accent);
     box-shadow: 0 14px 28px rgba(0, 0, 0, 0.36);
 }
 
+html.crimson-night .mt-panel-header,
 body.crimson-night .mt-panel-header {
     background: rgba(255, 255, 255, 0.03);
     border-bottom: 1px solid var(--neppy-line);
 }
 
+html.crimson-night .mt-panel-title,
 body.crimson-night .mt-panel-title {
     color: var(--neppy-accent);
 }
 
+html.crimson-night .mt-toggle-btn,
 body.crimson-night .mt-toggle-btn {
     background: linear-gradient(180deg, rgba(48, 12, 16, 0.98) 0%, rgba(20, 6, 8, 0.98) 100%);
     border: 1px solid var(--neppy-line);
@@ -388,26 +466,31 @@ body.crimson-night .mt-toggle-btn {
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
 }
 
+html.crimson-night .mt-toggle-btn:hover,
 body.crimson-night .mt-toggle-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, rgba(68, 18, 24, 0.98) 0%, rgba(30, 10, 12, 0.98) 100%);
     color: var(--neppy-text);
 }
 
+html.crimson-night .mt-panel.is-collapsed .mt-toggle-btn,
 body.crimson-night .mt-panel.is-collapsed .mt-toggle-btn {
     background: linear-gradient(180deg, #2a3a7a 0%, #1e2e62 100%);
     border-color: rgba(130, 160, 255, 0.35);
     color: #ffffff;
 }
 
+html.crimson-night .mt-panel-body,
 body.crimson-night .mt-panel-body {
     color: var(--neppy-text);
 }
 
+html.crimson-night .mt-panel-content,
 body.crimson-night .mt-panel-content {
     gap: 12px;
 }
 
+html.crimson-night .mt-item,
 body.crimson-night .mt-item {
     background: rgba(20, 6, 8, 0.92);
     border: 1px solid var(--neppy-line);
@@ -415,11 +498,13 @@ body.crimson-night .mt-item {
     border-radius: 8px;
 }
 
+html.crimson-night .mt-item:hover,
 body.crimson-night .mt-item:hover {
     background: rgba(255, 92, 122, 0.08);
     border-color: var(--neppy-accent);
 }
 
+html.crimson-night .mt-item.is-active,
 body.crimson-night .mt-item.is-active {
     background: rgba(255, 92, 122, 0.16);
     border-color: var(--neppy-accent);

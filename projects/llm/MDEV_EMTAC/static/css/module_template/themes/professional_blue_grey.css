@@ -14,8 +14,9 @@ Role:
 
 /* ==================================
 THEME VARIABLE OVERRIDES
-Apply by adding class="professional-blue-grey" to body
+Apply by adding class="professional-blue-grey" to html or body
 ================================== */
+html.professional-blue-grey,
 body.professional-blue-grey {
     --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
@@ -63,6 +64,7 @@ body.professional-blue-grey {
 NEPPY TOKEN OVERRIDES
 Supports reusable neppy-* utility classes
 ================================== */
+html.professional-blue-grey,
 body.professional-blue-grey {
     --neppy-surface: rgba(55, 71, 79, 0.88);
     --neppy-surface-2: rgba(69, 90, 100, 0.90);
@@ -90,35 +92,43 @@ body.professional-blue-grey {
 /* ==================================
 GLOBAL POLISH
 ================================== */
+html.professional-blue-grey .banner,
 body.professional-blue-grey .banner {
     letter-spacing: 0.03em;
     box-shadow: var(--app-shadow-sm);
 }
 
+html.professional-blue-grey .banner a,
 body.professional-blue-grey .banner a {
     font-weight: 600;
 }
 
+html.professional-blue-grey .sidebar,
 body.professional-blue-grey .sidebar {
     backdrop-filter: blur(5px);
     box-shadow: inset -1px 0 0 rgba(176, 190, 197, 0.12);
 }
 
+html.professional-blue-grey .sidebar h1,
 body.professional-blue-grey .sidebar h1 {
     color: var(--neppy-accent);
     letter-spacing: 0.02em;
 }
 
+html.professional-blue-grey .welcome-message,
 body.professional-blue-grey .welcome-message {
     color: var(--app-sidebar-text);
     font-weight: 600;
 }
 
+html.professional-blue-grey .user-level,
+html.professional-blue-grey .model-display-section,
 body.professional-blue-grey .user-level,
 body.professional-blue-grey .model-display-section {
     color: #cfd8dc;
 }
 
+html.professional-blue-grey .content,
 body.professional-blue-grey .content {
     background: linear-gradient(180deg, #37474f 0%, #2f3d43 100%);
     color: var(--app-content-text);
@@ -127,6 +137,10 @@ body.professional-blue-grey .content {
 /* ==================================
 SIDEBAR NAV / INTERACTION POLISH
 ================================== */
+html.professional-blue-grey .nav-link,
+html.professional-blue-grey .sidebar a,
+html.professional-blue-grey .sidebar button,
+html.professional-blue-grey .sidebar select,
 body.professional-blue-grey .nav-link,
 body.professional-blue-grey .sidebar a,
 body.professional-blue-grey .sidebar button,
@@ -134,6 +148,10 @@ body.professional-blue-grey .sidebar select {
     color: var(--app-sidebar-link);
 }
 
+html.professional-blue-grey .nav-link:hover,
+html.professional-blue-grey .sidebar a:hover,
+html.professional-blue-grey .sidebar button:hover,
+html.professional-blue-grey .sidebar select:hover,
 body.professional-blue-grey .nav-link:hover,
 body.professional-blue-grey .sidebar a:hover,
 body.professional-blue-grey .sidebar button:hover,
@@ -142,6 +160,7 @@ body.professional-blue-grey .sidebar select:hover {
     background-color: var(--app-sidebar-hover-bg);
 }
 
+html.professional-blue-grey .nav-link.highlight,
 body.professional-blue-grey .nav-link.highlight {
     color: var(--app-sidebar-hover);
     background-color: rgba(129, 199, 132, 0.20);
@@ -151,6 +170,7 @@ body.professional-blue-grey .nav-link.highlight {
 /* ==================================
 STANDARD CONTROLS
 ================================== */
+html.professional-blue-grey .toggle-button,
 body.professional-blue-grey .toggle-button {
     background: linear-gradient(180deg, #546e7a 0%, #455a64 100%) !important;
     color: var(--app-control-text) !important;
@@ -160,11 +180,14 @@ body.professional-blue-grey .toggle-button {
     font-weight: 600;
 }
 
+html.professional-blue-grey .toggle-button:hover,
 body.professional-blue-grey .toggle-button:hover {
     background: linear-gradient(180deg, #78909c 0%, #607d8b 100%) !important;
     border-color: rgba(129, 199, 132, 0.35) !important;
 }
 
+html.professional-blue-grey #voice-selection,
+html.professional-blue-grey .sidebar select,
 body.professional-blue-grey #voice-selection,
 body.professional-blue-grey .sidebar select {
     background-color: #455a64;
@@ -173,6 +196,8 @@ body.professional-blue-grey .sidebar select {
     border-radius: 5px;
 }
 
+html.professional-blue-grey #voice-selection:focus,
+html.professional-blue-grey .sidebar select:focus,
 body.professional-blue-grey #voice-selection:focus,
 body.professional-blue-grey .sidebar select:focus {
     outline: 2px solid rgba(129, 199, 132, 0.35);
@@ -182,6 +207,7 @@ body.professional-blue-grey .sidebar select:focus {
 /* ==================================
 RESULTS / PANELS / THUMBNAILS
 ================================== */
+html.professional-blue-grey .results-container,
 body.professional-blue-grey .results-container {
     background: var(--app-results-bg);
     border: 1px solid #546e7a;
@@ -190,10 +216,12 @@ body.professional-blue-grey .results-container {
     backdrop-filter: blur(4px);
 }
 
+html.professional-blue-grey #drawingList,
 body.professional-blue-grey #drawingList {
     color: var(--app-results-text);
 }
 
+html.professional-blue-grey .thumbnail,
 body.professional-blue-grey .thumbnail {
     background: rgba(69, 90, 100, 0.92);
     border: 1px solid var(--app-thumbnail-border);
@@ -203,42 +231,50 @@ body.professional-blue-grey .thumbnail {
 /* ==================================
 COMMENT POPUP
 ================================== */
+html.professional-blue-grey #commentPopup,
 body.professional-blue-grey #commentPopup {
     background: var(--app-popup-bg);
     border: 1px solid rgba(176, 190, 197, 0.16);
     box-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
 }
 
+html.professional-blue-grey #commentForm h2,
 body.professional-blue-grey #commentForm h2 {
     color: var(--app-popup-accent);
     letter-spacing: 0.02em;
 }
 
+html.professional-blue-grey #commentForm textarea,
 body.professional-blue-grey #commentForm textarea {
     background: #455a64;
     color: var(--app-popup-text);
     border: 1px solid rgba(176, 190, 197, 0.22);
 }
 
+html.professional-blue-grey #commentForm textarea::placeholder,
 body.professional-blue-grey #commentForm textarea::placeholder {
     color: rgba(227, 242, 253, 0.58);
 }
 
+html.professional-blue-grey #commentForm textarea:focus,
 body.professional-blue-grey #commentForm textarea:focus {
     border-color: rgba(129, 199, 132, 0.38);
     box-shadow: 0 0 0 3px rgba(129, 199, 132, 0.12);
 }
 
+html.professional-blue-grey #commentForm button,
 body.professional-blue-grey #commentForm button {
     background: linear-gradient(180deg, #546e7a 0%, #455a64 100%);
     color: var(--app-popup-text);
     border: 1px solid rgba(176, 190, 197, 0.16);
 }
 
+html.professional-blue-grey #commentForm button:hover,
 body.professional-blue-grey #commentForm button:hover {
     background: linear-gradient(180deg, #78909c 0%, #607d8b 100%);
 }
 
+html.professional-blue-grey #commentForm button[type="submit"],
 body.professional-blue-grey #commentForm button[type="submit"] {
     background: linear-gradient(180deg, #9ad6a0 0%, #81c784 100%);
     color: var(--app-popup-submit-text);
@@ -246,6 +282,7 @@ body.professional-blue-grey #commentForm button[type="submit"] {
     font-weight: 700;
 }
 
+html.professional-blue-grey #commentForm button[type="submit"]:hover,
 body.professional-blue-grey #commentForm button[type="submit"]:hover {
     background: linear-gradient(180deg, #aedcb3 0%, #74be79 100%);
 }
@@ -253,14 +290,17 @@ body.professional-blue-grey #commentForm button[type="submit"]:hover {
 /* ==================================
 LINKS / SPECIAL STATES
 ================================== */
+html.professional-blue-grey a,
 body.professional-blue-grey a {
     color: #b3e5fc;
 }
 
+html.professional-blue-grey a:hover,
 body.professional-blue-grey a:hover {
     color: var(--app-sidebar-hover);
 }
 
+html.professional-blue-grey .logout-button,
 body.professional-blue-grey .logout-button {
     color: #ffcc80 !important;
 }
@@ -268,6 +308,18 @@ body.professional-blue-grey .logout-button {
 /* ==================================
 ACCESSIBILITY / FOCUS
 ================================== */
+html.professional-blue-grey .hamburger:focus-visible,
+html.professional-blue-grey .toggle-button:focus-visible,
+html.professional-blue-grey .sidebar button:focus-visible,
+html.professional-blue-grey .sidebar a:focus-visible,
+html.professional-blue-grey .sidebar select:focus-visible,
+html.professional-blue-grey #commentForm textarea:focus-visible,
+html.professional-blue-grey #commentForm button:focus-visible,
+html.professional-blue-grey .mt-toggle-btn:focus-visible,
+html.professional-blue-grey .neppy-btn:focus-visible,
+html.professional-blue-grey .neppy-input:focus-visible,
+html.professional-blue-grey .neppy-select:focus-visible,
+html.professional-blue-grey .neppy-textarea:focus-visible,
 body.professional-blue-grey .hamburger:focus-visible,
 body.professional-blue-grey .toggle-button:focus-visible,
 body.professional-blue-grey .sidebar button:focus-visible,
@@ -287,34 +339,48 @@ body.professional-blue-grey .neppy-textarea:focus-visible {
 /* ==================================
 NEPPY UTILITY CLASS SUPPORT
 ================================== */
+html.professional-blue-grey .neppy-card,
+html.professional-blue-grey .neppy-card-soft,
 body.professional-blue-grey .neppy-card,
 body.professional-blue-grey .neppy-card-soft {
     background: var(--neppy-surface);
     border-color: var(--neppy-line);
 }
 
+html.professional-blue-grey .neppy-title,
+html.professional-blue-grey .neppy-panel-title,
 body.professional-blue-grey .neppy-title,
 body.professional-blue-grey .neppy-panel-title {
     color: var(--neppy-heading);
 }
 
+html.professional-blue-grey .neppy-subtitle,
+html.professional-blue-grey .neppy-label,
+html.professional-blue-grey .neppy-text-muted,
 body.professional-blue-grey .neppy-subtitle,
 body.professional-blue-grey .neppy-label,
 body.professional-blue-grey .neppy-text-muted {
     color: var(--neppy-muted) !important;
 }
 
+html.professional-blue-grey .neppy-btn,
 body.professional-blue-grey .neppy-btn {
     background: linear-gradient(180deg, #546e7a 0%, #455a64 100%);
     color: var(--neppy-text);
     border-color: var(--neppy-line);
 }
 
+html.professional-blue-grey .neppy-btn:hover,
 body.professional-blue-grey .neppy-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, #78909c 0%, #607d8b 100%);
 }
 
+html.professional-blue-grey .neppy-input,
+html.professional-blue-grey .neppy-select,
+html.professional-blue-grey .neppy-textarea,
+html.professional-blue-grey .neppy-mono,
+html.professional-blue-grey .neppy-code,
 body.professional-blue-grey .neppy-input,
 body.professional-blue-grey .neppy-select,
 body.professional-blue-grey .neppy-textarea,
@@ -325,6 +391,9 @@ body.professional-blue-grey .neppy-code {
     border-color: var(--neppy-line);
 }
 
+html.professional-blue-grey .neppy-input:focus,
+html.professional-blue-grey .neppy-select:focus,
+html.professional-blue-grey .neppy-textarea:focus,
 body.professional-blue-grey .neppy-input:focus,
 body.professional-blue-grey .neppy-select:focus,
 body.professional-blue-grey .neppy-textarea:focus {
@@ -336,23 +405,28 @@ body.professional-blue-grey .neppy-textarea:focus {
 MODULE TEMPLATE PANEL LAYOUT THEME
 Styles the standardized .mt-* module templates
 ================================== */
+html.professional-blue-grey .mt-layout,
 body.professional-blue-grey .mt-layout {
     color: var(--neppy-text);
 }
 
+html.professional-blue-grey .mt-layout-header,
 body.professional-blue-grey .mt-layout-header {
     border-bottom: 2px solid rgba(129, 199, 132, 0.22);
 }
 
+html.professional-blue-grey .mt-layout-title,
 body.professional-blue-grey .mt-layout-title {
     color: var(--neppy-accent);
     letter-spacing: 0.02em;
 }
 
+html.professional-blue-grey .mt-layout-description,
 body.professional-blue-grey .mt-layout-description {
     color: var(--neppy-muted);
 }
 
+html.professional-blue-grey .mt-panel,
 body.professional-blue-grey .mt-panel {
     background: var(--neppy-surface);
     border: 1px solid var(--neppy-line);
@@ -361,20 +435,24 @@ body.professional-blue-grey .mt-panel {
     backdrop-filter: blur(4px);
 }
 
+html.professional-blue-grey .mt-panel:hover,
 body.professional-blue-grey .mt-panel:hover {
     border-color: var(--neppy-accent);
     box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
 }
 
+html.professional-blue-grey .mt-panel-header,
 body.professional-blue-grey .mt-panel-header {
     background: rgba(255, 255, 255, 0.04);
     border-bottom: 1px solid var(--neppy-line);
 }
 
+html.professional-blue-grey .mt-panel-title,
 body.professional-blue-grey .mt-panel-title {
     color: var(--neppy-accent);
 }
 
+html.professional-blue-grey .mt-toggle-btn,
 body.professional-blue-grey .mt-toggle-btn {
     background: linear-gradient(180deg, #546e7a 0%, #455a64 100%);
     border: 1px solid var(--neppy-line);
@@ -383,26 +461,31 @@ body.professional-blue-grey .mt-toggle-btn {
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
 }
 
+html.professional-blue-grey .mt-toggle-btn:hover,
 body.professional-blue-grey .mt-toggle-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, #78909c 0%, #607d8b 100%);
     color: var(--neppy-text);
 }
 
+html.professional-blue-grey .mt-panel.is-collapsed .mt-toggle-btn,
 body.professional-blue-grey .mt-panel.is-collapsed .mt-toggle-btn {
     background: linear-gradient(180deg, #7a2f3f 0%, #5e2431 100%);
     border-color: rgba(239, 154, 154, 0.35);
     color: #ffffff;
 }
 
+html.professional-blue-grey .mt-panel-body,
 body.professional-blue-grey .mt-panel-body {
     color: var(--neppy-text);
 }
 
+html.professional-blue-grey .mt-panel-content,
 body.professional-blue-grey .mt-panel-content {
     gap: 12px;
 }
 
+html.professional-blue-grey .mt-item,
 body.professional-blue-grey .mt-item {
     background: rgba(69, 90, 100, 0.92);
     border: 1px solid var(--neppy-line);
@@ -410,11 +493,13 @@ body.professional-blue-grey .mt-item {
     border-radius: 8px;
 }
 
+html.professional-blue-grey .mt-item:hover,
 body.professional-blue-grey .mt-item:hover {
     background: rgba(129, 199, 132, 0.08);
     border-color: var(--neppy-accent);
 }
 
+html.professional-blue-grey .mt-item.is-active,
 body.professional-blue-grey .mt-item.is-active {
     background: rgba(129, 199, 132, 0.16);
     border-color: var(--neppy-accent);

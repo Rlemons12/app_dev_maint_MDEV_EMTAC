@@ -14,8 +14,9 @@ Role:
 
 /* ==================================
 THEME VARIABLE OVERRIDES
-Apply by adding class="modern-orange" to body
+Apply by adding class="modern-orange" to html or body
 ================================== */
+html.modern-orange,
 body.modern-orange {
     --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
@@ -68,6 +69,7 @@ body.modern-orange {
 NEPPY TOKEN OVERRIDES
 Supports reusable neppy-* utility classes
 ================================== */
+html.modern-orange,
 body.modern-orange {
     --neppy-surface: rgba(255, 255, 255, 0.90);
     --neppy-surface-2: rgba(245, 245, 245, 0.96);
@@ -95,35 +97,43 @@ body.modern-orange {
 /* ==================================
 GLOBAL POLISH
 ================================== */
+html.modern-orange .banner,
 body.modern-orange .banner {
     letter-spacing: 0.03em;
     box-shadow: var(--app-shadow-sm);
 }
 
+html.modern-orange .banner a,
 body.modern-orange .banner a {
     font-weight: 600;
 }
 
+html.modern-orange .sidebar,
 body.modern-orange .sidebar {
     backdrop-filter: blur(5px);
     box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.18), 2px 0 12px rgba(255, 111, 0, 0.18);
 }
 
+html.modern-orange .sidebar h1,
 body.modern-orange .sidebar h1 {
     color: #FFFFFF;
     letter-spacing: 0.02em;
 }
 
+html.modern-orange .welcome-message,
 body.modern-orange .welcome-message {
     color: #FFFFFF;
     font-weight: 600;
 }
 
+html.modern-orange .user-level,
+html.modern-orange .model-display-section,
 body.modern-orange .user-level,
 body.modern-orange .model-display-section {
     color: rgba(255, 255, 255, 0.76);
 }
 
+html.modern-orange .content,
 body.modern-orange .content {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 248, 248, 0.98) 100%);
     color: var(--app-content-text);
@@ -132,6 +142,10 @@ body.modern-orange .content {
 /* ==================================
 SIDEBAR NAV / INTERACTION POLISH
 ================================== */
+html.modern-orange .nav-link,
+html.modern-orange .sidebar a,
+html.modern-orange .sidebar button,
+html.modern-orange .sidebar select,
 body.modern-orange .nav-link,
 body.modern-orange .sidebar a,
 body.modern-orange .sidebar button,
@@ -139,6 +153,10 @@ body.modern-orange .sidebar select {
     color: var(--app-sidebar-link);
 }
 
+html.modern-orange .nav-link:hover,
+html.modern-orange .sidebar a:hover,
+html.modern-orange .sidebar button:hover,
+html.modern-orange .sidebar select:hover,
 body.modern-orange .nav-link:hover,
 body.modern-orange .sidebar a:hover,
 body.modern-orange .sidebar button:hover,
@@ -147,6 +165,7 @@ body.modern-orange .sidebar select:hover {
     background-color: var(--app-sidebar-hover-bg);
 }
 
+html.modern-orange .nav-link.highlight,
 body.modern-orange .nav-link.highlight {
     color: #FFFFFF;
     background-color: rgba(25, 118, 210, 0.20);
@@ -156,6 +175,7 @@ body.modern-orange .nav-link.highlight {
 /* ==================================
 STANDARD CONTROLS
 ================================== */
+html.modern-orange .toggle-button,
 body.modern-orange .toggle-button {
     background: linear-gradient(180deg, #FF9800 0%, #F57C00 100%) !important;
     color: #FFFFFF !important;
@@ -165,11 +185,14 @@ body.modern-orange .toggle-button {
     font-weight: 600;
 }
 
+html.modern-orange .toggle-button:hover,
 body.modern-orange .toggle-button:hover {
     background: linear-gradient(180deg, #FFA726 0%, #FB8C00 100%) !important;
     border-color: rgba(255, 193, 80, 0.55) !important;
 }
 
+html.modern-orange #voice-selection,
+html.modern-orange .sidebar select,
 body.modern-orange #voice-selection,
 body.modern-orange .sidebar select {
     background-color: rgba(255, 152, 0, 0.20);
@@ -178,6 +201,8 @@ body.modern-orange .sidebar select {
     border-radius: 5px;
 }
 
+html.modern-orange #voice-selection:focus,
+html.modern-orange .sidebar select:focus,
 body.modern-orange #voice-selection:focus,
 body.modern-orange .sidebar select:focus {
     outline: 2px solid rgba(25, 118, 210, 0.45);
@@ -187,6 +212,7 @@ body.modern-orange .sidebar select:focus {
 /* ==================================
 RESULTS / PANELS / THUMBNAILS
 ================================== */
+html.modern-orange .results-container,
 body.modern-orange .results-container {
     background: var(--app-results-bg);
     border: 1px solid rgba(66, 66, 66, 0.12);
@@ -195,10 +221,12 @@ body.modern-orange .results-container {
     backdrop-filter: blur(4px);
 }
 
+html.modern-orange #drawingList,
 body.modern-orange #drawingList {
     color: var(--app-results-text);
 }
 
+html.modern-orange .thumbnail,
 body.modern-orange .thumbnail {
     background: rgba(255, 255, 255, 0.96);
     border: 1px solid var(--app-thumbnail-border);
@@ -208,42 +236,50 @@ body.modern-orange .thumbnail {
 /* ==================================
 COMMENT POPUP
 ================================== */
+html.modern-orange #commentPopup,
 body.modern-orange #commentPopup {
     background: var(--app-popup-bg);
     border: 1px solid rgba(66, 66, 66, 0.14);
     box-shadow: 0 18px 36px rgba(66, 66, 66, 0.18);
 }
 
+html.modern-orange #commentForm h2,
 body.modern-orange #commentForm h2 {
     color: var(--app-popup-accent);
     letter-spacing: 0.02em;
 }
 
+html.modern-orange #commentForm textarea,
 body.modern-orange #commentForm textarea {
     background: rgba(245, 245, 245, 0.98);
     color: var(--app-popup-text);
     border: 1px solid rgba(66, 66, 66, 0.20);
 }
 
+html.modern-orange #commentForm textarea::placeholder,
 body.modern-orange #commentForm textarea::placeholder {
     color: rgba(66, 66, 66, 0.44);
 }
 
+html.modern-orange #commentForm textarea:focus,
 body.modern-orange #commentForm textarea:focus {
     border-color: rgba(25, 118, 210, 0.40);
     box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.12);
 }
 
+html.modern-orange #commentForm button,
 body.modern-orange #commentForm button {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 245, 245, 0.98) 100%);
     color: var(--app-popup-text);
     border: 1px solid rgba(66, 66, 66, 0.18);
 }
 
+html.modern-orange #commentForm button:hover,
 body.modern-orange #commentForm button:hover {
     background: linear-gradient(180deg, rgba(240, 240, 240, 0.98) 0%, rgba(228, 228, 228, 0.98) 100%);
 }
 
+html.modern-orange #commentForm button[type="submit"],
 body.modern-orange #commentForm button[type="submit"] {
     background: linear-gradient(180deg, #42A5F5 0%, #1976D2 100%);
     color: var(--app-popup-submit-text);
@@ -251,6 +287,7 @@ body.modern-orange #commentForm button[type="submit"] {
     font-weight: 700;
 }
 
+html.modern-orange #commentForm button[type="submit"]:hover,
 body.modern-orange #commentForm button[type="submit"]:hover {
     background: linear-gradient(180deg, #64B5F6 0%, #1565C0 100%);
 }
@@ -258,14 +295,17 @@ body.modern-orange #commentForm button[type="submit"]:hover {
 /* ==================================
 LINKS / SPECIAL STATES
 ================================== */
+html.modern-orange a,
 body.modern-orange a {
     color: #1565C0;
 }
 
+html.modern-orange a:hover,
 body.modern-orange a:hover {
     color: #1976D2;
 }
 
+html.modern-orange .logout-button,
 body.modern-orange .logout-button {
     color: #BF360C !important;
 }
@@ -273,6 +313,18 @@ body.modern-orange .logout-button {
 /* ==================================
 ACCESSIBILITY / FOCUS
 ================================== */
+html.modern-orange .hamburger:focus-visible,
+html.modern-orange .toggle-button:focus-visible,
+html.modern-orange .sidebar button:focus-visible,
+html.modern-orange .sidebar a:focus-visible,
+html.modern-orange .sidebar select:focus-visible,
+html.modern-orange #commentForm textarea:focus-visible,
+html.modern-orange #commentForm button:focus-visible,
+html.modern-orange .mt-toggle-btn:focus-visible,
+html.modern-orange .neppy-btn:focus-visible,
+html.modern-orange .neppy-input:focus-visible,
+html.modern-orange .neppy-select:focus-visible,
+html.modern-orange .neppy-textarea:focus-visible,
 body.modern-orange .hamburger:focus-visible,
 body.modern-orange .toggle-button:focus-visible,
 body.modern-orange .sidebar button:focus-visible,
@@ -292,34 +344,48 @@ body.modern-orange .neppy-textarea:focus-visible {
 /* ==================================
 NEPPY UTILITY CLASS SUPPORT
 ================================== */
+html.modern-orange .neppy-card,
+html.modern-orange .neppy-card-soft,
 body.modern-orange .neppy-card,
 body.modern-orange .neppy-card-soft {
     background: var(--neppy-surface);
     border-color: var(--neppy-line);
 }
 
+html.modern-orange .neppy-title,
+html.modern-orange .neppy-panel-title,
 body.modern-orange .neppy-title,
 body.modern-orange .neppy-panel-title {
     color: var(--neppy-heading);
 }
 
+html.modern-orange .neppy-subtitle,
+html.modern-orange .neppy-label,
+html.modern-orange .neppy-text-muted,
 body.modern-orange .neppy-subtitle,
 body.modern-orange .neppy-label,
 body.modern-orange .neppy-text-muted {
     color: var(--neppy-muted) !important;
 }
 
+html.modern-orange .neppy-btn,
 body.modern-orange .neppy-btn {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 245, 245, 0.98) 100%);
     color: var(--neppy-text);
     border-color: var(--neppy-line);
 }
 
+html.modern-orange .neppy-btn:hover,
 body.modern-orange .neppy-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, rgba(232, 240, 253, 0.98) 0%, rgba(218, 232, 250, 0.98) 100%);
 }
 
+html.modern-orange .neppy-input,
+html.modern-orange .neppy-select,
+html.modern-orange .neppy-textarea,
+html.modern-orange .neppy-mono,
+html.modern-orange .neppy-code,
 body.modern-orange .neppy-input,
 body.modern-orange .neppy-select,
 body.modern-orange .neppy-textarea,
@@ -330,6 +396,9 @@ body.modern-orange .neppy-code {
     border-color: var(--neppy-line);
 }
 
+html.modern-orange .neppy-input:focus,
+html.modern-orange .neppy-select:focus,
+html.modern-orange .neppy-textarea:focus,
 body.modern-orange .neppy-input:focus,
 body.modern-orange .neppy-select:focus,
 body.modern-orange .neppy-textarea:focus {
@@ -341,23 +410,28 @@ body.modern-orange .neppy-textarea:focus {
 MODULE TEMPLATE PANEL LAYOUT THEME
 Styles the standardized .mt-* module templates
 ================================== */
+html.modern-orange .mt-layout,
 body.modern-orange .mt-layout {
     color: var(--neppy-text);
 }
 
+html.modern-orange .mt-layout-header,
 body.modern-orange .mt-layout-header {
     border-bottom: 2px solid rgba(255, 111, 0, 0.22);
 }
 
+html.modern-orange .mt-layout-title,
 body.modern-orange .mt-layout-title {
     color: #FF6F00;
     letter-spacing: 0.02em;
 }
 
+html.modern-orange .mt-layout-description,
 body.modern-orange .mt-layout-description {
     color: var(--neppy-muted);
 }
 
+html.modern-orange .mt-panel,
 body.modern-orange .mt-panel {
     background: var(--neppy-surface);
     border: 1px solid var(--neppy-line);
@@ -366,20 +440,24 @@ body.modern-orange .mt-panel {
     backdrop-filter: blur(4px);
 }
 
+html.modern-orange .mt-panel:hover,
 body.modern-orange .mt-panel:hover {
     border-color: #FF9800;
     box-shadow: 0 10px 24px rgba(66, 66, 66, 0.16);
 }
 
+html.modern-orange .mt-panel-header,
 body.modern-orange .mt-panel-header {
     background: rgba(255, 111, 0, 0.05);
     border-bottom: 1px solid var(--neppy-line);
 }
 
+html.modern-orange .mt-panel-title,
 body.modern-orange .mt-panel-title {
     color: #E65100;
 }
 
+html.modern-orange .mt-toggle-btn,
 body.modern-orange .mt-toggle-btn {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 245, 245, 0.98) 100%);
     border: 1px solid var(--neppy-line);
@@ -388,26 +466,31 @@ body.modern-orange .mt-toggle-btn {
     box-shadow: 0 2px 8px rgba(66, 66, 66, 0.10);
 }
 
+html.modern-orange .mt-toggle-btn:hover,
 body.modern-orange .mt-toggle-btn:hover {
     border-color: #FF9800;
     background: linear-gradient(180deg, rgba(255, 243, 224, 0.98) 0%, rgba(255, 232, 194, 0.98) 100%);
     color: var(--neppy-text);
 }
 
+html.modern-orange .mt-panel.is-collapsed .mt-toggle-btn,
 body.modern-orange .mt-panel.is-collapsed .mt-toggle-btn {
     background: linear-gradient(180deg, #c62828 0%, #a81f1f 100%);
     border-color: rgba(230, 74, 74, 0.40);
     color: #ffffff;
 }
 
+html.modern-orange .mt-panel-body,
 body.modern-orange .mt-panel-body {
     color: var(--neppy-text);
 }
 
+html.modern-orange .mt-panel-content,
 body.modern-orange .mt-panel-content {
     gap: 12px;
 }
 
+html.modern-orange .mt-item,
 body.modern-orange .mt-item {
     background: rgba(245, 245, 245, 0.96);
     border: 1px solid var(--neppy-line);
@@ -415,11 +498,13 @@ body.modern-orange .mt-item {
     border-radius: 8px;
 }
 
+html.modern-orange .mt-item:hover,
 body.modern-orange .mt-item:hover {
     background: rgba(255, 152, 0, 0.08);
     border-color: #FF9800;
 }
 
+html.modern-orange .mt-item.is-active,
 body.modern-orange .mt-item.is-active {
     background: rgba(255, 152, 0, 0.14);
     border-color: #FF9800;

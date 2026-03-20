@@ -14,8 +14,9 @@ Role:
 
 /* ==================================
 THEME VARIABLE OVERRIDES
-Apply by adding class="slate-teal" to body
+Apply by adding class="slate-teal" to html or body
 ================================== */
+html.slate-teal,
 body.slate-teal {
     --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
@@ -68,6 +69,7 @@ body.slate-teal {
 NEPPY TOKEN OVERRIDES
 Supports reusable neppy-* utility classes
 ================================== */
+html.slate-teal,
 body.slate-teal {
     --neppy-surface: rgba(14, 26, 28, 0.80);
     --neppy-surface-2: rgba(10, 20, 22, 0.90);
@@ -95,35 +97,43 @@ body.slate-teal {
 /* ==================================
 GLOBAL POLISH
 ================================== */
+html.slate-teal .banner,
 body.slate-teal .banner {
     letter-spacing: 0.03em;
     box-shadow: var(--app-shadow-sm);
 }
 
+html.slate-teal .banner a,
 body.slate-teal .banner a {
     font-weight: 600;
 }
 
+html.slate-teal .sidebar,
 body.slate-teal .sidebar {
     backdrop-filter: blur(5px);
     box-shadow: inset -1px 0 0 rgba(226, 240, 241, 0.08);
 }
 
+html.slate-teal .sidebar h1,
 body.slate-teal .sidebar h1 {
     color: #E2F0F1;
     letter-spacing: 0.02em;
 }
 
+html.slate-teal .welcome-message,
 body.slate-teal .welcome-message {
     color: #C0DCE0;
     font-weight: 600;
 }
 
+html.slate-teal .user-level,
+html.slate-teal .model-display-section,
 body.slate-teal .user-level,
 body.slate-teal .model-display-section {
     color: rgba(226, 240, 241, 0.66);
 }
 
+html.slate-teal .content,
 body.slate-teal .content {
     background: linear-gradient(180deg, rgba(14, 26, 28, 0.84) 0%, rgba(8, 16, 18, 0.92) 100%);
     color: var(--app-content-text);
@@ -132,6 +142,10 @@ body.slate-teal .content {
 /* ==================================
 SIDEBAR NAV / INTERACTION POLISH
 ================================== */
+html.slate-teal .nav-link,
+html.slate-teal .sidebar a,
+html.slate-teal .sidebar button,
+html.slate-teal .sidebar select,
 body.slate-teal .nav-link,
 body.slate-teal .sidebar a,
 body.slate-teal .sidebar button,
@@ -139,6 +153,10 @@ body.slate-teal .sidebar select {
     color: var(--app-sidebar-link);
 }
 
+html.slate-teal .nav-link:hover,
+html.slate-teal .sidebar a:hover,
+html.slate-teal .sidebar button:hover,
+html.slate-teal .sidebar select:hover,
 body.slate-teal .nav-link:hover,
 body.slate-teal .sidebar a:hover,
 body.slate-teal .sidebar button:hover,
@@ -147,6 +165,7 @@ body.slate-teal .sidebar select:hover {
     background-color: var(--app-sidebar-hover-bg);
 }
 
+html.slate-teal .nav-link.highlight,
 body.slate-teal .nav-link.highlight {
     color: var(--app-sidebar-hover);
     background-color: rgba(45, 212, 200, 0.10);
@@ -156,6 +175,7 @@ body.slate-teal .nav-link.highlight {
 /* ==================================
 STANDARD CONTROLS
 ================================== */
+html.slate-teal .toggle-button,
 body.slate-teal .toggle-button {
     background: linear-gradient(180deg, rgba(18, 34, 38, 0.98) 0%, rgba(10, 20, 22, 0.98) 100%) !important;
     color: var(--app-control-text) !important;
@@ -165,11 +185,14 @@ body.slate-teal .toggle-button {
     font-weight: 600;
 }
 
+html.slate-teal .toggle-button:hover,
 body.slate-teal .toggle-button:hover {
     background: linear-gradient(180deg, rgba(26, 46, 52, 0.98) 0%, rgba(14, 28, 32, 0.98) 100%) !important;
     border-color: rgba(45, 212, 200, 0.35) !important;
 }
 
+html.slate-teal #voice-selection,
+html.slate-teal .sidebar select,
 body.slate-teal #voice-selection,
 body.slate-teal .sidebar select {
     background-color: rgba(10, 20, 22, 0.95);
@@ -178,6 +201,8 @@ body.slate-teal .sidebar select {
     border-radius: 5px;
 }
 
+html.slate-teal #voice-selection:focus,
+html.slate-teal .sidebar select:focus,
 body.slate-teal #voice-selection:focus,
 body.slate-teal .sidebar select:focus {
     outline: 2px solid rgba(45, 212, 200, 0.35);
@@ -187,6 +212,7 @@ body.slate-teal .sidebar select:focus {
 /* ==================================
 RESULTS / PANELS / THUMBNAILS
 ================================== */
+html.slate-teal .results-container,
 body.slate-teal .results-container {
     background: var(--app-results-bg);
     border: 1px solid rgba(226, 240, 241, 0.10);
@@ -195,10 +221,12 @@ body.slate-teal .results-container {
     backdrop-filter: blur(4px);
 }
 
+html.slate-teal #drawingList,
 body.slate-teal #drawingList {
     color: var(--app-results-text);
 }
 
+html.slate-teal .thumbnail,
 body.slate-teal .thumbnail {
     background: rgba(10, 20, 22, 0.90);
     border: 1px solid var(--app-thumbnail-border);
@@ -208,42 +236,50 @@ body.slate-teal .thumbnail {
 /* ==================================
 COMMENT POPUP
 ================================== */
+html.slate-teal #commentPopup,
 body.slate-teal #commentPopup {
     background: var(--app-popup-bg);
     border: 1px solid rgba(226, 240, 241, 0.12);
     box-shadow: 0 18px 36px rgba(0, 0, 0, 0.40);
 }
 
+html.slate-teal #commentForm h2,
 body.slate-teal #commentForm h2 {
     color: var(--app-popup-accent);
     letter-spacing: 0.02em;
 }
 
+html.slate-teal #commentForm textarea,
 body.slate-teal #commentForm textarea {
     background: rgba(10, 20, 22, 0.96);
     color: var(--app-popup-text);
     border: 1px solid rgba(138, 190, 196, 0.24);
 }
 
+html.slate-teal #commentForm textarea::placeholder,
 body.slate-teal #commentForm textarea::placeholder {
     color: rgba(226, 240, 241, 0.46);
 }
 
+html.slate-teal #commentForm textarea:focus,
 body.slate-teal #commentForm textarea:focus {
     border-color: rgba(45, 212, 200, 0.38);
     box-shadow: 0 0 0 3px rgba(45, 212, 200, 0.12);
 }
 
+html.slate-teal #commentForm button,
 body.slate-teal #commentForm button {
     background: linear-gradient(180deg, rgba(18, 34, 38, 0.98) 0%, rgba(10, 20, 22, 0.98) 100%);
     color: var(--app-popup-text);
     border: 1px solid rgba(138, 190, 196, 0.16);
 }
 
+html.slate-teal #commentForm button:hover,
 body.slate-teal #commentForm button:hover {
     background: linear-gradient(180deg, rgba(26, 46, 52, 0.98) 0%, rgba(14, 28, 32, 0.98) 100%);
 }
 
+html.slate-teal #commentForm button[type="submit"],
 body.slate-teal #commentForm button[type="submit"] {
     background: linear-gradient(180deg, #52e8d8 0%, #2DD4C8 100%);
     color: var(--app-popup-submit-text);
@@ -251,6 +287,7 @@ body.slate-teal #commentForm button[type="submit"] {
     font-weight: 700;
 }
 
+html.slate-teal #commentForm button[type="submit"]:hover,
 body.slate-teal #commentForm button[type="submit"]:hover {
     background: linear-gradient(180deg, #74ece0 0%, #26c0b5 100%);
 }
@@ -258,14 +295,17 @@ body.slate-teal #commentForm button[type="submit"]:hover {
 /* ==================================
 LINKS / SPECIAL STATES
 ================================== */
+html.slate-teal a,
 body.slate-teal a {
     color: #A0E4EC;
 }
 
+html.slate-teal a:hover,
 body.slate-teal a:hover {
     color: #2DD4C8;
 }
 
+html.slate-teal .logout-button,
 body.slate-teal .logout-button {
     color: #FFB36B !important;
 }
@@ -273,6 +313,18 @@ body.slate-teal .logout-button {
 /* ==================================
 ACCESSIBILITY / FOCUS
 ================================== */
+html.slate-teal .hamburger:focus-visible,
+html.slate-teal .toggle-button:focus-visible,
+html.slate-teal .sidebar button:focus-visible,
+html.slate-teal .sidebar a:focus-visible,
+html.slate-teal .sidebar select:focus-visible,
+html.slate-teal #commentForm textarea:focus-visible,
+html.slate-teal #commentForm button:focus-visible,
+html.slate-teal .mt-toggle-btn:focus-visible,
+html.slate-teal .neppy-btn:focus-visible,
+html.slate-teal .neppy-input:focus-visible,
+html.slate-teal .neppy-select:focus-visible,
+html.slate-teal .neppy-textarea:focus-visible,
 body.slate-teal .hamburger:focus-visible,
 body.slate-teal .toggle-button:focus-visible,
 body.slate-teal .sidebar button:focus-visible,
@@ -292,34 +344,48 @@ body.slate-teal .neppy-textarea:focus-visible {
 /* ==================================
 NEPPY UTILITY CLASS SUPPORT
 ================================== */
+html.slate-teal .neppy-card,
+html.slate-teal .neppy-card-soft,
 body.slate-teal .neppy-card,
 body.slate-teal .neppy-card-soft {
     background: var(--neppy-surface);
     border-color: var(--neppy-line);
 }
 
+html.slate-teal .neppy-title,
+html.slate-teal .neppy-panel-title,
 body.slate-teal .neppy-title,
 body.slate-teal .neppy-panel-title {
     color: var(--neppy-heading);
 }
 
+html.slate-teal .neppy-subtitle,
+html.slate-teal .neppy-label,
+html.slate-teal .neppy-text-muted,
 body.slate-teal .neppy-subtitle,
 body.slate-teal .neppy-label,
 body.slate-teal .neppy-text-muted {
     color: var(--neppy-muted) !important;
 }
 
+html.slate-teal .neppy-btn,
 body.slate-teal .neppy-btn {
     background: linear-gradient(180deg, rgba(18, 34, 38, 0.98) 0%, rgba(10, 20, 22, 0.98) 100%);
     color: var(--neppy-text);
     border-color: var(--neppy-line);
 }
 
+html.slate-teal .neppy-btn:hover,
 body.slate-teal .neppy-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, rgba(26, 46, 52, 0.98) 0%, rgba(14, 28, 32, 0.98) 100%);
 }
 
+html.slate-teal .neppy-input,
+html.slate-teal .neppy-select,
+html.slate-teal .neppy-textarea,
+html.slate-teal .neppy-mono,
+html.slate-teal .neppy-code,
 body.slate-teal .neppy-input,
 body.slate-teal .neppy-select,
 body.slate-teal .neppy-textarea,
@@ -330,6 +396,9 @@ body.slate-teal .neppy-code {
     border-color: var(--neppy-line);
 }
 
+html.slate-teal .neppy-input:focus,
+html.slate-teal .neppy-select:focus,
+html.slate-teal .neppy-textarea:focus,
 body.slate-teal .neppy-input:focus,
 body.slate-teal .neppy-select:focus,
 body.slate-teal .neppy-textarea:focus {
@@ -341,23 +410,28 @@ body.slate-teal .neppy-textarea:focus {
 MODULE TEMPLATE PANEL LAYOUT THEME
 Styles the standardized .mt-* module templates
 ================================== */
+html.slate-teal .mt-layout,
 body.slate-teal .mt-layout {
     color: var(--neppy-text);
 }
 
+html.slate-teal .mt-layout-header,
 body.slate-teal .mt-layout-header {
     border-bottom: 2px solid rgba(45, 212, 200, 0.22);
 }
 
+html.slate-teal .mt-layout-title,
 body.slate-teal .mt-layout-title {
     color: var(--neppy-accent);
     letter-spacing: 0.02em;
 }
 
+html.slate-teal .mt-layout-description,
 body.slate-teal .mt-layout-description {
     color: var(--neppy-muted);
 }
 
+html.slate-teal .mt-panel,
 body.slate-teal .mt-panel {
     background: var(--neppy-surface);
     border: 1px solid var(--neppy-line);
@@ -366,20 +440,24 @@ body.slate-teal .mt-panel {
     backdrop-filter: blur(4px);
 }
 
+html.slate-teal .mt-panel:hover,
 body.slate-teal .mt-panel:hover {
     border-color: var(--neppy-accent);
     box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32);
 }
 
+html.slate-teal .mt-panel-header,
 body.slate-teal .mt-panel-header {
     background: rgba(255, 255, 255, 0.03);
     border-bottom: 1px solid var(--neppy-line);
 }
 
+html.slate-teal .mt-panel-title,
 body.slate-teal .mt-panel-title {
     color: var(--neppy-accent);
 }
 
+html.slate-teal .mt-toggle-btn,
 body.slate-teal .mt-toggle-btn {
     background: linear-gradient(180deg, rgba(18, 34, 38, 0.98) 0%, rgba(10, 20, 22, 0.98) 100%);
     border: 1px solid var(--neppy-line);
@@ -388,26 +466,31 @@ body.slate-teal .mt-toggle-btn {
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.20);
 }
 
+html.slate-teal .mt-toggle-btn:hover,
 body.slate-teal .mt-toggle-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, rgba(26, 46, 52, 0.98) 0%, rgba(14, 28, 32, 0.98) 100%);
     color: var(--neppy-text);
 }
 
+html.slate-teal .mt-panel.is-collapsed .mt-toggle-btn,
 body.slate-teal .mt-panel.is-collapsed .mt-toggle-btn {
     background: linear-gradient(180deg, #7a3020 0%, #5e2418 100%);
     border-color: rgba(255, 142, 142, 0.35);
     color: #ffffff;
 }
 
+html.slate-teal .mt-panel-body,
 body.slate-teal .mt-panel-body {
     color: var(--neppy-text);
 }
 
+html.slate-teal .mt-panel-content,
 body.slate-teal .mt-panel-content {
     gap: 12px;
 }
 
+html.slate-teal .mt-item,
 body.slate-teal .mt-item {
     background: rgba(10, 20, 22, 0.92);
     border: 1px solid var(--neppy-line);
@@ -415,11 +498,13 @@ body.slate-teal .mt-item {
     border-radius: 8px;
 }
 
+html.slate-teal .mt-item:hover,
 body.slate-teal .mt-item:hover {
     background: rgba(45, 212, 200, 0.08);
     border-color: var(--neppy-accent);
 }
 
+html.slate-teal .mt-item.is-active,
 body.slate-teal .mt-item.is-active {
     background: rgba(45, 212, 200, 0.16);
     border-color: var(--neppy-accent);
