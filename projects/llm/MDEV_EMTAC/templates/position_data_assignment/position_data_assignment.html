@@ -1,11 +1,9 @@
 <!--templates/position_data_assignment.html -->
 
-{% extends "base.html" %}
+{% extends "module_template_html/base_template_2_0_0.html" %}
 
 {% block extra_head %}
-    <!-- Include base and custom styles for this page -->
-    <!-- Load base CSS first (corrected path) -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/module_template/base.css') }}">
+
 
     <!-- Then load position-specific CSS to override base -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/position_data_assignment.css') }}">
