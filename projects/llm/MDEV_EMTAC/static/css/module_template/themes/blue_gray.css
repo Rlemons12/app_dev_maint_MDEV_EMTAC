@@ -14,8 +14,9 @@ Role:
 
 /* ==================================
 THEME VARIABLE OVERRIDES
-Apply by adding class="blue-gray" to body
+Apply by adding class="blue-gray" to html or body
 ================================== */
+html.blue-gray,
 body.blue-gray {
     --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
@@ -68,6 +69,7 @@ body.blue-gray {
 NEPPY TOKEN OVERRIDES
 Supports reusable neppy-* utility classes
 ================================== */
+html.blue-gray,
 body.blue-gray {
     --neppy-surface: rgba(24, 35, 58, 0.80);
     --neppy-surface-2: rgba(20, 33, 54, 0.90);
@@ -95,35 +97,43 @@ body.blue-gray {
 /* ==================================
 GLOBAL POLISH
 ================================== */
+html.blue-gray .banner,
 body.blue-gray .banner {
     letter-spacing: 0.03em;
     box-shadow: var(--app-shadow-sm);
 }
 
+html.blue-gray .banner a,
 body.blue-gray .banner a {
     font-weight: 600;
 }
 
+html.blue-gray .sidebar,
 body.blue-gray .sidebar {
     backdrop-filter: blur(5px);
     box-shadow: inset -1px 0 0 rgba(244, 247, 250, 0.10);
 }
 
+html.blue-gray .sidebar h1,
 body.blue-gray .sidebar h1 {
     color: #F4F7FA;
     letter-spacing: 0.02em;
 }
 
+html.blue-gray .welcome-message,
 body.blue-gray .welcome-message {
     color: #D7E2EE;
     font-weight: 600;
 }
 
+html.blue-gray .user-level,
+html.blue-gray .model-display-section,
 body.blue-gray .user-level,
 body.blue-gray .model-display-section {
     color: rgba(244, 247, 250, 0.72);
 }
 
+html.blue-gray .content,
 body.blue-gray .content {
     background: linear-gradient(180deg, rgba(24, 35, 58, 0.84) 0%, rgba(16, 26, 43, 0.92) 100%);
     color: var(--app-content-text);
@@ -132,6 +142,10 @@ body.blue-gray .content {
 /* ==================================
 SIDEBAR NAV / INTERACTION POLISH
 ================================== */
+html.blue-gray .nav-link,
+html.blue-gray .sidebar a,
+html.blue-gray .sidebar button,
+html.blue-gray .sidebar select,
 body.blue-gray .nav-link,
 body.blue-gray .sidebar a,
 body.blue-gray .sidebar button,
@@ -139,6 +153,10 @@ body.blue-gray .sidebar select {
     color: var(--app-sidebar-link);
 }
 
+html.blue-gray .nav-link:hover,
+html.blue-gray .sidebar a:hover,
+html.blue-gray .sidebar button:hover,
+html.blue-gray .sidebar select:hover,
 body.blue-gray .nav-link:hover,
 body.blue-gray .sidebar a:hover,
 body.blue-gray .sidebar button:hover,
@@ -147,6 +165,7 @@ body.blue-gray .sidebar select:hover {
     background-color: var(--app-sidebar-hover-bg);
 }
 
+html.blue-gray .nav-link.highlight,
 body.blue-gray .nav-link.highlight {
     color: var(--app-sidebar-hover);
     background-color: rgba(21, 212, 216, 0.10);
@@ -156,6 +175,7 @@ body.blue-gray .nav-link.highlight {
 /* ==================================
 STANDARD CONTROLS
 ================================== */
+html.blue-gray .toggle-button,
 body.blue-gray .toggle-button {
     background: linear-gradient(180deg, rgba(36, 58, 89, 0.98) 0%, rgba(20, 33, 54, 0.98) 100%) !important;
     color: var(--app-control-text) !important;
@@ -165,11 +185,14 @@ body.blue-gray .toggle-button {
     font-weight: 600;
 }
 
+html.blue-gray .toggle-button:hover,
 body.blue-gray .toggle-button:hover {
     background: linear-gradient(180deg, rgba(48, 74, 110, 0.98) 0%, rgba(28, 43, 68, 0.98) 100%) !important;
     border-color: rgba(21, 212, 216, 0.35) !important;
 }
 
+html.blue-gray #voice-selection,
+html.blue-gray .sidebar select,
 body.blue-gray #voice-selection,
 body.blue-gray .sidebar select {
     background-color: rgba(20, 33, 54, 0.95);
@@ -178,6 +201,8 @@ body.blue-gray .sidebar select {
     border-radius: 5px;
 }
 
+html.blue-gray #voice-selection:focus,
+html.blue-gray .sidebar select:focus,
 body.blue-gray #voice-selection:focus,
 body.blue-gray .sidebar select:focus {
     outline: 2px solid rgba(21, 212, 216, 0.35);
@@ -187,6 +212,7 @@ body.blue-gray .sidebar select:focus {
 /* ==================================
 RESULTS / PANELS / THUMBNAILS
 ================================== */
+html.blue-gray .results-container,
 body.blue-gray .results-container {
     background: var(--app-results-bg);
     border: 1px solid rgba(244, 247, 250, 0.10);
@@ -195,10 +221,12 @@ body.blue-gray .results-container {
     backdrop-filter: blur(4px);
 }
 
+html.blue-gray #drawingList,
 body.blue-gray #drawingList {
     color: var(--app-results-text);
 }
 
+html.blue-gray .thumbnail,
 body.blue-gray .thumbnail {
     background: rgba(20, 33, 54, 0.90);
     border: 1px solid var(--app-thumbnail-border);
@@ -208,42 +236,50 @@ body.blue-gray .thumbnail {
 /* ==================================
 COMMENT POPUP
 ================================== */
+html.blue-gray #commentPopup,
 body.blue-gray #commentPopup {
     background: var(--app-popup-bg);
     border: 1px solid rgba(244, 247, 250, 0.12);
     box-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
 }
 
+html.blue-gray #commentForm h2,
 body.blue-gray #commentForm h2 {
     color: var(--app-popup-accent);
     letter-spacing: 0.02em;
 }
 
+html.blue-gray #commentForm textarea,
 body.blue-gray #commentForm textarea {
     background: rgba(20, 33, 54, 0.96);
     color: var(--app-popup-text);
     border: 1px solid rgba(170, 178, 189, 0.24);
 }
 
+html.blue-gray #commentForm textarea::placeholder,
 body.blue-gray #commentForm textarea::placeholder {
     color: rgba(244, 247, 250, 0.58);
 }
 
+html.blue-gray #commentForm textarea:focus,
 body.blue-gray #commentForm textarea:focus {
     border-color: rgba(21, 212, 216, 0.38);
     box-shadow: 0 0 0 3px rgba(21, 212, 216, 0.12);
 }
 
+html.blue-gray #commentForm button,
 body.blue-gray #commentForm button {
     background: linear-gradient(180deg, rgba(36, 58, 89, 0.98) 0%, rgba(20, 33, 54, 0.98) 100%);
     color: var(--app-popup-text);
     border: 1px solid rgba(170, 178, 189, 0.16);
 }
 
+html.blue-gray #commentForm button:hover,
 body.blue-gray #commentForm button:hover {
     background: linear-gradient(180deg, rgba(48, 74, 110, 0.98) 0%, rgba(28, 43, 68, 0.98) 100%);
 }
 
+html.blue-gray #commentForm button[type="submit"],
 body.blue-gray #commentForm button[type="submit"] {
     background: linear-gradient(180deg, #4debed 0%, #15D4D8 100%);
     color: var(--app-popup-submit-text);
@@ -251,6 +287,7 @@ body.blue-gray #commentForm button[type="submit"] {
     font-weight: 700;
 }
 
+html.blue-gray #commentForm button[type="submit"]:hover,
 body.blue-gray #commentForm button[type="submit"]:hover {
     background: linear-gradient(180deg, #73f0f2 0%, #11c3c7 100%);
 }
@@ -258,14 +295,17 @@ body.blue-gray #commentForm button[type="submit"]:hover {
 /* ==================================
 LINKS / SPECIAL STATES
 ================================== */
+html.blue-gray a,
 body.blue-gray a {
     color: #BEEBFF;
 }
 
+html.blue-gray a:hover,
 body.blue-gray a:hover {
     color: #15D4D8;
 }
 
+html.blue-gray .logout-button,
 body.blue-gray .logout-button {
     color: #FFB36B !important;
 }
@@ -273,6 +313,18 @@ body.blue-gray .logout-button {
 /* ==================================
 ACCESSIBILITY / FOCUS
 ================================== */
+html.blue-gray .hamburger:focus-visible,
+html.blue-gray .toggle-button:focus-visible,
+html.blue-gray .sidebar button:focus-visible,
+html.blue-gray .sidebar a:focus-visible,
+html.blue-gray .sidebar select:focus-visible,
+html.blue-gray #commentForm textarea:focus-visible,
+html.blue-gray #commentForm button:focus-visible,
+html.blue-gray .mt-toggle-btn:focus-visible,
+html.blue-gray .neppy-btn:focus-visible,
+html.blue-gray .neppy-input:focus-visible,
+html.blue-gray .neppy-select:focus-visible,
+html.blue-gray .neppy-textarea:focus-visible,
 body.blue-gray .hamburger:focus-visible,
 body.blue-gray .toggle-button:focus-visible,
 body.blue-gray .sidebar button:focus-visible,
@@ -292,34 +344,48 @@ body.blue-gray .neppy-textarea:focus-visible {
 /* ==================================
 NEPPY UTILITY CLASS SUPPORT
 ================================== */
+html.blue-gray .neppy-card,
+html.blue-gray .neppy-card-soft,
 body.blue-gray .neppy-card,
 body.blue-gray .neppy-card-soft {
     background: var(--neppy-surface);
     border-color: var(--neppy-line);
 }
 
+html.blue-gray .neppy-title,
+html.blue-gray .neppy-panel-title,
 body.blue-gray .neppy-title,
 body.blue-gray .neppy-panel-title {
     color: var(--neppy-heading);
 }
 
+html.blue-gray .neppy-subtitle,
+html.blue-gray .neppy-label,
+html.blue-gray .neppy-text-muted,
 body.blue-gray .neppy-subtitle,
 body.blue-gray .neppy-label,
 body.blue-gray .neppy-text-muted {
     color: var(--neppy-muted) !important;
 }
 
+html.blue-gray .neppy-btn,
 body.blue-gray .neppy-btn {
     background: linear-gradient(180deg, rgba(36, 58, 89, 0.98) 0%, rgba(20, 33, 54, 0.98) 100%);
     color: var(--neppy-text);
     border-color: var(--neppy-line);
 }
 
+html.blue-gray .neppy-btn:hover,
 body.blue-gray .neppy-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, rgba(48, 74, 110, 0.98) 0%, rgba(28, 43, 68, 0.98) 100%);
 }
 
+html.blue-gray .neppy-input,
+html.blue-gray .neppy-select,
+html.blue-gray .neppy-textarea,
+html.blue-gray .neppy-mono,
+html.blue-gray .neppy-code,
 body.blue-gray .neppy-input,
 body.blue-gray .neppy-select,
 body.blue-gray .neppy-textarea,
@@ -330,6 +396,9 @@ body.blue-gray .neppy-code {
     border-color: var(--neppy-line);
 }
 
+html.blue-gray .neppy-input:focus,
+html.blue-gray .neppy-select:focus,
+html.blue-gray .neppy-textarea:focus,
 body.blue-gray .neppy-input:focus,
 body.blue-gray .neppy-select:focus,
 body.blue-gray .neppy-textarea:focus {
@@ -341,23 +410,28 @@ body.blue-gray .neppy-textarea:focus {
 MODULE TEMPLATE PANEL LAYOUT THEME
 Styles the standardized .mt-* module templates
 ================================== */
+html.blue-gray .mt-layout,
 body.blue-gray .mt-layout {
     color: var(--neppy-text);
 }
 
+html.blue-gray .mt-layout-header,
 body.blue-gray .mt-layout-header {
     border-bottom: 2px solid rgba(21, 212, 216, 0.22);
 }
 
+html.blue-gray .mt-layout-title,
 body.blue-gray .mt-layout-title {
     color: var(--neppy-accent);
     letter-spacing: 0.02em;
 }
 
+html.blue-gray .mt-layout-description,
 body.blue-gray .mt-layout-description {
     color: var(--neppy-muted);
 }
 
+html.blue-gray .mt-panel,
 body.blue-gray .mt-panel {
     background: var(--neppy-surface);
     border: 1px solid var(--neppy-line);
@@ -366,20 +440,24 @@ body.blue-gray .mt-panel {
     backdrop-filter: blur(4px);
 }
 
+html.blue-gray .mt-panel:hover,
 body.blue-gray .mt-panel:hover {
     border-color: var(--neppy-accent);
     box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
 }
 
+html.blue-gray .mt-panel-header,
 body.blue-gray .mt-panel-header {
     background: rgba(255, 255, 255, 0.04);
     border-bottom: 1px solid var(--neppy-line);
 }
 
+html.blue-gray .mt-panel-title,
 body.blue-gray .mt-panel-title {
     color: var(--neppy-accent);
 }
 
+html.blue-gray .mt-toggle-btn,
 body.blue-gray .mt-toggle-btn {
     background: linear-gradient(180deg, rgba(36, 58, 89, 0.98) 0%, rgba(20, 33, 54, 0.98) 100%);
     border: 1px solid var(--neppy-line);
@@ -388,26 +466,31 @@ body.blue-gray .mt-toggle-btn {
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
 }
 
+html.blue-gray .mt-toggle-btn:hover,
 body.blue-gray .mt-toggle-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, rgba(48, 74, 110, 0.98) 0%, rgba(28, 43, 68, 0.98) 100%);
     color: var(--neppy-text);
 }
 
+html.blue-gray .mt-panel.is-collapsed .mt-toggle-btn,
 body.blue-gray .mt-panel.is-collapsed .mt-toggle-btn {
     background: linear-gradient(180deg, #7a2f3f 0%, #5e2431 100%);
     border-color: rgba(255, 142, 142, 0.35);
     color: #ffffff;
 }
 
+html.blue-gray .mt-panel-body,
 body.blue-gray .mt-panel-body {
     color: var(--neppy-text);
 }
 
+html.blue-gray .mt-panel-content,
 body.blue-gray .mt-panel-content {
     gap: 12px;
 }
 
+html.blue-gray .mt-item,
 body.blue-gray .mt-item {
     background: rgba(20, 33, 54, 0.92);
     border: 1px solid var(--neppy-line);
@@ -415,11 +498,13 @@ body.blue-gray .mt-item {
     border-radius: 8px;
 }
 
+html.blue-gray .mt-item:hover,
 body.blue-gray .mt-item:hover {
     background: rgba(21, 212, 216, 0.08);
     border-color: var(--neppy-accent);
 }
 
+html.blue-gray .mt-item.is-active,
 body.blue-gray .mt-item.is-active {
     background: rgba(21, 212, 216, 0.16);
     border-color: var(--neppy-accent);
