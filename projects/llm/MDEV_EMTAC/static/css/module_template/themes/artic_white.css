@@ -14,8 +14,9 @@ Role:
 
 /* ==================================
 THEME VARIABLE OVERRIDES
-Apply by adding class="arctic-white" to body
+Apply by adding class="arctic-white" to html or body
 ================================== */
+html.arctic-white,
 body.arctic-white {
     --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
@@ -68,6 +69,7 @@ body.arctic-white {
 NEPPY TOKEN OVERRIDES
 Supports reusable neppy-* utility classes
 ================================== */
+html.arctic-white,
 body.arctic-white {
     --neppy-surface: rgba(255, 255, 255, 0.86);
     --neppy-surface-2: rgba(244, 248, 252, 0.95);
@@ -95,35 +97,43 @@ body.arctic-white {
 /* ==================================
 GLOBAL POLISH
 ================================== */
+html.arctic-white .banner,
 body.arctic-white .banner {
     letter-spacing: 0.03em;
     box-shadow: var(--app-shadow-sm);
 }
 
+html.arctic-white .banner a,
 body.arctic-white .banner a {
     font-weight: 600;
 }
 
+html.arctic-white .sidebar,
 body.arctic-white .sidebar {
     backdrop-filter: blur(8px);
     box-shadow: inset -1px 0 0 rgba(28, 43, 58, 0.10), 2px 0 12px rgba(28, 43, 58, 0.06);
 }
 
+html.arctic-white .sidebar h1,
 body.arctic-white .sidebar h1 {
     color: #0D1E2C;
     letter-spacing: 0.02em;
 }
 
+html.arctic-white .welcome-message,
 body.arctic-white .welcome-message {
     color: #2A4256;
     font-weight: 600;
 }
 
+html.arctic-white .user-level,
+html.arctic-white .model-display-section,
 body.arctic-white .user-level,
 body.arctic-white .model-display-section {
     color: rgba(28, 43, 58, 0.58);
 }
 
+html.arctic-white .content,
 body.arctic-white .content {
     background: linear-gradient(180deg, rgba(238, 242, 247, 0.88) 0%, rgba(228, 235, 244, 0.94) 100%);
     color: var(--app-content-text);
@@ -132,6 +142,10 @@ body.arctic-white .content {
 /* ==================================
 SIDEBAR NAV / INTERACTION POLISH
 ================================== */
+html.arctic-white .nav-link,
+html.arctic-white .sidebar a,
+html.arctic-white .sidebar button,
+html.arctic-white .sidebar select,
 body.arctic-white .nav-link,
 body.arctic-white .sidebar a,
 body.arctic-white .sidebar button,
@@ -139,6 +153,10 @@ body.arctic-white .sidebar select {
     color: var(--app-sidebar-link);
 }
 
+html.arctic-white .nav-link:hover,
+html.arctic-white .sidebar a:hover,
+html.arctic-white .sidebar button:hover,
+html.arctic-white .sidebar select:hover,
 body.arctic-white .nav-link:hover,
 body.arctic-white .sidebar a:hover,
 body.arctic-white .sidebar button:hover,
@@ -147,6 +165,7 @@ body.arctic-white .sidebar select:hover {
     background-color: var(--app-sidebar-hover-bg);
 }
 
+html.arctic-white .nav-link.highlight,
 body.arctic-white .nav-link.highlight {
     color: var(--app-sidebar-hover);
     background-color: rgba(15, 143, 191, 0.08);
@@ -156,6 +175,7 @@ body.arctic-white .nav-link.highlight {
 /* ==================================
 STANDARD CONTROLS
 ================================== */
+html.arctic-white .toggle-button,
 body.arctic-white .toggle-button {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 245, 250, 0.98) 100%) !important;
     color: var(--app-control-text) !important;
@@ -165,11 +185,14 @@ body.arctic-white .toggle-button {
     font-weight: 600;
 }
 
+html.arctic-white .toggle-button:hover,
 body.arctic-white .toggle-button:hover {
     background: linear-gradient(180deg, rgba(232, 240, 248, 0.98) 0%, rgba(218, 230, 242, 0.98) 100%) !important;
     border-color: rgba(15, 143, 191, 0.35) !important;
 }
 
+html.arctic-white #voice-selection,
+html.arctic-white .sidebar select,
 body.arctic-white #voice-selection,
 body.arctic-white .sidebar select {
     background-color: rgba(255, 255, 255, 0.95);
@@ -178,6 +201,8 @@ body.arctic-white .sidebar select {
     border-radius: 5px;
 }
 
+html.arctic-white #voice-selection:focus,
+html.arctic-white .sidebar select:focus,
 body.arctic-white #voice-selection:focus,
 body.arctic-white .sidebar select:focus {
     outline: 2px solid rgba(15, 143, 191, 0.35);
@@ -187,6 +212,7 @@ body.arctic-white .sidebar select:focus {
 /* ==================================
 RESULTS / PANELS / THUMBNAILS
 ================================== */
+html.arctic-white .results-container,
 body.arctic-white .results-container {
     background: var(--app-results-bg);
     border: 1px solid rgba(28, 43, 58, 0.12);
@@ -195,10 +221,12 @@ body.arctic-white .results-container {
     backdrop-filter: blur(4px);
 }
 
+html.arctic-white #drawingList,
 body.arctic-white #drawingList {
     color: var(--app-results-text);
 }
 
+html.arctic-white .thumbnail,
 body.arctic-white .thumbnail {
     background: rgba(255, 255, 255, 0.95);
     border: 1px solid var(--app-thumbnail-border);
@@ -208,42 +236,50 @@ body.arctic-white .thumbnail {
 /* ==================================
 COMMENT POPUP
 ================================== */
+html.arctic-white #commentPopup,
 body.arctic-white #commentPopup {
     background: var(--app-popup-bg);
     border: 1px solid rgba(28, 43, 58, 0.14);
     box-shadow: 0 18px 36px rgba(28, 43, 58, 0.18);
 }
 
+html.arctic-white #commentForm h2,
 body.arctic-white #commentForm h2 {
     color: var(--app-popup-accent);
     letter-spacing: 0.02em;
 }
 
+html.arctic-white #commentForm textarea,
 body.arctic-white #commentForm textarea {
     background: rgba(244, 248, 252, 0.98);
     color: var(--app-popup-text);
     border: 1px solid rgba(28, 43, 58, 0.18);
 }
 
+html.arctic-white #commentForm textarea::placeholder,
 body.arctic-white #commentForm textarea::placeholder {
     color: rgba(28, 43, 58, 0.40);
 }
 
+html.arctic-white #commentForm textarea:focus,
 body.arctic-white #commentForm textarea:focus {
     border-color: rgba(15, 143, 191, 0.40);
     box-shadow: 0 0 0 3px rgba(15, 143, 191, 0.12);
 }
 
+html.arctic-white #commentForm button,
 body.arctic-white #commentForm button {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 245, 250, 0.98) 100%);
     color: var(--app-popup-text);
     border: 1px solid rgba(28, 43, 58, 0.16);
 }
 
+html.arctic-white #commentForm button:hover,
 body.arctic-white #commentForm button:hover {
     background: linear-gradient(180deg, rgba(232, 240, 248, 0.98) 0%, rgba(218, 230, 242, 0.98) 100%);
 }
 
+html.arctic-white #commentForm button[type="submit"],
 body.arctic-white #commentForm button[type="submit"] {
     background: linear-gradient(180deg, #30AACC 0%, #0F8FBF 100%);
     color: var(--app-popup-submit-text);
@@ -251,6 +287,7 @@ body.arctic-white #commentForm button[type="submit"] {
     font-weight: 700;
 }
 
+html.arctic-white #commentForm button[type="submit"]:hover,
 body.arctic-white #commentForm button[type="submit"]:hover {
     background: linear-gradient(180deg, #46BADA 0%, #0D7FAD 100%);
 }
@@ -258,14 +295,17 @@ body.arctic-white #commentForm button[type="submit"]:hover {
 /* ==================================
 LINKS / SPECIAL STATES
 ================================== */
+html.arctic-white a,
 body.arctic-white a {
     color: #0F7AAD;
 }
 
+html.arctic-white a:hover,
 body.arctic-white a:hover {
     color: #0F8FBF;
 }
 
+html.arctic-white .logout-button,
 body.arctic-white .logout-button {
     color: #B04000 !important;
 }
@@ -273,6 +313,18 @@ body.arctic-white .logout-button {
 /* ==================================
 ACCESSIBILITY / FOCUS
 ================================== */
+html.arctic-white .hamburger:focus-visible,
+html.arctic-white .toggle-button:focus-visible,
+html.arctic-white .sidebar button:focus-visible,
+html.arctic-white .sidebar a:focus-visible,
+html.arctic-white .sidebar select:focus-visible,
+html.arctic-white #commentForm textarea:focus-visible,
+html.arctic-white #commentForm button:focus-visible,
+html.arctic-white .mt-toggle-btn:focus-visible,
+html.arctic-white .neppy-btn:focus-visible,
+html.arctic-white .neppy-input:focus-visible,
+html.arctic-white .neppy-select:focus-visible,
+html.arctic-white .neppy-textarea:focus-visible,
 body.arctic-white .hamburger:focus-visible,
 body.arctic-white .toggle-button:focus-visible,
 body.arctic-white .sidebar button:focus-visible,
@@ -292,34 +344,48 @@ body.arctic-white .neppy-textarea:focus-visible {
 /* ==================================
 NEPPY UTILITY CLASS SUPPORT
 ================================== */
+html.arctic-white .neppy-card,
+html.arctic-white .neppy-card-soft,
 body.arctic-white .neppy-card,
 body.arctic-white .neppy-card-soft {
     background: var(--neppy-surface);
     border-color: var(--neppy-line);
 }
 
+html.arctic-white .neppy-title,
+html.arctic-white .neppy-panel-title,
 body.arctic-white .neppy-title,
 body.arctic-white .neppy-panel-title {
     color: var(--neppy-heading);
 }
 
+html.arctic-white .neppy-subtitle,
+html.arctic-white .neppy-label,
+html.arctic-white .neppy-text-muted,
 body.arctic-white .neppy-subtitle,
 body.arctic-white .neppy-label,
 body.arctic-white .neppy-text-muted {
     color: var(--neppy-muted) !important;
 }
 
+html.arctic-white .neppy-btn,
 body.arctic-white .neppy-btn {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 245, 250, 0.98) 100%);
     color: var(--neppy-text);
     border-color: var(--neppy-line);
 }
 
+html.arctic-white .neppy-btn:hover,
 body.arctic-white .neppy-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, rgba(232, 240, 248, 0.98) 0%, rgba(218, 230, 242, 0.98) 100%);
 }
 
+html.arctic-white .neppy-input,
+html.arctic-white .neppy-select,
+html.arctic-white .neppy-textarea,
+html.arctic-white .neppy-mono,
+html.arctic-white .neppy-code,
 body.arctic-white .neppy-input,
 body.arctic-white .neppy-select,
 body.arctic-white .neppy-textarea,
@@ -330,6 +396,9 @@ body.arctic-white .neppy-code {
     border-color: var(--neppy-line);
 }
 
+html.arctic-white .neppy-input:focus,
+html.arctic-white .neppy-select:focus,
+html.arctic-white .neppy-textarea:focus,
 body.arctic-white .neppy-input:focus,
 body.arctic-white .neppy-select:focus,
 body.arctic-white .neppy-textarea:focus {
@@ -341,23 +410,28 @@ body.arctic-white .neppy-textarea:focus {
 MODULE TEMPLATE PANEL LAYOUT THEME
 Styles the standardized .mt-* module templates
 ================================== */
+html.arctic-white .mt-layout,
 body.arctic-white .mt-layout {
     color: var(--neppy-text);
 }
 
+html.arctic-white .mt-layout-header,
 body.arctic-white .mt-layout-header {
     border-bottom: 2px solid rgba(15, 143, 191, 0.20);
 }
 
+html.arctic-white .mt-layout-title,
 body.arctic-white .mt-layout-title {
     color: var(--neppy-accent);
     letter-spacing: 0.02em;
 }
 
+html.arctic-white .mt-layout-description,
 body.arctic-white .mt-layout-description {
     color: var(--neppy-muted);
 }
 
+html.arctic-white .mt-panel,
 body.arctic-white .mt-panel {
     background: var(--neppy-surface);
     border: 1px solid var(--neppy-line);
@@ -366,20 +440,24 @@ body.arctic-white .mt-panel {
     backdrop-filter: blur(4px);
 }
 
+html.arctic-white .mt-panel:hover,
 body.arctic-white .mt-panel:hover {
     border-color: var(--neppy-accent);
     box-shadow: 0 10px 24px rgba(28, 43, 58, 0.16);
 }
 
+html.arctic-white .mt-panel-header,
 body.arctic-white .mt-panel-header {
     background: rgba(28, 43, 58, 0.04);
     border-bottom: 1px solid var(--neppy-line);
 }
 
+html.arctic-white .mt-panel-title,
 body.arctic-white .mt-panel-title {
     color: var(--neppy-accent);
 }
 
+html.arctic-white .mt-toggle-btn,
 body.arctic-white .mt-toggle-btn {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 245, 250, 0.98) 100%);
     border: 1px solid var(--neppy-line);
@@ -388,26 +466,31 @@ body.arctic-white .mt-toggle-btn {
     box-shadow: 0 2px 8px rgba(28, 43, 58, 0.10);
 }
 
+html.arctic-white .mt-toggle-btn:hover,
 body.arctic-white .mt-toggle-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, rgba(232, 240, 248, 0.98) 0%, rgba(218, 230, 242, 0.98) 100%);
     color: var(--neppy-text);
 }
 
+html.arctic-white .mt-panel.is-collapsed .mt-toggle-btn,
 body.arctic-white .mt-panel.is-collapsed .mt-toggle-btn {
     background: linear-gradient(180deg, #b83030 0%, #922424 100%);
     border-color: rgba(200, 80, 80, 0.40);
     color: #ffffff;
 }
 
+html.arctic-white .mt-panel-body,
 body.arctic-white .mt-panel-body {
     color: var(--neppy-text);
 }
 
+html.arctic-white .mt-panel-content,
 body.arctic-white .mt-panel-content {
     gap: 12px;
 }
 
+html.arctic-white .mt-item,
 body.arctic-white .mt-item {
     background: rgba(244, 248, 252, 0.95);
     border: 1px solid var(--neppy-line);
@@ -415,11 +498,13 @@ body.arctic-white .mt-item {
     border-radius: 8px;
 }
 
+html.arctic-white .mt-item:hover,
 body.arctic-white .mt-item:hover {
     background: rgba(15, 143, 191, 0.06);
     border-color: var(--neppy-accent);
 }
 
+html.arctic-white .mt-item.is-active,
 body.arctic-white .mt-item.is-active {
     background: rgba(15, 143, 191, 0.12);
     border-color: var(--neppy-accent);
