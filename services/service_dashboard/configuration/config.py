@@ -47,7 +47,7 @@ def as_path(value: str | Path) -> Path:
 # Dashboard host/port
 # ---------------------------------------------------------
 SERVICE_DASHBOARD_HOST: str = get_env("SERVICE_DASHBOARD_HOST", "127.0.0.1")
-SERVICE_DASHBOARD_PORT: int = int(get_env("SERVICE_DASHBOARD_PORT", "5051"))
+SERVICE_DASHBOARD_PORT: int = int(get_env("SERVICE_DASHBOARD_PORT", "5000"))
 
 
 # ---------------------------------------------------------
@@ -56,7 +56,7 @@ SERVICE_DASHBOARD_PORT: int = int(get_env("SERVICE_DASHBOARD_PORT", "5051"))
 SERVICE_GPU_PYTHON: Path = as_path(get_env("SERVICE_GPU_PYTHON"))
 SERVICE_GPU_CWD: Path = as_path(get_env("SERVICE_GPU_CWD"))
 SERVICE_GPU_ENTRY: str = get_env("SERVICE_GPU_ENTRY")
-SERVICE_GPU_BASE_URL: str = get_env("SERVICE_GPU_BASE_URL", "http://127.0.0.1:5050")
+SERVICE_GPU_BASE_URL: str = get_env("SERVICE_GPU_BASE_URL", "http://127.0.0.1:5051")
 
 
 # ---------------------------------------------------------
