@@ -14,8 +14,9 @@ Role:
 
 /* ==================================
 THEME VARIABLE OVERRIDES
-Apply by adding class="amber-forge" to body
+Apply by adding class="amber-forge" to html or body
 ================================== */
+html.amber-forge,
 body.amber-forge {
     --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
@@ -68,6 +69,7 @@ body.amber-forge {
 NEPPY TOKEN OVERRIDES
 Supports reusable neppy-* utility classes
 ================================== */
+html.amber-forge,
 body.amber-forge {
     --neppy-surface: rgba(28, 16, 0, 0.80);
     --neppy-surface-2: rgba(22, 12, 0, 0.90);
@@ -95,35 +97,43 @@ body.amber-forge {
 /* ==================================
 GLOBAL POLISH
 ================================== */
+html.amber-forge .banner,
 body.amber-forge .banner {
     letter-spacing: 0.03em;
     box-shadow: var(--app-shadow-sm);
 }
 
+html.amber-forge .banner a,
 body.amber-forge .banner a {
     font-weight: 600;
 }
 
+html.amber-forge .sidebar,
 body.amber-forge .sidebar {
     backdrop-filter: blur(5px);
     box-shadow: inset -1px 0 0 rgba(255, 243, 220, 0.08);
 }
 
+html.amber-forge .sidebar h1,
 body.amber-forge .sidebar h1 {
     color: #FFF3DC;
     letter-spacing: 0.02em;
 }
 
+html.amber-forge .welcome-message,
 body.amber-forge .welcome-message {
     color: #EEDD9A;
     font-weight: 600;
 }
 
+html.amber-forge .user-level,
+html.amber-forge .model-display-section,
 body.amber-forge .user-level,
 body.amber-forge .model-display-section {
     color: rgba(255, 243, 220, 0.66);
 }
 
+html.amber-forge .content,
 body.amber-forge .content {
     background: linear-gradient(180deg, rgba(28, 16, 0, 0.84) 0%, rgba(16, 8, 0, 0.92) 100%);
     color: var(--app-content-text);
@@ -132,6 +142,10 @@ body.amber-forge .content {
 /* ==================================
 SIDEBAR NAV / INTERACTION POLISH
 ================================== */
+html.amber-forge .nav-link,
+html.amber-forge .sidebar a,
+html.amber-forge .sidebar button,
+html.amber-forge .sidebar select,
 body.amber-forge .nav-link,
 body.amber-forge .sidebar a,
 body.amber-forge .sidebar button,
@@ -139,6 +153,10 @@ body.amber-forge .sidebar select {
     color: var(--app-sidebar-link);
 }
 
+html.amber-forge .nav-link:hover,
+html.amber-forge .sidebar a:hover,
+html.amber-forge .sidebar button:hover,
+html.amber-forge .sidebar select:hover,
 body.amber-forge .nav-link:hover,
 body.amber-forge .sidebar a:hover,
 body.amber-forge .sidebar button:hover,
@@ -147,6 +165,7 @@ body.amber-forge .sidebar select:hover {
     background-color: var(--app-sidebar-hover-bg);
 }
 
+html.amber-forge .nav-link.highlight,
 body.amber-forge .nav-link.highlight {
     color: var(--app-sidebar-hover);
     background-color: rgba(255, 174, 66, 0.10);
@@ -156,6 +175,7 @@ body.amber-forge .nav-link.highlight {
 /* ==================================
 STANDARD CONTROLS
 ================================== */
+html.amber-forge .toggle-button,
 body.amber-forge .toggle-button {
     background: linear-gradient(180deg, rgba(48, 26, 0, 0.98) 0%, rgba(22, 12, 0, 0.98) 100%) !important;
     color: var(--app-control-text) !important;
@@ -165,11 +185,14 @@ body.amber-forge .toggle-button {
     font-weight: 600;
 }
 
+html.amber-forge .toggle-button:hover,
 body.amber-forge .toggle-button:hover {
     background: linear-gradient(180deg, rgba(68, 36, 0, 0.98) 0%, rgba(30, 16, 0, 0.98) 100%) !important;
     border-color: rgba(255, 174, 66, 0.35) !important;
 }
 
+html.amber-forge #voice-selection,
+html.amber-forge .sidebar select,
 body.amber-forge #voice-selection,
 body.amber-forge .sidebar select {
     background-color: rgba(22, 12, 0, 0.95);
@@ -178,6 +201,8 @@ body.amber-forge .sidebar select {
     border-radius: 5px;
 }
 
+html.amber-forge #voice-selection:focus,
+html.amber-forge .sidebar select:focus,
 body.amber-forge #voice-selection:focus,
 body.amber-forge .sidebar select:focus {
     outline: 2px solid rgba(255, 174, 66, 0.35);
@@ -187,6 +212,7 @@ body.amber-forge .sidebar select:focus {
 /* ==================================
 RESULTS / PANELS / THUMBNAILS
 ================================== */
+html.amber-forge .results-container,
 body.amber-forge .results-container {
     background: var(--app-results-bg);
     border: 1px solid rgba(255, 243, 220, 0.10);
@@ -195,10 +221,12 @@ body.amber-forge .results-container {
     backdrop-filter: blur(4px);
 }
 
+html.amber-forge #drawingList,
 body.amber-forge #drawingList {
     color: var(--app-results-text);
 }
 
+html.amber-forge .thumbnail,
 body.amber-forge .thumbnail {
     background: rgba(22, 12, 0, 0.90);
     border: 1px solid var(--app-thumbnail-border);
@@ -208,42 +236,50 @@ body.amber-forge .thumbnail {
 /* ==================================
 COMMENT POPUP
 ================================== */
+html.amber-forge #commentPopup,
 body.amber-forge #commentPopup {
     background: var(--app-popup-bg);
     border: 1px solid rgba(255, 243, 220, 0.12);
     box-shadow: 0 18px 36px rgba(0, 0, 0, 0.44);
 }
 
+html.amber-forge #commentForm h2,
 body.amber-forge #commentForm h2 {
     color: var(--app-popup-accent);
     letter-spacing: 0.02em;
 }
 
+html.amber-forge #commentForm textarea,
 body.amber-forge #commentForm textarea {
     background: rgba(22, 12, 0, 0.96);
     color: var(--app-popup-text);
     border: 1px solid rgba(212, 168, 106, 0.24);
 }
 
+html.amber-forge #commentForm textarea::placeholder,
 body.amber-forge #commentForm textarea::placeholder {
     color: rgba(255, 243, 220, 0.46);
 }
 
+html.amber-forge #commentForm textarea:focus,
 body.amber-forge #commentForm textarea:focus {
     border-color: rgba(255, 174, 66, 0.38);
     box-shadow: 0 0 0 3px rgba(255, 174, 66, 0.12);
 }
 
+html.amber-forge #commentForm button,
 body.amber-forge #commentForm button {
     background: linear-gradient(180deg, rgba(48, 26, 0, 0.98) 0%, rgba(22, 12, 0, 0.98) 100%);
     color: var(--app-popup-text);
     border: 1px solid rgba(212, 168, 106, 0.16);
 }
 
+html.amber-forge #commentForm button:hover,
 body.amber-forge #commentForm button:hover {
     background: linear-gradient(180deg, rgba(68, 36, 0, 0.98) 0%, rgba(30, 16, 0, 0.98) 100%);
 }
 
+html.amber-forge #commentForm button[type="submit"],
 body.amber-forge #commentForm button[type="submit"] {
     background: linear-gradient(180deg, #ffd080 0%, #FFAE42 100%);
     color: var(--app-popup-submit-text);
@@ -251,6 +287,7 @@ body.amber-forge #commentForm button[type="submit"] {
     font-weight: 700;
 }
 
+html.amber-forge #commentForm button[type="submit"]:hover,
 body.amber-forge #commentForm button[type="submit"]:hover {
     background: linear-gradient(180deg, #ffe09e 0%, #f09e30 100%);
 }
@@ -258,14 +295,17 @@ body.amber-forge #commentForm button[type="submit"]:hover {
 /* ==================================
 LINKS / SPECIAL STATES
 ================================== */
+html.amber-forge a,
 body.amber-forge a {
     color: #FFD9A0;
 }
 
+html.amber-forge a:hover,
 body.amber-forge a:hover {
     color: #FFAE42;
 }
 
+html.amber-forge .logout-button,
 body.amber-forge .logout-button {
     color: #FF8C8C !important;
 }
@@ -273,6 +313,18 @@ body.amber-forge .logout-button {
 /* ==================================
 ACCESSIBILITY / FOCUS
 ================================== */
+html.amber-forge .hamburger:focus-visible,
+html.amber-forge .toggle-button:focus-visible,
+html.amber-forge .sidebar button:focus-visible,
+html.amber-forge .sidebar a:focus-visible,
+html.amber-forge .sidebar select:focus-visible,
+html.amber-forge #commentForm textarea:focus-visible,
+html.amber-forge #commentForm button:focus-visible,
+html.amber-forge .mt-toggle-btn:focus-visible,
+html.amber-forge .neppy-btn:focus-visible,
+html.amber-forge .neppy-input:focus-visible,
+html.amber-forge .neppy-select:focus-visible,
+html.amber-forge .neppy-textarea:focus-visible,
 body.amber-forge .hamburger:focus-visible,
 body.amber-forge .toggle-button:focus-visible,
 body.amber-forge .sidebar button:focus-visible,
@@ -292,34 +344,48 @@ body.amber-forge .neppy-textarea:focus-visible {
 /* ==================================
 NEPPY UTILITY CLASS SUPPORT
 ================================== */
+html.amber-forge .neppy-card,
+html.amber-forge .neppy-card-soft,
 body.amber-forge .neppy-card,
 body.amber-forge .neppy-card-soft {
     background: var(--neppy-surface);
     border-color: var(--neppy-line);
 }
 
+html.amber-forge .neppy-title,
+html.amber-forge .neppy-panel-title,
 body.amber-forge .neppy-title,
 body.amber-forge .neppy-panel-title {
     color: var(--neppy-heading);
 }
 
+html.amber-forge .neppy-subtitle,
+html.amber-forge .neppy-label,
+html.amber-forge .neppy-text-muted,
 body.amber-forge .neppy-subtitle,
 body.amber-forge .neppy-label,
 body.amber-forge .neppy-text-muted {
     color: var(--neppy-muted) !important;
 }
 
+html.amber-forge .neppy-btn,
 body.amber-forge .neppy-btn {
     background: linear-gradient(180deg, rgba(48, 26, 0, 0.98) 0%, rgba(22, 12, 0, 0.98) 100%);
     color: var(--neppy-text);
     border-color: var(--neppy-line);
 }
 
+html.amber-forge .neppy-btn:hover,
 body.amber-forge .neppy-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, rgba(68, 36, 0, 0.98) 0%, rgba(30, 16, 0, 0.98) 100%);
 }
 
+html.amber-forge .neppy-input,
+html.amber-forge .neppy-select,
+html.amber-forge .neppy-textarea,
+html.amber-forge .neppy-mono,
+html.amber-forge .neppy-code,
 body.amber-forge .neppy-input,
 body.amber-forge .neppy-select,
 body.amber-forge .neppy-textarea,
@@ -330,6 +396,9 @@ body.amber-forge .neppy-code {
     border-color: var(--neppy-line);
 }
 
+html.amber-forge .neppy-input:focus,
+html.amber-forge .neppy-select:focus,
+html.amber-forge .neppy-textarea:focus,
 body.amber-forge .neppy-input:focus,
 body.amber-forge .neppy-select:focus,
 body.amber-forge .neppy-textarea:focus {
@@ -341,23 +410,28 @@ body.amber-forge .neppy-textarea:focus {
 MODULE TEMPLATE PANEL LAYOUT THEME
 Styles the standardized .mt-* module templates
 ================================== */
+html.amber-forge .mt-layout,
 body.amber-forge .mt-layout {
     color: var(--neppy-text);
 }
 
+html.amber-forge .mt-layout-header,
 body.amber-forge .mt-layout-header {
     border-bottom: 2px solid rgba(255, 174, 66, 0.22);
 }
 
+html.amber-forge .mt-layout-title,
 body.amber-forge .mt-layout-title {
     color: var(--neppy-accent);
     letter-spacing: 0.02em;
 }
 
+html.amber-forge .mt-layout-description,
 body.amber-forge .mt-layout-description {
     color: var(--neppy-muted);
 }
 
+html.amber-forge .mt-panel,
 body.amber-forge .mt-panel {
     background: var(--neppy-surface);
     border: 1px solid var(--neppy-line);
@@ -366,20 +440,24 @@ body.amber-forge .mt-panel {
     backdrop-filter: blur(4px);
 }
 
+html.amber-forge .mt-panel:hover,
 body.amber-forge .mt-panel:hover {
     border-color: var(--neppy-accent);
     box-shadow: 0 14px 28px rgba(0, 0, 0, 0.36);
 }
 
+html.amber-forge .mt-panel-header,
 body.amber-forge .mt-panel-header {
     background: rgba(255, 255, 255, 0.03);
     border-bottom: 1px solid var(--neppy-line);
 }
 
+html.amber-forge .mt-panel-title,
 body.amber-forge .mt-panel-title {
     color: var(--neppy-accent);
 }
 
+html.amber-forge .mt-toggle-btn,
 body.amber-forge .mt-toggle-btn {
     background: linear-gradient(180deg, rgba(48, 26, 0, 0.98) 0%, rgba(22, 12, 0, 0.98) 100%);
     border: 1px solid var(--neppy-line);
@@ -388,26 +466,31 @@ body.amber-forge .mt-toggle-btn {
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
 }
 
+html.amber-forge .mt-toggle-btn:hover,
 body.amber-forge .mt-toggle-btn:hover {
     border-color: var(--neppy-accent);
     background: linear-gradient(180deg, rgba(68, 36, 0, 0.98) 0%, rgba(30, 16, 0, 0.98) 100%);
     color: var(--neppy-text);
 }
 
+html.amber-forge .mt-panel.is-collapsed .mt-toggle-btn,
 body.amber-forge .mt-panel.is-collapsed .mt-toggle-btn {
     background: linear-gradient(180deg, #2a3060 0%, #1e2448 100%);
     border-color: rgba(120, 140, 255, 0.35);
     color: #ffffff;
 }
 
+html.amber-forge .mt-panel-body,
 body.amber-forge .mt-panel-body {
     color: var(--neppy-text);
 }
 
+html.amber-forge .mt-panel-content,
 body.amber-forge .mt-panel-content {
     gap: 12px;
 }
 
+html.amber-forge .mt-item,
 body.amber-forge .mt-item {
     background: rgba(22, 12, 0, 0.92);
     border: 1px solid var(--neppy-line);
@@ -415,11 +498,13 @@ body.amber-forge .mt-item {
     border-radius: 8px;
 }
 
+html.amber-forge .mt-item:hover,
 body.amber-forge .mt-item:hover {
     background: rgba(255, 174, 66, 0.08);
     border-color: var(--neppy-accent);
 }
 
+html.amber-forge .mt-item.is-active,
 body.amber-forge .mt-item.is-active {
     background: rgba(255, 174, 66, 0.16);
     border-color: var(--neppy-accent);
