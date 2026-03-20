@@ -1,18 +1,21 @@
+console.log("[THEME] theme_selector.js loaded");
+
 document.addEventListener("DOMContentLoaded", function () {
     const themeSelect = document.getElementById("theme-select");
     const themeLink = document.getElementById("theme-style");
     const themeContainer = document.querySelector(".sidebar-theme-selector");
-    const storageKey = "selectedTheme";
+
+    const storageKey = "emtac_selected_theme";
 
     if (!themeSelect || !themeLink || !themeContainer) {
-        console.warn("Theme selector setup skipped: required elements not found.");
+        console.warn("[THEME] Theme selector setup skipped: required elements not found.");
         return;
     }
 
     const themeBasePath =
         themeContainer.dataset.themeBaseUrl || "/static/css/module_template/themes/";
 
-    function filenameToBodyClass(themeFile) {
+    function filenameToThemeClass(themeFile) {
         if (!themeFile) {
             return "";
         }
@@ -26,31 +29,37 @@ document.addEventListener("DOMContentLoaded", function () {
         return name.replace(/_/g, "-");
     }
 
-    function getAvailableThemeBodyClasses() {
+    function getAvailableThemeClasses() {
         return Array.from(themeSelect.options)
             .map((option) => option.value)
             .filter((value) => value)
-            .map((value) => filenameToBodyClass(value));
+            .map((value) => filenameToThemeClass(value));
     }
 
-    function clearExistingThemeBodyClasses() {
-        const themeClasses = getAvailableThemeBodyClasses();
+    function clearExistingThemeClasses() {
+        const themeClasses = getAvailableThemeClasses();
+
         themeClasses.forEach((className) => {
+            document.documentElement.classList.remove(className);
             document.body.classList.remove(className);
         });
     }
 
-    function clearTheme() {
+    function clearTheme(persist = true) {
         themeLink.href = "";
         themeSelect.value = "";
-        clearExistingThemeBodyClasses();
-        localStorage.removeItem(storageKey);
-        console.log("Theme cleared");
+        clearExistingThemeClasses();
+
+        if (persist) {
+            localStorage.removeItem(storageKey);
+        }
+
+        console.log("[THEME] Theme cleared");
     }
 
-    function applyTheme(themeFile) {
+    function applyTheme(themeFile, persist = true) {
         if (!themeFile) {
-            clearTheme();
+            clearTheme(persist);
             return;
         }
 
@@ -59,34 +68,43 @@ document.addEventListener("DOMContentLoaded", function () {
         );
 
         if (!optionExists) {
-            console.warn("Theme option not found:", themeFile);
-            clearTheme();
+            console.warn("[THEME] Theme option not found:", themeFile);
+            clearTheme(persist);
             return;
         }
 
-        const bodyClass = filenameToBodyClass(themeFile);
+        const themeClass = filenameToThemeClass(themeFile);
 
-        clearExistingThemeBodyClasses();
-        if (bodyClass) {
-            document.body.classList.add(bodyClass);
+        clearExistingThemeClasses();
+
+        if (themeClass) {
+            document.documentElement.classList.add(themeClass);
+            document.body.classList.add(themeClass);
         }
 
-        themeLink.href = `${themeBasePath}${themeFile}?v=${Date.now()}`;
+        themeLink.href = `${themeBasePath}${themeFile}`;
         themeSelect.value = themeFile;
-        localStorage.setItem(storageKey, themeFile);
 
-        console.log("Applied theme file:", themeFile);
-        console.log("Applied body class:", bodyClass);
-        console.log("Theme href:", themeLink.href);
-        console.log("Body class list:", document.body.className);
+        if (persist) {
+            localStorage.setItem(storageKey, themeFile);
+        }
+
+        console.log("[THEME] Applied theme file:", themeFile);
+        console.log("[THEME] Applied theme class:", themeClass);
+        console.log("[THEME] Theme href:", themeLink.href);
+        console.log("[THEME] HTML class list:", document.documentElement.className);
+        console.log("[THEME] Body class list:", document.body.className);
     }
 
     themeSelect.addEventListener("change", function () {
-        applyTheme(this.value);
+        applyTheme(this.value, true);
     });
 
-    const savedTheme = localStorage.getItem(storageKey);
+    const savedTheme = localStorage.getItem(storageKey) || "";
+
     if (savedTheme) {
-        applyTheme(savedTheme);
+        applyTheme(savedTheme, false);
+    } else {
+        clearTheme(false);
     }
 });
