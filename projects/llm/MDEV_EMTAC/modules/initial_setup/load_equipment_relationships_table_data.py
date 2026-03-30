@@ -76,7 +76,7 @@ class PostgreSQLEquipmentRelationshipsLoader:
         ]
 
     def create_database_tables(self, session):
-        """Create database tables if they don't exist - THIS IS THE KEY FIX!"""
+        """Create database tables if they don't exist !"""
         try:
             info_id("Creating database tables if they don't exist", self.request_id)
             info_id("Creating database tables...")
