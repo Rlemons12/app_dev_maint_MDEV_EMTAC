@@ -45,6 +45,9 @@ if not DATABASE_URL:
         "Please define it in your .venv configuration or .env file."
     )
 
+SCRIPTS_OUTPUT = os.path.join(BASE_DIR, "scripts_output")
+os.makedirs(SCRIPTS_OUTPUT, exist_ok=True)
+
 ENABLE_REVISION_CONTROL = False  # Set to True once wired up
 
 ENABLE_REVISION_CONTROL = False   # or True once you wire it up
@@ -87,7 +90,7 @@ GPT4ALL_MODELS_PATH = os.path.join(BASE_DIR, 'plugins', 'ai_modules', 'gpt4all')
 SENTENCE_TRANSFORMERS_MODELS_PATH = os.path.join(BASE_DIR, 'plugins', 'huggingface')
 CURRENT_AI_MODEL="OpenAIModel"
 CURRENT_EMBEDDING_MODEL="OpenAIEmbeddingModel"
-
+SCRIPTS_OUTPUT= os.path.join(BASE_DIR, "scripts_output")
 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 HUGGINGFACE_API_KEY="..."
