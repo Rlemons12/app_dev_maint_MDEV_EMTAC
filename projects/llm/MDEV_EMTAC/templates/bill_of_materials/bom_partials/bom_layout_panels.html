@@ -1,0 +1,63 @@
+<div class="mt-layout bom-container" data-mt-layout="panels-2">
+    <div class="mt-grid mt-grid--2">
+
+        <section
+            id="bom-actions-panel"
+            class="mt-panel"
+            data-panel="bom-actions"
+        >
+            <div class="mt-panel-header">
+                <h3 class="mt-panel-title">Bill of Materials</h3>
+                <button
+                    class="mt-toggle-btn"
+                    type="button"
+                    aria-label="Toggle Bill of Materials Panel"
+                    aria-controls="bom-actions-panel-body"
+                    aria-expanded="true"
+                    data-panel-toggle="bom-actions"
+                >
+                    ⚙
+                </button>
+            </div>
+
+            <div
+                id="bom-actions-panel-body"
+                class="mt-panel-body"
+            >
+                <div class="mt-panel-content bom-actions-panel-content">
+                    {% include "bill_of_materials/bom_partials/bom_forms_panel.html" %}
+                </div>
+            </div>
+        </section>
+
+        <section
+            id="bom-results-panel"
+            class="mt-panel"
+            data-panel="bom-results"
+        >
+            <div class="mt-panel-header">
+                <h3 class="mt-panel-title">Results</h3>
+                <button
+                    class="mt-toggle-btn"
+                    type="button"
+                    aria-label="Toggle Results Panel"
+                    aria-controls="bom-results-panel-body"
+                    aria-expanded="true"
+                    data-panel-toggle="bom-results"
+                >
+                    📊
+                </button>
+            </div>
+
+            <div
+                id="bom-results-panel-body"
+                class="mt-panel-body"
+            >
+                <div class="mt-panel-content bom-results-panel-content">
+                    {% include "bill_of_materials/bom_partials/bom_results_panel.html" %}
+                </div>
+            </div>
+        </section>
+
+    </div>
+</div>
