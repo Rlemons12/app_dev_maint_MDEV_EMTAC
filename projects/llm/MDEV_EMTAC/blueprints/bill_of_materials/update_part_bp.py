@@ -1,3 +1,5 @@
+#blueprints/bill_of_materials/update_part_bp.py
+
 import logging
 from flask import jsonify
 import os
