@@ -13,6 +13,7 @@ SERVICE_DASHBOARD_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_ENV_PATH = Path(r"E:\emtac\dev_env\.env")
 ENV_PATH = Path(os.getenv("EMTAC_ENV_PATH", str(DEFAULT_ENV_PATH)))
 
+
 if not ENV_PATH.exists():
     raise FileNotFoundError(f"Environment file not found: {ENV_PATH}")
 
@@ -76,7 +77,12 @@ POSTGRES_DATA_DIR: Path = as_path(get_env("POSTGRES_DATA_DIR"))
 POSTGRES_LOG_FILE: Path = POSTGRES_DATA_DIR / "server.log"
 PG_CTL_EXE: Path = POSTGRES_BIN_DIR / "pg_ctl.exe"
 
-
+# ---------------------------------------------------------
+# Grafana
+# ---------------------------------------------------------
+GRAFANA_URL = os.getenv("GRAFANA_URL", "http://localhost:3000").rstrip("/")
+GRAFANA_CWD = Path(os.getenv("GRAFANA_CWD", r"E:\emtac\services\grafana-12.3.1"))
+GRAFANA_EXE = GRAFANA_CWD / "bin" / "grafana.exe"
 # ---------------------------------------------------------
 # Optional application DB connection values
 # ---------------------------------------------------------
