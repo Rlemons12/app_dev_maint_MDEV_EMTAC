@@ -12,6 +12,12 @@ import requests
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+from grafana_service_client import (
+    grafana_service_client,
+    GRAFANA_URL,
+    GRAFANA_SYSTEM_PROMPT,
+    GRAFANA_KEYWORDS,
+)
 
 # ---------------------------------------------------------
 # Load .env
@@ -327,6 +333,17 @@ def looks_like_commit_request(messages: List[Dict[str, Any]]) -> bool:
     )
 
 
+def looks_like_grafana_request(messages: List[Dict[str, Any]]) -> bool:
+    """
+    Detect queries related to Grafana observability:
+    dashboards, panels, alerts, metrics, datasources, etc.
+    """
+    combined = "\n".join(
+        content_to_text(m.get("content")).lower() for m in messages
+    )
+    return any(kw in combined for kw in GRAFANA_KEYWORDS)
+
+
 def resolve_requested_model(requested_model: Optional[str]) -> str:
     """
     Resolve the incoming OpenAI-compatible model name into the actual GPU model name.
@@ -422,11 +439,17 @@ async def startup_event():
     logger.info("GPU_SERVICE_URL: %s", GPU_SERVICE_URL)
     logger.info("Configured model name: %s", MODEL_NAME)
     logger.info("Default GPU model: %s", DEFAULT_GPU_MODEL)
+    logger.info("Grafana URL: %s", GRAFANA_URL)
 
     if gpu_client.health():
         logger.info("GPU service is available")
     else:
         logger.warning("GPU service is not reachable at startup")
+
+    if grafana_service_client.health():
+        logger.info("Grafana service is available")
+    else:
+        logger.warning("Grafana is not reachable at startup — context enrichment will be skipped")
 
 
 # ---------------------------------------------------------
@@ -439,6 +462,8 @@ async def health():
         "gateway": "emtac_pycharm_mcp",
         "gpu_service_url": GPU_SERVICE_URL,
         "gpu_service_available": gpu_client.health(),
+        "grafana_url": GRAFANA_URL,
+        "grafana_available": grafana_service_client.health(),
         "model_name": MODEL_NAME,
         "default_gpu_model": DEFAULT_GPU_MODEL,
     }
@@ -544,6 +569,7 @@ def build_commit_prompt(messages: List[Dict[str, Any]]) -> str:
 
     return "\n\n".join(parts).strip()
 
+
 @app.post("/v1/chat/completions")
 async def chat_completions(request: Request):
     payload = await request.json()
@@ -582,6 +608,7 @@ async def chat_completions(request: Request):
         resolved_model,
     )
 
+    # Set defaults first — matches original behaviour exactly
     system_prompt = extract_system_message(messages) or DEFAULT_SYSTEM_PROMPT
     prompt = build_forward_prompt(messages)
 
@@ -598,6 +625,25 @@ async def chat_completions(request: Request):
             len(prompt),
             prompt[:500],
         )
+
+    elif looks_like_grafana_request(messages):
+        logger.info("Detected Grafana observability request")
+        system_prompt = GRAFANA_SYSTEM_PROMPT
+        user_query = extract_last_user_message(messages)
+        grafana_context = ""
+
+        try:
+            grafana_context = grafana_service_client.build_context(user_query=user_query)
+            logger.info(
+                "Grafana context fetched | chars=%s | preview=%r",
+                len(grafana_context),
+                grafana_context[:300],
+            )
+        except Exception as exc:
+            logger.warning("Grafana context fetch failed, proceeding without it: %s", exc)
+
+        if grafana_context:
+            prompt = grafana_context + "\n\n" + prompt
 
     if not prompt.strip():
         reply_text = "No valid user message was provided."
