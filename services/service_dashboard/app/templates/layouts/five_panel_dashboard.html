@@ -22,18 +22,28 @@
   --red:       #ff4455;
   --blue:      #38b2ff;
   --purple:    #a78bfa;
+  --orange:    #ff6f3c;
   --txt:       #c8d6e5;
   --txt-dim:   #5a7090;
   --txt-muted: #3a4a5c;
   --mono:      'Share Tech Mono', monospace;
   --sans:      'Rajdhani', sans-serif;
+
+  /* ── Type scale ── */
+  --fs-xs:     10px;
+  --fs-sm:     11px;
+  --fs-base:   13px;
+  --fs-ui:     14px;
+  --fs-stat:   20px;
+  --fs-metric: 24px;
+  --fs-logo:   18px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; overflow-x: hidden; }
 body {
   background: var(--bg); color: var(--txt);
-  font-family: var(--sans); font-size: 14px;
+  font-family: var(--sans); font-size: var(--fs-base);
 }
 
 /* CRT scanline overlay */
@@ -60,7 +70,7 @@ header {
 .logo-mark {
   width: 36px; height: 36px; border: 2px solid var(--green);
   display: grid; place-items: center;
-  font-family: var(--mono); font-size: 11px; color: var(--green); letter-spacing: 1px;
+  font-family: var(--mono); font-size: var(--fs-sm); color: var(--green); letter-spacing: 1px;
   position: relative; animation: pulse-border 3s ease-in-out infinite;
 }
 .logo-mark::before { content:''; position:absolute; inset:3px; background:rgba(0,255,136,0.08); }
@@ -68,24 +78,28 @@ header {
   0%,100%{box-shadow:0 0 6px rgba(0,255,136,0.4)} 50%{box-shadow:0 0 18px rgba(0,255,136,0.7)}
 }
 .logo-text h1 {
-  font-size: 18px; font-weight: 700; letter-spacing: 4px;
+  font-size: var(--fs-logo); font-weight: 700; letter-spacing: 4px;
   color: #fff; text-transform: uppercase; line-height: 1;
 }
-.logo-text span { font-family:var(--mono); font-size:10px; color:var(--txt-dim); letter-spacing:2px; }
+.logo-text span { font-family:var(--mono); font-size:var(--fs-xs); color:var(--txt-dim); letter-spacing:2px; }
 
 .top-nav { display:flex; gap:2px; margin-left:16px; }
 .top-nav a {
-  font-family:var(--mono); font-size:10px; letter-spacing:2px; text-transform:uppercase;
+  font-family:var(--mono); font-size:var(--fs-xs); letter-spacing:2px; text-transform:uppercase;
   text-decoration:none; color:var(--txt-dim); padding:6px 12px;
   border:1px solid transparent; transition:all 0.15s;
 }
 .top-nav a:hover, .top-nav a.active {
   color:var(--green); border-color:rgba(0,255,136,0.3); background:rgba(0,255,136,0.06);
 }
+/* Grafana nav item uses orange accent */
+.top-nav a.grafana-nav:hover, .top-nav a.grafana-nav.active {
+  color:var(--orange); border-color:rgba(255,111,60,0.3); background:rgba(255,111,60,0.06);
+}
 .header-right { display:flex; align-items:center; gap:18px; }
-.sys-time { font-family:var(--mono); font-size:12px; color:var(--txt-dim); letter-spacing:1px; }
+.sys-time { font-family:var(--mono); font-size:var(--fs-sm); color:var(--txt-dim); letter-spacing:1px; }
 .status-pill {
-  font-family:var(--mono); font-size:10px; letter-spacing:2px; text-transform:uppercase;
+  font-family:var(--mono); font-size:var(--fs-xs); letter-spacing:2px; text-transform:uppercase;
   padding:4px 10px; border:1px solid var(--green); color:var(--green);
   background:rgba(0,255,136,0.08); animation:pill-flash 4s ease-in-out infinite;
 }
@@ -116,19 +130,19 @@ header {
   background:var(--card-color,var(--green)); opacity:0.6;
 }
 .stat-icon {
-  font-size:20px; width:36px; text-align:center;
+  font-size:var(--fs-stat); width:36px; text-align:center;
   color:var(--card-color,var(--green));
   filter:drop-shadow(0 0 6px var(--card-color,var(--green)));
 }
 .stat-info label {
-  display:block; font-size:10px; letter-spacing:2px; text-transform:uppercase;
+  display:block; font-size:var(--fs-xs); letter-spacing:2px; text-transform:uppercase;
   color:var(--txt-dim); font-family:var(--mono);
 }
 .stat-info .val {
-  font-size:22px; font-weight:700; line-height:1.1;
+  font-size:var(--fs-stat); font-weight:700; line-height:1.1;
   color:var(--card-color,var(--green)); font-family:var(--mono);
 }
-.stat-info .sub { font-size:10px; color:var(--txt-dim); font-family:var(--mono); }
+.stat-info .sub { font-size:var(--fs-xs); color:var(--txt-dim); font-family:var(--mono); }
 
 /* ── Main panel (left col, row 2) ── */
 .main-panel {
@@ -140,9 +154,9 @@ header {
   padding:10px 16px; border-bottom:1px solid var(--border);
   background:rgba(0,0,0,0.3); flex-shrink:0;
 }
-.panel-title { font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--txt-dim); font-family:var(--mono); }
+.panel-title { font-size:var(--fs-sm); letter-spacing:3px; text-transform:uppercase; color:var(--txt-dim); font-family:var(--mono); }
 .badge {
-  font-size:9px; letter-spacing:1px; padding:2px 8px;
+  font-size:var(--fs-xs); letter-spacing:1px; padding:2px 8px;
   background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3);
   color:var(--green); font-family:var(--mono);
 }
@@ -161,8 +175,8 @@ header {
   animation:blink 1.5s ease-in-out infinite;
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-.ai-title h2 { font-size:14px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:#fff; }
-.ai-subtitle { font-family:var(--mono); font-size:10px; color:var(--txt-dim); letter-spacing:1px; margin-left:18px; }
+.ai-title h2 { font-size:var(--fs-ui); font-weight:700; letter-spacing:3px; text-transform:uppercase; color:#fff; }
+.ai-subtitle { font-family:var(--mono); font-size:var(--fs-xs); color:var(--txt-dim); letter-spacing:1px; margin-left:18px; }
 
 .model-selector {
   display:flex; gap:6px; padding:10px 16px;
@@ -177,7 +191,7 @@ header {
   animation:blink 2s ease-in-out infinite; flex-shrink:0;
 }
 .model-label {
-  font-family:var(--mono); font-size:10px;
+  font-family:var(--mono); font-size:var(--fs-xs);
   color:var(--txt-dim); letter-spacing:1px;
 }
 
@@ -186,7 +200,7 @@ header {
   border-bottom:1px solid var(--border); flex-shrink:0;
 }
 .qp-btn {
-  font-family:var(--mono); font-size:9px; letter-spacing:1px; text-transform:uppercase;
+  font-family:var(--mono); font-size:var(--fs-xs); letter-spacing:1px; text-transform:uppercase;
   padding:4px 10px; cursor:pointer; background:rgba(0,255,136,0.05);
   border:1px solid var(--border2); color:var(--txt-dim); transition:all 0.15s;
 }
@@ -201,16 +215,16 @@ header {
 .msg-avatar {
   flex-shrink:0; width:26px; height:26px; border:1px solid var(--border2);
   display:grid; place-items:center;
-  font-family:var(--mono); font-size:9px; color:var(--txt-dim); margin-top:2px;
+  font-family:var(--mono); font-size:var(--fs-xs); color:var(--txt-dim); margin-top:2px;
 }
 .msg.ai .msg-avatar { border-color:var(--green); color:var(--green); }
 .msg-body { flex:1; }
 .msg-role {
-  font-size:9px; letter-spacing:2px; color:var(--txt-muted);
+  font-size:var(--fs-xs); letter-spacing:2px; color:var(--txt-muted);
   font-family:var(--mono); text-transform:uppercase; margin-bottom:4px;
 }
 .msg.ai .msg-role { color:var(--green-dim); }
-.msg-text { font-size:13px; line-height:1.6; color:var(--txt); font-family:var(--sans); font-weight:500; word-break:break-word; }
+.msg-text { font-size:var(--fs-base); line-height:1.6; color:var(--txt); font-family:var(--sans); font-weight:500; word-break:break-word; }
 .msg.ai .msg-text { color:#d4e8d4; }
 
 .typing-dots { display:flex; gap:4px; align-items:center; padding:4px 0; }
@@ -228,14 +242,14 @@ header {
 }
 .chat-input {
   flex:1; background:rgba(0,0,0,0.5); border:1px solid var(--border2); color:var(--txt);
-  padding:8px 12px; font-family:var(--mono); font-size:11px;
+  padding:8px 12px; font-family:var(--mono); font-size:var(--fs-sm);
   outline:none; resize:none; transition:border-color 0.2s;
 }
 .chat-input:focus { border-color:var(--green); }
 .chat-input::placeholder { color:var(--txt-muted); }
 .send-btn {
   background:var(--green); color:#000; border:none; padding:8px 16px; cursor:pointer;
-  font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:1px;
+  font-family:var(--mono); font-size:var(--fs-sm); font-weight:700; letter-spacing:1px;
   text-transform:uppercase; transition:all 0.15s; align-self:flex-end;
 }
 .send-btn:hover { background:var(--green-dim); box-shadow:0 0 12px rgba(0,255,136,0.4); }
@@ -263,6 +277,8 @@ header {
       <a href="/dashboards/trace"    class="{% block nav_trace %}{% endblock %}">Trace</a>
       <a href="/dashboards/gpu"      class="{% block nav_gpu %}{% endblock %}">GPU</a>
       <a href="/dashboards/ai"       class="{% block nav_ai %}{% endblock %}">Status A.I.</a>
+      <a href="http://localhost:3000" class="grafana-nav {% block nav_grafana %}{% endblock %}"
+         target="_blank" rel="noopener noreferrer">Grafana ↗</a>
     </nav>
   </div>
   <div class="header-right">
@@ -273,7 +289,7 @@ header {
 
 <div class="em-layout">
 
-  <!-- Status strip: child pages override this block with their own stat cards -->
+  <!-- Status strip -->
   <div class="status-strip">
     {% block status_strip %}
     <div class="stat-card" style="--card-color:var(--green)">
@@ -299,7 +315,7 @@ header {
     {% endblock %}
   </div>
 
-  <!-- Main panel: child pages fill this -->
+  <!-- Main panel -->
   <main class="main-panel">
     {% block main_panel %}
     <div class="panel-header">
@@ -308,7 +324,7 @@ header {
     {% endblock %}
   </main>
 
-  <!-- Status A.I. panel: always present, lives in base -->
+  <!-- Status A.I. panel -->
   <aside class="ai-panel">
     <div class="ai-header">
       <div class="ai-title">
@@ -330,7 +346,6 @@ header {
       <button class="qp-btn" data-qp="health">Health</button>
       <button class="qp-btn" data-qp="errors">Diagnose</button>
       <button class="qp-btn" data-qp="recommend">Recommend</button>
-      {# Child pages inject extra quick-prompt buttons here #}
       {% block ai_quick_prompts %}{% endblock %}
     </div>
 
@@ -367,15 +382,6 @@ document.querySelectorAll('.top-nav a').forEach(a => {
   if (href && path.startsWith(href)) a.classList.add('active');
 });
 
-/* ════════════════════════════════════════════════════
-   STATUS A.I. — shared engine, lives in base template
-   ════════════════════════════════════════════════════ */
-/* System prompt, model config, and telemetry all live in ai_chat_route.py.
-   The frontend only tracks mode, history, and session counters.            */
-
-/* Child pages set window.AI_PAGE_CONTEXT (string) — forwarded to the backend
-   as extra system prompt context. window.AI_EXTRA_PROMPTS = { key: 'text' }
-   adds page-specific quick-prompt buttons.                                  */
 window.AI_PAGE_CONTEXT  = window.AI_PAGE_CONTEXT  || '';
 window.AI_EXTRA_PROMPTS = window.AI_EXTRA_PROMPTS || {};
 
@@ -390,7 +396,7 @@ let chatHistory = [];
 let reqCount = 0, errCount = 0, tokTotal = 0;
 let latencies = [];
 
-/* ── Quick prompts (base + page-level extras) ── */
+/* ── Quick prompts ── */
 document.querySelectorAll('.qp-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const key = btn.dataset.qp;
@@ -435,9 +441,6 @@ function refreshStatCards() {
   if (tc) tc.textContent = tokTotal.toLocaleString();
 }
 
-/* ── Single backend call → /api/ai/chat ──
-   Telemetry and routing are handled server-side.
-   The frontend just sends: clean message history + mode + page context.    */
 async function callBackend(messages) {
   const t0  = Date.now();
   const res = await fetch('/api/ai/chat', {
@@ -464,7 +467,6 @@ async function callBackend(messages) {
   return text;
 }
 
-/* ── Send ── */
 async function sendMessage(overrideText) {
   const input = document.getElementById('chat-input');
   const text  = (overrideText || input.value).trim();
@@ -473,9 +475,6 @@ async function sendMessage(overrideText) {
   document.getElementById('send-btn').disabled = true;
 
   appendMsg('user', text);
-
-  // History holds clean messages only — no telemetry injected client-side.
-  // The backend injects live ServiceManager telemetry on every request.
   chatHistory.push({ role: 'user', content: text });
   appendMsg('assistant', '', true);
 
@@ -497,7 +496,6 @@ document.getElementById('chat-input').addEventListener('keydown', e => {
 });
 document.getElementById('send-btn').addEventListener('click', () => sendMessage());
 
-/* Boot greeting fires after child page JS has run (short delay) */
 setTimeout(() => {
   appendMsg('assistant',
     'Status A.I. online. EMTAC MCP Gateway is operational.\n\n' +
