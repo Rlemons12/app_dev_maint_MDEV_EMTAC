@@ -4,7 +4,7 @@ from typing import Optional, Dict, Any
 
 from modules.orchestrators.base_orchestrator import BaseOrchestrator
 from modules.configuration.log_config import with_request_id
-
+from modules.services.site_location_service import SiteLocationService
 from modules.services.position_service import PositionService
 from modules.services.area_service import AreaService
 from modules.services.campus_service import CampusService
@@ -34,7 +34,7 @@ class PositionOrchestrator(BaseOrchestrator):
         self.component_assembly_service = ComponentAssemblyService()
         self.assembly_view_service = AssemblyViewService()
         self.asset_number_service = AssetNumberService()
-
+        self.site_location_service = SiteLocationService()
     # ---------------------------------------------------------
     # FULL HIERARCHY RESOLUTION
     # ---------------------------------------------------------
@@ -217,3 +217,150 @@ class PositionOrchestrator(BaseOrchestrator):
             )
 
             return position_id
+
+    # ---------------------------------------------------------
+    # LOOKUP DATA (READ-ONLY)
+    # ---------------------------------------------------------
+
+    @with_request_id
+    def get_position_lookup_data(self) -> Dict[str, Any]:
+        """
+        Read-only lookup data for position-related dropdowns.
+
+        Uses existing service APIs (find), no service changes required.
+        """
+
+        with self.transaction(
+                read_only=True,
+                operation_name="PositionOrchestrator.get_position_lookup_data",
+        ) as session:
+            BIG_LIMIT = 10_000  # safe upper bound for dropdown data
+
+            areas = self.area_service.find(session=session, limit=BIG_LIMIT)
+            equipment_groups = self.equipment_group_service.find(session=session)
+            models = self.model_service.find(session=session, limit=BIG_LIMIT)
+            locations = self.location_service.find(session=session, limit=BIG_LIMIT)
+            subassemblies = self.subassembly_service.find(session=session, limit=BIG_LIMIT)
+            component_assemblies = self.component_assembly_service.find(
+                session=session,
+                limit=BIG_LIMIT,
+            )
+            assembly_views = self.assembly_view_service.find(session=session, limit=BIG_LIMIT)
+            campuses = self.campus_service.find(session=session, limit=BIG_LIMIT)
+            buildings = self.building_service.find(session=session, limit=BIG_LIMIT)
+            asset_numbers = self.asset_number_service.find(session=session, limit=BIG_LIMIT)
+            site_locations = self.site_location_service.find(session=session, limit=BIG_LIMIT)
+
+            payload = {
+                "areas": self._serialize_areas(areas),
+                "equipment_groups": self._serialize_equipment_groups(equipment_groups),
+                "models": self._serialize_models(models),
+                "locations": self._serialize_locations(locations),
+                "subassemblies": self._serialize_rows(subassemblies),
+                "component_assemblies": self._serialize_rows(component_assemblies),
+                "assembly_views": self._serialize_rows(assembly_views),
+                "campuses": self._serialize_rows(campuses),
+                "buildings": self._serialize_rows(buildings),
+                "asset_numbers": self._serialize_asset_numbers(asset_numbers),
+                "site_locations": self._serialize_rows(site_locations),
+            }
+
+            return {
+                "success": True,
+                "message": "Lookup data retrieved successfully.",
+                "data": payload,
+                "status_code": 200,
+            }
+
+    # ---------------------------------------------------------
+    # SERIALIZATION HELPERS
+    # ---------------------------------------------------------
+
+    @staticmethod
+    def _serialize_rows(rows):
+        """
+        Generic serializer for lookup rows.
+        Returns legacy-compatible keys for dropdowns.
+        """
+        serialized = []
+
+        for row in rows:
+            name = None
+
+            # Find best display field
+            for attr in (
+                    "name",
+                    "number",
+                    "location",
+                    "description",
+                    "title",
+            ):
+                if hasattr(row, attr):
+                    val = getattr(row, attr)
+                    if val is not None:
+                        name = val
+                        break
+
+            serialized.append(
+                {
+                    "id": getattr(row, "id", None),
+                    "name": name,  # ✅ FIXED
+                }
+            )
+
+        return serialized
+
+    @staticmethod
+    def _serialize_areas(rows):
+        return [
+            {
+                "id": row.id,
+                "name": row.name,
+            }
+            for row in rows
+        ]
+
+    @staticmethod
+    def _serialize_equipment_groups(rows):
+        return [
+            {
+                "id": row.id,
+                "name": row.name,
+                "area_id": getattr(row, "area_id", None),
+            }
+            for row in rows
+        ]
+
+    @staticmethod
+    def _serialize_models(rows):
+        return [
+            {
+                "id": row.id,
+                "name": row.name,
+                "equipment_group_id": getattr(row, "equipment_group_id", None),
+            }
+            for row in rows
+        ]
+
+    @staticmethod
+    def _serialize_locations(rows):
+        return [
+            {
+                "id": row.id,
+                "name": row.name,
+                "model_id": getattr(row, "model_id", None),
+            }
+            for row in rows
+        ]
+
+    @staticmethod
+    def _serialize_asset_numbers(rows):
+        return [
+            {
+                "id": row.id,
+                "number": row.number,
+                "model_id": getattr(row, "model_id", None),
+                "description": getattr(row, "description", None),
+            }
+            for row in rows
+        ]
