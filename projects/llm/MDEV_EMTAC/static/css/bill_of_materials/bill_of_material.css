@@ -1,0 +1,209 @@
+/* static/css/bill_of_materials/bill_of_material.css
+====================================================
+BILL OF MATERIALS
+Page-level styling aligned to shared module template
+==================================================== */
+
+/* ============================================================
+   PANEL LAYOUT TUNING
+   ============================================================ */
+.bom-container.mt-layout {
+    min-height: 0;
+}
+
+.bom-container .mt-grid {
+    min-height: 0;
+}
+
+.bom-container .mt-panel {
+    min-height: 0;
+}
+
+.bom-container .mt-panel-body {
+    min-height: 0;
+}
+
+.bom-container .mt-panel-content {
+    min-height: 0;
+}
+
+/* Keep forms/results from overflowing awkwardly */
+.bom-container #main-forms-area,
+.bom-container #results-container,
+.bom-container #searchResults,
+.bom-container #edit-part-form {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ============================================================
+   STANDARD FORM CONTROLS
+   ============================================================ */
+.bom-container input,
+.bom-container select,
+.bom-container textarea,
+.bom-container button {
+    max-width: 100%;
+    box-sizing: border-box;
+    font-family: var(--app-font-family);
+}
+
+.bom-container input,
+.bom-container select,
+.bom-container textarea {
+    width: 100%;
+    min-height: 38px;
+    padding: 8px 10px;
+    border: 1px solid var(--app-control-border, var(--app-thumbnail-border));
+    border-radius: var(--app-radius-sm);
+    background: var(--app-control-bg, rgba(255, 255, 255, 0.04));
+    color: var(--app-control-text, var(--app-page-text));
+}
+
+.bom-container input::placeholder,
+.bom-container textarea::placeholder {
+    color: color-mix(
+        in srgb,
+        var(--app-control-text, var(--app-page-text)) 60%,
+        transparent
+    );
+}
+
+.bom-container input:focus,
+.bom-container select:focus,
+.bom-container textarea:focus {
+    outline: none;
+    border-color: var(--app-sidebar-hover);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--app-sidebar-hover) 35%, transparent);
+}
+
+/* Use native select rendering */
+.bom-container select {
+    appearance: auto;
+    -webkit-appearance: auto;
+    -moz-appearance: auto;
+}
+
+/* Improve native option readability */
+.bom-container select option {
+    background: var(--app-control-bg, #0b223d);
+    color: var(--app-control-text, #ffffff);
+}
+
+/* ============================================================
+   FORM SPACING
+   ============================================================ */
+.bom-container .form-group,
+.bom-container .field-group {
+    margin-bottom: 12px;
+}
+
+.bom-container label {
+    display: inline-block;
+    margin-bottom: 6px;
+    color: var(--app-page-text);
+    font-weight: 600;
+}
+
+.bom-container .btn,
+.bom-container button {
+    border-radius: var(--app-radius-sm);
+}
+
+/* ============================================================
+   FORM CONTAINER BEHAVIOR
+   ============================================================ */
+.bom-container .form-container {
+    display: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.bom-container .form-container.is-active {
+    display: block;
+}
+
+/* Default visible panel if JS has not run yet */
+.bom-container #search-bill-of-materials {
+    display: block;
+}
+
+/* ============================================================
+   RESULTS AREA
+   ============================================================ */
+.bom-container #results-container {
+    display: none;
+    width: 100%;
+    min-height: 0;
+}
+
+.bom-container #searchResults {
+    width: 100%;
+    min-height: 0;
+}
+
+.bom-container #edit-part-form {
+    width: 100%;
+    min-height: 0;
+}
+
+/* ============================================================
+   TABLE / RESULT READABILITY
+   ============================================================ */
+.bom-container table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.bom-container th,
+.bom-container td {
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.bom-container th {
+    color: var(--app-page-text);
+    border-bottom: 1px solid var(--app-thumbnail-border);
+}
+
+.bom-container td {
+    color: var(--app-page-text);
+    border-bottom: 1px solid color-mix(in srgb, var(--app-thumbnail-border) 65%, transparent);
+}
+
+
+/* ============================================================
+   BOM ACTION BUTTON ROW
+   ============================================================ */
+.bom-container .bom-action-row,
+.bom-container .filter-button-row,
+.bom-container .form-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+
+/* Do not let action buttons stretch full width */
+.bom-container .bom-action-row .btn,
+.bom-container .bom-action-row button,
+.bom-container .filter-button-row .btn,
+.bom-container .filter-button-row button,
+.bom-container .form-actions .btn,
+.bom-container .form-actions button,
+.bom-container #filterBtn,
+.bom-container #resetFilterBtn,
+.bom-container #clearFormBtn {
+    width: auto !important;
+    min-width: 120px;
+    max-width: none;
+    flex: 0 0 auto;
+    padding: 8px 16px;
+}
+
+/* Optional: keep primary action a little wider without filling row */
+.bom-container #filterBtn {
+    min-width: 140px;
+}
