@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import os
 import time
-import requests
+from pathlib import Path
 from typing import List, Dict, Any, Optional
+
+import requests
+from dotenv import load_dotenv
 
 from modules.configuration.log_config import (
     debug_id,
@@ -12,6 +15,16 @@ from modules.configuration.log_config import (
     error_id,
     get_request_id,
 )
+
+
+# ---------------------------------------------------------
+# Load shared EMTAC environment
+# ---------------------------------------------------------
+DEFAULT_ENV_PATH = Path(r"E:\emtac\dev_env\.env")
+ENV_PATH = Path(os.getenv("EMTAC_ENV_PATH", str(DEFAULT_ENV_PATH)))
+
+if ENV_PATH.exists():
+    load_dotenv(ENV_PATH, override=False)
 
 
 class GPUServerAdapter:
@@ -35,9 +48,14 @@ class GPUServerAdapter:
         max_retries: int = 2,
         enabled: Optional[bool] = None,
     ):
-        self.base_url = base_url or os.getenv(
-            "GPU_SERVICE_URL", "http://127.0.0.1:5050"
+        resolved_base_url = (
+            base_url
+            or os.getenv("SERVICE_GPU_BASE_URL")
+            or os.getenv("GPU_SERVICE_URL")
+            or "http://127.0.0.1:5051"
         )
+
+        self.base_url = resolved_base_url.rstrip("/")
         self.timeout = timeout
         self.max_retries = max_retries
         self.enabled = enabled if enabled is not None else self._detect_service()
@@ -53,10 +71,10 @@ class GPUServerAdapter:
     # ---------------------------------------------------------
 
     def _detect_service(self) -> bool:
-        """Check if GPU service is reachable"""
+        """Check if GPU service is reachable."""
         try:
-            r = requests.get(f"{self.base_url}/health", timeout=5)
-            return r.status_code == 200
+            response = requests.get(f"{self.base_url}/health", timeout=5)
+            return response.status_code == 200
         except Exception:
             return False
 
@@ -67,7 +85,8 @@ class GPUServerAdapter:
         url = f"{self.base_url}{endpoint}"
         rid = get_request_id()
 
-        last_err = None
+        last_err: Optional[Exception] = None
+
         for attempt in range(1, self.max_retries + 1):
             try:
                 debug_id(
@@ -83,10 +102,10 @@ class GPUServerAdapter:
                 response.raise_for_status()
                 return response.json()
 
-            except Exception as e:
-                last_err = e
+            except Exception as exc:
+                last_err = exc
                 warning_id(
-                    f"[GPU-ADAPTER] Attempt {attempt} failed: {e}",
+                    f"[GPU-ADAPTER] Attempt {attempt} failed: {exc}",
                     rid,
                 )
                 time.sleep(1)
@@ -98,12 +117,12 @@ class GPUServerAdapter:
     # ---------------------------------------------------------
 
     def embed(
-            self,
-            texts: List[str],
-            *,
-            gpu_model: str,
-            batch_size: int = 32,
-            normalize: bool = True,
+        self,
+        texts: List[str],
+        *,
+        gpu_model: str,
+        batch_size: int = 32,
+        normalize: bool = True,
     ) -> List[List[float]]:
         """
         Call GPU embedding service.
@@ -139,21 +158,18 @@ class GPUServerAdapter:
         return embeddings
 
     def generate(
-            self,
-            prompt: str,
-            model: str = "qwen",
-            max_new_tokens: int = 512,
-            temperature: float = 0.2,
-            top_p: float = 0.95,
+        self,
+        prompt: str,
+        model: str = "qwen",
+        max_new_tokens: int = 512,
+        temperature: float = 0.2,
+        top_p: float = 0.95,
     ) -> str:
         """
-        Request text generation from GPU service
+        Request text generation from GPU service.
         """
         rid = get_request_id()
 
-        # --------------------------------------------------
-        # EMTAC → GPU SERVICE MODEL MAP (GENERATION)
-        # --------------------------------------------------
         MODEL_MAP = {
             "TinyLlamaModel": "tinyllama",
             "QwenModel": "qwen",
@@ -167,7 +183,7 @@ class GPUServerAdapter:
         payload = {
             "prompt": prompt,
             "model": gpu_model,
-            "max_tokens": max_new_tokens,  # GPU service expects `max_tokens`
+            "max_tokens": max_new_tokens,
             "temperature": temperature,
             "top_p": top_p,
         }
@@ -187,16 +203,14 @@ class GPUServerAdapter:
 
             return text
 
-        except Exception as e:
+        except Exception as exc:
             error_id(
-                f"[GPU-ADAPTER] Generation failed (model={gpu_model}): {e}",
+                f"[GPU-ADAPTER] Generation failed (model={gpu_model}): {exc}",
                 rid,
                 exc_info=True,
             )
             raise
 
     def is_available(self) -> bool:
-        if not self.enabled:
-            self.enabled = self._detect_service()
+        self.enabled = self._detect_service()
         return self.enabled
-
