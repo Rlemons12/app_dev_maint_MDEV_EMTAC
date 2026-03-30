@@ -1,300 +1,429 @@
-# services/position_service.py
+from __future__ import annotations
 
-from typing import Optional, List
-from sqlalchemy.orm import Session
+from typing import Any, Dict, List, Optional, Sequence
+
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
-from modules.emtacdb.emtacdb_fts import (
-    Position,
-    EquipmentGroup, Model, AssetNumber, Location,
-    Subassembly, ComponentAssembly, AssemblyView,
-    SiteLocation, Campus, Building,
-    CompletedDocumentPositionAssociation
+from modules.configuration.log_config import (
+    debug_id,
+    error_id,
+    info_id,
+    warning_id,
+    with_request_id,
 )
 
-from modules.configuration.config_env import DatabaseConfig
-from modules.configuration.log_config import with_request_id
+from modules.emtacdb.emtacdb_fts import Position
 
 
 class PositionService:
     """
-    Transaction-aware Position service.
+    Pure domain/service layer for Position operations.
 
-    RULE:
-    - If session provided → NEVER commit
-    - If session not provided → standalone mode allowed
+    HARD RULES:
+    - NEVER open sessions
+    - NEVER close sessions
+    - NEVER commit
+    - NEVER rollback
+    - Orchestrator owns transaction lifecycle
+
+    Notes:
+    - This service intentionally does NOT call Position.add_to_db()
+      because that ORM helper still commits/rolls back internally.
+    - For create/get-or-create flows, this service uses session.flush()
+      so the orchestrator can still own the transaction boundary.
     """
 
     VALID_FIELDS = {
-        "area_id", "equipment_group_id", "model_id",
-        "asset_number_id", "location_id", "subassembly_id",
-        "component_assembly_id", "assembly_view_id",
-        "site_location_id", "campus_id", "building_id"
+        "id",
+        "area_id",
+        "equipment_group_id",
+        "model_id",
+        "asset_number_id",
+        "location_id",
+        "subassembly_id",
+        "component_assembly_id",
+        "assembly_view_id",
+        "site_location_id",
+        "campus_id",
+        "building_id",
     }
 
-    def __init__(self, db_config: DatabaseConfig = None):
-        self.db_config = db_config or DatabaseConfig()
+    POSITION_FK_FIELDS = (
+        "area_id",
+        "equipment_group_id",
+        "model_id",
+        "asset_number_id",
+        "location_id",
+        "subassembly_id",
+        "component_assembly_id",
+        "assembly_view_id",
+        "site_location_id",
+        "campus_id",
+        "building_id",
+    )
 
-        self.MODEL_MAP = {
-            "EquipmentGroup": EquipmentGroup,
-            "Model": Model,
-            "AssetNumber": AssetNumber,
-            "Location": Location,
-            "Subassembly": Subassembly,
-            "ComponentAssembly": ComponentAssembly,
-            "AssemblyView": AssemblyView,
-            "SiteLocation": SiteLocation,
-            "Campus": Campus,
-            "Building": Building,
-        }
-
-        if getattr(Position, "MODELS_MAP", None) is None:
-            Position.MODELS_MAP = self.MODEL_MAP
-
-    # ----------------------------------------------------
-    # FIND
-    # ----------------------------------------------------
+    # ------------------------------------------------------------------
+    # READ HELPERS
+    # ------------------------------------------------------------------
 
     @with_request_id
-    def find(self, session: Optional[Session] = None, **filters) -> List[Position]:
-
-        if session:
-            return self._find_internal(session, filters)
-
-        with self.db_config.main_session() as s:
-            return self._find_internal(s, filters)
-
-    def _find_internal(self, session, filters):
-
-        query = session.query(Position)
-
-        for key, value in filters.items():
-            if key in self.VALID_FIELDS and value not in (None, "", "null"):
-                query = query.filter(getattr(Position, key) == value)
-
-        return query.all()
-
-    # ----------------------------------------------------
-    # GET
-    # ----------------------------------------------------
+    def find(self, session: Session, **filters: Any) -> List[Position]:
+        """
+        Find Position rows by allowed filters.
+        """
+        return self._find_internal(session=session, filters=filters)
 
     @with_request_id
-    def get(self, position_id: int, session: Optional[Session] = None):
+    def get(self, session: Session, position_id: int) -> Optional[Position]:
+        """
+        Get one Position by primary key.
+        """
+        if not position_id:
+            warning_id("PositionService.get called without a valid position_id")
+            return None
 
-        if session:
-            return session.get(Position, position_id)
-
-        with self.db_config.main_session() as s:
-            return s.get(Position, position_id)
-
-    # ----------------------------------------------------
-    # SAVE
-    # ----------------------------------------------------
+        return self._get_internal(session=session, position_id=position_id)
 
     @with_request_id
-    def save(self, session: Optional[Session] = None, **kwargs) -> Position:
+    def get_positions_by_filters(
+        self,
+        session: Session,
+        *,
+        area_id: Optional[int] = None,
+        equipment_group_id: Optional[int] = None,
+        model_id: Optional[int] = None,
+        asset_number_id: Optional[int] = None,
+        location_id: Optional[int] = None,
+        subassembly_id: Optional[int] = None,
+        component_assembly_id: Optional[int] = None,
+        assembly_view_id: Optional[int] = None,
+        site_location_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
+        building_id: Optional[int] = None,
+    ) -> List[Position]:
+        """
+        Read helper for filtered Position lookup.
+        """
+        filters = self._build_position_filters(
+            area_id=area_id,
+            equipment_group_id=equipment_group_id,
+            model_id=model_id,
+            asset_number_id=asset_number_id,
+            location_id=location_id,
+            subassembly_id=subassembly_id,
+            component_assembly_id=component_assembly_id,
+            assembly_view_id=assembly_view_id,
+            site_location_id=site_location_id,
+            campus_id=campus_id,
+            building_id=building_id,
+        )
 
-        if session:
-            return self._save_internal(session, kwargs)
-
-        with self.db_config.main_session() as s:
-            try:
-                pos = self._save_internal(s, kwargs)
-                s.commit()
-                return pos
-            except:
-                s.rollback()
-                raise
-
-    def _save_internal(self, session, kwargs):
-
-        if "id" in kwargs and kwargs["id"]:
-            pos = session.get(Position, kwargs["id"])
-            if not pos:
-                raise ValueError(f"Position {kwargs['id']} not found")
-
-            for k, v in kwargs.items():
-                if hasattr(pos, k):
-                    setattr(pos, k, v)
-        else:
-            pos = Position(**kwargs)
-            session.add(pos)
-
-        session.flush()
-        return pos
-
-    # ----------------------------------------------------
-    # REMOVE
-    # ----------------------------------------------------
+        debug_id(f"PositionService.get_positions_by_filters filters={filters}")
+        return self._find_internal(session=session, filters=filters)
 
     @with_request_id
-    def remove(self, position_id: int, session: Optional[Session] = None) -> bool:
+    def get_corresponding_position_ids(
+        self,
+        session: Session,
+        *,
+        area_id: Optional[int] = None,
+        equipment_group_id: Optional[int] = None,
+        model_id: Optional[int] = None,
+        asset_number_id: Optional[int] = None,
+        location_id: Optional[int] = None,
+        subassembly_id: Optional[int] = None,
+        component_assembly_id: Optional[int] = None,
+        assembly_view_id: Optional[int] = None,
+        site_location_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
+        building_id: Optional[int] = None,
+    ) -> List[int]:
+        """
+        Return Position IDs matching the provided hierarchy filters.
+        """
+        positions = self.get_positions_by_filters(
+            session=session,
+            area_id=area_id,
+            equipment_group_id=equipment_group_id,
+            model_id=model_id,
+            asset_number_id=asset_number_id,
+            location_id=location_id,
+            subassembly_id=subassembly_id,
+            component_assembly_id=component_assembly_id,
+            assembly_view_id=assembly_view_id,
+            site_location_id=site_location_id,
+            campus_id=campus_id,
+            building_id=building_id,
+        )
 
-        if session:
-            return self._remove_internal(session, position_id)
-
-        with self.db_config.main_session() as s:
-            try:
-                result = self._remove_internal(s, position_id)
-                s.commit()
-                return result
-            except:
-                s.rollback()
-                raise
-
-    def _remove_internal(self, session, position_id):
-
-        pos = session.get(Position, position_id)
-        if not pos:
-            return False
-
-        session.delete(pos)
-        return True
-
-    # ----------------------------------------------------
-    # HIERARCHY
-    # ----------------------------------------------------
+        position_ids = [position.id for position in positions]
+        info_id(f"PositionService.get_corresponding_position_ids found {len(position_ids)} ids")
+        return position_ids
 
     @with_request_id
     def get_dependents(
         self,
+        session: Session,
+        *,
         parent_type: str,
-        parent_id: int,
+        parent_id: Optional[int],
         child_type: Optional[str] = None,
-        session: Optional[Session] = None,
-    ):
+    ) -> List[Any]:
+        """
+        Get dependent hierarchy items using Position model helper.
+        Safe for service use because it only reads and uses caller-owned session.
+        """
+        if not parent_type:
+            warning_id("PositionService.get_dependents called without parent_type")
+            return []
 
-        if session:
-            return Position.get_dependent_items(
-                session=session,
-                parent_type=parent_type,
-                parent_id=parent_id,
-                child_type=child_type
-            )
-
-        with self.db_config.main_session() as s:
-            return Position.get_dependent_items(
-                session=s,
-                parent_type=parent_type,
-                parent_id=parent_id,
-                child_type=child_type
-            )
-
-    @with_request_id
-    def get_corresponding_ids(
-        self,
-        session: Optional[Session] = None,
-        **filters
-    ):
-
-        if session:
-            return Position.get_corresponding_position_ids(
-                session=session,
-                area_id=filters.get("area_id"),
-                equipment_group_id=filters.get("equipment_group_id"),
-                model_id=filters.get("model_id"),
-                asset_number_id=filters.get("asset_number_id"),
-                location_id=filters.get("location_id"),
-                campus_id=filters.get("campus_id"),
-                building_id=filters.get("building_id"),
-                site_location_id=filters.get("site_location_id"),
-                request_id=None,
-            )
-
-        with self.db_config.main_session() as s:
-            return Position.get_corresponding_position_ids(
-                session=s,
-                area_id=filters.get("area_id"),
-                equipment_group_id=filters.get("equipment_group_id"),
-                model_id=filters.get("model_id"),
-                asset_number_id=filters.get("asset_number_id"),
-                location_id=filters.get("location_id"),
-                campus_id=filters.get("campus_id"),
-                building_id=filters.get("building_id"),
-                site_location_id=filters.get("site_location_id"),
-                request_id=None,
-            )
-
-    @with_request_id
-    def get_next_level_type(self, current_level: str):
-        return Position.get_next_level_type(current_level)
-
-    # ----------------------------------------------------
-    # GET OR CREATE
-    # ----------------------------------------------------
-
-    @with_request_id
-    def add_to_db(self, session: Optional[Session] = None, **kwargs) -> int:
-
-        if session:
-            return Position.add_to_db(session=session, **kwargs)
-
-        with self.db_config.main_session() as s:
-            try:
-                position_id = Position.add_to_db(session=s, **kwargs)
-                s.commit()
-                return position_id
-            except:
-                s.rollback()
-                raise
-
-    # ----------------------------------------------------
-    # DOCUMENT LINKING
-    # ----------------------------------------------------
-
-    @with_request_id
-    def get_positions_for_complete_document(
-        self,
-        complete_document_id: int,
-        session: Optional[Session] = None,
-    ):
-
-        if not session:
-            with self.db_config.main_session() as s:
-                return self._get_positions_internal(s, complete_document_id)
-
-        return self._get_positions_internal(session, complete_document_id)
-
-    def _get_positions_internal(self, session, complete_document_id):
-
-        position_ids = [
-            a.position_id
-            for a in (
-                session.query(CompletedDocumentPositionAssociation)
-                .filter(
-                    CompletedDocumentPositionAssociation.complete_document_id
-                    == complete_document_id
-                )
-                .all()
-            )
-            if a.position_id
-        ]
-
-        if not position_ids:
-            return [], []
-
-        positions = (
-            session.query(Position)
-            .filter(Position.id.in_(position_ids))
-            .all()
+        return Position.get_dependent_items(
+            session=session,
+            parent_type=parent_type,
+            parent_id=parent_id,
+            child_type=child_type,
         )
 
-        serialized = [
-            {
-                "id": p.id,
-                "area_id": p.area_id,
-                "equipment_group_id": p.equipment_group_id,
-                "model_id": p.model_id,
-                "asset_number_id": p.asset_number_id,
-                "location_id": p.location_id,
-                "subassembly_id": p.subassembly_id,
-                "component_assembly_id": p.component_assembly_id,
-                "assembly_view_id": p.assembly_view_id,
-                "site_location_id": p.site_location_id,
-                "campus_id": p.campus_id,
-                "building_id": p.building_id,
-            }
-            for p in positions
-        ]
+    @with_request_id
+    def get_next_level_type(self, current_level: str) -> Optional[str]:
+        """
+        Return the next hierarchy level type.
+        """
+        if not current_level:
+            warning_id("PositionService.get_next_level_type called without current_level")
+            return None
 
-        return serialized, position_ids
+        return Position.get_next_level_type(current_level)
+
+    # ------------------------------------------------------------------
+    # WRITE HELPERS
+    # ------------------------------------------------------------------
+
+    @with_request_id
+    def create(
+        self,
+        session: Session,
+        *,
+        area_id: Optional[int] = None,
+        equipment_group_id: Optional[int] = None,
+        model_id: Optional[int] = None,
+        asset_number_id: Optional[int] = None,
+        location_id: Optional[int] = None,
+        subassembly_id: Optional[int] = None,
+        component_assembly_id: Optional[int] = None,
+        assembly_view_id: Optional[int] = None,
+        site_location_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
+        building_id: Optional[int] = None,
+    ) -> Position:
+        """
+        Create a new Position row and flush it.
+        No commit happens here.
+        """
+        filters = self._build_position_filters(
+            area_id=area_id,
+            equipment_group_id=equipment_group_id,
+            model_id=model_id,
+            asset_number_id=asset_number_id,
+            location_id=location_id,
+            subassembly_id=subassembly_id,
+            component_assembly_id=component_assembly_id,
+            assembly_view_id=assembly_view_id,
+            site_location_id=site_location_id,
+            campus_id=campus_id,
+            building_id=building_id,
+        )
+
+        position = Position(**filters)
+        session.add(position)
+        session.flush()
+
+        info_id(f"PositionService.create created Position id={position.id}")
+        return position
+
+    @with_request_id
+    def get_or_create(
+        self,
+        session: Session,
+        *,
+        area_id: Optional[int] = None,
+        equipment_group_id: Optional[int] = None,
+        model_id: Optional[int] = None,
+        asset_number_id: Optional[int] = None,
+        location_id: Optional[int] = None,
+        subassembly_id: Optional[int] = None,
+        component_assembly_id: Optional[int] = None,
+        assembly_view_id: Optional[int] = None,
+        site_location_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
+        building_id: Optional[int] = None,
+    ) -> Position:
+        """
+        Get-or-create Position using exact FK match.
+        No commit happens here.
+        """
+        filters = self._build_position_filters(
+            area_id=area_id,
+            equipment_group_id=equipment_group_id,
+            model_id=model_id,
+            asset_number_id=asset_number_id,
+            location_id=location_id,
+            subassembly_id=subassembly_id,
+            component_assembly_id=component_assembly_id,
+            assembly_view_id=assembly_view_id,
+            site_location_id=site_location_id,
+            campus_id=campus_id,
+            building_id=building_id,
+            include_none=True,
+        )
+
+        existing = session.query(Position).filter_by(**filters).first()
+        if existing:
+            info_id(f"PositionService.get_or_create found existing Position id={existing.id}")
+            return existing
+
+        position = Position(**filters)
+        session.add(position)
+        session.flush()
+
+        info_id(f"PositionService.get_or_create created Position id={position.id}")
+        return position
+
+    @with_request_id
+    def save(self, session: Session, position: Position) -> Position:
+        """
+        Add or merge Position into the current session and flush.
+        No commit happens here.
+        """
+        if position is None:
+            raise ValueError("PositionService.save requires a non-null position")
+
+        session.add(position)
+        session.flush()
+
+        info_id(f"PositionService.save flushed Position id={getattr(position, 'id', None)}")
+        return position
+
+    @with_request_id
+    def remove(self, session: Session, position: Position) -> None:
+        """
+        Delete Position from the current session and flush.
+        No commit happens here.
+        """
+        if position is None:
+            raise ValueError("PositionService.remove requires a non-null position")
+
+        session.delete(position)
+        session.flush()
+
+        info_id(f"PositionService.remove flushed delete for Position id={getattr(position, 'id', None)}")
+
+    # ------------------------------------------------------------------
+    # SERIALIZATION / RESPONSE HELPERS
+    # ------------------------------------------------------------------
+
+    @with_request_id
+    def serialize_position(self, position: Position) -> Dict[str, Any]:
+        """
+        Convert a Position ORM object into a response-safe dictionary.
+        """
+        if position is None:
+            return {}
+
+        return {
+            "id": position.id,
+            "area_id": position.area_id,
+            "equipment_group_id": position.equipment_group_id,
+            "model_id": position.model_id,
+            "asset_number_id": position.asset_number_id,
+            "location_id": position.location_id,
+            "subassembly_id": position.subassembly_id,
+            "component_assembly_id": position.component_assembly_id,
+            "assembly_view_id": position.assembly_view_id,
+            "site_location_id": position.site_location_id,
+            "campus_id": position.campus_id,
+            "building_id": position.building_id,
+        }
+
+    @with_request_id
+    def serialize_positions(self, positions: Sequence[Position]) -> List[Dict[str, Any]]:
+        """
+        Serialize multiple Position rows.
+        """
+        return [self.serialize_position(position) for position in positions]
+
+    # ------------------------------------------------------------------
+    # INTERNAL HELPERS
+    # ------------------------------------------------------------------
+
+    def _find_internal(self, session: Session, filters: Dict[str, Any]) -> List[Position]:
+        """
+        Internal filtered query helper.
+        """
+        query = session.query(Position)
+
+        cleaned_filters: Dict[str, Any] = {}
+        for key, value in filters.items():
+            if key not in self.VALID_FIELDS:
+                warning_id(f"PositionService._find_internal ignored invalid filter '{key}'")
+                continue
+
+            if value is None:
+                continue
+
+            cleaned_filters[key] = value
+
+        debug_id(f"PositionService._find_internal cleaned_filters={cleaned_filters}")
+
+        if cleaned_filters:
+            query = query.filter_by(**cleaned_filters)
+
+        return query.all()
+
+    def _get_internal(self, session: Session, position_id: int) -> Optional[Position]:
+        """
+        Internal PK lookup helper.
+        """
+        return session.query(Position).filter(Position.id == position_id).first()
+
+    def _build_position_filters(
+        self,
+        *,
+        area_id: Optional[int] = None,
+        equipment_group_id: Optional[int] = None,
+        model_id: Optional[int] = None,
+        asset_number_id: Optional[int] = None,
+        location_id: Optional[int] = None,
+        subassembly_id: Optional[int] = None,
+        component_assembly_id: Optional[int] = None,
+        assembly_view_id: Optional[int] = None,
+        site_location_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
+        building_id: Optional[int] = None,
+        include_none: bool = False,
+    ) -> Dict[str, Optional[int]]:
+        """
+        Build canonical Position FK filter dictionary.
+
+        include_none=True is important for exact get-or-create matching,
+        because Position rows are defined by the full FK combination.
+        """
+        raw_filters: Dict[str, Optional[int]] = {
+            "area_id": area_id,
+            "equipment_group_id": equipment_group_id,
+            "model_id": model_id,
+            "asset_number_id": asset_number_id,
+            "location_id": location_id,
+            "subassembly_id": subassembly_id,
+            "component_assembly_id": component_assembly_id,
+            "assembly_view_id": assembly_view_id,
+            "site_location_id": site_location_id,
+            "campus_id": campus_id,
+            "building_id": building_id,
+        }
+
+        if include_none:
+            return raw_filters
+
+        return {key: value for key, value in raw_filters.items() if value is not None}
