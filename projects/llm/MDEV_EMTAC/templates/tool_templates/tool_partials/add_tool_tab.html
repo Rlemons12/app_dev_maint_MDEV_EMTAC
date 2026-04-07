@@ -1,0 +1,246 @@
+{# templates/tool_templates/tool_partials/add_tool_tab.html #}
+
+{% if tool_form and position_form %}
+    <div class="form-container">
+        <form
+            id="tool_add_form"
+            action="{{ url_for('tool_routes.submit_tool_data') }}"
+            method="POST"
+            enctype="multipart/form-data"
+            class="mt-4"
+        >
+            {{ tool_form.hidden_tag() }}
+
+            <div class="accordion" id="toolFormAccordion">
+
+                <!-- Tool Information Section -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingToolInfo">
+                        <button
+                            class="accordion-button"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#collapseToolInfo"
+                            aria-expanded="true"
+                            aria-controls="collapseToolInfo"
+                        >
+                            Tool Information
+                        </button>
+                    </h2>
+
+                    <div
+                        id="collapseToolInfo"
+                        class="accordion-collapse collapse show"
+                        aria-labelledby="headingToolInfo"
+                        data-bs-parent="#toolFormAccordion"
+                    >
+                        <div class="accordion-body">
+                            <div class="mb-3">
+                                {{ tool_form.tool_name.label(class="form-label") }}
+                                {{ tool_form.tool_name(class="form-control", placeholder="Enter tool name") }}
+                                {% for error in tool_form.tool_name.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ tool_form.tool_size.label(class="form-label") }}
+                                {{ tool_form.tool_size(class="form-control", placeholder="Enter tool size") }}
+                                {% for error in tool_form.tool_size.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ tool_form.tool_type.label(class="form-label") }}
+                                {{ tool_form.tool_type(class="form-control", placeholder="Enter tool type") }}
+                                {% for error in tool_form.tool_type.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ tool_form.tool_material.label(class="form-label") }}
+                                {{ tool_form.tool_material(class="form-control", placeholder="Enter tool material") }}
+                                {% for error in tool_form.tool_material.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ tool_form.tool_description.label(class="form-label") }}
+                                {{ tool_form.tool_description(class="form-control", placeholder="Enter tool description") }}
+                                {% for error in tool_form.tool_description.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ tool_form.tool_category.label(class="form-label") }}
+                                {{ tool_form.tool_category(class="form-select") }}
+                                {% for error in tool_form.tool_category.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ tool_form.tool_manufacturer.label(class="form-label") }}
+                                {{ tool_form.tool_manufacturer(class="form-select") }}
+                                {% for error in tool_form.tool_manufacturer.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Position Information Section -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingPosition">
+                        <button
+                            class="accordion-button collapsed"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#collapsePosition"
+                            aria-expanded="false"
+                            aria-controls="collapsePosition"
+                        >
+                            Position Information
+                        </button>
+                    </h2>
+
+                    <div
+                        id="collapsePosition"
+                        class="accordion-collapse collapse"
+                        aria-labelledby="headingPosition"
+                        data-bs-parent="#toolFormAccordion"
+                    >
+                        <div class="accordion-body">
+                            {{ position_form.hidden_tag() }}
+
+                            <div class="mb-3">
+                                {{ position_form.area.label(class="form-label") }}
+                                {{ position_form.area(class="form-select") }}
+                                {% for error in position_form.area.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ position_form.equipment_group.label(class="form-label") }}
+                                {{ position_form.equipment_group(class="form-select") }}
+                                {% for error in position_form.equipment_group.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ position_form.model.label(class="form-label") }}
+                                {{ position_form.model(class="form-select") }}
+                                {% for error in position_form.model.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ position_form.asset_number.label(class="form-label") }}
+                                {{ position_form.asset_number(class="form-select") }}
+                                {% for error in position_form.asset_number.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ position_form.location.label(class="form-label") }}
+                                {{ position_form.location(class="form-select") }}
+                                {% for error in position_form.location.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ position_form.subassembly.label(class="form-label") }}
+                                {{ position_form.subassembly(class="form-select") }}
+                                {% for error in position_form.subassembly.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ position_form.component_assembly.label(class="form-label") }}
+                                {{ position_form.component_assembly(class="form-select") }}
+                                {% for error in position_form.component_assembly.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ position_form.assembly_view.label(class="form-label") }}
+                                {{ position_form.assembly_view(class="form-select") }}
+                                {% for error in position_form.assembly_view.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ position_form.site_location.label(class="form-label") }}
+                                {{ position_form.site_location(class="form-select") }}
+                                {% for error in position_form.site_location.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tool Image Upload Section -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingToolImage">
+                        <button
+                            class="accordion-button collapsed"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#collapseToolImage"
+                            aria-expanded="false"
+                            aria-controls="collapseToolImage"
+                        >
+                            Tool Image Upload
+                        </button>
+                    </h2>
+
+                    <div
+                        id="collapseToolImage"
+                        class="accordion-collapse collapse"
+                        aria-labelledby="headingToolImage"
+                        data-bs-parent="#toolFormAccordion"
+                    >
+                        <div class="accordion-body">
+                            <div class="mb-3">
+                                {{ tool_form.tool_images.label(class="form-label") }}
+                                {{ tool_form.tool_images(class="form-control", multiple="multiple") }}
+                                {% for error in tool_form.tool_images.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ tool_form.image_description.label(class="form-label") }}
+                                {{ tool_form.image_description(class="form-control", placeholder="Enter image description") }}
+                                {% for error in tool_form.image_description.errors %}
+                                    <span class="text-danger">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="text-end mt-4">
+                {{ tool_form.submit_tool(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+{% else %}
+    <p>Add Tool form is not available at the moment.</p>
+{% endif %}
