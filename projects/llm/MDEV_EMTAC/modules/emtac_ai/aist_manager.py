@@ -9,10 +9,12 @@ Thin orchestrator around UnifiedSearch:
 - Persists interactions (QandA table in emtacdb)
 """
 
+from __future__ import annotations
+
 import time
 import uuid
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from modules.configuration.log_config import (
     logger,
@@ -22,14 +24,16 @@ from modules.configuration.log_config import (
     error_id,
     warning_id,
 )
-from modules.configuration.config_env import DatabaseConfig
+from modules.configuration.config_env import get_db_config
 from modules.emtac_ai.search.UnifiedSearch import UnifiedSearch
 from modules.services.image_service import ImageService
 from modules.services.position_service import PositionService
 from modules.services.parts_position_image_service import PartsPositionImageService
-from modules.services.image_completed_document_association_service import ImageCompletedDocumentAssociationService
+from modules.services.image_completed_document_association_service import (
+    ImageCompletedDocumentAssociationService,
+)
 
-# ✅ GPU / unified AI facade ONLY
+# GPU / unified AI facade ONLY
 from modules.services.ai_models_service import AIModelsService
 
 # DB models
@@ -39,7 +43,9 @@ from modules.emtacdb.emtacdb_fts import QandA, Document
 from modules.emtac_ai.search.nlp import SearchQueryTracker
 from modules.emtac_ai.search.nlp.tracker import SearchSessionManager
 
-db_config = DatabaseConfig()
+
+# Shared singleton DB config only
+db_config = get_db_config()
 
 
 # -------------------------------
@@ -62,7 +68,8 @@ class AistManager:
         self.db_session = db_session
         self.start_time = None
 
-        self.db_config = DatabaseConfig()
+        # Use shared singleton config instead of new DatabaseConfig()
+        self.db_config = get_db_config()
         self.performance_history: List[float] = []
         self.current_request_id: Optional[str] = None
 
@@ -81,19 +88,17 @@ class AistManager:
                 enable_fts=True,
             )
 
-            # -----------------------------
-            # Enrichment services (OWNED HERE)
-            # -----------------------------
+            # Enrichment services
             self.image_assoc_service = ImageCompletedDocumentAssociationService()
             self.position_service = PositionService(self.db_session)
             self.parts_position_image_service = PartsPositionImageService(self.db_session)
 
-            # -----------------------------
             # Inject services into UnifiedSearch
-            # -----------------------------
             self.search_engine.image_assoc_service = self.image_assoc_service
             self.search_engine.position_service = self.position_service
-            self.search_engine.parts_position_image_service = self.parts_position_image_service
+            self.search_engine.parts_position_image_service = (
+                self.parts_position_image_service
+            )
 
             logger.info("AistManager: UnifiedSearch + enrichment services initialized.")
 
@@ -163,7 +168,7 @@ class AistManager:
         self.current_request_id = request_id or get_request_id()
 
         logger.critical(
-            "🚨 RUNNING UPDATED answer_question FROM: %s",
+            "RUNNING UPDATED answer_question FROM: %s",
             __file__,
             extra={"request_id": self.current_request_id},
         )
@@ -173,27 +178,21 @@ class AistManager:
             extra={"request_id": self.current_request_id},
         )
 
-        # --------------------------------------------------
-        # Basic input validation (NON-BLOCKING)
-        # --------------------------------------------------
         if not question or not question.strip():
             logger.warning(
                 "[AIST] Empty or invalid question received",
                 extra={"request_id": self.current_request_id},
             )
-
-            # 🔑 ALWAYS return UI-normalized structure
-            return self._format_final_response({
-                "answer": "Please provide a more detailed question so I can help you better.",
-                "documents": [],
-                "parts": [],
-                "thumbnails": [],
-            })
+            return self._format_final_response(
+                {
+                    "answer": "Please provide a more detailed question so I can help you better.",
+                    "documents": [],
+                    "parts": [],
+                    "thumbnails": [],
+                }
+            )
 
         try:
-            # --------------------------------------------------
-            # Optional tracking (DOES NOT affect execution)
-            # --------------------------------------------------
             if self.query_tracker and not self.current_session_id:
                 try:
                     self.set_current_user(
@@ -206,34 +205,28 @@ class AistManager:
                         extra={"request_id": self.current_request_id},
                     )
 
-            # --------------------------------------------------
-            # RAG AVAILABILITY CHECK (CORRECT OWNER)
-            # --------------------------------------------------
-            if not self.search_engine or not self.search_engine.rag_pipeline:
+            if not self.search_engine or not getattr(self.search_engine, "rag_pipeline", None):
                 logger.error(
                     "[AIST] RAG pipeline not initialized",
                     extra={"request_id": self.current_request_id},
                 )
+                return self._format_final_response(
+                    {
+                        "answer": "The AI assistant is temporarily unavailable.",
+                        "documents": [],
+                        "parts": [],
+                        "thumbnails": [],
+                    }
+                )
 
-                return self._format_final_response({
-                    "answer": "The AI assistant is temporarily unavailable.",
-                    "documents": [],
-                    "parts": [],
-                    "thumbnails": [],
-                })
-
-            # --------------------------------------------------
-            # UnifiedSearch execution (RAG-FIRST)
-            # --------------------------------------------------
-            with self.db_config.main_session() as session:
+            with self.db_config.get_main_session() as session:
                 result = self.search_engine.execute_unified_search(
                     question=question.strip(),
                     user_id=user_id,
                     request_id=self.current_request_id,
-                    session=session,  # 🔑 PASS SESSION
+                    session=session,
                 )
 
-            # 🔑 SINGLE EXIT POINT
             return self._format_final_response(result)
 
         except Exception as e:
@@ -242,32 +235,21 @@ class AistManager:
                 exc_info=True,
                 extra={"request_id": self.current_request_id},
             )
-
-            # 🔑 EVEN ERRORS RETURN VALID UI STRUCTURE
-            return self._format_final_response({
-                "answer": "An unexpected error occurred while processing your request.",
-                "documents": [],
-                "parts": [],
-                "thumbnails": [],
-            })
+            return self._format_final_response(
+                {
+                    "answer": "An unexpected error occurred while processing your request.",
+                    "documents": [],
+                    "parts": [],
+                    "thumbnails": [],
+                }
+            )
 
     # --------------------------------------------------
-    # Drawings extraction helpers (DOCUMENT → drawing_navigation → FLAT LIST)
+    # Drawings extraction helpers
     # --------------------------------------------------
-    def _flatten_drawing_navigation(self, drawing_navigation: Any) -> List[Dict[str, Any]]:
-        """
-        Mirrors your frontend flattening logic, but server-side.
-        Expected shape:
-        {
-          "areas":[
-            {"area_name":..., "models":[
-              {"model_name":..., "assets":[
-                {"asset_name":..., "drawings":[ {...}, ... ]}
-              ]}
-            ]}
-          ]
-        }
-        """
+    def _flatten_drawing_navigation(
+        self, drawing_navigation: Any
+    ) -> List[Dict[str, Any]]:
         results: List[Dict[str, Any]] = []
         if not drawing_navigation or not isinstance(drawing_navigation, dict):
             return results
@@ -314,18 +296,14 @@ class AistManager:
 
         return results
 
-    def _extract_drawings_from_documents(self, documents: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """
-        Primary server-side extraction:
-        - reads doc["drawing_navigation"] (if present)
-        - flattens it
-        - dedupes
-        """
+    def _extract_drawings_from_documents(
+        self, documents: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         if not isinstance(documents, list):
             return []
 
         all_drawings: List[Dict[str, Any]] = []
-        for i, doc in enumerate(documents):
+        for doc in documents:
             if not isinstance(doc, dict):
                 continue
             nav = doc.get("drawing_navigation")
@@ -335,23 +313,21 @@ class AistManager:
             flattened = self._flatten_drawing_navigation(nav)
             all_drawings.extend(flattened)
 
-        # Dedupe with stable key preference
         unique: List[Dict[str, Any]] = []
         seen: set = set()
 
-        for d in all_drawings:
-            # Prefer id, then drawing number, then url, then full dict
+        for drawing in all_drawings:
             key = (
-                d.get("id")
-                or d.get("drw_number")
-                or d.get("drawing_number")
-                or d.get("url")
-                or str(sorted(d.items()))
+                drawing.get("id")
+                or drawing.get("drw_number")
+                or drawing.get("drawing_number")
+                or drawing.get("url")
+                or str(sorted(drawing.items()))
             )
             if key in seen:
                 continue
             seen.add(key)
-            unique.append(d)
+            unique.append(drawing)
 
         return unique
 
@@ -360,9 +336,6 @@ class AistManager:
         documents = result.get("documents", []) or []
         parts = result.get("parts", []) or []
 
-        # --------------------------------------------------
-        # 🔒 Ensure drawing_navigation ALWAYS exists on docs
-        # --------------------------------------------------
         for doc in documents:
             if not isinstance(doc, dict):
                 continue
@@ -381,12 +354,6 @@ class AistManager:
                 },
             )
 
-        # --------------------------------------------------
-        # 📐 Resolve drawings (priority order)
-        # 1) explicit top-level drawings
-        # 2) drawings extracted from drawing_navigation
-        # 3) fallback legacy extraction
-        # --------------------------------------------------
         drawings = result.get("drawings")
 
         if not isinstance(drawings, list) or len(drawings) == 0:
@@ -395,9 +362,6 @@ class AistManager:
         if not drawings:
             drawings = self._extract_drawings_from_documents(documents)
 
-        # --------------------------------------------------
-        # 🖼️ Promote images from documents
-        # --------------------------------------------------
         images: List[Any] = []
         for doc in documents:
             doc_images = doc.get("images")
@@ -425,10 +389,9 @@ class AistManager:
             "performance": result.get("performance"),
         }
 
-    def _extract_drawings_from_navigation(self, documents: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """
-        Flatten drawings from doc.drawing_navigation into a unique list.
-        """
+    def _extract_drawings_from_navigation(
+        self, documents: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         seen: set[int] = set()
         drawings: List[Dict[str, Any]] = []
 
@@ -455,7 +418,7 @@ class AistManager:
         self, user_id: str, question: str, response: Dict[str, Any], request_id: str
     ) -> None:
         try:
-            with db_config.main_session() as session:
+            with db_config.get_main_session() as session:
                 QandA.record_interaction(
                     user_id=user_id,
                     question=question,
@@ -464,7 +427,7 @@ class AistManager:
                     request_id=request_id,
                     raw_response=response,
                 )
-        except Exception as e:
+        except Exception:
             logger.error("record_interaction failed", exc_info=True)
 
     # ---------- Error ----------
@@ -505,7 +468,10 @@ global_aist_manager: Optional[AistManager] = None
 @with_request_id
 def get_or_create_aist_manager() -> AistManager:
     global global_aist_manager
+
     if global_aist_manager is None:
-        db_session = DatabaseConfig().get_session()
+        # Use shared singleton config, do not instantiate DatabaseConfig()
+        db_session = get_db_config().get_main_session()
         global_aist_manager = AistManager(db_session=db_session)
+
     return global_aist_manager
