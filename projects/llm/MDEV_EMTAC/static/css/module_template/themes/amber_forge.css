@@ -10,6 +10,10 @@ Role:
 - Provide a complete Amber Forge visual identity
 - Support reusable neppy-* utility classes
 - Theme the standardized .mt-* module template layouts
+
+Important:
+- Does NOT style the standalone banner system
+- Does NOT style the standalone comment popup system
 ================================== */
 
 /* ==================================
@@ -22,10 +26,6 @@ body.amber-forge {
 
     --app-page-bg: #1C1000;
     --app-page-text: #FFF3DC;
-
-    --app-banner-bg: linear-gradient(90deg, #7A3A00 0%, #9C5000 45%, #B86200 100%);
-    --app-banner-text: #FFF3DC;
-    --app-banner-link: #FFD080;
 
     --app-sidebar-bg: rgba(36, 18, 0, 0.94);
     --app-sidebar-text: #D4A86A;
@@ -41,11 +41,6 @@ body.amber-forge {
     --app-control-text: #FFF3DC;
     --app-control-border: rgba(212, 168, 106, 0.22);
     --app-control-hover-bg: rgba(40, 22, 0, 0.96);
-
-    --app-popup-bg: rgba(28, 16, 0, 0.97);
-    --app-popup-text: #FFF3DC;
-    --app-popup-accent: #FFAE42;
-    --app-popup-submit-text: #1C1000;
 
     --app-results-bg: rgba(28, 16, 0, 0.78);
     --app-results-text: #FFF3DC;
@@ -97,17 +92,6 @@ body.amber-forge {
 /* ==================================
 GLOBAL POLISH
 ================================== */
-html.amber-forge .banner,
-body.amber-forge .banner {
-    letter-spacing: 0.03em;
-    box-shadow: var(--app-shadow-sm);
-}
-
-html.amber-forge .banner a,
-body.amber-forge .banner a {
-    font-weight: 600;
-}
-
 html.amber-forge .sidebar,
 body.amber-forge .sidebar {
     backdrop-filter: blur(5px);
@@ -234,74 +218,20 @@ body.amber-forge .thumbnail {
 }
 
 /* ==================================
-COMMENT POPUP
-================================== */
-html.amber-forge #commentPopup,
-body.amber-forge #commentPopup {
-    background: var(--app-popup-bg);
-    border: 1px solid rgba(255, 243, 220, 0.12);
-    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.44);
-}
-
-html.amber-forge #commentForm h2,
-body.amber-forge #commentForm h2 {
-    color: var(--app-popup-accent);
-    letter-spacing: 0.02em;
-}
-
-html.amber-forge #commentForm textarea,
-body.amber-forge #commentForm textarea {
-    background: rgba(22, 12, 0, 0.96);
-    color: var(--app-popup-text);
-    border: 1px solid rgba(212, 168, 106, 0.24);
-}
-
-html.amber-forge #commentForm textarea::placeholder,
-body.amber-forge #commentForm textarea::placeholder {
-    color: rgba(255, 243, 220, 0.46);
-}
-
-html.amber-forge #commentForm textarea:focus,
-body.amber-forge #commentForm textarea:focus {
-    border-color: rgba(255, 174, 66, 0.38);
-    box-shadow: 0 0 0 3px rgba(255, 174, 66, 0.12);
-}
-
-html.amber-forge #commentForm button,
-body.amber-forge #commentForm button {
-    background: linear-gradient(180deg, rgba(48, 26, 0, 0.98) 0%, rgba(22, 12, 0, 0.98) 100%);
-    color: var(--app-popup-text);
-    border: 1px solid rgba(212, 168, 106, 0.16);
-}
-
-html.amber-forge #commentForm button:hover,
-body.amber-forge #commentForm button:hover {
-    background: linear-gradient(180deg, rgba(68, 36, 0, 0.98) 0%, rgba(30, 16, 0, 0.98) 100%);
-}
-
-html.amber-forge #commentForm button[type="submit"],
-body.amber-forge #commentForm button[type="submit"] {
-    background: linear-gradient(180deg, #ffd080 0%, #FFAE42 100%);
-    color: var(--app-popup-submit-text);
-    border-color: rgba(255, 174, 66, 0.35);
-    font-weight: 700;
-}
-
-html.amber-forge #commentForm button[type="submit"]:hover,
-body.amber-forge #commentForm button[type="submit"]:hover {
-    background: linear-gradient(180deg, #ffe09e 0%, #f09e30 100%);
-}
-
-/* ==================================
 LINKS / SPECIAL STATES
+Scoped so they do NOT affect the banner
 ================================== */
-html.amber-forge a,
-body.amber-forge a {
+html.amber-forge .content a,
+html.amber-forge .sidebar a,
+body.amber-forge .content a,
+body.amber-forge .sidebar a {
     color: #FFD9A0;
 }
 
-html.amber-forge a:hover,
-body.amber-forge a:hover {
+html.amber-forge .content a:hover,
+html.amber-forge .sidebar a:hover,
+body.amber-forge .content a:hover,
+body.amber-forge .sidebar a:hover {
     color: #FFAE42;
 }
 
@@ -312,26 +242,22 @@ body.amber-forge .logout-button {
 
 /* ==================================
 ACCESSIBILITY / FOCUS
+No hamburger styling here.
+Hamburger focus belongs to banner.css / banner theme only.
 ================================== */
-html.amber-forge .hamburger:focus-visible,
 html.amber-forge .toggle-button:focus-visible,
 html.amber-forge .sidebar button:focus-visible,
 html.amber-forge .sidebar a:focus-visible,
 html.amber-forge .sidebar select:focus-visible,
-html.amber-forge #commentForm textarea:focus-visible,
-html.amber-forge #commentForm button:focus-visible,
 html.amber-forge .mt-toggle-btn:focus-visible,
 html.amber-forge .neppy-btn:focus-visible,
 html.amber-forge .neppy-input:focus-visible,
 html.amber-forge .neppy-select:focus-visible,
 html.amber-forge .neppy-textarea:focus-visible,
-body.amber-forge .hamburger:focus-visible,
 body.amber-forge .toggle-button:focus-visible,
 body.amber-forge .sidebar button:focus-visible,
 body.amber-forge .sidebar a:focus-visible,
 body.amber-forge .sidebar select:focus-visible,
-body.amber-forge #commentForm textarea:focus-visible,
-body.amber-forge #commentForm button:focus-visible,
 body.amber-forge .mt-toggle-btn:focus-visible,
 body.amber-forge .neppy-btn:focus-visible,
 body.amber-forge .neppy-input:focus-visible,
