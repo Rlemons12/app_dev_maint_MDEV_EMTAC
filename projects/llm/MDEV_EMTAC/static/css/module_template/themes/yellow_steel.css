@@ -10,6 +10,10 @@ Role:
 - Provide a complete Yellow Steel visual identity
 - Support reusable neppy-* utility classes
 - Theme the standardized .mt-* module template layouts
+
+Important:
+- Does NOT style the standalone banner system
+- Does NOT style the standalone comment popup system
 ================================== */
 
 /* ==================================
@@ -22,10 +26,6 @@ body.yellow-steel {
 
     --app-page-bg: #232323;
     --app-page-text: #E7E9EC;
-
-    --app-banner-bg: linear-gradient(90deg, #E6C000 0%, #FFD600 45%, #FFE033 100%);
-    --app-banner-text: #232323;
-    --app-banner-link: #232323;
 
     --app-sidebar-bg: rgba(255, 214, 0, 0.97);
     --app-sidebar-text: #3A2E00;
@@ -41,11 +41,6 @@ body.yellow-steel {
     --app-control-text: #E7E9EC;
     --app-control-border: rgba(231, 233, 236, 0.20);
     --app-control-hover-bg: rgba(42, 42, 42, 0.96);
-
-    --app-popup-bg: rgba(30, 30, 30, 0.97);
-    --app-popup-text: #E7E9EC;
-    --app-popup-accent: #FFD600;
-    --app-popup-submit-text: #232323;
 
     --app-results-bg: rgba(35, 35, 35, 0.80);
     --app-results-text: #E7E9EC;
@@ -97,17 +92,6 @@ body.yellow-steel {
 /* ==================================
 GLOBAL POLISH
 ================================== */
-html.yellow-steel .banner,
-body.yellow-steel .banner {
-    letter-spacing: 0.03em;
-    box-shadow: var(--app-shadow-sm);
-}
-
-html.yellow-steel .banner a,
-body.yellow-steel .banner a {
-    font-weight: 700;
-}
-
 html.yellow-steel .sidebar,
 body.yellow-steel .sidebar {
     backdrop-filter: blur(5px);
@@ -234,74 +218,20 @@ body.yellow-steel .thumbnail {
 }
 
 /* ==================================
-COMMENT POPUP
-================================== */
-html.yellow-steel #commentPopup,
-body.yellow-steel #commentPopup {
-    background: var(--app-popup-bg);
-    border: 1px solid rgba(231, 233, 236, 0.12);
-    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.48);
-}
-
-html.yellow-steel #commentForm h2,
-body.yellow-steel #commentForm h2 {
-    color: var(--app-popup-accent);
-    letter-spacing: 0.02em;
-}
-
-html.yellow-steel #commentForm textarea,
-body.yellow-steel #commentForm textarea {
-    background: rgba(22, 22, 22, 0.96);
-    color: var(--app-popup-text);
-    border: 1px solid rgba(231, 233, 236, 0.20);
-}
-
-html.yellow-steel #commentForm textarea::placeholder,
-body.yellow-steel #commentForm textarea::placeholder {
-    color: rgba(231, 233, 236, 0.40);
-}
-
-html.yellow-steel #commentForm textarea:focus,
-body.yellow-steel #commentForm textarea:focus {
-    border-color: rgba(255, 214, 0, 0.40);
-    box-shadow: 0 0 0 3px rgba(255, 214, 0, 0.12);
-}
-
-html.yellow-steel #commentForm button,
-body.yellow-steel #commentForm button {
-    background: linear-gradient(180deg, rgba(48, 48, 48, 0.98) 0%, rgba(28, 28, 28, 0.98) 100%);
-    color: var(--app-popup-text);
-    border: 1px solid rgba(231, 233, 236, 0.16);
-}
-
-html.yellow-steel #commentForm button:hover,
-body.yellow-steel #commentForm button:hover {
-    background: linear-gradient(180deg, rgba(64, 64, 64, 0.98) 0%, rgba(38, 38, 38, 0.98) 100%);
-}
-
-html.yellow-steel #commentForm button[type="submit"],
-body.yellow-steel #commentForm button[type="submit"] {
-    background: linear-gradient(180deg, #FFE033 0%, #FFD600 100%);
-    color: var(--app-popup-submit-text);
-    border-color: rgba(255, 214, 0, 0.40);
-    font-weight: 700;
-}
-
-html.yellow-steel #commentForm button[type="submit"]:hover,
-body.yellow-steel #commentForm button[type="submit"]:hover {
-    background: linear-gradient(180deg, #FFE84D 0%, #F0C800 100%);
-}
-
-/* ==================================
 LINKS / SPECIAL STATES
+Scoped so they do NOT affect the banner
 ================================== */
-html.yellow-steel a,
-body.yellow-steel a {
+html.yellow-steel .content a,
+html.yellow-steel .sidebar a,
+body.yellow-steel .content a,
+body.yellow-steel .sidebar a {
     color: #FFD600;
 }
 
-html.yellow-steel a:hover,
-body.yellow-steel a:hover {
+html.yellow-steel .content a:hover,
+html.yellow-steel .sidebar a:hover,
+body.yellow-steel .content a:hover,
+body.yellow-steel .sidebar a:hover {
     color: #FF8500;
 }
 
@@ -312,26 +242,22 @@ body.yellow-steel .logout-button {
 
 /* ==================================
 ACCESSIBILITY / FOCUS
+No hamburger styling here.
+Hamburger focus belongs to banner.css / banner theme only.
 ================================== */
-html.yellow-steel .hamburger:focus-visible,
 html.yellow-steel .toggle-button:focus-visible,
 html.yellow-steel .sidebar button:focus-visible,
 html.yellow-steel .sidebar a:focus-visible,
 html.yellow-steel .sidebar select:focus-visible,
-html.yellow-steel #commentForm textarea:focus-visible,
-html.yellow-steel #commentForm button:focus-visible,
 html.yellow-steel .mt-toggle-btn:focus-visible,
 html.yellow-steel .neppy-btn:focus-visible,
 html.yellow-steel .neppy-input:focus-visible,
 html.yellow-steel .neppy-select:focus-visible,
 html.yellow-steel .neppy-textarea:focus-visible,
-body.yellow-steel .hamburger:focus-visible,
 body.yellow-steel .toggle-button:focus-visible,
 body.yellow-steel .sidebar button:focus-visible,
 body.yellow-steel .sidebar a:focus-visible,
 body.yellow-steel .sidebar select:focus-visible,
-body.yellow-steel #commentForm textarea:focus-visible,
-body.yellow-steel #commentForm button:focus-visible,
 body.yellow-steel .mt-toggle-btn:focus-visible,
 body.yellow-steel .neppy-btn:focus-visible,
 body.yellow-steel .neppy-input:focus-visible,
