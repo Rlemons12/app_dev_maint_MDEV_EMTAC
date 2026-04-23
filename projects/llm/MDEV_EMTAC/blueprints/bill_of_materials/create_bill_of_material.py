@@ -93,6 +93,25 @@ def create_bill_of_material():
         )
 
         # -----------------------------
+        # PAGINATION INPUTS
+        # IMPORTANT:
+        # - AJAX first-load may not send per_page, so default to 4
+        # - index defaults to 0
+        # -----------------------------
+        index = request.args.get('index', 0, type=int)
+        per_page = request.args.get('per_page', 4, type=int)
+
+        if per_page not in (4, 10, 25, 50):
+            logger.warning(f"Invalid per_page received: {per_page}. Resetting to 4.")
+            per_page = 4
+
+        if index < 0:
+            logger.warning(f"Invalid index received: {index}. Resetting to 0.")
+            index = 0
+
+        logger.debug(f"Pagination parameters: index={index}, per_page={per_page}")
+
+        # -----------------------------
         # BUILD QUERY
         # -----------------------------
         query = db_session.query(Position)
@@ -126,9 +145,17 @@ def create_bill_of_material():
             if is_ajax:
                 return render_template(
                     'bill_of_materials/bom_partials/bill_of_material_results_partial.html',
+                    index=0,
+                    per_page=per_page,
                     parts_and_images=[],
                     total=0,
-                    debug_info={'result_count': 0}
+                    next_index=None,
+                    prev_index=None,
+                    debug_info={
+                        'result_count': 0,
+                        'parts_count': 0,
+                        'total_results': 0
+                    }
                 )
 
             flash('No matching positions found.', 'error')
@@ -193,26 +220,56 @@ def create_bill_of_material():
                     'description': r.description
                 })
 
-        logger.info(f"Returning {len(parts_and_images)} results")
+        total_results = len(parts_and_images)
+        logger.info(f"Built {total_results} total BOM result rows for display")
 
         # -----------------------------
         # AJAX RESPONSE
+        # FIX:
+        # Paginate BEFORE rendering partial
         # -----------------------------
         if is_ajax:
-            logger.info("Returning PARTIAL (AJAX mode)")
+            start = index
+            end = index + per_page
+
+            paginated_results = parts_and_images[start:end]
+
+            next_index = end if end < total_results else None
+            prev_index = start - per_page if start - per_page >= 0 else None
+
+            logger.info(
+                "Returning PARTIAL (AJAX mode) with pagination | "
+                f"total={total_results}, returned={len(paginated_results)}, "
+                f"index={index}, per_page={per_page}, "
+                f"next_index={next_index}, prev_index={prev_index}"
+            )
 
             return render_template(
                 'bill_of_materials/bom_partials/bill_of_material_results_partial.html',
-                parts_and_images=parts_and_images,
-                total=len(parts_and_images),
-                debug_info={'result_count': len(parts_and_images)}
+                index=index,
+                per_page=per_page,
+                parts_and_images=paginated_results,
+                total=total_results,
+                next_index=next_index,
+                prev_index=prev_index,
+                debug_info={
+                    'result_count': len(paginated_results),
+                    'parts_count': len(paginated_results),
+                    'total_results': total_results
+                }
             )
 
         # -----------------------------
         # NON-AJAX FALLBACK
         # -----------------------------
         logger.info("Redirecting to full results page (non-AJAX)")
-        return redirect(url_for('create_bill_of_material_bp.view_bill_of_material', index=0))
+        return redirect(
+            url_for(
+                'create_bill_of_material_bp.view_bill_of_material',
+                index=0,
+                per_page=per_page
+            )
+        )
 
     except Exception as e:
         logger.exception("Error in create_bill_of_material")
@@ -222,9 +279,18 @@ def create_bill_of_material():
             return (
                 render_template(
                     'bill_of_materials/bom_partials/bill_of_material_results_partial.html',
+                    index=0,
+                    per_page=4,
                     parts_and_images=[],
                     total=0,
-                    debug_info={'error': str(e)}
+                    next_index=None,
+                    prev_index=None,
+                    debug_info={
+                        'error': str(e),
+                        'result_count': 0,
+                        'parts_count': 0,
+                        'total_results': 0
+                    }
                 ),
                 500
             )
