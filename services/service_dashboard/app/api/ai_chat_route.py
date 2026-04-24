@@ -29,7 +29,7 @@ Register in main.py:
 import json
 import os
 import time
-from typing import Any
+from typing import Any, Optional
 
 import requests as http_requests
 from flask import Blueprint, jsonify, request
@@ -85,6 +85,7 @@ EMTAC runs a service dashboard that manages local infrastructure. The dashboard 
 - GPU Service       — local model execution backend
 - AI Gateway        — OpenAI-compatible MCP/gateway proxy
 - PostgreSQL Server — local database service
+- Grafana           — observability UI (dashboards, datasources, alerts)
 - Other managed EMTAC services started by the ServiceManager
 
 You have access to live tools that let you query and control services in real time.
@@ -95,6 +96,8 @@ Tool use guidelines:
 - To answer "what services are running?" → call list_services
 - To investigate a specific service → call get_service_logs with that service name
 - To check GPU state → call get_gpu_insights
+- To answer Grafana questions (health, dashboards, datasources, alerts)
+  → call the matching get_grafana_* / list_grafana_* tool
 - To start / stop / restart a service → call the appropriate control tool
 - Chain tools when needed: e.g. check status, then act, then verify
 
@@ -115,6 +118,7 @@ Behavior requirements:
 # -------------------------------------------------------------------
 
 TOOLS: list[dict[str, Any]] = [
+    # ── Service management ─────────────────────────────────────────
     {
         "type": "function",
         "function": {
@@ -205,17 +209,6 @@ TOOLS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
-            "name": "get_gpu_insights",
-            "description": (
-                "Fetch detailed GPU service insights: GPU hardware metrics (VRAM, utilisation, "
-                "temperature), process info, and model status from the GPU service API."
-            ),
-            "parameters": {"type": "object", "properties": {}, "required": []},
-        },
-    },
-    {
-        "type": "function",
-        "function": {
             "name": "clear_service_logs",
             "description": "Clear the in-memory output buffer for a named service.",
             "parameters": {
@@ -230,7 +223,113 @@ TOOLS: list[dict[str, Any]] = [
             },
         },
     },
+
+    # ── GPU ────────────────────────────────────────────────────────
+    {
+        "type": "function",
+        "function": {
+            "name": "get_gpu_insights",
+            "description": (
+                "Fetch detailed GPU service insights: GPU hardware metrics (VRAM, utilisation, "
+                "temperature), process info, and model status from the GPU service API."
+            ),
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    },
+
+    # ── Grafana ────────────────────────────────────────────────────
+    {
+        "type": "function",
+        "function": {
+            "name": "get_grafana_health",
+            "description": (
+                "Fetch Grafana's /api/health endpoint: database status, "
+                "version, and commit. Use this to confirm Grafana is reachable "
+                "and healthy, not just that the process is running."
+            ),
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_grafana_dashboards",
+            "description": (
+                "List Grafana dashboards via /api/search. Use to answer "
+                "'what dashboards do we have?' or to find a dashboard by name."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Optional title substring to filter by.",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Max results (default 50, max 200).",
+                        "default": 50,
+                    },
+                },
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_grafana_datasources",
+            "description": (
+                "List configured Grafana datasources (Prometheus, Postgres, "
+                "Loki, etc). Requires Grafana admin auth."
+            ),
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_grafana_alert_rules",
+            "description": (
+                "Return configured Grafana alert rules via the provisioning "
+                "API. Use to answer 'what alerts are set up?'."
+            ),
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    },
 ]
+
+
+# -------------------------------------------------------------------
+# Service lookup helpers
+# -------------------------------------------------------------------
+
+def _get_gpu_service():
+    """Locate the managed GPU service regardless of exact registration name."""
+    if _service_manager is None:
+        return None
+    for candidate in ("GPU Service", "gpu_service", "gpu"):
+        svc = _service_manager.get_service(candidate)
+        if svc:
+            return svc
+    for svc in _service_manager.services.values():
+        if "gpu" in svc.name.lower():
+            return svc
+    return None
+
+
+def _get_grafana_service():
+    """Locate the managed Grafana service regardless of exact registration name."""
+    if _service_manager is None:
+        return None
+    for candidate in ("Grafana", "grafana"):
+        svc = _service_manager.get_service(candidate)
+        if svc:
+            return svc
+    for svc in _service_manager.services.values():
+        if "grafana" in svc.name.lower():
+            return svc
+    return None
 
 
 # -------------------------------------------------------------------
@@ -309,30 +408,6 @@ def _execute_tool(tool_name: str, tool_args: dict[str, Any]) -> str:
             result = _service_manager.restart_service(name)
             return json.dumps(result)
 
-        # ── get_gpu_insights ────────────────────────────────────────
-        if tool_name == "get_gpu_insights":
-            # Import lazily so the route doesn't hard-depend on the GPU helper
-            try:
-                from app.api.gpu_service_helpers import get_gpu_service_insights
-            except ImportError:
-                return json.dumps({"error": "gpu_service_helpers module not available."})
-
-            gpu_service = None
-            if _service_manager is not None:
-                # Try common names; fall back to first GPU-type service found
-                for candidate in ("GPU Service", "gpu_service", "gpu"):
-                    gpu_service = _service_manager.get_service(candidate)
-                    if gpu_service:
-                        break
-                if gpu_service is None:
-                    for svc in _service_manager.services.values():
-                        if "gpu" in svc.name.lower():
-                            gpu_service = svc
-                            break
-
-            result = get_gpu_service_insights(gpu_service, base_url=GPU_SERVICE_URL)
-            return json.dumps(result)
-
         # ── clear_service_logs ──────────────────────────────────────
         if tool_name == "clear_service_logs":
             if _service_manager is None:
@@ -343,6 +418,64 @@ def _execute_tool(tool_name: str, tool_args: dict[str, Any]) -> str:
                 return json.dumps({"error": f"Service '{name}' not found."})
             service.clear_output()
             return json.dumps({"success": True, "message": f"Logs cleared for '{name}'."})
+
+        # ── get_gpu_insights ────────────────────────────────────────
+        if tool_name == "get_gpu_insights":
+            try:
+                from app.services.gpu_insights_service import get_gpu_service_insights
+            except ImportError as exc:
+                return json.dumps({
+                    "error": f"gpu_insights_service module not available: {exc}"
+                })
+
+            result = get_gpu_service_insights(
+                _get_gpu_service(), base_url=GPU_SERVICE_URL
+            )
+            return json.dumps(result)
+
+        # ── get_grafana_health ──────────────────────────────────────
+        if tool_name == "get_grafana_health":
+            try:
+                from app.services.grafana_insights_service import get_grafana_health
+            except ImportError as exc:
+                return json.dumps({
+                    "error": f"grafana_insights_service module not available: {exc}"
+                })
+            return json.dumps(get_grafana_health(_get_grafana_service()))
+
+        # ── list_grafana_dashboards ─────────────────────────────────
+        if tool_name == "list_grafana_dashboards":
+            try:
+                from app.services.grafana_insights_service import list_grafana_dashboards
+            except ImportError as exc:
+                return json.dumps({
+                    "error": f"grafana_insights_service module not available: {exc}"
+                })
+            return json.dumps(list_grafana_dashboards(
+                _get_grafana_service(),
+                query=tool_args.get("query"),
+                limit=int(tool_args.get("limit", 50)),
+            ))
+
+        # ── list_grafana_datasources ────────────────────────────────
+        if tool_name == "list_grafana_datasources":
+            try:
+                from app.services.grafana_insights_service import list_grafana_datasources
+            except ImportError as exc:
+                return json.dumps({
+                    "error": f"grafana_insights_service module not available: {exc}"
+                })
+            return json.dumps(list_grafana_datasources(_get_grafana_service()))
+
+        # ── get_grafana_alert_rules ─────────────────────────────────
+        if tool_name == "get_grafana_alert_rules":
+            try:
+                from app.services.grafana_insights_service import get_grafana_alert_rules
+            except ImportError as exc:
+                return json.dumps({
+                    "error": f"grafana_insights_service module not available: {exc}"
+                })
+            return json.dumps(get_grafana_alert_rules(_get_grafana_service()))
 
         # ── unknown tool ────────────────────────────────────────────
         return json.dumps({"error": f"Unknown tool: '{tool_name}'"})
@@ -436,7 +569,8 @@ def build_telemetry() -> str:
         )
 
     lines.append(
-        "\nUse tools (list_services, get_service_logs, get_gpu_insights, etc.) "
+        "\nUse tools (list_services, get_service_logs, get_gpu_insights, "
+        "get_grafana_health, list_grafana_dashboards, etc.) "
         "to get full detail on any service."
     )
 
