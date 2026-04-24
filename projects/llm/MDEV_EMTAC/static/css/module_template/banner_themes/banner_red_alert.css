@@ -1,0 +1,72 @@
+/* static/css/module_template/banner_themes/banner_red_alert.css */
+
+.app-top-chrome,
+.thcp-root {
+    --banner-bg: linear-gradient(180deg, #c51616 0%, #8f0d0d 100%);
+    --banner-text: #fffefe;
+    --banner-border: rgba(255, 120, 120, 0.55);
+
+    --banner-link-bg: rgba(255, 255, 255, 0.14);
+    --banner-link-border: rgba(255, 180, 180, 0.45);
+    --banner-link-hover-bg: rgba(255, 255, 255, 0.26);
+    --banner-link-hover-border: rgba(255, 210, 210, 0.65);
+
+    --banner-toggle-bg: rgba(255, 255, 255, 0.14);
+    --banner-toggle-border: rgba(255, 180, 180, 0.45);
+    --banner-toggle-hover-bg: rgba(255, 255, 255, 0.26);
+
+    --banner-shadow: 0 10px 28px rgba(120, 0, 0, 0.45);
+
+    /* Popup - brighter red theme */
+    --comment-popup-overlay-bg: rgba(40, 0, 0, 0.78);
+    --comment-popup-bg: linear-gradient(180deg, #b81414 0%, #7a0c0c 100%);
+    --comment-popup-text: #fffefe;
+    --comment-popup-border: rgba(255, 150, 150, 0.40);
+    --comment-popup-shadow: 0 24px 50px rgba(80, 0, 0, 0.55);
+
+    --comment-popup-header-border: rgba(255, 220, 220, 0.18);
+    --comment-popup-footer-border: rgba(255, 220, 220, 0.18);
+
+    --comment-popup-help-text: rgba(255, 235, 235, 0.92);
+    --comment-popup-label-text: #fffefe;
+
+    --comment-popup-input-bg: rgba(255, 255, 255, 0.10);
+    --comment-popup-input-border: rgba(255, 200, 200, 0.30);
+    --comment-popup-input-text: #fffefe;
+    --comment-popup-input-placeholder: rgba(255, 235, 235, 0.70);
+    --comment-popup-input-focus-border: rgba(255, 140, 140, 0.75);
+    --comment-popup-input-focus-ring: 0 0 0 3px rgba(255, 140, 140, 0.25);
+
+    --comment-popup-button-bg: rgba(255, 255, 255, 0.12);
+    --comment-popup-button-border: rgba(255, 200, 200, 0.30);
+    --comment-popup-button-text: #fffefe;
+    --comment-popup-button-hover-bg: rgba(255, 255, 255, 0.22);
+    --comment-popup-button-hover-border: rgba(255, 210, 210, 0.50);
+
+    --comment-popup-submit-bg: #ff2e2e;
+    --comment-popup-submit-border: #ff5555;
+    --comment-popup-submit-text: #ffffff;
+    --comment-popup-submit-hover-bg: #ff4a4a;
+    --comment-popup-submit-hover-border: #ff6b6b;
+
+    --comment-popup-feedback-bg: rgba(255, 60, 60, 0.22);
+    --comment-popup-feedback-border: rgba(255, 180, 180, 0.35);
+    --comment-popup-feedback-text: #fffefe;
+}
+
+.app-top-chrome .banner-text,
+.thcp-root .thcp-banner-text {
+    letter-spacing: 0.035em;
+}
+
+.app-top-chrome .banner-link,
+.app-top-chrome #commentPopupLink,
+.app-top-chrome .banner a,
+.app-top-chrome #sidebarCollapse,
+.app-top-chrome button#sidebarCollapse,
+.app-top-chrome .hamburger,
+.thcp-root .thcp-banner-link,
+.thcp-root .thcp-hamburger {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}

@@ -1,0 +1,163 @@
+{# templates/module_template_html/partials/top_header_with_comment_popup.html #}
+
+{% set banner_theme_file = banner_theme_file|default('banner_red_alert.css') %}
+
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/module_template/top_header_with_comment_popup.css') }}"
+>
+
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/module_template/banner_themes/' ~ banner_theme_file) }}"
+>
+
+<div class="thcp-root" data-thcp-root="true">
+    <header class="thcp-banner" role="banner">
+        <button
+            id="sidebarCollapse"
+            class="thcp-hamburger"
+            aria-expanded="true"
+            aria-label="Toggle sidebar"
+            aria-controls="mainSidebar"
+            type="button"
+        >
+            <span class="thcp-hamburger-line"></span>
+            <span class="thcp-hamburger-line"></span>
+            <span class="thcp-hamburger-line"></span>
+        </button>
+
+        <div class="thcp-banner-content">
+            <div class="thcp-banner-text-wrap">
+                <span class="thcp-banner-text">
+                    THIS IS FOR REFERENCE ONLY. ALL INFORMATION SHOULD BE VERIFIED WITH CURRENT SOP'S
+                </span>
+            </div>
+
+            <div class="thcp-banner-actions">
+                <a href="#" id="thcpCommentOpen" class="thcp-banner-link">Leave a Comment</a>
+            </div>
+        </div>
+    </header>
+
+    <div
+        id="thcpCommentOverlay"
+        class="thcp-comment-overlay"
+        aria-hidden="true"
+        hidden
+    >
+        <div
+            id="thcpCommentDialog"
+            class="thcp-comment-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="thcpCommentTitle"
+            aria-describedby="thcpCommentHelp"
+            tabindex="-1"
+        >
+            <form
+                id="thcpCommentForm"
+                class="thcp-comment-form"
+                method="POST"
+                action="{{ url_for('comment_pop_up_bp.submit_comment') }}"
+                enctype="multipart/form-data"
+                novalidate
+            >
+                <input
+                    type="hidden"
+                    id="thcpPageUrl"
+                    name="page_url"
+                    value=""
+                >
+
+                <input
+                    type="hidden"
+                    id="thcpSubmitUrl"
+                    value="{{ url_for('comment_pop_up_bp.submit_comment') }}"
+                >
+
+                <div class="thcp-comment-header">
+                    <h2 id="thcpCommentTitle">Leave a Comment</h2>
+                    <button
+                        type="button"
+                        id="thcpCommentCloseX"
+                        class="thcp-comment-close"
+                        aria-label="Close comment popup"
+                    >
+                        &times;
+                    </button>
+                </div>
+
+                <div class="thcp-comment-body">
+                    <p id="thcpCommentHelp" class="thcp-comment-help">
+                        Instructions: You can write your comment, paste an image, or upload a file.
+                    </p>
+
+                    <label for="thcpCommentText" class="thcp-comment-label">Comment</label>
+                    <textarea
+                        name="comment"
+                        id="thcpCommentText"
+                        class="thcp-comment-textarea"
+                        placeholder="Write your comment here..."
+                        required
+                    ></textarea>
+
+                    <input
+                        type="hidden"
+                        id="thcpImageData"
+                        name="imageData"
+                        value=""
+                    >
+
+                    <div
+                        id="thcpImageFeedback"
+                        class="thcp-comment-feedback"
+                        style="display: none;"
+                        aria-live="polite"
+                    >
+                        Image snippet successfully added.
+                    </div>
+
+                    <img
+                        id="thcpImagePreview"
+                        class="thcp-comment-preview"
+                        src=""
+                        alt="Pasted image preview"
+                        style="display: none;"
+                    >
+
+                    <label for="thcpFileUpload" class="thcp-comment-label">
+                        Or upload an image
+                    </label>
+                    <input
+                        type="file"
+                        id="thcpFileUpload"
+                        name="screenshot"
+                        class="thcp-comment-file"
+                        accept="image/*"
+                    >
+                </div>
+
+                <div class="thcp-comment-footer">
+                    <button
+                        type="submit"
+                        id="thcpCommentSend"
+                        class="thcp-comment-submit"
+                    >
+                        Send
+                    </button>
+
+                    <button
+                        type="button"
+                        id="thcpCommentCloseBtn"
+                        class="thcp-comment-cancel"
+                    >
+                        Close
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/module_template/top_header_with_comment_popup.js') }}"></script>
