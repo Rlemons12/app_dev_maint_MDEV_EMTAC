@@ -1,0 +1,24 @@
+<div class="mt-layout" data-mt-layout="panels-1">
+    <div class="mt-layout-header">
+        <h1 class="mt-layout-title">{{ panel_layout_title|default("Single Panel Layout") }}</h1>
+        <p class="mt-layout-description">{{ panel_layout_description|default("One full-width content panel") }}</p>
+    </div>
+
+    <div class="mt-grid mt-grid--1">
+        <section class="mt-panel">
+            <div class="mt-panel-header">
+                <h3 class="mt-panel-title">{{ panel_1_title|default("Main Panel") }}</h3>
+
+                {% if panel_1_header_actions %}
+                    {{ panel_1_header_actions|safe }}
+                {% else %}
+                    <button class="mt-toggle-btn" type="button" aria-label="Toggle Main Panel">⚙️</button>
+                {% endif %}
+            </div>
+
+            <div class="mt-panel-body">
+                {% include panel_1_content_template %}
+            </div>
+        </section>
+    </div>
+</div>

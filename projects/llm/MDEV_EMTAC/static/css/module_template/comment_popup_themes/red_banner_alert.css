@@ -1,0 +1,42 @@
+/* static/css/module_template/comment_popup_themes/red_banner_alert.css
+   Comment popup theme only.
+   Overrides variables only.
+*/
+
+.comment-popup-theme-root {
+    --comment-popup-overlay-bg: rgba(28, 0, 0, 0.72);
+
+    --comment-popup-bg: linear-gradient(180deg, #4f0c0c 0%, #320707 100%);
+    --comment-popup-text: #fff4f4;
+    --comment-popup-border: rgba(255, 160, 160, 0.28);
+    --comment-popup-shadow: 0 20px 42px rgba(40, 0, 0, 0.42);
+
+    --comment-popup-header-border: rgba(255, 220, 220, 0.10);
+    --comment-popup-footer-border: rgba(255, 220, 220, 0.10);
+
+    --comment-popup-help-text: rgba(255, 235, 235, 0.88);
+    --comment-popup-label-text: #fff4f4;
+
+    --comment-popup-input-bg: rgba(255, 255, 255, 0.07);
+    --comment-popup-input-border: rgba(255, 210, 210, 0.18);
+    --comment-popup-input-text: #fff6f6;
+    --comment-popup-input-placeholder: rgba(255, 230, 230, 0.55);
+    --comment-popup-input-focus-border: rgba(255, 170, 170, 0.55);
+    --comment-popup-input-focus-ring: 0 0 0 3px rgba(255, 145, 145, 0.16);
+
+    --comment-popup-button-bg: rgba(255, 255, 255, 0.08);
+    --comment-popup-button-border: rgba(255, 220, 220, 0.18);
+    --comment-popup-button-text: #fff4f4;
+    --comment-popup-button-hover-bg: rgba(255, 255, 255, 0.16);
+    --comment-popup-button-hover-border: rgba(255, 225, 225, 0.30);
+
+    --comment-popup-submit-bg: #b32020;
+    --comment-popup-submit-border: #cc3a3a;
+    --comment-popup-submit-text: #ffffff;
+    --comment-popup-submit-hover-bg: #ca2e2e;
+    --comment-popup-submit-hover-border: #df5050;
+
+    --comment-popup-feedback-bg: rgba(255, 255, 255, 0.10);
+    --comment-popup-feedback-border: rgba(255, 210, 210, 0.20);
+    --comment-popup-feedback-text: #fff0f0;
+}

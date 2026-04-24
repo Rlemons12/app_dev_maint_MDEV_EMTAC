@@ -1,0 +1,629 @@
+/* static/css/module_template/top_header_with_comment_popup.css
+==================================
+TOP HEADER WITH COMMENT POPUP
+Single-owner styles for:
+- banner
+- hamburger
+- comment popup
+
+Theme strategy:
+- Read generic theme variables first
+- Fall back to thcp defaults
+- Allow theme files to override on:
+  .app-top-chrome,
+  .thcp-root,
+  html/body theme classes, etc.
+==================================
+*/
+
+:root {
+    --thcp-banner-height: 80px;
+
+    /* Banner defaults */
+    --thcp-banner-bg: #160028;
+    --thcp-banner-text: #f4f1ff;
+    --thcp-banner-border: rgba(180, 120, 255, 0.22);
+
+    --thcp-banner-link-bg: rgba(255, 255, 255, 0.08);
+    --thcp-banner-link-border: rgba(255, 255, 255, 0.16);
+    --thcp-banner-link-hover-bg: rgba(255, 255, 255, 0.16);
+    --thcp-banner-link-hover-border: rgba(255, 255, 255, 0.28);
+
+    --thcp-toggle-bg: rgba(255, 255, 255, 0.06);
+    --thcp-toggle-border: rgba(255, 255, 255, 0.16);
+    --thcp-toggle-hover-bg: rgba(255, 255, 255, 0.14);
+
+    --thcp-banner-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+
+    /* Popup defaults */
+    --thcp-popup-overlay-bg: rgba(0, 0, 0, 0.65);
+    --thcp-popup-bg: #1a1324;
+    --thcp-popup-text: #f4f1ff;
+    --thcp-popup-border: rgba(180, 120, 255, 0.22);
+    --thcp-popup-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+
+    --thcp-popup-header-border: rgba(255, 255, 255, 0.08);
+    --thcp-popup-footer-border: rgba(255, 255, 255, 0.08);
+
+    --thcp-help-text: rgba(244, 241, 255, 0.82);
+    --thcp-label-text: #f4f1ff;
+
+    --thcp-input-bg: rgba(255, 255, 255, 0.06);
+    --thcp-input-border: rgba(255, 255, 255, 0.14);
+    --thcp-input-text: #f4f1ff;
+    --thcp-input-placeholder: rgba(244, 241, 255, 0.55);
+    --thcp-input-focus-border: rgba(180, 120, 255, 0.55);
+    --thcp-input-focus-ring: 0 0 0 3px rgba(180, 120, 255, 0.16);
+
+    --thcp-button-bg: rgba(255, 255, 255, 0.08);
+    --thcp-button-border: rgba(255, 255, 255, 0.16);
+    --thcp-button-text: #f4f1ff;
+    --thcp-button-hover-bg: rgba(255, 255, 255, 0.16);
+    --thcp-button-hover-border: rgba(255, 255, 255, 0.28);
+
+    --thcp-submit-bg: #7b3ff2;
+    --thcp-submit-border: #8d58f4;
+    --thcp-submit-text: #ffffff;
+    --thcp-submit-hover-bg: #8b54f5;
+    --thcp-submit-hover-border: #9a69f7;
+
+    --thcp-feedback-bg: rgba(80, 190, 120, 0.14);
+    --thcp-feedback-border: rgba(80, 190, 120, 0.30);
+    --thcp-feedback-text: #dff7e8;
+
+    --thcp-radius-sm: 8px;
+    --thcp-radius-md: 10px;
+    --thcp-radius-lg: 14px;
+    --thcp-shadow: 0 4px 8px rgba(0, 0, 0, 0.18);
+
+    --thcp-z-banner: 4000;
+    --thcp-z-toggle: 5000;
+    --thcp-z-overlay: 9000;
+    --thcp-z-dialog: 9010;
+}
+
+/* ==================================
+COMPONENT ROOT
+================================== */
+
+.thcp-root,
+.thcp-root * {
+    box-sizing: border-box;
+}
+
+.thcp-root {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--thcp-z-banner);
+    width: 100%;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.2;
+
+    /*
+    Theme variable bridge:
+    Generic vars can be set by theme files on .app-top-chrome or .thcp-root.
+    */
+    --_thcp-banner-bg: var(--banner-bg, var(--thcp-banner-bg));
+    --_thcp-banner-text: var(--banner-text, var(--thcp-banner-text));
+    --_thcp-banner-border: var(--banner-border, var(--thcp-banner-border));
+
+    --_thcp-banner-link-bg: var(--banner-link-bg, var(--thcp-banner-link-bg));
+    --_thcp-banner-link-border: var(--banner-link-border, var(--thcp-banner-link-border));
+    --_thcp-banner-link-hover-bg: var(--banner-link-hover-bg, var(--thcp-banner-link-hover-bg));
+    --_thcp-banner-link-hover-border: var(--banner-link-hover-border, var(--thcp-banner-link-hover-border));
+
+    --_thcp-toggle-bg: var(--banner-toggle-bg, var(--thcp-toggle-bg));
+    --_thcp-toggle-border: var(--banner-toggle-border, var(--thcp-toggle-border));
+    --_thcp-toggle-hover-bg: var(--banner-toggle-hover-bg, var(--thcp-toggle-hover-bg));
+
+    --_thcp-banner-shadow: var(--banner-shadow, var(--thcp-banner-shadow));
+
+    /* Popup theme bridge */
+    --_thcp-popup-overlay-bg: var(--comment-popup-overlay-bg, var(--thcp-popup-overlay-bg));
+    --_thcp-popup-bg: var(--comment-popup-bg, var(--thcp-popup-bg));
+    --_thcp-popup-text: var(--comment-popup-text, var(--thcp-popup-text));
+    --_thcp-popup-border: var(--comment-popup-border, var(--thcp-popup-border));
+    --_thcp-popup-shadow: var(--comment-popup-shadow, var(--thcp-popup-shadow));
+
+    --_thcp-popup-header-border: var(--comment-popup-header-border, var(--thcp-popup-header-border));
+    --_thcp-popup-footer-border: var(--comment-popup-footer-border, var(--thcp-popup-footer-border));
+
+    --_thcp-help-text: var(--comment-popup-help-text, var(--thcp-help-text));
+    --_thcp-label-text: var(--comment-popup-label-text, var(--thcp-label-text));
+
+    --_thcp-input-bg: var(--comment-popup-input-bg, var(--thcp-input-bg));
+    --_thcp-input-border: var(--comment-popup-input-border, var(--thcp-input-border));
+    --_thcp-input-text: var(--comment-popup-input-text, var(--thcp-input-text));
+    --_thcp-input-placeholder: var(--comment-popup-input-placeholder, var(--thcp-input-placeholder));
+    --_thcp-input-focus-border: var(--comment-popup-input-focus-border, var(--thcp-input-focus-border));
+    --_thcp-input-focus-ring: var(--comment-popup-input-focus-ring, var(--thcp-input-focus-ring));
+
+    --_thcp-button-bg: var(--comment-popup-button-bg, var(--thcp-button-bg));
+    --_thcp-button-border: var(--comment-popup-button-border, var(--thcp-button-border));
+    --_thcp-button-text: var(--comment-popup-button-text, var(--thcp-button-text));
+    --_thcp-button-hover-bg: var(--comment-popup-button-hover-bg, var(--thcp-button-hover-bg));
+    --_thcp-button-hover-border: var(--comment-popup-button-hover-border, var(--thcp-button-hover-border));
+
+    --_thcp-submit-bg: var(--comment-popup-submit-bg, var(--thcp-submit-bg));
+    --_thcp-submit-border: var(--comment-popup-submit-border, var(--thcp-submit-border));
+    --_thcp-submit-text: var(--comment-popup-submit-text, var(--thcp-submit-text));
+    --_thcp-submit-hover-bg: var(--comment-popup-submit-hover-bg, var(--thcp-submit-hover-bg));
+    --_thcp-submit-hover-border: var(--comment-popup-submit-hover-border, var(--thcp-submit-hover-border));
+
+    --_thcp-feedback-bg: var(--comment-popup-feedback-bg, var(--thcp-feedback-bg));
+    --_thcp-feedback-border: var(--comment-popup-feedback-border, var(--thcp-feedback-border));
+    --_thcp-feedback-text: var(--comment-popup-feedback-text, var(--thcp-feedback-text));
+
+    color: var(--_thcp-banner-text);
+}
+
+/* ==================================
+BANNER
+================================== */
+
+.thcp-banner {
+    width: 100%;
+    min-height: var(--thcp-banner-height);
+    background: var(--_thcp-banner-bg);
+    color: var(--_thcp-banner-text);
+    position: relative;
+    z-index: var(--thcp-z-banner);
+    display: flex;
+    align-items: center;
+    padding: 10px 12px 10px 64px;
+    border-bottom: 1px solid var(--_thcp-banner-border);
+    box-shadow: var(--_thcp-banner-shadow);
+}
+
+.thcp-banner-content {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.thcp-banner-text-wrap {
+    width: 100%;
+    min-width: 0;
+}
+
+.thcp-banner-text {
+    display: block;
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.15rem;
+    line-height: 1.25;
+    text-transform: uppercase;
+    word-break: break-word;
+    text-align: center;
+    color: var(--_thcp-banner-text);
+    letter-spacing: 0.02em;
+}
+
+.thcp-banner-actions {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.thcp-banner-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 0 12px;
+    text-decoration: none;
+    cursor: pointer;
+    color: var(--_thcp-banner-text);
+    background: var(--_thcp-banner-link-bg);
+    border: 1px solid var(--_thcp-banner-link-border);
+    border-radius: var(--thcp-radius-sm);
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.thcp-banner-link:hover,
+.thcp-banner-link:focus {
+    color: #ffffff;
+    background: var(--_thcp-banner-link-hover-bg);
+    border-color: var(--_thcp-banner-link-hover-border);
+    outline: none;
+}
+
+.thcp-banner-link:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.35);
+    outline-offset: 2px;
+}
+
+/* ==================================
+HAMBURGER
+================================== */
+
+.thcp-hamburger {
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    z-index: var(--thcp-z-toggle);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    margin: 0;
+    background-color: var(--_thcp-toggle-bg);
+    color: #ffffff;
+    border: 1px solid var(--_thcp-toggle-border);
+    border-radius: var(--thcp-radius-sm);
+    box-shadow: var(--_thcp-banner-shadow);
+    cursor: pointer;
+    outline: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    appearance: none;
+    -webkit-appearance: none;
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.thcp-hamburger:hover,
+.thcp-hamburger:focus {
+    background-color: var(--_thcp-toggle-hover-bg);
+    color: #ffffff;
+}
+
+.thcp-hamburger:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.35);
+    outline-offset: 2px;
+}
+
+.thcp-hamburger-line {
+    display: block;
+    width: 20px;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
+}
+
+/* ==================================
+POPUP
+================================== */
+
+.thcp-comment-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: var(--thcp-z-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: var(--_thcp-popup-overlay-bg);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.thcp-comment-overlay[hidden],
+.thcp-comment-overlay[aria-hidden="true"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+.thcp-comment-overlay[aria-hidden="false"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+.thcp-comment-dialog {
+    width: min(720px, 100%);
+    max-height: min(88vh, 900px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: var(--_thcp-popup-bg);
+    color: var(--_thcp-popup-text);
+    border: 1px solid var(--_thcp-popup-border);
+    border-radius: var(--thcp-radius-lg);
+    box-shadow: var(--_thcp-popup-shadow);
+    z-index: var(--thcp-z-dialog);
+}
+
+.thcp-comment-form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.thcp-comment-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--_thcp-popup-header-border);
+}
+
+.thcp-comment-header h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    line-height: 1.2;
+    color: var(--_thcp-popup-text);
+}
+
+.thcp-comment-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    background: var(--_thcp-button-bg);
+    color: var(--_thcp-button-text);
+    border: 1px solid var(--_thcp-button-border);
+    border-radius: var(--thcp-radius-md);
+    cursor: pointer;
+    font-size: 1.5rem;
+    line-height: 1;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.thcp-comment-close:hover,
+.thcp-comment-close:focus {
+    background: var(--_thcp-button-hover-bg);
+    border-color: var(--_thcp-button-hover-border);
+    outline: none;
+}
+
+.thcp-comment-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px;
+    overflow-y: auto;
+}
+
+.thcp-comment-help {
+    margin: 0;
+    color: var(--_thcp-help-text);
+    line-height: 1.45;
+}
+
+.thcp-comment-label {
+    font-weight: 600;
+    color: var(--_thcp-label-text);
+}
+
+.thcp-comment-textarea,
+.thcp-comment-file {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.thcp-comment-textarea {
+    min-height: 180px;
+    resize: vertical;
+    padding: 12px 14px;
+    background: var(--_thcp-input-bg);
+    color: var(--_thcp-input-text);
+    border: 1px solid var(--_thcp-input-border);
+    border-radius: var(--thcp-radius-md);
+    outline: none;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.thcp-comment-textarea::placeholder {
+    color: var(--_thcp-input-placeholder);
+}
+
+.thcp-comment-textarea:focus,
+.thcp-comment-file:focus {
+    border-color: var(--_thcp-input-focus-border);
+    box-shadow: var(--_thcp-input-focus-ring);
+    outline: none;
+}
+
+.thcp-comment-file {
+    padding: 10px 12px;
+    background: var(--_thcp-input-bg);
+    color: var(--_thcp-input-text);
+    border: 1px solid var(--_thcp-input-border);
+    border-radius: var(--thcp-radius-md);
+}
+
+.thcp-comment-feedback {
+    padding: 10px 12px;
+    background: var(--_thcp-feedback-bg);
+    color: var(--_thcp-feedback-text);
+    border: 1px solid var(--_thcp-feedback-border);
+    border-radius: var(--thcp-radius-md);
+}
+
+.thcp-comment-preview {
+    display: block;
+    max-width: 100%;
+    max-height: 220px;
+    object-fit: contain;
+    border-radius: var(--thcp-radius-md);
+    border: 1px solid var(--_thcp-input-border);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.thcp-comment-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 18px;
+    border-top: 1px solid var(--_thcp-popup-footer-border);
+}
+
+.thcp-comment-submit,
+.thcp-comment-cancel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 16px;
+    border-radius: var(--thcp-radius-md);
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.thcp-comment-submit {
+    background: var(--_thcp-submit-bg);
+    color: var(--_thcp-submit-text);
+    border: 1px solid var(--_thcp-submit-border);
+}
+
+.thcp-comment-submit:hover,
+.thcp-comment-submit:focus {
+    background: var(--_thcp-submit-hover-bg);
+    border-color: var(--_thcp-submit-hover-border);
+    outline: none;
+}
+
+.thcp-comment-cancel {
+    background: var(--_thcp-button-bg);
+    color: var(--_thcp-button-text);
+    border: 1px solid var(--_thcp-button-border);
+}
+
+.thcp-comment-cancel:hover,
+.thcp-comment-cancel:focus {
+    background: var(--_thcp-button-hover-bg);
+    border-color: var(--_thcp-button-hover-border);
+    outline: none;
+}
+
+/* Disabled send state */
+.thcp-comment-submit:disabled {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+/* ==================================
+RESPONSIVE
+================================== */
+
+@media (max-width: 768px) {
+    .thcp-banner {
+        padding: 8px 12px 8px 56px;
+    }
+
+    .thcp-banner-text {
+        font-size: 1rem;
+        line-height: 1.2;
+    }
+
+    .thcp-hamburger {
+        left: 8px;
+        width: 48px;
+        height: 48px;
+        gap: 5px;
+    }
+
+    .thcp-hamburger-line {
+        width: 20px;
+        height: 2px;
+    }
+
+    .thcp-comment-overlay {
+        padding: 14px;
+    }
+
+    .thcp-comment-dialog {
+        width: 100%;
+        max-height: 90vh;
+    }
+
+    .thcp-comment-header,
+    .thcp-comment-body,
+    .thcp-comment-footer {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .thcp-comment-footer {
+        flex-wrap: wrap;
+    }
+
+    .thcp-comment-submit,
+    .thcp-comment-cancel {
+        flex: 1 1 160px;
+    }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --thcp-banner-height: 72px;
+    }
+
+    .thcp-banner {
+        padding: 8px 10px 8px 54px;
+    }
+
+    .thcp-banner-text {
+        font-size: 0.9rem;
+        line-height: 1.2;
+    }
+
+    .thcp-hamburger {
+        left: 6px;
+        width: 44px;
+        height: 44px;
+        gap: 4px;
+    }
+
+    .thcp-hamburger-line {
+        width: 18px;
+        height: 2px;
+    }
+
+    .thcp-comment-overlay {
+        padding: 10px;
+    }
+
+    .thcp-comment-header {
+        padding-top: 12px;
+        padding-bottom: 12px;
+    }
+
+    .thcp-comment-body {
+        padding-top: 14px;
+        padding-bottom: 14px;
+    }
+
+    .thcp-comment-footer {
+        padding-top: 12px;
+        padding-bottom: 12px;
+    }
+
+    .thcp-comment-textarea {
+        min-height: 150px;
+    }
+}
