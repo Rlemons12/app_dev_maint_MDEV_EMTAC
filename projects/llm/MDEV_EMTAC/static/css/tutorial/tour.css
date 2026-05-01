@@ -1,24 +1,51 @@
 /* static/css/tutorial/tour.css */
 
+/* ================================
+   INTRO.JS TOUR STYLES
+   Tablet-friendly version
+   ================================ */
+
+/* Main overlay:
+   Keep the darkened background effect here instead of on helperLayer.
+   pointer-events: none lets taps/clicks go through to the real page
+   when disableInteraction: false is used in Intro.js.
+*/
+.introjs-overlay {
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    opacity: 1 !important;
+    pointer-events: none !important;
+    z-index: 999990 !important;
+}
+
 /* Tooltip styling */
 .introjs-tooltip {
     min-width: 300px;
     max-width: 400px;
-    background-color: #f8f9fa;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    border-radius: 6px;
+    background-color: #f8f9fa !important;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2) !important;
+    border-radius: 6px !important;
     position: relative !important;
-    margin-top: 10px !important; /* Reduced margin since skip button is now inside */
+    margin-top: 10px !important;
+    pointer-events: auto !important;
+    z-index: 999999 !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
+/* Tooltip arrow */
+.introjs-arrow {
+    border-width: 8px !important;
+}
+
+/* Tooltip text */
 .introjs-tooltiptext {
     font-size: 1rem;
     line-height: 1.5;
-    color: #333;
+    color: #333 !important;
     text-align: left !important;
+    padding: 4px 2px !important;
 }
 
-/* Ensure all text in tooltips is left-aligned */
+/* Ensure all text inside tooltips stays left-aligned */
 .introjs-tooltiptext p,
 .introjs-tooltip .introjs-tooltiptext > *:not(#custom-step-counter),
 .intro-left-text {
@@ -27,17 +54,79 @@
     padding-left: 0 !important;
 }
 
+/* Keep tooltip text readable in all themes */
+.introjs-tooltip,
+.introjs-tooltiptext,
+.introjs-tooltip * {
+    color: #333 !important;
+}
+
+/* The highlighted box around the current element.
+   IMPORTANT: remove the giant box-shadow that can interfere with touch on tablets.
+*/
+.introjs-helperLayer {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border: 3px solid #17a2b8 !important;
+    box-shadow: none !important;
+    border-radius: 6px !important;
+    pointer-events: auto !important;
+    z-index: 999997 !important;
+}
+
+/* Reference/highlight layers */
+.introjs-tooltipReferenceLayer,
+.introjs-showElement,
+.introjs-relativePosition {
+    pointer-events: auto !important;
+}
+
+/* Make sure the active highlighted element stays above the overlay */
+.introjs-showElement,
+.introjs-relativePosition {
+    z-index: 999998 !important;
+}
+
+/* Prevent any disable-interaction layer from blocking the page when
+   the JS uses disableInteraction: false, but keep it harmless if Intro.js injects it.
+*/
+.introjs-disableInteraction {
+    pointer-events: none !important;
+    background: transparent !important;
+    opacity: 0 !important;
+}
+
 /* Button container styling */
 .introjs-tooltipbuttons {
     display: flex !important;
     flex-direction: row !important;
     justify-content: space-between !important;
     align-items: center !important;
+    gap: 8px !important;
     padding: 10px !important;
-    border-top: 1px solid rgba(0,0,0,0.1) !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
-/* Skip button styling - IMPORTANT: now positioned INSIDE the tooltip */
+/* Shared button polish */
+.introjs-button,
+.introjs-prevbutton,
+.introjs-nextbutton,
+.introjs-donebutton,
+.introjs-skipbutton {
+    border: none !important;
+    text-shadow: none !important;
+    font-weight: bold !important;
+    border-radius: 4px !important;
+    padding: 6px 12px !important;
+    line-height: 1.2 !important;
+    text-decoration: none !important;
+    box-sizing: border-box !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Skip button styling - positioned inside tooltip */
 .introjs-skipbutton {
     position: relative !important;
     top: auto !important;
@@ -45,13 +134,10 @@
     right: auto !important;
     transform: none !important;
     z-index: 1 !important;
-    padding: 6px 12px !important;
     background-color: #dc3545 !important;
-    color: white !important;
-    border-radius: 4px !important;
-    font-weight: bold !important;
+    color: #ffffff !important;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) !important;
-    opacity: 0.9 !important;
+    opacity: 0.95 !important;
     width: auto !important;
     height: auto !important;
     text-align: center !important;
@@ -59,50 +145,61 @@
     margin: 0 10px !important;
     float: none !important;
     display: inline-block !important;
+    white-space: nowrap !important;
 }
 
-/* Hide any skip button that might be outside the tooltip */
+/* Hide any skip button that might be placed outside the tooltip */
 body > .introjs-skipbutton {
     display: none !important;
 }
 
-.introjs-skipbutton:hover {
+.introjs-skipbutton:hover,
+.introjs-skipbutton:focus {
     opacity: 1 !important;
     background-color: #bd2130 !important;
+    color: #ffffff !important;
+    outline: none !important;
 }
 
-/* Back button - positioned on left */
+/* Back button - left side */
 .introjs-prevbutton {
     background-color: #17a2b8 !important;
-    color: white !important;
-    border: none !important;
-    text-shadow: none !important;
-    padding: 6px 12px !important;
-    font-weight: bold !important;
+    color: #ffffff !important;
     order: 0 !important;
     margin-right: auto !important;
+    white-space: nowrap !important;
 }
 
-/* Next/Done button - positioned on right */
+/* Next and Done - right side */
 .introjs-nextbutton,
 .introjs-donebutton {
     background-color: #17a2b8 !important;
-    color: white !important;
-    border: none !important;
-    text-shadow: none !important;
-    padding: 6px 12px !important;
-    font-weight: bold !important;
+    color: #ffffff !important;
     order: 2 !important;
     margin-left: auto !important;
+    white-space: nowrap !important;
 }
 
 .introjs-nextbutton:hover,
 .introjs-prevbutton:hover,
-.introjs-donebutton:hover {
+.introjs-donebutton:hover,
+.introjs-nextbutton:focus,
+.introjs-prevbutton:focus,
+.introjs-donebutton:focus {
     background-color: #138496 !important;
+    color: #ffffff !important;
+    outline: none !important;
 }
 
-/* Tour button styling */
+/* Disabled buttons */
+.introjs-disabled,
+.introjs-button.introjs-disabled {
+    opacity: 0.45 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}
+
+/* Tour start button styling */
 #startTourBtn {
     background-color: #17a2b8;
     color: white;
@@ -112,48 +209,92 @@ body > .introjs-skipbutton {
 
 #startTourBtn:hover {
     transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Fix tooltip text color in dark mode */
-.introjs-tooltip,
-.introjs-tooltiptext,
-.introjs-tooltip * {
-    color: #333 !important;
-}
-
-/* Make the highlighted elements more visible */
-.introjs-helperLayer {
-    background-color: rgba(255, 255, 255, 0.1);
-    border: 3px solid #17a2b8 !important;
-    box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.6);
-}
-
-/* Custom step counter styling - add these rules */
+/* Custom step counter */
 #custom-step-counter {
     text-align: center !important;
     margin-top: 10px !important;
     padding-top: 5px !important;
-    border-top: 1px solid rgba(0,0,0,0.1) !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
     font-weight: bold !important;
-    direction: ltr !important; /* Force left-to-right text direction */
-    unicode-bidi: isolate !important; /* Isolate this element from surrounding text direction */
+    direction: ltr !important;
+    unicode-bidi: isolate !important;
+    color: #333 !important;
 }
 
-/* Add this to further ensure proper display */
 #custom-step-counter span {
     display: inline-block !important;
     direction: ltr !important;
+    color: #333 !important;
 }
 
-/* Improve tooltip positioning on narrow screens */
+/* Better focus visibility for keyboard users */
+.introjs-button:focus-visible,
+.introjs-prevbutton:focus-visible,
+.introjs-nextbutton:focus-visible,
+.introjs-donebutton:focus-visible,
+.introjs-skipbutton:focus-visible {
+    outline: 2px solid rgba(23, 162, 184, 0.45) !important;
+    outline-offset: 2px !important;
+}
+
+/* Improve tooltip positioning and size on tablets/phones */
 @media (max-width: 768px) {
     .introjs-tooltip {
         max-width: 300px !important;
         min-width: 250px !important;
+        margin-top: 8px !important;
     }
 
     .introjs-tooltiptext {
         font-size: 0.9rem !important;
+        line-height: 1.4 !important;
+    }
+
+    .introjs-tooltipbuttons {
+        gap: 6px !important;
+        padding: 8px !important;
+    }
+
+    .introjs-prevbutton,
+    .introjs-nextbutton,
+    .introjs-donebutton,
+    .introjs-skipbutton {
+        padding: 8px 10px !important;
+        font-size: 0.9rem !important;
+    }
+}
+
+/* Very small screens */
+@media (max-width: 480px) {
+    .introjs-tooltip {
+        min-width: 220px !important;
+        max-width: calc(100vw - 24px) !important;
+    }
+
+    .introjs-tooltipbuttons {
+        flex-wrap: wrap !important;
+    }
+
+    .introjs-prevbutton,
+    .introjs-nextbutton,
+    .introjs-donebutton,
+    .introjs-skipbutton {
+        margin: 4px 0 !important;
+    }
+
+    .introjs-prevbutton {
+        order: 0 !important;
+    }
+
+    .introjs-skipbutton {
+        order: 1 !important;
+    }
+
+    .introjs-nextbutton,
+    .introjs-donebutton {
+        order: 2 !important;
     }
 }
