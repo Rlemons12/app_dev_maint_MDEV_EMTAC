@@ -1,4 +1,4 @@
-# modules/rag_core/answer_generator.py
+# modules/ai/search_pathway/rag_core/answer_generator.py
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
