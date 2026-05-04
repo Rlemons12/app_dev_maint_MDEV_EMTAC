@@ -7,7 +7,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, Any, Optional, List
-from modules.emtac_ai.search.rag_core.document_ui_payload import DocumentUIPayload
+from modules.ai.search_pathway.rag_core.document_ui_payload import DocumentUIPayload
 from modules.configuration.log_config import (
     logger,
     with_request_id,
@@ -51,7 +51,7 @@ try:
 except Exception:
     CompleteDocument = None
 
-from modules.emtac_ai.search.rag_core.rag_pipeline import get_default_rag
+from modules.ai.search_pathway.rag_core.rag_pipeline import get_default_rag
 from modules.emtacdb.emtacdb_fts import Document
 
 
