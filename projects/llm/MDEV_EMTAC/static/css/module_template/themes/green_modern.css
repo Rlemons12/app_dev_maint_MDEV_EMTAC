@@ -10,6 +10,10 @@ Role:
 - Provide a complete Green Modern visual identity
 - Support reusable neppy-* utility classes
 - Theme the standardized .mt-* module template layouts
+
+Important:
+- Does NOT style the standalone banner system
+- Does NOT style the standalone comment popup system
 ================================== */
 
 /* ==================================
@@ -22,10 +26,6 @@ body.green-modern {
 
     --app-page-bg: #123524;
     --app-page-text: #D8E1E9;
-
-    --app-banner-bg: linear-gradient(90deg, #2f9e44 0%, #3BC14A 45%, #5cd65c 100%);
-    --app-banner-text: #123524;
-    --app-banner-link: #123524;
 
     --app-sidebar-bg: rgba(59, 193, 74, 0.94);
     --app-sidebar-text: #123524;
@@ -42,11 +42,6 @@ body.green-modern {
     --app-control-border: rgba(216, 225, 233, 0.18);
     --app-control-hover-bg: rgba(26, 74, 49, 0.95);
 
-    --app-popup-bg: rgba(18, 53, 36, 0.96);
-    --app-popup-text: #D8E1E9;
-    --app-popup-accent: #C3FF00;
-    --app-popup-submit-text: #123524;
-
     --app-results-bg: rgba(18, 53, 36, 0.78);
     --app-results-text: #D8E1E9;
 
@@ -55,7 +50,7 @@ body.green-modern {
     --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.20);
     --app-shadow-md: 0 16px 30px rgba(0, 0, 0, 0.32);
 
-    background-color: #123524;
+    background: #123524;
     background-image: url("/static/background_images/greenmodern.jpg");
     background-size: cover;
     background-repeat: no-repeat;
@@ -97,17 +92,6 @@ body.green-modern {
 /* ==================================
 GLOBAL POLISH
 ================================== */
-html.green-modern .banner,
-body.green-modern .banner {
-    letter-spacing: 0.03em;
-    box-shadow: var(--app-shadow-sm);
-}
-
-html.green-modern .banner a,
-body.green-modern .banner a {
-    font-weight: 600;
-}
-
 html.green-modern .sidebar,
 body.green-modern .sidebar {
     backdrop-filter: blur(5px);
@@ -234,74 +218,20 @@ body.green-modern .thumbnail {
 }
 
 /* ==================================
-COMMENT POPUP
-================================== */
-html.green-modern #commentPopup,
-body.green-modern #commentPopup {
-    background: var(--app-popup-bg);
-    border: 1px solid rgba(216, 225, 233, 0.14);
-    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
-}
-
-html.green-modern #commentForm h2,
-body.green-modern #commentForm h2 {
-    color: var(--app-popup-accent);
-    letter-spacing: 0.02em;
-}
-
-html.green-modern #commentForm textarea,
-body.green-modern #commentForm textarea {
-    background: rgba(14, 43, 27, 0.96);
-    color: var(--app-popup-text);
-    border: 1px solid rgba(216, 225, 233, 0.18);
-}
-
-html.green-modern #commentForm textarea::placeholder,
-body.green-modern #commentForm textarea::placeholder {
-    color: rgba(216, 225, 233, 0.58);
-}
-
-html.green-modern #commentForm textarea:focus,
-body.green-modern #commentForm textarea:focus {
-    border-color: rgba(195, 255, 0, 0.38);
-    box-shadow: 0 0 0 3px rgba(195, 255, 0, 0.12);
-}
-
-html.green-modern #commentForm button,
-body.green-modern #commentForm button {
-    background: linear-gradient(180deg, rgba(23, 67, 42, 0.98) 0%, rgba(14, 43, 27, 0.98) 100%);
-    color: var(--app-popup-text);
-    border: 1px solid rgba(216, 225, 233, 0.14);
-}
-
-html.green-modern #commentForm button:hover,
-body.green-modern #commentForm button:hover {
-    background: linear-gradient(180deg, rgba(32, 87, 54, 0.98) 0%, rgba(18, 57, 35, 0.98) 100%);
-}
-
-html.green-modern #commentForm button[type="submit"],
-body.green-modern #commentForm button[type="submit"] {
-    background: linear-gradient(180deg, #d3ff4d 0%, #C3FF00 100%);
-    color: var(--app-popup-submit-text);
-    border-color: rgba(195, 255, 0, 0.35);
-    font-weight: 700;
-}
-
-html.green-modern #commentForm button[type="submit"]:hover,
-body.green-modern #commentForm button[type="submit"]:hover {
-    background: linear-gradient(180deg, #dfff6a 0%, #b4f000 100%);
-}
-
-/* ==================================
 LINKS / SPECIAL STATES
+Scoped so they do NOT affect the banner
 ================================== */
-html.green-modern a,
-body.green-modern a {
+html.green-modern .content a,
+html.green-modern .sidebar a,
+body.green-modern .content a,
+body.green-modern .sidebar a {
     color: #b7f5c3;
 }
 
-html.green-modern a:hover,
-body.green-modern a:hover {
+html.green-modern .content a:hover,
+html.green-modern .sidebar a:hover,
+body.green-modern .content a:hover,
+body.green-modern .sidebar a:hover {
     color: #C3FF00;
 }
 
@@ -312,26 +242,22 @@ body.green-modern .logout-button {
 
 /* ==================================
 ACCESSIBILITY / FOCUS
+No hamburger styling here.
+Hamburger focus belongs to banner.css / banner theme only.
 ================================== */
-html.green-modern .hamburger:focus-visible,
 html.green-modern .toggle-button:focus-visible,
 html.green-modern .sidebar button:focus-visible,
 html.green-modern .sidebar a:focus-visible,
 html.green-modern .sidebar select:focus-visible,
-html.green-modern #commentForm textarea:focus-visible,
-html.green-modern #commentForm button:focus-visible,
 html.green-modern .mt-toggle-btn:focus-visible,
 html.green-modern .neppy-btn:focus-visible,
 html.green-modern .neppy-input:focus-visible,
 html.green-modern .neppy-select:focus-visible,
 html.green-modern .neppy-textarea:focus-visible,
-body.green-modern .hamburger:focus-visible,
 body.green-modern .toggle-button:focus-visible,
 body.green-modern .sidebar button:focus-visible,
 body.green-modern .sidebar a:focus-visible,
 body.green-modern .sidebar select:focus-visible,
-body.green-modern #commentForm textarea:focus-visible,
-body.green-modern #commentForm button:focus-visible,
 body.green-modern .mt-toggle-btn:focus-visible,
 body.green-modern .neppy-btn:focus-visible,
 body.green-modern .neppy-input:focus-visible,
