@@ -1,4 +1,4 @@
-# modules/rag_core/__init__.py
+# modules/ai/search_pathway/rag_core/__init__.py
 
 from .embedder import BaseEmbedder, DBConfiguredEmbedder
 from .retriever import PgVectorRetriever
