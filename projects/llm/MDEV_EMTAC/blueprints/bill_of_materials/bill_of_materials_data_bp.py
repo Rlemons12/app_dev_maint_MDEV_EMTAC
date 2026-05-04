@@ -1,19 +1,15 @@
 from __future__ import annotations
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify
 
 from utilities.auth_utils import login_required
 from modules.configuration.log_config import logger, with_request_id
-from modules.coordinators.bill_of_materials_coordinator import (
-    BillOfMaterialsCoordinator,
-)
+from modules.coordinators.bill_of_materials_coordinator import BillOfMaterialsCoordinator
 
 bill_of_materials_data_bp = Blueprint(
     "bill_of_materials_data_bp",
     __name__,
 )
-
-lookup_coordinator = BillOfMaterialsCoordinator()
 
 
 @bill_of_materials_data_bp.route("/get_bom_list_data", methods=["GET"])
@@ -22,7 +18,8 @@ lookup_coordinator = BillOfMaterialsCoordinator()
 def get_bom_list_data():
     logger.info("Route hit: /get_bom_list_data")
 
-    result = lookup_coordinator.get_bom_lookup_data()
+    lookup_coordinator = BillOfMaterialsCoordinator()
+    result = lookup_coordinator.get_bom_list_data()
 
     status_code = result.get("status_code", 200)
     payload = {k: v for k, v in result.items() if k != "status_code"}
@@ -36,9 +33,8 @@ def get_bom_list_data():
 def get_parts_position_data():
     logger.info("Route hit: /get_parts_position_data")
 
-    result = lookup_coordinator.get_parts_position_data(
-        args=request.args
-    )
+    lookup_coordinator = BillOfMaterialsCoordinator()
+    result = lookup_coordinator.get_parts_position_data()
 
     status_code = result.get("status_code", 200)
     payload = {k: v for k, v in result.items() if k != "status_code"}
