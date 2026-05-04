@@ -96,6 +96,9 @@ Tool use guidelines:
 - To answer "what services are running?" → call list_services
 - To investigate a specific service → call get_service_logs with that service name
 - To check GPU state → call get_gpu_insights
+- To check database state → call get_postgres_insights
+- To explore the database schema → call list_postgres_tables, then describe_postgres_table
+- To inspect data → call query_postgres with a SELECT statement (read-only)
 - To answer Grafana questions (health, dashboards, datasources, alerts)
   → call the matching get_grafana_* / list_grafana_* tool
 - To start / stop / restart a service → call the appropriate control tool
@@ -110,6 +113,8 @@ Behavior requirements:
 - If a tool returns an error, report it clearly and suggest next steps.
 - Always confirm the result of a control action (start/stop/restart) by calling list_services
   or get_service_logs after acting.
+- query_postgres only accepts SELECT statements. Never attempt writes — the client
+  will reject them. For schema changes, ask the operator to run them manually.
 """
 
 
@@ -237,6 +242,86 @@ TOOLS: list[dict[str, Any]] = [
         },
     },
 
+    # ── PostgreSQL ─────────────────────────────────────────────────
+    {
+        "type": "function",
+        "function": {
+            "name": "get_postgres_insights",
+            "description": (
+                "Fetch PostgreSQL Server insights: service status, health check, "
+                "database name/size/version, active connection breakdown by state, "
+                "and a list of tables in the configured schema. Use this for an "
+                "overall view of the local PostgreSQL database."
+            ),
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_postgres_tables",
+            "description": (
+                "List tables in the configured PostgreSQL schema, with an optional "
+                "case-insensitive substring filter on table name. Returns name, "
+                "schema, estimated row count, and table comment."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Optional substring filter on table name. Empty string returns all tables (up to the configured cap).",
+                        "default": "",
+                    },
+                },
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "describe_postgres_table",
+            "description": (
+                "Return column definitions, indexes, and foreign keys for a named "
+                "table in the configured PostgreSQL schema. Use this before writing "
+                "a query against an unfamiliar table."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "table_name": {
+                        "type": "string",
+                        "description": "Exact table name (case-sensitive) in the configured schema.",
+                    },
+                },
+                "required": ["table_name"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "query_postgres",
+            "description": (
+                "Execute a read-only SELECT query against PostgreSQL and return up "
+                "to the configured row cap. Only SELECT is permitted — any other "
+                "statement is rejected by the client. Use this for investigating "
+                "live data; never for schema or write operations."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "sql": {
+                        "type": "string",
+                        "description": "A single SELECT statement. Must begin with SELECT after stripping whitespace.",
+                    },
+                },
+                "required": ["sql"],
+            },
+        },
+    },
+
     # ── Grafana ────────────────────────────────────────────────────
     {
         "type": "function",
@@ -328,6 +413,20 @@ def _get_grafana_service():
             return svc
     for svc in _service_manager.services.values():
         if "grafana" in svc.name.lower():
+            return svc
+    return None
+
+
+def _get_postgres_service():
+    """Locate the managed PostgreSQL service regardless of exact registration name."""
+    if _service_manager is None:
+        return None
+    for candidate in ("PostgreSQL Server", "postgresql", "postgres"):
+        svc = _service_manager.get_service(candidate)
+        if svc:
+            return svc
+    for svc in _service_manager.services.values():
+        if "postgres" in svc.name.lower():
             return svc
     return None
 
@@ -432,6 +531,78 @@ def _execute_tool(tool_name: str, tool_args: dict[str, Any]) -> str:
                 _get_gpu_service(), base_url=GPU_SERVICE_URL
             )
             return json.dumps(result)
+
+        # ── get_postgres_insights ───────────────────────────────────
+        if tool_name == "get_postgres_insights":
+            try:
+                from app.services.postgres_insights_service import (
+                    get_postgres_service_insights,
+                )
+            except ImportError as exc:
+                return json.dumps({
+                    "error": f"postgres_insights_service module not available: {exc}"
+                })
+
+            result = get_postgres_service_insights(_get_postgres_service())
+            # default=str handles datetime / Decimal returned by psycopg2
+            return json.dumps(result, default=str)
+
+        # ── list_postgres_tables ────────────────────────────────────
+        if tool_name == "list_postgres_tables":
+            try:
+                from app.services.postgres_service_client import postgres_service_client
+            except ImportError as exc:
+                return json.dumps({
+                    "error": f"postgres_service_client not available: {exc}"
+                })
+            q = tool_args.get("query", "") or ""
+            tables = postgres_service_client.get_tables(query=q)
+            return json.dumps(
+                {"tables": tables, "count": len(tables)},
+                default=str,
+            )
+
+        # ── describe_postgres_table ─────────────────────────────────
+        if tool_name == "describe_postgres_table":
+            try:
+                from app.services.postgres_service_client import postgres_service_client
+            except ImportError as exc:
+                return json.dumps({
+                    "error": f"postgres_service_client not available: {exc}"
+                })
+            table_name = tool_args.get("table_name", "") or ""
+            if not table_name:
+                return json.dumps({"error": "table_name is required."})
+            detail = postgres_service_client.get_table_detail(table_name)
+            if not detail:
+                return json.dumps({
+                    "error": f"Table '{table_name}' not found or inaccessible."
+                })
+            return json.dumps(detail, default=str)
+
+        # ── query_postgres (SELECT-only) ────────────────────────────
+        if tool_name == "query_postgres":
+            try:
+                from app.services.postgres_service_client import postgres_service_client
+            except ImportError as exc:
+                return json.dumps({
+                    "error": f"postgres_service_client not available: {exc}"
+                })
+            sql = tool_args.get("sql", "") or ""
+            if not sql.strip():
+                return json.dumps({"error": "sql is required."})
+            try:
+                rows = postgres_service_client.execute_query(sql)
+                return json.dumps({
+                    "rows": rows,
+                    "row_count": len(rows),
+                    "row_cap": postgres_service_client.max_rows,
+                }, default=str)
+            except ValueError as exc:
+                # non-SELECT statements are rejected here
+                return json.dumps({"error": str(exc)})
+            except Exception as exc:
+                return json.dumps({"error": f"Query failed: {exc}"})
 
         # ── get_grafana_health ──────────────────────────────────────
         if tool_name == "get_grafana_health":
@@ -570,6 +741,7 @@ def build_telemetry() -> str:
 
     lines.append(
         "\nUse tools (list_services, get_service_logs, get_gpu_insights, "
+        "get_postgres_insights, list_postgres_tables, query_postgres, "
         "get_grafana_health, list_grafana_dashboards, etc.) "
         "to get full detail on any service."
     )
