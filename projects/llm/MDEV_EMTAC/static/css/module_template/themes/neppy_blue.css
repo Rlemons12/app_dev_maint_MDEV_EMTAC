@@ -5,16 +5,21 @@ Designed to sit on top of:
 static/css/module_template/base.css
 
 Role:
-- Override base theme variables
-- Provide reusable Neppy UI component classes
-- Add consistent card/button/input/output styling
+- Override standardized base theme variables
 - Preserve layout ownership in base.css
+- Provide a complete Neppy Blue visual identity
+- Support reusable neppy-* utility classes
 - Theme the standardized .mt-* module template layouts
+- Theme content-area form controls and dropdowns
+- Support both native selects and Select2 widgets
+
+Important:
+- Does NOT style the standalone banner system
+- Does NOT style the standalone comment popup system
 ================================== */
 
 /* ==================================
 THEME VARIABLE OVERRIDES
-These override the defaults defined in base.css
 Apply by adding class="neppy-blue" to html or body
 ================================== */
 html.neppy-blue,
@@ -23,10 +28,6 @@ body.neppy-blue {
 
     --app-page-bg: radial-gradient(circle at 20% 20%, #122a45 0%, #071522 50%, #02080f 100%);
     --app-page-text: #e7eef7;
-
-    --app-banner-bg: linear-gradient(90deg, #a81818 0%, #c62828 45%, #d93838 100%);
-    --app-banner-text: #ffffff;
-    --app-banner-link: #7fe7ff;
 
     --app-sidebar-bg: rgba(8, 20, 34, 0.94);
     --app-sidebar-text: #b9d7f5;
@@ -42,11 +43,7 @@ body.neppy-blue {
     --app-control-text: #e7eef7;
     --app-control-border: rgba(122, 150, 182, 0.30);
     --app-control-hover-bg: #10304f;
-
-    --app-popup-bg: rgba(10, 24, 40, 0.98);
-    --app-popup-text: #e7eef7;
-    --app-popup-accent: #36c8f6;
-    --app-popup-submit-text: #04101b;
+    --app-control-focus-ring: rgba(54, 200, 246, 0.18);
 
     --app-results-bg: rgba(8, 20, 34, 0.88);
     --app-results-text: #dce9f7;
@@ -55,11 +52,15 @@ body.neppy-blue {
 
     --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.20);
     --app-shadow-md: 0 16px 30px rgba(0, 0, 0, 0.35);
+
+    color: var(--app-page-text);
+    background: var(--app-page-bg);
+    line-height: 1.45;
 }
 
 /* ==================================
-NEPPY-SPECIFIC TOKENS
-Used by reusable neppy-* utility classes
+NEPPY TOKEN OVERRIDES
+Supports reusable neppy-* utility classes
 ================================== */
 html.neppy-blue,
 body.neppy-blue {
@@ -110,24 +111,6 @@ GLOBAL THEME POLISH
 These enhance the base layout visually
 without taking over structure.
 ================================== */
-html.neppy-blue,
-body.neppy-blue {
-    color: var(--neppy-text);
-    background: var(--app-page-bg);
-    line-height: 1.45;
-}
-
-html.neppy-blue .banner,
-body.neppy-blue .banner {
-    letter-spacing: 0.04em;
-    box-shadow: var(--app-shadow-sm);
-}
-
-html.neppy-blue .banner a,
-body.neppy-blue .banner a {
-    font-weight: 600;
-}
-
 html.neppy-blue .sidebar,
 body.neppy-blue .sidebar {
     backdrop-filter: blur(6px);
@@ -143,6 +126,7 @@ body.neppy-blue .sidebar h1 {
 html.neppy-blue .welcome-message,
 body.neppy-blue .welcome-message {
     color: var(--app-sidebar-text);
+    font-weight: 600;
 }
 
 html.neppy-blue .user-level,
@@ -162,6 +146,7 @@ body.neppy-blue .nav-link.highlight {
 html.neppy-blue .content,
 body.neppy-blue .content {
     background: linear-gradient(180deg, rgba(7, 21, 34, 0.96) 0%, rgba(5, 16, 27, 0.98) 100%);
+    color: var(--app-content-text);
 }
 
 /* ==================================
@@ -403,6 +388,272 @@ body.neppy-blue .neppy-textarea:focus {
 }
 
 /* ==================================
+CONTENT AREA FORM CONTROLS
+This is the missing piece that fixes
+low-contrast dropdowns in the main panel
+================================== */
+html.neppy-blue .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.neppy-blue .content select,
+html.neppy-blue .content textarea,
+html.neppy-blue .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.neppy-blue .mt-panel-body select,
+html.neppy-blue .mt-panel-body textarea,
+html.neppy-blue .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.neppy-blue .upload-search-form select,
+html.neppy-blue .upload-search-form textarea,
+body.neppy-blue .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.neppy-blue .content select,
+body.neppy-blue .content textarea,
+body.neppy-blue .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.neppy-blue .mt-panel-body select,
+body.neppy-blue .mt-panel-body textarea,
+body.neppy-blue .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.neppy-blue .upload-search-form select,
+body.neppy-blue .upload-search-form textarea {
+    background: var(--app-control-bg);
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 8px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.20);
+}
+
+html.neppy-blue .content input::placeholder,
+html.neppy-blue .content textarea::placeholder,
+html.neppy-blue .mt-panel-body input::placeholder,
+html.neppy-blue .mt-panel-body textarea::placeholder,
+html.neppy-blue .upload-search-form input::placeholder,
+html.neppy-blue .upload-search-form textarea::placeholder,
+body.neppy-blue .content input::placeholder,
+body.neppy-blue .content textarea::placeholder,
+body.neppy-blue .mt-panel-body input::placeholder,
+body.neppy-blue .mt-panel-body textarea::placeholder,
+body.neppy-blue .upload-search-form input::placeholder,
+body.neppy-blue .upload-search-form textarea::placeholder {
+    color: #9bb0c9;
+}
+
+html.neppy-blue .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.neppy-blue .content select:hover,
+html.neppy-blue .content textarea:hover,
+html.neppy-blue .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.neppy-blue .mt-panel-body select:hover,
+html.neppy-blue .mt-panel-body textarea:hover,
+html.neppy-blue .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.neppy-blue .upload-search-form select:hover,
+html.neppy-blue .upload-search-form textarea:hover,
+body.neppy-blue .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.neppy-blue .content select:hover,
+body.neppy-blue .content textarea:hover,
+body.neppy-blue .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.neppy-blue .mt-panel-body select:hover,
+body.neppy-blue .mt-panel-body textarea:hover,
+body.neppy-blue .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.neppy-blue .upload-search-form select:hover,
+body.neppy-blue .upload-search-form textarea:hover {
+    border-color: rgba(54, 200, 246, 0.45);
+    background: var(--app-control-hover-bg);
+}
+
+html.neppy-blue .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.neppy-blue .content select:focus,
+html.neppy-blue .content textarea:focus,
+html.neppy-blue .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.neppy-blue .mt-panel-body select:focus,
+html.neppy-blue .mt-panel-body textarea:focus,
+html.neppy-blue .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.neppy-blue .upload-search-form select:focus,
+html.neppy-blue .upload-search-form textarea:focus,
+body.neppy-blue .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.neppy-blue .content select:focus,
+body.neppy-blue .content textarea:focus,
+body.neppy-blue .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.neppy-blue .mt-panel-body select:focus,
+body.neppy-blue .mt-panel-body textarea:focus,
+body.neppy-blue .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.neppy-blue .upload-search-form select:focus,
+body.neppy-blue .upload-search-form textarea:focus {
+    outline: none;
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+/* Native select dropdown list */
+html.neppy-blue .content select option,
+html.neppy-blue .mt-panel-body select option,
+html.neppy-blue .upload-search-form select option,
+body.neppy-blue .content select option,
+body.neppy-blue .mt-panel-body select option,
+body.neppy-blue .upload-search-form select option {
+    background: #0b2239;
+    color: #e7eef7;
+}
+
+/* Disabled states */
+html.neppy-blue .content input:disabled,
+html.neppy-blue .content select:disabled,
+html.neppy-blue .content textarea:disabled,
+html.neppy-blue .mt-panel-body input:disabled,
+html.neppy-blue .mt-panel-body select:disabled,
+html.neppy-blue .mt-panel-body textarea:disabled,
+html.neppy-blue .upload-search-form input:disabled,
+html.neppy-blue .upload-search-form select:disabled,
+html.neppy-blue .upload-search-form textarea:disabled,
+body.neppy-blue .content input:disabled,
+body.neppy-blue .content select:disabled,
+body.neppy-blue .content textarea:disabled,
+body.neppy-blue .mt-panel-body input:disabled,
+body.neppy-blue .mt-panel-body select:disabled,
+body.neppy-blue .mt-panel-body textarea:disabled,
+body.neppy-blue .upload-search-form input:disabled,
+body.neppy-blue .upload-search-form select:disabled,
+body.neppy-blue .upload-search-form textarea:disabled {
+    background: rgba(24, 45, 68, 0.80);
+    color: rgba(231, 238, 247, 0.58);
+    cursor: not-allowed;
+}
+
+/* ==================================
+CONTENT AREA BUTTONS
+================================== */
+html.neppy-blue .content button:not(.mt-toggle-btn):not(.toggle-button),
+html.neppy-blue .content input[type="submit"],
+html.neppy-blue .content input[type="button"],
+html.neppy-blue .content input[type="reset"],
+body.neppy-blue .content button:not(.mt-toggle-btn):not(.toggle-button),
+body.neppy-blue .content input[type="submit"],
+body.neppy-blue .content input[type="button"],
+body.neppy-blue .content input[type="reset"] {
+    background: linear-gradient(180deg, #0d2944 0%, #091d31 100%);
+    color: #e7eef7;
+    border: 1px solid var(--app-control-border);
+    border-radius: 8px;
+    box-shadow: var(--app-shadow-sm);
+}
+
+html.neppy-blue .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+html.neppy-blue .content input[type="submit"]:hover,
+html.neppy-blue .content input[type="button"]:hover,
+html.neppy-blue .content input[type="reset"]:hover,
+body.neppy-blue .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+body.neppy-blue .content input[type="submit"]:hover,
+body.neppy-blue .content input[type="button"]:hover,
+body.neppy-blue .content input[type="reset"]:hover {
+    border-color: rgba(54, 200, 246, 0.45);
+    background: linear-gradient(180deg, #123454 0%, #0b2339 100%);
+}
+
+/* ==================================
+SELECT2 SUPPORT
+Needed if the dropdown is enhanced by Select2
+================================== */
+html.neppy-blue .select2-container,
+body.neppy-blue .select2-container {
+    color: #e7eef7;
+}
+
+html.neppy-blue .select2-container .select2-selection--single,
+html.neppy-blue .select2-container .select2-selection--multiple,
+body.neppy-blue .select2-container .select2-selection--single,
+body.neppy-blue .select2-container .select2-selection--multiple {
+    background: var(--app-control-bg);
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 8px;
+    min-height: 38px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.20);
+}
+
+html.neppy-blue .select2-container .select2-selection--single:hover,
+html.neppy-blue .select2-container .select2-selection--multiple:hover,
+body.neppy-blue .select2-container .select2-selection--single:hover,
+body.neppy-blue .select2-container .select2-selection--multiple:hover {
+    border-color: rgba(54, 200, 246, 0.45);
+    background: var(--app-control-hover-bg);
+}
+
+html.neppy-blue .select2-container--default.select2-container--focus .select2-selection--multiple,
+html.neppy-blue .select2-container--default.select2-container--open .select2-selection--single,
+html.neppy-blue .select2-container--default.select2-container--open .select2-selection--multiple,
+body.neppy-blue .select2-container--default.select2-container--focus .select2-selection--multiple,
+body.neppy-blue .select2-container--default.select2-container--open .select2-selection--single,
+body.neppy-blue .select2-container--default.select2-container--open .select2-selection--multiple {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+html.neppy-blue .select2-container--default .select2-selection--single .select2-selection__rendered,
+html.neppy-blue .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.neppy-blue .select2-container--default .select2-selection--single .select2-selection__rendered,
+body.neppy-blue .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    color: #e7eef7;
+    line-height: 36px;
+}
+
+html.neppy-blue .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.neppy-blue .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    line-height: normal;
+    padding-top: 4px;
+}
+
+html.neppy-blue .select2-container--default .select2-selection--single .select2-selection__placeholder,
+html.neppy-blue .select2-container--default .select2-selection--multiple .select2-selection__placeholder,
+body.neppy-blue .select2-container--default .select2-selection--single .select2-selection__placeholder,
+body.neppy-blue .select2-container--default .select2-selection--multiple .select2-selection__placeholder {
+    color: #9bb0c9;
+}
+
+html.neppy-blue .select2-container--default .select2-selection--single .select2-selection__arrow b,
+body.neppy-blue .select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: #e7eef7 transparent transparent transparent;
+}
+
+html.neppy-blue .select2-dropdown,
+body.neppy-blue .select2-dropdown {
+    background: #0b2239;
+    color: #e7eef7;
+    border: 1px solid var(--app-control-border);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.30);
+}
+
+html.neppy-blue .select2-container--default .select2-search--dropdown .select2-search__field,
+body.neppy-blue .select2-container--default .select2-search--dropdown .select2-search__field {
+    background: #081a2a;
+    color: #e7eef7;
+    border: 1px solid var(--app-control-border);
+    border-radius: 4px;
+}
+
+html.neppy-blue .select2-results__option,
+body.neppy-blue .select2-results__option {
+    background: #0b2239;
+    color: #e7eef7;
+}
+
+html.neppy-blue .select2-container--default .select2-results__option--highlighted[aria-selected],
+body.neppy-blue .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background: #36c8f6;
+    color: #04101b;
+}
+
+html.neppy-blue .select2-container--default .select2-results__option[aria-selected="true"],
+body.neppy-blue .select2-container--default .select2-results__option[aria-selected="true"] {
+    background: rgba(54, 200, 246, 0.16);
+    color: #e7eef7;
+}
+
+html.neppy-blue .select2-container--default .select2-selection--multiple .select2-selection__choice,
+body.neppy-blue .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background: rgba(54, 200, 246, 0.16);
+    color: #e7eef7;
+    border: 1px solid rgba(54, 200, 246, 0.30);
+}
+
+html.neppy-blue .select2-container--default .select2-selection--multiple .select2-selection__choice__remove,
+body.neppy-blue .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #9be7ff;
+}
+
+/* ==================================
 OUTPUT / STATUS BLOCKS
 ================================== */
 html.neppy-blue .neppy-mono,
@@ -523,6 +774,8 @@ body.neppy-blue .neppy-mb-4 { margin-bottom: var(--neppy-space-4) !important; }
 
 /* ==================================
 ACCESSIBILITY / FOCUS
+No hamburger styling here.
+Hamburger focus belongs to banner.css / banner theme only.
 ================================== */
 html.neppy-blue .neppy-btn:focus-visible,
 html.neppy-blue .neppy-input:focus-visible,
@@ -534,6 +787,10 @@ html.neppy-blue .sidebar button:focus-visible,
 html.neppy-blue .sidebar a:focus-visible,
 html.neppy-blue .sidebar select:focus-visible,
 html.neppy-blue .mt-toggle-btn:focus-visible,
+html.neppy-blue .content button:focus-visible,
+html.neppy-blue .content input:focus-visible,
+html.neppy-blue .content select:focus-visible,
+html.neppy-blue .content textarea:focus-visible,
 body.neppy-blue .neppy-btn:focus-visible,
 body.neppy-blue .neppy-input:focus-visible,
 body.neppy-blue .neppy-select:focus-visible,
@@ -543,7 +800,11 @@ body.neppy-blue button.neppy-btn:focus-visible,
 body.neppy-blue .sidebar button:focus-visible,
 body.neppy-blue .sidebar a:focus-visible,
 body.neppy-blue .sidebar select:focus-visible,
-body.neppy-blue .mt-toggle-btn:focus-visible {
+body.neppy-blue .mt-toggle-btn:focus-visible,
+body.neppy-blue .content button:focus-visible,
+body.neppy-blue .content input:focus-visible,
+body.neppy-blue .content select:focus-visible,
+body.neppy-blue .content textarea:focus-visible {
     outline: 2px solid var(--neppy-accent);
     outline-offset: 2px;
 }
