@@ -78,7 +78,7 @@ from modules.ui_emtac.content_widgets import (
 )
 
 # --- Data Services ---
-from .data_service import DataService
+from data_service import DataService
 
 
 # Add parent directory to path to find modules
