@@ -3,9 +3,7 @@ from __future__ import annotations
 from flask import Blueprint, request, render_template
 
 from modules.configuration.log_config import logger, with_request_id
-from modules.coordinators.bill_of_materials_search_coordinator import (
-    BillOfMaterialsSearchCoordinator,
-)
+from modules.coordinators.bill_of_materials_coordinator import BillOfMaterialsCoordinator
 from utilities.auth_utils import login_required
 
 
@@ -15,7 +13,7 @@ search_bill_of_material_bp = Blueprint(
     template_folder="templates",
 )
 
-coordinator = BillOfMaterialsSearchCoordinator()
+coordinator = BillOfMaterialsCoordinator()
 
 
 @search_bill_of_material_bp.route("/tool_search", methods=["GET", "POST"])
