@@ -10,6 +10,10 @@ Role:
 - Provide a complete Crimson Night visual identity
 - Support reusable neppy-* utility classes
 - Theme the standardized .mt-* module template layouts
+
+Important:
+- Does NOT style the standalone banner system
+- Does NOT style the standalone comment popup system
 ================================== */
 
 /* ==================================
@@ -22,10 +26,6 @@ body.crimson-night {
 
     --app-page-bg: #1A0A0A;
     --app-page-text: #F5E8E8;
-
-    --app-banner-bg: linear-gradient(90deg, #6b0f1a 0%, #8B1A2A 45%, #a82438 100%);
-    --app-banner-text: #F5E8E8;
-    --app-banner-link: #FF8FAB;
 
     --app-sidebar-bg: rgba(40, 8, 12, 0.94);
     --app-sidebar-text: #C9A8AE;
@@ -41,11 +41,6 @@ body.crimson-night {
     --app-control-text: #F5E8E8;
     --app-control-border: rgba(201, 168, 174, 0.22);
     --app-control-hover-bg: rgba(38, 12, 16, 0.96);
-
-    --app-popup-bg: rgba(26, 10, 10, 0.97);
-    --app-popup-text: #F5E8E8;
-    --app-popup-accent: #FF5C7A;
-    --app-popup-submit-text: #1A0A0A;
 
     --app-results-bg: rgba(26, 10, 10, 0.78);
     --app-results-text: #F5E8E8;
@@ -97,17 +92,6 @@ body.crimson-night {
 /* ==================================
 GLOBAL POLISH
 ================================== */
-html.crimson-night .banner,
-body.crimson-night .banner {
-    letter-spacing: 0.03em;
-    box-shadow: var(--app-shadow-sm);
-}
-
-html.crimson-night .banner a,
-body.crimson-night .banner a {
-    font-weight: 600;
-}
-
 html.crimson-night .sidebar,
 body.crimson-night .sidebar {
     backdrop-filter: blur(5px);
@@ -130,7 +114,7 @@ html.crimson-night .user-level,
 html.crimson-night .model-display-section,
 body.crimson-night .user-level,
 body.crimson-night .model-display-section {
-    color: rgba(245, 232, 232, 0.68);
+    color: rgba(245, 232, 232, 0.66);
 }
 
 html.crimson-night .content,
@@ -234,74 +218,20 @@ body.crimson-night .thumbnail {
 }
 
 /* ==================================
-COMMENT POPUP
-================================== */
-html.crimson-night #commentPopup,
-body.crimson-night #commentPopup {
-    background: var(--app-popup-bg);
-    border: 1px solid rgba(245, 232, 232, 0.12);
-    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.45);
-}
-
-html.crimson-night #commentForm h2,
-body.crimson-night #commentForm h2 {
-    color: var(--app-popup-accent);
-    letter-spacing: 0.02em;
-}
-
-html.crimson-night #commentForm textarea,
-body.crimson-night #commentForm textarea {
-    background: rgba(20, 6, 8, 0.96);
-    color: var(--app-popup-text);
-    border: 1px solid rgba(201, 168, 174, 0.24);
-}
-
-html.crimson-night #commentForm textarea::placeholder,
-body.crimson-night #commentForm textarea::placeholder {
-    color: rgba(245, 232, 232, 0.50);
-}
-
-html.crimson-night #commentForm textarea:focus,
-body.crimson-night #commentForm textarea:focus {
-    border-color: rgba(255, 92, 122, 0.38);
-    box-shadow: 0 0 0 3px rgba(255, 92, 122, 0.12);
-}
-
-html.crimson-night #commentForm button,
-body.crimson-night #commentForm button {
-    background: linear-gradient(180deg, rgba(48, 12, 16, 0.98) 0%, rgba(20, 6, 8, 0.98) 100%);
-    color: var(--app-popup-text);
-    border: 1px solid rgba(201, 168, 174, 0.16);
-}
-
-html.crimson-night #commentForm button:hover,
-body.crimson-night #commentForm button:hover {
-    background: linear-gradient(180deg, rgba(68, 18, 24, 0.98) 0%, rgba(30, 10, 12, 0.98) 100%);
-}
-
-html.crimson-night #commentForm button[type="submit"],
-body.crimson-night #commentForm button[type="submit"] {
-    background: linear-gradient(180deg, #ff8fab 0%, #FF5C7A 100%);
-    color: var(--app-popup-submit-text);
-    border-color: rgba(255, 92, 122, 0.35);
-    font-weight: 700;
-}
-
-html.crimson-night #commentForm button[type="submit"]:hover,
-body.crimson-night #commentForm button[type="submit"]:hover {
-    background: linear-gradient(180deg, #ffadc4 0%, #e04d6a 100%);
-}
-
-/* ==================================
 LINKS / SPECIAL STATES
+Scoped so they do NOT affect the banner
 ================================== */
-html.crimson-night a,
-body.crimson-night a {
+html.crimson-night .content a,
+html.crimson-night .sidebar a,
+body.crimson-night .content a,
+body.crimson-night .sidebar a {
     color: #FFBECE;
 }
 
-html.crimson-night a:hover,
-body.crimson-night a:hover {
+html.crimson-night .content a:hover,
+html.crimson-night .sidebar a:hover,
+body.crimson-night .content a:hover,
+body.crimson-night .sidebar a:hover {
     color: #FF5C7A;
 }
 
@@ -312,26 +242,22 @@ body.crimson-night .logout-button {
 
 /* ==================================
 ACCESSIBILITY / FOCUS
+No hamburger styling here.
+Hamburger focus belongs to banner.css / banner theme only.
 ================================== */
-html.crimson-night .hamburger:focus-visible,
 html.crimson-night .toggle-button:focus-visible,
 html.crimson-night .sidebar button:focus-visible,
 html.crimson-night .sidebar a:focus-visible,
 html.crimson-night .sidebar select:focus-visible,
-html.crimson-night #commentForm textarea:focus-visible,
-html.crimson-night #commentForm button:focus-visible,
 html.crimson-night .mt-toggle-btn:focus-visible,
 html.crimson-night .neppy-btn:focus-visible,
 html.crimson-night .neppy-input:focus-visible,
 html.crimson-night .neppy-select:focus-visible,
 html.crimson-night .neppy-textarea:focus-visible,
-body.crimson-night .hamburger:focus-visible,
 body.crimson-night .toggle-button:focus-visible,
 body.crimson-night .sidebar button:focus-visible,
 body.crimson-night .sidebar a:focus-visible,
 body.crimson-night .sidebar select:focus-visible,
-body.crimson-night #commentForm textarea:focus-visible,
-body.crimson-night #commentForm button:focus-visible,
 body.crimson-night .mt-toggle-btn:focus-visible,
 body.crimson-night .neppy-btn:focus-visible,
 body.crimson-night .neppy-input:focus-visible,
@@ -475,9 +401,9 @@ body.crimson-night .mt-toggle-btn:hover {
 
 html.crimson-night .mt-panel.is-collapsed .mt-toggle-btn,
 body.crimson-night .mt-panel.is-collapsed .mt-toggle-btn {
-    background: linear-gradient(180deg, #2a3a7a 0%, #1e2e62 100%);
+    background: linear-gradient(180deg, #2A3A7A 0%, #1E2E62 100%);
     border-color: rgba(130, 160, 255, 0.35);
-    color: #ffffff;
+    color: #FFFFFF;
 }
 
 html.crimson-night .mt-panel-body,
