@@ -7,9 +7,13 @@ static/css/module_template/base.css
 Role:
 - Override standardized base theme variables
 - Preserve layout ownership in base.css
-- Provide a Professional Blue Grey visual identity
+- Provide a complete Professional Blue Grey visual identity
 - Support reusable neppy-* utility classes
 - Theme the standardized .mt-* module template layouts
+
+Important:
+- Does NOT style the standalone banner system
+- Does NOT style the standalone comment popup system
 ================================== */
 
 /* ==================================
@@ -22,10 +26,6 @@ body.professional-blue-grey {
 
     --app-page-bg: #263238;
     --app-page-text: #e3f2fd;
-
-    --app-banner-bg: linear-gradient(90deg, #b71c1c 0%, #c62828 45%, #d32f2f 100%);
-    --app-banner-text: #ffffff;
-    --app-banner-link: #b3e5fc;
 
     --app-sidebar-bg: rgba(55, 71, 79, 0.95);
     --app-sidebar-text: #b3e5fc;
@@ -42,11 +42,6 @@ body.professional-blue-grey {
     --app-control-border: #78909c;
     --app-control-hover-bg: #78909c;
 
-    --app-popup-bg: rgba(55, 71, 79, 0.97);
-    --app-popup-text: #e3f2fd;
-    --app-popup-accent: #81c784;
-    --app-popup-submit-text: #102027;
-
     --app-results-bg: rgba(84, 110, 122, 0.30);
     --app-results-text: #e3f2fd;
 
@@ -55,7 +50,7 @@ body.professional-blue-grey {
     --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.20);
     --app-shadow-md: 0 16px 30px rgba(0, 0, 0, 0.32);
 
-    background-color: #263238;
+    background: #263238;
     color: var(--app-page-text);
     line-height: 1.45;
 }
@@ -92,17 +87,6 @@ body.professional-blue-grey {
 /* ==================================
 GLOBAL POLISH
 ================================== */
-html.professional-blue-grey .banner,
-body.professional-blue-grey .banner {
-    letter-spacing: 0.03em;
-    box-shadow: var(--app-shadow-sm);
-}
-
-html.professional-blue-grey .banner a,
-body.professional-blue-grey .banner a {
-    font-weight: 600;
-}
-
 html.professional-blue-grey .sidebar,
 body.professional-blue-grey .sidebar {
     backdrop-filter: blur(5px);
@@ -229,74 +213,20 @@ body.professional-blue-grey .thumbnail {
 }
 
 /* ==================================
-COMMENT POPUP
-================================== */
-html.professional-blue-grey #commentPopup,
-body.professional-blue-grey #commentPopup {
-    background: var(--app-popup-bg);
-    border: 1px solid rgba(176, 190, 197, 0.16);
-    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
-}
-
-html.professional-blue-grey #commentForm h2,
-body.professional-blue-grey #commentForm h2 {
-    color: var(--app-popup-accent);
-    letter-spacing: 0.02em;
-}
-
-html.professional-blue-grey #commentForm textarea,
-body.professional-blue-grey #commentForm textarea {
-    background: #455a64;
-    color: var(--app-popup-text);
-    border: 1px solid rgba(176, 190, 197, 0.22);
-}
-
-html.professional-blue-grey #commentForm textarea::placeholder,
-body.professional-blue-grey #commentForm textarea::placeholder {
-    color: rgba(227, 242, 253, 0.58);
-}
-
-html.professional-blue-grey #commentForm textarea:focus,
-body.professional-blue-grey #commentForm textarea:focus {
-    border-color: rgba(129, 199, 132, 0.38);
-    box-shadow: 0 0 0 3px rgba(129, 199, 132, 0.12);
-}
-
-html.professional-blue-grey #commentForm button,
-body.professional-blue-grey #commentForm button {
-    background: linear-gradient(180deg, #546e7a 0%, #455a64 100%);
-    color: var(--app-popup-text);
-    border: 1px solid rgba(176, 190, 197, 0.16);
-}
-
-html.professional-blue-grey #commentForm button:hover,
-body.professional-blue-grey #commentForm button:hover {
-    background: linear-gradient(180deg, #78909c 0%, #607d8b 100%);
-}
-
-html.professional-blue-grey #commentForm button[type="submit"],
-body.professional-blue-grey #commentForm button[type="submit"] {
-    background: linear-gradient(180deg, #9ad6a0 0%, #81c784 100%);
-    color: var(--app-popup-submit-text);
-    border-color: rgba(129, 199, 132, 0.35);
-    font-weight: 700;
-}
-
-html.professional-blue-grey #commentForm button[type="submit"]:hover,
-body.professional-blue-grey #commentForm button[type="submit"]:hover {
-    background: linear-gradient(180deg, #aedcb3 0%, #74be79 100%);
-}
-
-/* ==================================
 LINKS / SPECIAL STATES
+Scoped so they do NOT affect the banner
 ================================== */
-html.professional-blue-grey a,
-body.professional-blue-grey a {
+html.professional-blue-grey .content a,
+html.professional-blue-grey .sidebar a,
+body.professional-blue-grey .content a,
+body.professional-blue-grey .sidebar a {
     color: #b3e5fc;
 }
 
-html.professional-blue-grey a:hover,
-body.professional-blue-grey a:hover {
+html.professional-blue-grey .content a:hover,
+html.professional-blue-grey .sidebar a:hover,
+body.professional-blue-grey .content a:hover,
+body.professional-blue-grey .sidebar a:hover {
     color: var(--app-sidebar-hover);
 }
 
@@ -307,26 +237,22 @@ body.professional-blue-grey .logout-button {
 
 /* ==================================
 ACCESSIBILITY / FOCUS
+No hamburger styling here.
+Hamburger focus belongs to banner.css / banner theme only.
 ================================== */
-html.professional-blue-grey .hamburger:focus-visible,
 html.professional-blue-grey .toggle-button:focus-visible,
 html.professional-blue-grey .sidebar button:focus-visible,
 html.professional-blue-grey .sidebar a:focus-visible,
 html.professional-blue-grey .sidebar select:focus-visible,
-html.professional-blue-grey #commentForm textarea:focus-visible,
-html.professional-blue-grey #commentForm button:focus-visible,
 html.professional-blue-grey .mt-toggle-btn:focus-visible,
 html.professional-blue-grey .neppy-btn:focus-visible,
 html.professional-blue-grey .neppy-input:focus-visible,
 html.professional-blue-grey .neppy-select:focus-visible,
 html.professional-blue-grey .neppy-textarea:focus-visible,
-body.professional-blue-grey .hamburger:focus-visible,
 body.professional-blue-grey .toggle-button:focus-visible,
 body.professional-blue-grey .sidebar button:focus-visible,
 body.professional-blue-grey .sidebar a:focus-visible,
 body.professional-blue-grey .sidebar select:focus-visible,
-body.professional-blue-grey #commentForm textarea:focus-visible,
-body.professional-blue-grey #commentForm button:focus-visible,
 body.professional-blue-grey .mt-toggle-btn:focus-visible,
 body.professional-blue-grey .neppy-btn:focus-visible,
 body.professional-blue-grey .neppy-input:focus-visible,
