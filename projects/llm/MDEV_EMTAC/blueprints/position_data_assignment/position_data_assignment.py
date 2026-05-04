@@ -39,6 +39,9 @@ def position_data_assignment():
     db_session = db_config.get_main_session()
     position_id = request.args.get('position_id')  # Get position ID from query parameters
 
+
+
+
     # Instantiate the forms
     logger.info("Loading CreatePositionForm and SearchPositionForm")
     form_create_position = CreatePositionForm()
