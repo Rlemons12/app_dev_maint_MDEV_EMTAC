@@ -17,11 +17,11 @@ from modules.emtacdb.utlity.main_database.database import (
     add_parts_position_image_association,
 )
 
-from modules.coordinators.enter_part_coodinator import EnterNewPartCoordinator
+from modules.coordinators.bill_of_materials_coordinator import BillOfMaterialsCoordinator
 
 enter_new_part_bp = Blueprint("enter_new_part_bp", __name__)
 
-coordinator = EnterNewPartCoordinator()
+coordinator = BillOfMaterialsCoordinator()
 
 
 @enter_new_part_bp.route("/get_part_form_data", methods=["GET"])
