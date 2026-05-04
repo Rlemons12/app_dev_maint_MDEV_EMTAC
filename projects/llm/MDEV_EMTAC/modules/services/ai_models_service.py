@@ -1,4 +1,5 @@
 from typing import Optional
+import re
 
 from modules.runtime.gpu_service_adapter_emtac import GPUServerAdapter
 from modules.configuration.log_config import (
@@ -26,18 +27,12 @@ class AIModelsService:
     _current_model_name: Optional[str] = None
     _gpu_adapter: Optional[GPUServerAdapter] = None
 
-    # ---------------------------------------------------------
-    # GPU Adapter
-    # ---------------------------------------------------------
     @classmethod
     def _get_gpu_adapter(cls) -> Optional[GPUServerAdapter]:
         if cls._gpu_adapter is None:
             cls._gpu_adapter = GPUServerAdapter()
         return cls._gpu_adapter if cls._gpu_adapter.is_available() else None
 
-    # ---------------------------------------------------------
-    # Model Name Handling
-    # ---------------------------------------------------------
     @classmethod
     @with_request_id
     def get_current_model_name(cls, request_id: Optional[str] = None) -> str:
@@ -58,6 +53,7 @@ class AIModelsService:
         request_id: Optional[str] = None,
     ) -> bool:
         ok = ModelsConfig.set_current_ai_model(model_name)
+
         if ok:
             info_id(
                 f"[AIModelsService] Updated CURRENT_MODEL (ai) to '{model_name}'",
@@ -70,11 +66,9 @@ class AIModelsService:
                 f"[AIModelsService] Failed to update CURRENT_MODEL (ai) → '{model_name}'",
                 request_id,
             )
+
         return ok
 
-    # ---------------------------------------------------------
-    # Public RAG API
-    # ---------------------------------------------------------
     @classmethod
     @with_request_id
     def answer(
@@ -83,25 +77,12 @@ class AIModelsService:
         context: str = "",
         request_id: Optional[str] = None,
     ) -> str:
-        """
-        Generate an answer using:
-        - DB-selected prompt
-        - DB-selected model
-        - GPU service backend
-
-        GUARANTEES:
-        - No system prompt leakage
-        - No context echo
-        - Final-answer-only output
-        """
-
         backend = ModelsConfig.get_execution_backend("ai")
-        from modules.emtac_ai.prompts.prompt_provider import PromptProvider
-        # -------------------------------------------------
-        # Build DB-driven prompt
-        # -------------------------------------------------
+
+        from modules.ai.prompts.prompt_provider import PromptProvider
+
         prompt = PromptProvider.build_prompt(
-            purpose="default",  # change to "rag" later if desired
+            purpose="default",
             question=question,
             context=context,
             request_id=request_id,
@@ -126,18 +107,24 @@ class AIModelsService:
             f"(model={model_name}, prompt_len={len(prompt)})",
             request_id,
         )
+        debug_id(
+            "[AIModelsService] FINAL PROMPT START\n"
+            + prompt[-2500:]
+            + "\n[AIModelsService] FINAL PROMPT END",
+            request_id,
+        )
 
         try:
             raw = gpu.generate(
                 prompt=prompt,
                 model=model_name,
             )
-
-            # -------------------------------------------------
-            # HARD OUTPUT BOUNDARY (CRITICAL)
-            # -------------------------------------------------
-            # This guarantees ONLY the final answer is returned,
-            # even if the model echoes the prompt or context.
+            debug_id(
+                "[AIModelsService] RAW MODEL OUTPUT START\n"
+                + str(raw)[:4000]
+                + "\n[AIModelsService] RAW MODEL OUTPUT END",
+                request_id,
+            )
             if not raw:
                 warning_id(
                     "[AIModelsService] Empty response from GPU service",
@@ -145,13 +132,16 @@ class AIModelsService:
                 )
                 return "No answer generated."
 
-            if "ANSWER:" in raw:
-                return raw.split("ANSWER:", 1)[-1].strip()
+            cleaned = cls._clean_generated_answer(raw)
 
-            if "FINAL ANSWER" in raw.upper():
-                return raw.split("FINAL ANSWER", 1)[-1].strip(":\n ")
+            if not cleaned:
+                warning_id(
+                    "[AIModelsService] Cleaned model response was empty",
+                    request_id,
+                )
+                return "No answer generated."
 
-            return raw.strip()
+            return cleaned
 
         except Exception as e:
             error_id(
@@ -159,3 +149,101 @@ class AIModelsService:
                 request_id,
             )
             return "Error generating answer."
+
+    @staticmethod
+    def _clean_generated_answer(raw: str) -> str:
+        if not raw:
+            return ""
+
+        text = str(raw).strip()
+        text = text.replace("\r\n", "\n").replace("\r", "\n")
+
+        # -------------------------------------------------
+        # 1. Prefer hard final-answer boundary
+        # -------------------------------------------------
+        marker_patterns = [
+            r"FINAL\s+ANSWER\s*:",
+            r"ANSWER\s*:",
+        ]
+
+        for pattern in marker_patterns:
+            matches = list(re.finditer(pattern, text, flags=re.IGNORECASE))
+            if matches:
+                last = matches[-1]
+                text = text[last.end():].strip()
+                return AIModelsService._final_trim_answer(text)
+
+        # -------------------------------------------------
+        # 2. If no marker, remove echoed prompt through context end
+        # -------------------------------------------------
+        context_end_matches = list(
+            re.finditer(
+                r"---\s*CONTEXT\s+END\s*---",
+                text,
+                flags=re.IGNORECASE,
+            )
+        )
+
+        if context_end_matches:
+            last_context_end = context_end_matches[-1]
+            text = text[last_context_end.end():].strip()
+
+        # -------------------------------------------------
+        # 3. If model only echoed prompt and gave no answer
+        # -------------------------------------------------
+        if not text:
+            return ""
+
+        # If the remainder still starts with prompt policy, reject it.
+        prompt_leak_starts = [
+            "You are an EMTAC maintenance and engineering assistant",
+            "GENERAL RULES",
+            "USE OF CONTEXT",
+            "AUTHORITATIVE INFORMATION",
+            "OUTPUT FORMAT",
+        ]
+
+        lowered = text.lower()
+        for leak in prompt_leak_starts:
+            if lowered.startswith(leak.lower()):
+                return ""
+
+        return AIModelsService._final_trim_answer(text)
+
+    @staticmethod
+    def _final_trim_answer(text: str) -> str:
+        if not text:
+            return ""
+
+        stop_patterns = [
+            r"\n\s*USER\s*:",
+            r"\n\s*ASSISTANT\s*:",
+            r"\n\s*SYSTEM\s*:",
+            r"\n\s*QUESTION\s*:",
+            r"\n\s*---\s*CONTEXT\s+START\s*---",
+            r"\n\s*GENERAL\s+RULES\b",
+            r"\n\s*USE\s+OF\s+CONTEXT\b",
+            r"\n\s*AUTHORITATIVE\s+INFORMATION\b",
+            r"\n\s*WHEN\s+CONTEXT\s+IS\s+INCOMPLETE\b",
+            r"\n\s*OUTPUT\s+FORMAT\b",
+        ]
+
+        cut_positions = []
+        for pattern in stop_patterns:
+            match = re.search(pattern, text, flags=re.IGNORECASE)
+            if match:
+                cut_positions.append(match.start())
+
+        if cut_positions:
+            text = text[:min(cut_positions)].strip()
+
+        text = re.sub(
+            r"^(USER|ASSISTANT|SYSTEM|QUESTION|ANSWER|FINAL\s+ANSWER)\s*:\s*",
+            "",
+            text,
+            flags=re.IGNORECASE,
+        ).strip()
+
+        text = re.sub(r"\n{3,}", "\n\n", text).strip()
+
+        return text
