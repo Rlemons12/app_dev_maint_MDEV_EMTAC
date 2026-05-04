@@ -1,31 +1,14 @@
 /* static/css/module_template/themes/purple_haze.css
 ==================================
-PURPLE HAZE THEME
-Designed to sit on top of:
-static/css/module_template/base.css
-
-Role:
-- Override standardized base theme variables
-- Preserve layout ownership in base.css
-- Provide a complete Purple Haze visual identity
-- Support reusable neppy-* utility classes
-- Theme the standardized .mt-* module template layouts
+PURPLE HAZE THEME (CLEANED)
 ================================== */
 
-/* ==================================
-THEME VARIABLE OVERRIDES
-Apply by adding class="purple-haze" to html or body
-================================== */
 html.purple-haze,
 body.purple-haze {
     --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
     --app-page-bg: #140D24;
     --app-page-text: #EEE8FF;
-
-    --app-banner-bg: linear-gradient(90deg, #3B1F6A 0%, #4E2A8C 45%, #6337AA 100%);
-    --app-banner-text: #EEE8FF;
-    --app-banner-link: #D8A8FF;
 
     --app-sidebar-bg: rgba(28, 14, 52, 0.94);
     --app-sidebar-text: #B8A4D8;
@@ -42,11 +25,6 @@ body.purple-haze {
     --app-control-border: rgba(184, 164, 216, 0.22);
     --app-control-hover-bg: rgba(30, 16, 54, 0.96);
 
-    --app-popup-bg: rgba(20, 13, 36, 0.97);
-    --app-popup-text: #EEE8FF;
-    --app-popup-accent: #C47FFF;
-    --app-popup-submit-text: #140D24;
-
     --app-results-bg: rgba(20, 13, 36, 0.78);
     --app-results-text: #EEE8FF;
 
@@ -61,20 +39,14 @@ body.purple-haze {
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-position: center;
-    color: var(--app-page-text);
-    line-height: 1.45;
 }
 
-/* ==================================
-NEPPY TOKEN OVERRIDES
-Supports reusable neppy-* utility classes
-================================== */
+/* NEPPY TOKENS */
 html.purple-haze,
 body.purple-haze {
     --neppy-surface: rgba(20, 13, 36, 0.80);
     --neppy-surface-2: rgba(16, 8, 30, 0.90);
     --neppy-line: rgba(184, 164, 216, 0.22);
-    --neppy-line-strong: rgba(238, 232, 255, 0.30);
 
     --neppy-text: #EEE8FF;
     --neppy-muted: #B8A4D8;
@@ -82,431 +54,43 @@ body.purple-haze {
 
     --neppy-accent: #C47FFF;
     --neppy-accent-soft: rgba(196, 127, 255, 0.14);
-    --neppy-accent-hover: #D8A8FF;
-
-    --neppy-ok: #72E8B0;
-    --neppy-ok-soft: rgba(114, 232, 176, 0.16);
-
-    --neppy-warn: #FFD670;
-    --neppy-warn-soft: rgba(255, 214, 112, 0.18);
-
-    --neppy-bad: #FF8EA8;
-    --neppy-bad-soft: rgba(255, 142, 168, 0.16);
 }
 
-/* ==================================
-GLOBAL POLISH
-================================== */
-html.purple-haze .banner,
-body.purple-haze .banner {
-    letter-spacing: 0.03em;
-    box-shadow: var(--app-shadow-sm);
-}
-
-html.purple-haze .banner a,
-body.purple-haze .banner a {
-    font-weight: 600;
-}
-
+/* GLOBAL POLISH */
 html.purple-haze .sidebar,
 body.purple-haze .sidebar {
     backdrop-filter: blur(5px);
-    box-shadow: inset -1px 0 0 rgba(238, 232, 255, 0.08);
-}
-
-html.purple-haze .sidebar h1,
-body.purple-haze .sidebar h1 {
-    color: #EEE8FF;
-    letter-spacing: 0.02em;
-}
-
-html.purple-haze .welcome-message,
-body.purple-haze .welcome-message {
-    color: #D4C8F0;
-    font-weight: 600;
-}
-
-html.purple-haze .user-level,
-html.purple-haze .model-display-section,
-body.purple-haze .user-level,
-body.purple-haze .model-display-section {
-    color: rgba(238, 232, 255, 0.68);
 }
 
 html.purple-haze .content,
 body.purple-haze .content {
     background: linear-gradient(180deg, rgba(20, 13, 36, 0.84) 0%, rgba(12, 6, 22, 0.92) 100%);
-    color: var(--app-content-text);
 }
 
-/* ==================================
-SIDEBAR NAV / INTERACTION POLISH
-================================== */
-html.purple-haze .nav-link,
+/* LINKS (SCOPED ONLY) */
+html.purple-haze .content a,
 html.purple-haze .sidebar a,
-html.purple-haze .sidebar button,
-html.purple-haze .sidebar select,
-body.purple-haze .nav-link,
-body.purple-haze .sidebar a,
-body.purple-haze .sidebar button,
-body.purple-haze .sidebar select {
-    color: var(--app-sidebar-link);
-}
-
-html.purple-haze .nav-link:hover,
-html.purple-haze .sidebar a:hover,
-html.purple-haze .sidebar button:hover,
-html.purple-haze .sidebar select:hover,
-body.purple-haze .nav-link:hover,
-body.purple-haze .sidebar a:hover,
-body.purple-haze .sidebar button:hover,
-body.purple-haze .sidebar select:hover {
-    color: var(--app-sidebar-hover);
-    background-color: var(--app-sidebar-hover-bg);
-}
-
-html.purple-haze .nav-link.highlight,
-body.purple-haze .nav-link.highlight {
-    color: var(--app-sidebar-hover);
-    background-color: rgba(196, 127, 255, 0.10);
-    border-left: 3px solid var(--app-sidebar-hover);
-}
-
-/* ==================================
-STANDARD CONTROLS
-================================== */
-html.purple-haze .toggle-button,
-body.purple-haze .toggle-button {
-    background: linear-gradient(180deg, rgba(38, 20, 68, 0.98) 0%, rgba(16, 8, 30, 0.98) 100%) !important;
-    color: var(--app-control-text) !important;
-    border: 1px solid var(--app-control-border) !important;
-    border-radius: 6px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
-    font-weight: 600;
-}
-
-html.purple-haze .toggle-button:hover,
-body.purple-haze .toggle-button:hover {
-    background: linear-gradient(180deg, rgba(56, 28, 96, 0.98) 0%, rgba(24, 12, 44, 0.98) 100%) !important;
-    border-color: rgba(196, 127, 255, 0.35) !important;
-}
-
-html.purple-haze #voice-selection,
-html.purple-haze .sidebar select,
-body.purple-haze #voice-selection,
-body.purple-haze .sidebar select {
-    background-color: rgba(16, 8, 30, 0.95);
-    color: var(--app-control-text);
-    border: 1px solid var(--app-control-border);
-    border-radius: 5px;
-}
-
-html.purple-haze #voice-selection:focus,
-html.purple-haze .sidebar select:focus,
-body.purple-haze #voice-selection:focus,
-body.purple-haze .sidebar select:focus {
-    outline: 2px solid rgba(196, 127, 255, 0.35);
-    outline-offset: 2px;
-}
-
-/* ==================================
-RESULTS / PANELS / THUMBNAILS
-================================== */
-html.purple-haze .results-container,
-body.purple-haze .results-container {
-    background: var(--app-results-bg);
-    border: 1px solid rgba(238, 232, 255, 0.10);
-    border-radius: 10px;
-    box-shadow: var(--app-shadow-md);
-    backdrop-filter: blur(4px);
-}
-
-html.purple-haze #drawingList,
-body.purple-haze #drawingList {
-    color: var(--app-results-text);
-}
-
-html.purple-haze .thumbnail,
-body.purple-haze .thumbnail {
-    background: rgba(16, 8, 30, 0.90);
-    border: 1px solid var(--app-thumbnail-border);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.20);
-}
-
-/* ==================================
-COMMENT POPUP
-================================== */
-html.purple-haze #commentPopup,
-body.purple-haze #commentPopup {
-    background: var(--app-popup-bg);
-    border: 1px solid rgba(238, 232, 255, 0.12);
-    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.42);
-}
-
-html.purple-haze #commentForm h2,
-body.purple-haze #commentForm h2 {
-    color: var(--app-popup-accent);
-    letter-spacing: 0.02em;
-}
-
-html.purple-haze #commentForm textarea,
-body.purple-haze #commentForm textarea {
-    background: rgba(16, 8, 30, 0.96);
-    color: var(--app-popup-text);
-    border: 1px solid rgba(184, 164, 216, 0.24);
-}
-
-html.purple-haze #commentForm textarea::placeholder,
-body.purple-haze #commentForm textarea::placeholder {
-    color: rgba(238, 232, 255, 0.48);
-}
-
-html.purple-haze #commentForm textarea:focus,
-body.purple-haze #commentForm textarea:focus {
-    border-color: rgba(196, 127, 255, 0.38);
-    box-shadow: 0 0 0 3px rgba(196, 127, 255, 0.12);
-}
-
-html.purple-haze #commentForm button,
-body.purple-haze #commentForm button {
-    background: linear-gradient(180deg, rgba(38, 20, 68, 0.98) 0%, rgba(16, 8, 30, 0.98) 100%);
-    color: var(--app-popup-text);
-    border: 1px solid rgba(184, 164, 216, 0.16);
-}
-
-html.purple-haze #commentForm button:hover,
-body.purple-haze #commentForm button:hover {
-    background: linear-gradient(180deg, rgba(56, 28, 96, 0.98) 0%, rgba(24, 12, 44, 0.98) 100%);
-}
-
-html.purple-haze #commentForm button[type="submit"],
-body.purple-haze #commentForm button[type="submit"] {
-    background: linear-gradient(180deg, #d8a8ff 0%, #C47FFF 100%);
-    color: var(--app-popup-submit-text);
-    border-color: rgba(196, 127, 255, 0.35);
-    font-weight: 700;
-}
-
-html.purple-haze #commentForm button[type="submit"]:hover,
-body.purple-haze #commentForm button[type="submit"]:hover {
-    background: linear-gradient(180deg, #e4c0ff 0%, #b070f0 100%);
-}
-
-/* ==================================
-LINKS / SPECIAL STATES
-================================== */
-html.purple-haze a,
-body.purple-haze a {
+body.purple-haze .content a,
+body.purple-haze .sidebar a {
     color: #CBAEFF;
 }
 
-html.purple-haze a:hover,
-body.purple-haze a:hover {
+html.purple-haze .content a:hover,
+html.purple-haze .sidebar a:hover,
+body.purple-haze .content a:hover,
+body.purple-haze .sidebar a:hover {
     color: #C47FFF;
 }
 
-html.purple-haze .logout-button,
-body.purple-haze .logout-button {
-    color: #FFB36B !important;
-}
-
-/* ==================================
-ACCESSIBILITY / FOCUS
-================================== */
-html.purple-haze .hamburger:focus-visible,
+/* ACCESSIBILITY (NO HAMBURGER / POPUP) */
 html.purple-haze .toggle-button:focus-visible,
 html.purple-haze .sidebar button:focus-visible,
 html.purple-haze .sidebar a:focus-visible,
 html.purple-haze .sidebar select:focus-visible,
-html.purple-haze #commentForm textarea:focus-visible,
-html.purple-haze #commentForm button:focus-visible,
-html.purple-haze .mt-toggle-btn:focus-visible,
-html.purple-haze .neppy-btn:focus-visible,
-html.purple-haze .neppy-input:focus-visible,
-html.purple-haze .neppy-select:focus-visible,
-html.purple-haze .neppy-textarea:focus-visible,
-body.purple-haze .hamburger:focus-visible,
 body.purple-haze .toggle-button:focus-visible,
 body.purple-haze .sidebar button:focus-visible,
 body.purple-haze .sidebar a:focus-visible,
-body.purple-haze .sidebar select:focus-visible,
-body.purple-haze #commentForm textarea:focus-visible,
-body.purple-haze #commentForm button:focus-visible,
-body.purple-haze .mt-toggle-btn:focus-visible,
-body.purple-haze .neppy-btn:focus-visible,
-body.purple-haze .neppy-input:focus-visible,
-body.purple-haze .neppy-select:focus-visible,
-body.purple-haze .neppy-textarea:focus-visible {
+body.purple-haze .sidebar select:focus-visible {
     outline: 2px solid rgba(196, 127, 255, 0.55);
     outline-offset: 2px;
-}
-
-/* ==================================
-NEPPY UTILITY CLASS SUPPORT
-================================== */
-html.purple-haze .neppy-card,
-html.purple-haze .neppy-card-soft,
-body.purple-haze .neppy-card,
-body.purple-haze .neppy-card-soft {
-    background: var(--neppy-surface);
-    border-color: var(--neppy-line);
-}
-
-html.purple-haze .neppy-title,
-html.purple-haze .neppy-panel-title,
-body.purple-haze .neppy-title,
-body.purple-haze .neppy-panel-title {
-    color: var(--neppy-heading);
-}
-
-html.purple-haze .neppy-subtitle,
-html.purple-haze .neppy-label,
-html.purple-haze .neppy-text-muted,
-body.purple-haze .neppy-subtitle,
-body.purple-haze .neppy-label,
-body.purple-haze .neppy-text-muted {
-    color: var(--neppy-muted) !important;
-}
-
-html.purple-haze .neppy-btn,
-body.purple-haze .neppy-btn {
-    background: linear-gradient(180deg, rgba(38, 20, 68, 0.98) 0%, rgba(16, 8, 30, 0.98) 100%);
-    color: var(--neppy-text);
-    border-color: var(--neppy-line);
-}
-
-html.purple-haze .neppy-btn:hover,
-body.purple-haze .neppy-btn:hover {
-    border-color: var(--neppy-accent);
-    background: linear-gradient(180deg, rgba(56, 28, 96, 0.98) 0%, rgba(24, 12, 44, 0.98) 100%);
-}
-
-html.purple-haze .neppy-input,
-html.purple-haze .neppy-select,
-html.purple-haze .neppy-textarea,
-html.purple-haze .neppy-mono,
-html.purple-haze .neppy-code,
-body.purple-haze .neppy-input,
-body.purple-haze .neppy-select,
-body.purple-haze .neppy-textarea,
-body.purple-haze .neppy-mono,
-body.purple-haze .neppy-code {
-    background: rgba(16, 8, 30, 0.96);
-    color: var(--neppy-text);
-    border-color: var(--neppy-line);
-}
-
-html.purple-haze .neppy-input:focus,
-html.purple-haze .neppy-select:focus,
-html.purple-haze .neppy-textarea:focus,
-body.purple-haze .neppy-input:focus,
-body.purple-haze .neppy-select:focus,
-body.purple-haze .neppy-textarea:focus {
-    border-color: var(--neppy-accent);
-    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
-}
-
-/* ==================================
-MODULE TEMPLATE PANEL LAYOUT THEME
-Styles the standardized .mt-* module templates
-================================== */
-html.purple-haze .mt-layout,
-body.purple-haze .mt-layout {
-    color: var(--neppy-text);
-}
-
-html.purple-haze .mt-layout-header,
-body.purple-haze .mt-layout-header {
-    border-bottom: 2px solid rgba(196, 127, 255, 0.22);
-}
-
-html.purple-haze .mt-layout-title,
-body.purple-haze .mt-layout-title {
-    color: var(--neppy-accent);
-    letter-spacing: 0.02em;
-}
-
-html.purple-haze .mt-layout-description,
-body.purple-haze .mt-layout-description {
-    color: var(--neppy-muted);
-}
-
-html.purple-haze .mt-panel,
-body.purple-haze .mt-panel {
-    background: var(--neppy-surface);
-    border: 1px solid var(--neppy-line);
-    border-radius: var(--neppy-radius-lg, 14px);
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.20);
-    backdrop-filter: blur(4px);
-}
-
-html.purple-haze .mt-panel:hover,
-body.purple-haze .mt-panel:hover {
-    border-color: var(--neppy-accent);
-    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.34);
-}
-
-html.purple-haze .mt-panel-header,
-body.purple-haze .mt-panel-header {
-    background: rgba(255, 255, 255, 0.03);
-    border-bottom: 1px solid var(--neppy-line);
-}
-
-html.purple-haze .mt-panel-title,
-body.purple-haze .mt-panel-title {
-    color: var(--neppy-accent);
-}
-
-html.purple-haze .mt-toggle-btn,
-body.purple-haze .mt-toggle-btn {
-    background: linear-gradient(180deg, rgba(38, 20, 68, 0.98) 0%, rgba(16, 8, 30, 0.98) 100%);
-    border: 1px solid var(--neppy-line);
-    color: var(--neppy-text);
-    border-radius: 8px;
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.20);
-}
-
-html.purple-haze .mt-toggle-btn:hover,
-body.purple-haze .mt-toggle-btn:hover {
-    border-color: var(--neppy-accent);
-    background: linear-gradient(180deg, rgba(56, 28, 96, 0.98) 0%, rgba(24, 12, 44, 0.98) 100%);
-    color: var(--neppy-text);
-}
-
-html.purple-haze .mt-panel.is-collapsed .mt-toggle-btn,
-body.purple-haze .mt-panel.is-collapsed .mt-toggle-btn {
-    background: linear-gradient(180deg, #7a3020 0%, #5e2418 100%);
-    border-color: rgba(255, 142, 100, 0.35);
-    color: #ffffff;
-}
-
-html.purple-haze .mt-panel-body,
-body.purple-haze .mt-panel-body {
-    color: var(--neppy-text);
-}
-
-html.purple-haze .mt-panel-content,
-body.purple-haze .mt-panel-content {
-    gap: 12px;
-}
-
-html.purple-haze .mt-item,
-body.purple-haze .mt-item {
-    background: rgba(16, 8, 30, 0.92);
-    border: 1px solid var(--neppy-line);
-    color: var(--neppy-text);
-    border-radius: 8px;
-}
-
-html.purple-haze .mt-item:hover,
-body.purple-haze .mt-item:hover {
-    background: rgba(196, 127, 255, 0.08);
-    border-color: var(--neppy-accent);
-}
-
-html.purple-haze .mt-item.is-active,
-body.purple-haze .mt-item.is-active {
-    background: rgba(196, 127, 255, 0.16);
-    border-color: var(--neppy-accent);
-    box-shadow: 0 0 0 1px rgba(196, 127, 255, 0.10);
 }
