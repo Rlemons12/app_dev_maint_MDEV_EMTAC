@@ -16,7 +16,7 @@ from .retriever import PgVectorRetriever
 from .context_builder import ContextBuilder
 from .answer_generator import DBConfiguredAnswerGenerator, BaseAnswerGenerator
 from .document_ui_payload import DocumentUIPayload
-
+from modules.observability.high_end_tracer import tracer
 
 class RAGPipeline:
     """
@@ -64,10 +64,11 @@ class RAGPipeline:
             # -------------------------------
             # 1. EMBEDDING STAGE
             # -------------------------------
-            query_embedding = self.embedder.embed_query(
-                question,
-                request_id=request_id,
-            )
+            with tracer.span("embed_query"):
+                query_embedding = self.embedder.embed_query(
+                    question,
+                    request_id=request_id,
+                )
 
             if not query_embedding:
                 warning_id(
@@ -85,11 +86,12 @@ class RAGPipeline:
             # -------------------------------
             # 2. RETRIEVAL STAGE
             # -------------------------------
-            retrieved_chunks = self.retriever.retrieve(
-                query_embedding=query_embedding,
-                top_k=top_k,
-                request_id=request_id,
-            )
+            with tracer.span("retrieve_chunks", meta={"top_k": top_k}):
+                retrieved_chunks = self.retriever.retrieve(
+                    query_embedding=query_embedding,
+                    top_k=top_k,
+                    request_id=request_id,
+                )
 
             if not retrieved_chunks:
                 warning_id(
@@ -100,10 +102,11 @@ class RAGPipeline:
             # -------------------------------
             # 3. CONTEXT BUILDING
             # -------------------------------
-            ctx = self.context_builder.build_context(
-                retrieved_chunks=retrieved_chunks,
-                request_id=request_id,
-            )
+            with tracer.span("build_context"):
+                ctx = self.context_builder.build_context(
+                    retrieved_chunks=retrieved_chunks,
+                    request_id=request_id,
+                )
 
             context: str = ctx.get("context", "")
             used_chunks: List[Dict[str, Any]] = ctx.get("used_chunks", [])
@@ -111,11 +114,12 @@ class RAGPipeline:
             # -------------------------------
             # 4. DOCUMENT UI PAYLOAD
             # -------------------------------
-            documents = (
-                DocumentUIPayload()
-                .aggregate_from_chunks(used_chunks)
-                .build()
-            )
+            with tracer.span("build_document_payload"):
+                documents = (
+                    DocumentUIPayload()
+                    .aggregate_from_chunks(used_chunks)
+                    .build()
+                )
 
             debug_id(
                 f"[RAGPipeline] Built UI payload with {len(documents)} documents "
@@ -124,14 +128,15 @@ class RAGPipeline:
             )
 
             # -------------------------------
-            # 5. ANSWER GENERATION
+            # 5. ANSWER GENERATION (🔥 likely bottleneck)
             # -------------------------------
-            answer_result = self.answer_generator.generate_answer(
-                question=question,
-                context=context,
-                request_id=request_id,
-                **answer_kwargs,
-            )
+            with tracer.span("generate_answer"):
+                answer_result = self.answer_generator.generate_answer(
+                    question=question,
+                    context=context,
+                    request_id=request_id,
+                    **answer_kwargs,
+                )
 
             answer: str = answer_result.get("answer", "")
 
@@ -173,6 +178,8 @@ def get_default_rag() -> RAGPipeline:
             raise
 
     return _default_rag
+
+
 
 
 __all__ = ["RAGPipeline", "get_default_rag"]
