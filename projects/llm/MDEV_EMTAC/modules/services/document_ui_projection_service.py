@@ -1,93 +1,156 @@
+from __future__ import annotations
+
 from typing import Dict, Any
+
 from sqlalchemy.orm import Session
 
-from modules.services.chunk_search_service import ChunkAssociationSearchService
-from modules.emtac_ai.search.rag_core.chunk_relationship_projection import (
-    ChunkRelationshipProjection,
+from modules.configuration.log_config import (
+    debug_id,
+    get_request_id,
 )
-from modules.services.drawing_part_association_service import (DrawingPartAssociationService)
+from modules.orchestrators.chunk_graph_orchestrator import ChunkGraphOrchestrator
+from modules.services.document_service import DocumentService
+from modules.ai.search_pathway.rag_core.document_ui_payload import DocumentUIPayload
 from modules.services.drawing_navigation_projection import DrawingNavigationProjection
-from modules.configuration.log_config import debug_id, get_request_id
+
 
 class DocumentUIProjectionService:
     """
     Orchestrates UI payload construction for documents starting from a chunk.
 
     Responsibilities:
-    - Execute chunk search
-    - Project result into UI-ready payload
+    - Resolve the chunk
+    - Build forward graph relationships
+    - Project those relationships into a UI-ready payload
 
     NOTE:
-    - Relationship resolution now lives in the search layer
-    - UI projection is document-centric
+    - This version no longer depends on ChunkAssociationSearchService
+    - It reuses ChunkGraphOrchestrator for graph resolution
     """
 
     def __init__(self, session: Session):
         self.session = session
-        self.search_service = ChunkAssociationSearchService(session=session)
-        self.projector = ChunkRelationshipProjection(session=session)
+        self.document_service = DocumentService()
+        self.chunk_graph_orchestrator = ChunkGraphOrchestrator()
 
     def build_from_chunk(
         self,
         chunk_id: int,
         *,
         include_embeddings: bool = False,
-        include_reverse: bool = True,
+        include_reverse: bool = True,  # kept for signature stability
     ) -> Dict[str, Any]:
 
-        search_result = self.search_service.search_from_chunk(
+        rid = get_request_id()
+
+        # --------------------------------------------------
+        # 1. Resolve chunk
+        # --------------------------------------------------
+        chunk = self.document_service.get(
+            session=self.session,
+            doc_id=chunk_id,
+            request_id=rid,
+        )
+
+        if not chunk:
+            return {
+                "documents-container": [],
+                "summary": {},
+            }
+
+        # --------------------------------------------------
+        # 2. Build graph from chunk
+        # --------------------------------------------------
+        graph = self.chunk_graph_orchestrator.build_graph(
             chunk_id=chunk_id,
             include_embeddings=include_embeddings,
             include_2nd_tier=True,
+            request_id=rid,
         )
 
-        documents = search_result.get("documents", [])
-        if not documents:
+        if not isinstance(graph, dict) or graph.get("error"):
             return {
                 "documents-container": [],
-                "summary": search_result.get("summary", {}),
+                "summary": graph.get("summary", {}) if isinstance(graph, dict) else {},
             }
 
-        tier1 = search_result.get("1st_tier", {})
-        tier2 = search_result.get("2nd_tier", {})
+        first = graph.get("1st_tier", {}) or {}
+        second = graph.get("2nd_tier", {}) or {}
+        summary = graph.get("summary", {}) or {}
 
-        images = tier1.get("images", {})
-        chunk_images = images.get("chunk_level", [])
-        document_images = images.get("document_level", [])
+        complete_doc = first.get("complete_document") or {}
 
-        for doc in documents:
+        # --------------------------------------------------
+        # 3. Build base document payload from chunk
+        # --------------------------------------------------
+        base_chunks = [
+            {
+                "chunk_id": chunk.id,
+                "document_id": chunk.id,
+                "content": chunk.content or "",
+                "file_path": getattr(chunk, "file_path", None),
+                "complete_document_id": chunk.complete_document_id,
+                "complete_document_title": complete_doc.get("title"),
+            }
+        ]
+
+        payload = DocumentUIPayload()
+        payload.aggregate_from_chunks(base_chunks, request_id=rid)
+
+        # --------------------------------------------------
+        # 4. Add enrichment to each projected document
+        # --------------------------------------------------
+        chunk_level_images = (
+            first.get("images", {}) or {}
+        ).get("chunk_level", []) or []
+
+        document_level_images = (
+            first.get("images", {}) or {}
+        ).get("document_level", []) or []
+
+        all_images = chunk_level_images + document_level_images
+
+        raw_position_ids = second.get("positions", []) or []
+        position_ids = [
+            int(pid) for pid in raw_position_ids
+            if isinstance(pid, int) or (isinstance(pid, str) and pid.isdigit())
+        ]
+
+        serialized_positions = [{"id": pid} for pid in position_ids]
+
+        parts = second.get("parts", []) or []
+        drawings = second.get("drawings", []) or []
+
+        for doc in payload._documents.values():
             # -----------------------------
             # Images
             # -----------------------------
-            doc["images"] = chunk_images + document_images
+            doc["images"] = all_images
 
             # -----------------------------
             # Positions
             # -----------------------------
-            positions = tier2.get("positions", [])
-            doc["positions"] = positions
-            doc["position_ids"] = [
-                p["id"] for p in positions
-                if isinstance(p, dict) and "id" in p
-            ]
+            doc["positions"] = serialized_positions
+            doc["position_ids"] = position_ids
 
             # -----------------------------
-            # Drawing Navigation (DOCUMENT → POSITION → DRAWINGS)
+            # Drawing Navigation
             # -----------------------------
             debug_id(
                 "[UI PROJECTION] entering drawing_navigation block",
-                get_request_id(),
+                rid,
             )
+
             if doc["position_ids"]:
                 drawing_nav = DrawingNavigationProjection(session=self.session)
 
-                doc["drawing_navigation"] = drawing_nav.build_navigation(
+                nav = drawing_nav.build_navigation(
                     complete_document_id=doc.get("complete_document_id"),
                     position_ids=doc["position_ids"],
                 )
 
-                if not doc.get("drawing_navigation"):
-                    doc["drawing_navigation"] = {
+                if not nav:
+                    nav = {
                         "complete_document_id": doc.get("complete_document_id"),
                         "areas": [],
                         "meta": {
@@ -98,26 +161,40 @@ class DocumentUIProjectionService:
                         },
                     }
 
+                doc["drawing_navigation"] = nav
+
                 debug_id(
                     f"[UI PROJECTION] drawing_navigation={doc['drawing_navigation']}",
-                    get_request_id(),
+                    rid,
                 )
+            else:
+                doc["drawing_navigation"] = {
+                    "complete_document_id": doc.get("complete_document_id"),
+                    "areas": [],
+                    "meta": {
+                        "area_count": 0,
+                        "model_count": 0,
+                        "asset_count": 0,
+                        "drawing_count": 0,
+                    },
+                }
 
             # -----------------------------
-            # Parts (no drawing enrichment here)
+            # Parts
             # -----------------------------
-            doc["parts"] = tier2.get("parts", [])
+            doc["parts"] = parts
 
             # -----------------------------
             # Optional panels
             # -----------------------------
+            if drawings:
+                doc["drawings"] = drawings
+
             for key in ("tasks", "tools", "problems"):
-                if key in tier2:
-                    doc[key] = tier2.get(key, [])
+                if key in second:
+                    doc[key] = second.get(key, [])
 
         return {
-            "documents-container": documents,
-            "summary": search_result.get("summary", {}),
+            "documents-container": payload.build(),
+            "summary": summary,
         }
-
-
