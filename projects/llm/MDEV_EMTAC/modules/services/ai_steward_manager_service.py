@@ -24,16 +24,16 @@ class AIStewardManagerService:
     Responsibilities:
         - Call UnifiedSearchService
         - Return raw/enriched domain result
+        - Optionally project supporting UI payload
         - No persistence
         - No transaction ownership
         - No session creation
-        - No UI formatting
+        - No final UI formatting
 
     Notes:
-        - ChatOrchestrator owns the session/transaction.
-        - ChatService owns final UI formatting into blocks.
-        - This service is the bridge between UnifiedSearchService/RAG and
-          richer document payload data.
+        - ChatOrchestrator owns the answer transaction.
+        - ChatPayloadOrchestrator owns the supporting payload transaction.
+        - This service bridges UnifiedSearchService/RAG and document UI payload projection.
     """
 
     def __init__(self):
@@ -58,7 +58,30 @@ class AIStewardManagerService:
         request_id: Optional[str] = None,
         rag_only: bool = True,
         forced_chunk_id: Optional[int] = None,
+        include_payload: bool = True,
     ) -> Dict[str, Any]:
+        """
+        Executes the RAG/search pathway.
+
+        include_payload=True:
+            Legacy/full behavior.
+            Runs search/RAG and allows supporting UI payload generation.
+
+        include_payload=False:
+            Answer-first behavior.
+            Runs search/RAG and returns the answer plus raw seed fields only.
+            Skips heavy UI payload projection so /ask can return faster.
+
+        Important:
+            include_payload=False must still preserve:
+                - chunks
+                - used_chunks
+                - retriever_top_k
+                - debug metadata
+
+            The payload route later rebuilds relationship_map and UI payload
+            through UnifiedSearchService.build_payload_from_seed().
+        """
 
         question = (question or "").strip()
 
@@ -67,6 +90,7 @@ class AIStewardManagerService:
                 strategy="invalid_input",
                 answer="Please provide a more detailed question.",
                 model_name=None,
+                payload_status="unavailable",
             )
 
         try:
@@ -79,6 +103,7 @@ class AIStewardManagerService:
                     "rag_only": rag_only,
                     "client_type": client_type,
                     "forced_chunk_id": forced_chunk_id,
+                    "include_payload": include_payload,
                 },
             ):
                 result = self.search_service.execute(
@@ -88,6 +113,7 @@ class AIStewardManagerService:
                     request_id=request_id,
                     rag_only=rag_only,
                     forced_chunk_id=forced_chunk_id,
+                    include_payload=include_payload,
                 )
 
             if not isinstance(result, dict):
@@ -101,18 +127,23 @@ class AIStewardManagerService:
             # --------------------------------------------------
             # 2. Normalize raw result shape
             # --------------------------------------------------
-            result.setdefault("strategy", "rag")
-            result.setdefault("method", result.get("strategy", "rag"))
-            result.setdefault("answer", "")
-            result.setdefault("chunks", [])
-            result.setdefault("used_chunks", [])
-            result.setdefault("documents", [])
-            result.setdefault("images", [])
-            result.setdefault("drawings", [])
-            result.setdefault("parts", [])
+            result = self._normalize_raw_result(
+                result=result,
+                fallback_strategy="rag",
+            )
 
             # --------------------------------------------------
-            # 3. Inject model_name safely
+            # 3. Preserve forced chunk/debug metadata
+            # --------------------------------------------------
+            if forced_chunk_id is not None:
+                result.setdefault("debug_mode", True)
+                result.setdefault("debug_chunk_id", forced_chunk_id)
+            else:
+                result.setdefault("debug_mode", False)
+                result.setdefault("debug_chunk_id", None)
+
+            # --------------------------------------------------
+            # 4. Inject model_name safely
             # --------------------------------------------------
             result["model_name"] = self._resolve_model_name(
                 fallback=result.get("model_name"),
@@ -120,18 +151,44 @@ class AIStewardManagerService:
             )
 
             # --------------------------------------------------
-            # 4. Enrich document/UI payload when relationship data exists
+            # 5. Final answer-path payload status
             # --------------------------------------------------
-            with tracer.span("ai_result_enrichment"):
-                result = self._apply_relationship_projection(
-                    session=session,
-                    result=result,
-                    request_id=request_id,
-                )
+            if include_payload:
+                # UnifiedSearchService should already have built the payload.
+                # This safety projection remains for older/legacy result shapes
+                # where relationship_map exists but documents/images/parts/drawings
+                # were not populated.
+                if self._should_apply_projection_safety_net(result):
+                    with tracer.span("ai_result_enrichment_safety_net"):
+                        result = self._apply_relationship_projection(
+                            session=session,
+                            result=result,
+                            request_id=request_id,
+                        )
+
+                result["payload_status"] = "complete"
+
+            else:
+                # Answer-first mode:
+                # Do not build documents/images/parts/drawings here.
+                # Keep chunks/used_chunks intact so the payload route can
+                # build the supporting panels later.
+                result["payload_status"] = "pending"
+                result["documents"] = []
+                result["images"] = []
+                result["drawings"] = []
+                result["parts"] = []
 
             debug_id(
                 "[AIStewardManagerService] Result ready "
                 f"(strategy={result.get('strategy')}, "
+                f"method={result.get('method')}, "
+                f"payload_status={result.get('payload_status')}, "
+                f"include_payload={include_payload}, "
+                f"forced_chunk_id={forced_chunk_id}, "
+                f"chunks={len(result.get('chunks') or [])}, "
+                f"used_chunks={len(result.get('used_chunks') or [])}, "
+                f"relationship_map={'yes' if isinstance(result.get('relationship_map'), dict) and result.get('relationship_map') else 'no'}, "
                 f"docs={len(result.get('documents') or [])}, "
                 f"images={len(result.get('images') or [])}, "
                 f"parts={len(result.get('parts') or [])}, "
@@ -152,27 +209,118 @@ class AIStewardManagerService:
                 strategy="error",
                 answer="AI processing error.",
                 model_name=None,
+                payload_status="unavailable",
             )
+
+    # ---------------------------------------------------------
+    # Payload Projection Entry Point
+    # ---------------------------------------------------------
+
+    @with_request_id
+    def project_payload(
+        self,
+        *,
+        session: Session,
+        result: Dict[str, Any],
+        request_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Builds supporting UI payload from an existing answer/RAG result.
+
+        This is intended for the second request:
+
+            ChatPayloadOrchestrator.load_payload()
+
+        Expected input fields:
+            - chunks or used_chunks
+            - answer
+            - strategy/method
+            - optional relationship_map
+
+        Preferred flow:
+            UnifiedSearchService.build_payload_from_seed()
+
+        Fallback flow:
+            _apply_relationship_projection()
+        """
+
+        if not isinstance(result, dict):
+            warning_id(
+                "[AIStewardManagerService] project_payload received non-dict result.",
+                request_id,
+            )
+            result = {}
+
+        result = self._normalize_raw_result(
+            result=result,
+            fallback_strategy="rag",
+        )
+
+        with tracer.span("ai_payload_projection"):
+            if hasattr(self.search_service, "build_payload_from_seed"):
+                result = self.search_service.build_payload_from_seed(
+                    session=session,
+                    result=result,
+                    request_id=request_id,
+                )
+            else:
+                warning_id(
+                    "[AIStewardManagerService] UnifiedSearchService does not have "
+                    "build_payload_from_seed(); falling back to local projection.",
+                    request_id,
+                )
+
+                result = self._apply_relationship_projection(
+                    session=session,
+                    result=result,
+                    request_id=request_id,
+                )
+
+        if not isinstance(result, dict):
+            warning_id(
+                "[AIStewardManagerService] project_payload returned non-dict result.",
+                request_id,
+            )
+            result = {}
+
+        result = self._normalize_raw_result(
+            result=result,
+            fallback_strategy="rag",
+        )
+
+        result["payload_status"] = result.get("payload_status") or "complete"
+
+        debug_id(
+            "[AIStewardManagerService] Payload projection ready "
+            f"payload_status={result.get('payload_status')} "
+            f"documents={len(result.get('documents') or [])} "
+            f"images={len(result.get('images') or [])} "
+            f"parts={len(result.get('parts') or [])} "
+            f"drawings={len(result.get('drawings') or [])}",
+            request_id,
+        )
+
+        return result
 
     # ---------------------------------------------------------
     # Relationship Projection Hook
     # ---------------------------------------------------------
 
     def _apply_relationship_projection(
-            self,
-            *,
-            session: Session,
-            result: Dict[str, Any],
-            request_id: Optional[str] = None,
+        self,
+        *,
+        session: Session,
+        result: Dict[str, Any],
+        request_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Converts RAG chunks + relationship_map into richer document payloads.
 
-        Required input fields from UnifiedSearchService:
+        Required input fields:
             - used_chunks or chunks
             - relationship_map
 
-        Output fields expected by ChatService:
+        Output fields:
             - documents
             - images
             - parts
@@ -180,8 +328,9 @@ class AIStewardManagerService:
 
         Notes:
             - This method does not create relationship_map.
-            - UnifiedSearchService is responsible for creating relationship_map.
-            - This method only projects/enriches data if relationship_map exists.
+            - UnifiedSearchService.build_payload_from_seed() is preferred for
+              second-pass payload loading because it can rebuild relationship_map
+              when the answer-first seed intentionally skipped it.
         """
 
         relationship_map = result.get("relationship_map")
@@ -253,23 +402,16 @@ class AIStewardManagerService:
             if summary is not None:
                 result["relationship_summary"] = summary
 
-            # --------------------------------------------------
-            # Copy top-level containers if projection provides them
-            # --------------------------------------------------
             for result_key, projected_key in (
-                    ("images", "images-container"),
-                    ("parts", "parts-container"),
-                    ("drawings", "drawings-container"),
+                ("images", "images-container"),
+                ("parts", "parts-container"),
+                ("drawings", "drawings-container"),
             ):
                 items = projected.get(projected_key)
+
                 if isinstance(items, list):
                     result[result_key] = items
 
-            # --------------------------------------------------
-            # Safety net:
-            # If projection only placed images/parts/drawings inside documents,
-            # promote them to top-level result containers too.
-            # --------------------------------------------------
             result["images"] = self._promote_unique_items_from_documents(
                 documents=result.get("documents") or [],
                 field_names=("images", "part_images"),
@@ -312,6 +454,39 @@ class AIStewardManagerService:
     # ---------------------------------------------------------
 
     @staticmethod
+    def _normalize_raw_result(
+        *,
+        result: Dict[str, Any],
+        fallback_strategy: str = "rag",
+    ) -> Dict[str, Any]:
+        """
+        Normalizes raw UnifiedSearchService output.
+
+        This intentionally preserves relationship_map, chunks, and used_chunks
+        because those are required for second-pass payload loading.
+        """
+
+        if not isinstance(result, dict):
+            result = {}
+
+        result.setdefault("status", "success")
+        result.setdefault("strategy", fallback_strategy)
+        result.setdefault("method", result.get("strategy", fallback_strategy))
+        result.setdefault("answer", "")
+
+        result.setdefault("chunks", [])
+        result.setdefault("used_chunks", [])
+        result.setdefault("documents", [])
+        result.setdefault("images", [])
+        result.setdefault("drawings", [])
+        result.setdefault("parts", [])
+
+        if "relationship_map" not in result:
+            result["relationship_map"] = {}
+
+        return result
+
+    @staticmethod
     def _resolve_projection_chunks(result: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
         Finds the best chunk list for UI projection.
@@ -322,10 +497,12 @@ class AIStewardManagerService:
         """
 
         used_chunks = result.get("used_chunks")
+
         if isinstance(used_chunks, list) and used_chunks:
             return used_chunks
 
         chunks = result.get("chunks")
+
         if isinstance(chunks, list) and chunks:
             return chunks
 
@@ -333,10 +510,10 @@ class AIStewardManagerService:
 
     @staticmethod
     def _promote_unique_items_from_documents(
-            *,
-            documents: List[Dict[str, Any]],
-            field_names: tuple[str, ...],
-            existing_items: Optional[List[Dict[str, Any]]] = None,
+        *,
+        documents: List[Dict[str, Any]],
+        field_names: tuple[str, ...],
+        existing_items: Optional[List[Dict[str, Any]]] = None,
     ) -> List[Dict[str, Any]]:
         """
         Promotes nested document-level items to top-level result containers.
@@ -390,6 +567,25 @@ class AIStewardManagerService:
 
         return promoted
 
+    @staticmethod
+    def _should_apply_projection_safety_net(result: Dict[str, Any]) -> bool:
+        """
+        Returns True when a legacy result has relationship_map but does not
+        yet have any UI payload populated.
+        """
+
+        relationship_map = result.get("relationship_map")
+
+        if not isinstance(relationship_map, dict) or not relationship_map:
+            return False
+
+        has_payload = any(
+            bool(result.get(key))
+            for key in ("documents", "images", "parts", "drawings")
+        )
+
+        return not has_payload
+
     def _resolve_model_name(
         self,
         *,
@@ -417,10 +613,12 @@ class AIStewardManagerService:
                 return None
 
             model_name = getattr(answer_generator, "model_name", None)
+
             if model_name:
                 return model_name
 
             model_config = getattr(answer_generator, "model_config", None)
+
             if model_config:
                 return getattr(model_config, "model_name", None)
 
@@ -439,6 +637,7 @@ class AIStewardManagerService:
         strategy: str,
         answer: str,
         model_name: Optional[str],
+        payload_status: str = "unavailable",
     ) -> Dict[str, Any]:
         return {
             "status": "error" if strategy == "error" else "success",
@@ -447,72 +646,13 @@ class AIStewardManagerService:
             "answer": answer,
             "chunks": [],
             "used_chunks": [],
+            "relationship_map": {},
             "documents": [],
             "images": [],
             "drawings": [],
             "parts": [],
             "model_name": model_name,
+            "payload_status": payload_status,
+            "debug_mode": False,
+            "debug_chunk_id": None,
         }
-
-    @with_request_id
-    def project_payload(
-        self,
-        *,
-        session: Session,
-        result: Dict[str, Any],
-        request_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """
-        Builds supporting UI payload from an existing answer/RAG result.
-
-        This is intended for the second request:
-            ChatPayloadOrchestrator.load_payload()
-
-        It expects the result to already contain:
-            - chunks or used_chunks
-            - relationship_map
-
-        It returns:
-            - documents
-            - images
-            - parts
-            - drawings
-            - relationship_summary when available
-        """
-
-        if not isinstance(result, dict):
-            warning_id(
-                "[AIStewardManagerService] project_payload received non-dict result.",
-                request_id,
-            )
-            result = {}
-
-        result.setdefault("strategy", "rag")
-        result.setdefault("method", result.get("strategy", "rag"))
-        result.setdefault("answer", "")
-        result.setdefault("chunks", [])
-        result.setdefault("used_chunks", [])
-        result.setdefault("documents", [])
-        result.setdefault("images", [])
-        result.setdefault("drawings", [])
-        result.setdefault("parts", [])
-
-        with tracer.span("ai_payload_projection"):
-            result = self._apply_relationship_projection(
-                session=session,
-                result=result,
-                request_id=request_id,
-            )
-
-        result["payload_status"] = "complete"
-
-        debug_id(
-            "[AIStewardManagerService] Payload projection ready "
-            f"documents={len(result.get('documents') or [])} "
-            f"images={len(result.get('images') or [])} "
-            f"parts={len(result.get('parts') or [])} "
-            f"drawings={len(result.get('drawings') or [])}",
-            request_id,
-        )
-
-        return result
