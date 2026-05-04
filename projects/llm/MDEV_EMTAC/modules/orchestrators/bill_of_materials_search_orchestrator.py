@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from modules.configuration.config_env import DatabaseConfig
+from modules.configuration.config_env import get_db_config
 from modules.configuration.log_config import logger, with_request_id
 from modules.services.part_service import PartService
 from modules.services.parts_position_image_service import PartsPositionImageService
@@ -26,13 +26,15 @@ class BillOfMaterialsSearchOrchestrator:
         self,
         part_service: Optional[PartService] = None,
         parts_position_image_service: Optional[PartsPositionImageService] = None,
-        db_config: Optional[DatabaseConfig] = None,
+        db_config=None,
     ) -> None:
         self.part_service = part_service or PartService()
         self.parts_position_image_service = (
             parts_position_image_service or PartsPositionImageService()
         )
-        self.db_config = db_config or DatabaseConfig()
+
+        # ✅ FIX — use shared singleton config
+        self.db_config = db_config or get_db_config()
 
     @with_request_id
     def search_bill_of_materials(
@@ -148,4 +150,8 @@ class BillOfMaterialsSearchOrchestrator:
             }
 
         finally:
-            session.close()
+            logger.debug("Closing DB session in search orchestrator")
+            try:
+                session.close()
+            except Exception:
+                logger.exception("Failed closing DB session")
