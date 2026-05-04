@@ -369,7 +369,7 @@ $(document).ready(function () {
             .show();
 
         $.ajax({
-            url: "/edit_part_ajax/" + partId,
+            url: "/update_part/edit_part_ajax/" + partId,
             type: "GET",
             cache: false,
             success: function (data, status, xhr) {
