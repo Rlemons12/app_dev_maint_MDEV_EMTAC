@@ -4,7 +4,7 @@
 <form id="search-part-form" method="GET" action="{{ url_for('update_part_bp.search_part') }}">
     <label for="search_query" style="color: Yellow;">Search by Part Number, Name, OEM Manufacturer, or Model:</label>
     <input type="text" id="search_query" name="search_query" value="{{ search_query|default('') }}" required><br>
-    
+
     <input type="submit" value="Search">
 </form>
 
@@ -13,7 +13,7 @@
     {% if parts is defined and parts|length > 0 %}
         <h3 style="color: Yellow;">Search Results</h3>
         <p>Found {{ parts|length }} parts matching "{{ search_query }}".</p>
-        
+
         <table style="width: 100%; border-collapse: collapse; color: white;">
             <thead>
                 <tr style="background-color: rgba(0, 0, 40, 0.6);">
@@ -30,7 +30,7 @@
                     <td style="padding: 10px; border-bottom: 1px solid #444;">{{ part.name }}</td>
                     <td style="padding: 10px; border-bottom: 1px solid #444;">{{ part.oem_mfg }}</td>
                     <td style="padding: 10px; border-bottom: 1px solid #444;">
-                        <button type="button" class="edit-part-btn" 
+                        <button type="button" class="edit-part-btn"
                                 style="background-color: #007bff; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px;"
                                 data-part-id="{{ part.id }}">Edit</button>
                     </td>
@@ -53,16 +53,16 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Find all edit buttons
         var editButtons = document.querySelectorAll('.edit-part-btn');
-        
+
         // Add click event to each button
         editButtons.forEach(function(button) {
             button.addEventListener('click', function() {
                 var partId = this.getAttribute('data-part-id');
-                
+
                 // Show loading message
                 document.getElementById('edit-form-container').style.display = 'block';
                 document.getElementById('edit-form-container').innerHTML = '<p style="color: white;">Loading edit form...</p>';
-                
+
                 // Fetch the edit form via AJAX
                 fetch('/get_edit_form/' + partId)
                     .then(response => response.text())
@@ -70,7 +70,7 @@
                         document.getElementById('edit-form-container').innerHTML = html;
                     })
                     .catch(error => {
-                        document.getElementById('edit-form-container').innerHTML = 
+                        document.getElementById('edit-form-container').innerHTML =
                             '<p style="color: red;">Error loading edit form: ' + error.message + '</p>';
                     });
             });
