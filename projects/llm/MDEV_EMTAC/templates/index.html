@@ -8,16 +8,21 @@
 
 {% block extra_scripts %}
 
-<!-- Container-specific renderers (DEFINE functions) -->
-<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_parts.js') }}"></script>
-<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_thumbnails.js') }}"></script>
-<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_documents.js') }}"></script>
-<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_drawings.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index/chatbot_payload_status.css') }}?v=answer_payload_20260504_3">
 
-<!-- Orchestrator LAST (CALLS functions) -->
-<script src="{{ url_for('static', filename='js/index/chatbot.js') }}"></script>
+<!-- Shared viewer/popout functions FIRST -->
+<script src="{{ url_for('static', filename='js/index/partials/chatbot_global_viewers.js') }}?v=answer_payload_20260504_4"></script>
+
+<!-- Container-specific renderers SECOND -->
+<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_parts.js') }}?v=answer_payload_20260504_4"></script>
+<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_thumbnails.js') }}?v=answer_payload_20260504_4"></script>
+<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_documents.js') }}?v=answer_payload_20260504_4"></script>
+<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_drawings.js') }}?v=answer_payload_20260504_4"></script>
+
+<!-- Main chatbot orchestrator LAST -->
+<script src="{{ url_for('static', filename='js/index/chatbot.js') }}?v=answer_payload_20260504_7"></script>
 
 <!-- Optional utilities -->
-<script src="{{ url_for('static', filename='js/update_qanda_table.js') }}"></script>
+<script src="{{ url_for('static', filename='js/update_qanda_table.js') }}?v=answer_payload_20260504_4"></script>
 
 {% endblock %}
