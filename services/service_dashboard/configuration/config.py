@@ -83,6 +83,12 @@ PG_CTL_EXE: Path = POSTGRES_BIN_DIR / "pg_ctl.exe"
 GRAFANA_URL = os.getenv("GRAFANA_URL", "http://localhost:3000").rstrip("/")
 GRAFANA_CWD = Path(os.getenv("GRAFANA_CWD", r"E:\emtac\services\grafana-12.3.1"))
 GRAFANA_EXE = GRAFANA_CWD / "bin" / "grafana.exe"
+
+# Grafana API auth — only needed for dashboards / datasources / alert rules.
+# Prefer a service-account API key; basic auth is a fallback.
+GRAFANA_API_KEY: str | None = get_optional_env("GRAFANA_API_KEY")
+GRAFANA_USER: str | None = get_optional_env("GRAFANA_USER", "admin")
+GRAFANA_PASSWORD: str | None = get_optional_env("GRAFANA_PASSWORD")
 # ---------------------------------------------------------
 # Optional application DB connection values
 # ---------------------------------------------------------
