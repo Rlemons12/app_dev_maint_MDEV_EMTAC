@@ -1,6 +1,6 @@
 from typing import Dict, Any, List
 
-from modules.emtac_ai.search.rag_core.document_ui_payload import DocumentUIPayload
+from modules.ai.search_pathway.rag_core.document_ui_payload import DocumentUIPayload
 from modules.services.drawing_navigation_projection import DrawingNavigationProjection
 
 
