@@ -5,7 +5,13 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from modules.configuration.log_config import debug_id, error_id
+from typing import Optional
+from datetime import datetime
 
+from sqlalchemy.orm import Session
+
+from modules.configuration.log_config import debug_id, error_id
+from modules.emtacdb.emtacdb_fts import SearchQueryAnalytics
 
 
 class SearchQueryAnalyticsTracker:
