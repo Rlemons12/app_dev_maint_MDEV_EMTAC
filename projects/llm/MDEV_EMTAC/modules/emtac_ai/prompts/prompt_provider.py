@@ -174,7 +174,7 @@ class PromptProvider:
         parts.append(
             "\nQUESTION:\n"
             + question.strip()
-            + "\n\nANSWER:\n"
+            + "\n\nFINAL ANSWER (DO NOT REPEAT THE QUESTION OR CONTEXT):\n"
         )
 
         return "\n".join(parts)
