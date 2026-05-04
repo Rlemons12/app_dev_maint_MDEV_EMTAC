@@ -1,8 +1,16 @@
 /* static/css/module_template/base.css
 ==================================
 STANDARD MODULE TEMPLATE BASE
-Authoritative structural base for EMTAC module pages
+Authoritative structural base for EMTAC module pages.
 Theme files should override variables, not layout rules.
+
+Drop-in replacement goals:
+- stable top header / banner structure
+- hamburger always visible and clickable
+- sidebar works on desktop and mobile/tablet
+- content area stays aligned with sidebar state
+- supports comment popup partial
+- keeps compatibility with common legacy EMTAC selectors
 ==================================
 */
 
@@ -14,19 +22,24 @@ Default values only. Theme files may override.
     --app-font-family: Arial, sans-serif;
 
     --app-page-bg: #222;
-    --app-page-text: white;
+    --app-page-text: #ffffff;
 
     --app-banner-height: 80px;
     --app-banner-bg: red;
     --app-banner-text: white;
     --app-banner-link: #39FF14;
+    --app-banner-link-bg: rgba(255, 255, 255, 0.10);
+    --app-banner-link-border: rgba(255, 255, 255, 0.18);
+    --app-banner-link-hover-bg: rgba(255, 255, 255, 0.18);
+    --app-banner-link-hover-border: rgba(255, 255, 255, 0.30);
+    --app-banner-border: rgba(255, 255, 255, 0.14);
 
     --app-sidebar-width: 300px;
     --app-sidebar-bg: rgba(0, 0, 0, 0.8);
     --app-sidebar-text: yellow;
     --app-sidebar-link: white;
     --app-sidebar-hover: #39FF14;
-    --app-sidebar-hover-bg: rgba(57, 255, 20, 0.1);
+    --app-sidebar-hover-bg: rgba(57, 255, 20, 0.10);
     --app-sidebar-border: #333;
 
     --app-content-bg: #333;
@@ -41,6 +54,8 @@ Default values only. Theme files may override.
     --app-popup-text: white;
     --app-popup-accent: #39FF14;
     --app-popup-submit-text: black;
+    --app-popup-border: rgba(255, 255, 255, 0.14);
+    --app-popup-overlay: rgba(0, 0, 0, 0.55);
 
     --app-results-bg: rgba(0, 0, 0, 0.7);
     --app-results-text: white;
@@ -48,19 +63,20 @@ Default values only. Theme files may override.
     --app-thumbnail-border: #444;
 
     --app-radius-sm: 4px;
-    --app-radius-md: 5px;
-    --app-radius-lg: 8px;
+    --app-radius-md: 8px;
+    --app-radius-lg: 14px;
 
-    --app-shadow-sm: 0 4px 8px rgba(0, 0, 0, 0.1);
-    --app-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.2);
+    --app-shadow-sm: 0 4px 8px rgba(0, 0, 0, 0.12);
+    --app-shadow-md: 0 10px 28px rgba(0, 0, 0, 0.28);
 
     --app-spacing-xs: 4px;
     --app-spacing-sm: 8px;
     --app-spacing-md: 12px;
     --app-spacing-lg: 16px;
+    --app-spacing-xl: 20px;
 
     --app-transition-fast: 0.2s ease;
-    --app-transition-main: 0.5s ease;
+    --app-transition-main: 0.35s ease;
 
     --app-panel-accent: var(--app-sidebar-hover);
     --app-panel-accent-soft: var(--app-sidebar-hover-bg);
@@ -68,6 +84,17 @@ Default values only. Theme files may override.
     --app-panel-border: var(--app-thumbnail-border);
     --app-panel-header-bg: rgba(0, 0, 0, 0.18);
     --app-panel-item-bg: rgba(0, 0, 0, 0.18);
+
+    /* Layering */
+    --app-z-sidebar: 3000;
+    --app-z-banner: 4000;
+    --app-z-hamburger: 5000;
+    --app-z-overlay: 6000;
+    --app-z-popup: 6010;
+
+    /* Mobile / tablet */
+    --app-mobile-toggle-size: 48px;
+    --app-mobile-sidebar-width: min(82vw, var(--app-sidebar-width));
 }
 
 /* ==================================
@@ -89,37 +116,194 @@ body {
     color: var(--app-page-text);
 }
 
+html {
+    height: 100%;
+}
+
 body {
+    min-height: 100vh;
+    min-height: 100dvh;
     padding-top: var(--app-banner-height);
+    overflow-x: hidden;
 }
 
 body.sidebar-is-collapsed {
     overflow-x: hidden;
 }
 
+body.comment-popup-open {
+    overflow: hidden;
+}
+
+a {
+    color: inherit;
+}
+
+img {
+    max-width: 100%;
+}
+
 /* ==================================
-BANNER
+TOP HEADER / BANNER
+Text on top, comment button underneath
 ================================== */
-.banner {
-    width: 100%;
-    background-color: var(--app-banner-bg);
-    color: var(--app-banner-text);
-    text-align: center;
-    padding: 10px 0;
+.app-top-chrome {
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 1002;
-    font-weight: bold;
-    font-size: 1.5em;
-    text-transform: uppercase;
+    right: 0;
+    z-index: var(--app-z-banner);
+    width: 100%;
+}
+
+.banner {
+    width: 100%;
+    min-height: var(--app-banner-height);
+    background-color: var(--app-banner-bg);
+    color: var(--app-banner-text);
+    position: relative;
+    z-index: var(--app-z-banner);
+
+    display: flex;
+    align-items: center;
+
+    padding: 10px 12px 10px 64px;
+    border-bottom: 1px solid var(--app-banner-border);
     box-shadow: var(--app-shadow-sm);
 }
 
+.banner-content {
+    width: 100%;
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.banner-text-wrap {
+    width: 100%;
+    min-width: 0;
+}
+
+.banner-text {
+    display: block;
+    margin: 0;
+    font-weight: bold;
+    font-size: 1.15rem;
+    line-height: 1.25;
+    text-transform: uppercase;
+    word-break: break-word;
+    text-align: center;
+}
+
+.banner-actions {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.banner-link,
+#commentPopupLink,
 .banner a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 0 12px;
+
+    text-decoration: none;
+    cursor: pointer;
+    color: var(--app-banner-text);
+
+    background: var(--app-banner-link-bg);
+    border: 1px solid var(--app-banner-link-border);
+    border-radius: var(--app-radius-md);
+
+    transition:
+        background-color var(--app-transition-fast),
+        border-color var(--app-transition-fast),
+        color var(--app-transition-fast);
+}
+
+.banner-link:hover,
+.banner-link:focus,
+#commentPopupLink:hover,
+#commentPopupLink:focus,
+.banner a:hover,
+.banner a:focus {
     color: var(--app-banner-link);
-    text-decoration: underline;
-    margin-left: 15px;
+    background: var(--app-banner-link-hover-bg);
+    border-color: var(--app-banner-link-hover-border);
+    outline: none;
+}
+
+/* ==================================
+HAMBURGER
+Lives inside banner and stays visible
+Uses 3 stacked span lines
+================================== */
+#sidebarCollapse,
+button#sidebarCollapse,
+.hamburger {
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    z-index: var(--app-z-hamburger);
+
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    margin: 0;
+
+    background-color: var(--app-control-bg);
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: var(--app-radius-md);
+    box-shadow: var(--app-shadow-sm);
+
+    cursor: pointer;
+    outline: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    appearance: none;
+    -webkit-appearance: none;
+
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+#sidebarCollapse:hover,
+#sidebarCollapse:focus,
+.hamburger:hover,
+.hamburger:focus {
+    background-color: var(--app-control-hover-bg);
+    color: var(--app-sidebar-hover);
+}
+
+#sidebarCollapse:focus-visible,
+.hamburger:focus-visible {
+    outline: 2px solid var(--app-sidebar-hover);
+    outline-offset: 2px;
+}
+
+.hamburger-line {
+    display: block;
+    width: 20px;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
 }
 
 /* ==================================
@@ -130,33 +314,37 @@ MAIN LAYOUT
     flex-direction: row;
     width: 100%;
     min-height: calc(100vh - var(--app-banner-height));
-    padding-top: 10px;
+    min-height: calc(100dvh - var(--app-banner-height));
+    position: relative;
 }
 
 /* ==================================
 SIDEBAR
+Works with base_sidebar.html
 ================================== */
-.sidebar {
+.sidebar,
+#mainSidebar {
     position: fixed;
     top: var(--app-banner-height);
     left: 0;
     width: var(--app-sidebar-width);
     height: calc(100vh - var(--app-banner-height));
+    height: calc(100dvh - var(--app-banner-height));
     background-color: var(--app-sidebar-bg);
     color: var(--app-sidebar-text);
-    z-index: 1000;
+    z-index: var(--app-z-sidebar);
 
     display: flex;
     flex-direction: column;
 
     padding: 0;
     font-size: 16px;
-    box-sizing: border-box;
     overflow: hidden;
 
     transform: translateX(0);
     transition: transform var(--app-transition-main);
     will-change: transform;
+
     border-right: 1px solid var(--app-sidebar-border);
 }
 
@@ -165,7 +353,6 @@ SIDEBAR
     margin-bottom: 0;
     padding: 14px 14px 10px 14px;
     border-bottom: 1px solid var(--app-sidebar-border);
-    box-sizing: border-box;
 }
 
 .sidebar h1 {
@@ -196,37 +383,55 @@ SIDEBAR
     overflow-y: auto;
     overflow-x: hidden;
     padding: 6px 14px;
-    box-sizing: border-box;
 }
 
 .nav-link,
 .sidebar a,
 .sidebar button,
-.sidebar select {
+.sidebar select,
+#mainSidebar a,
+#mainSidebar button,
+#mainSidebar select {
     display: block;
+    width: 100%;
     padding: 5px 12px;
     margin-left: -12px;
     margin-right: -12px;
     margin-bottom: 0;
+
     text-decoration: none;
     background: none;
     border: none;
     text-align: left;
     cursor: pointer;
-    transition: color var(--app-transition-fast), background-color var(--app-transition-fast);
+
+    transition:
+        color var(--app-transition-fast),
+        background-color var(--app-transition-fast);
+
     font-size: 15px;
     line-height: 1.1;
     color: var(--app-sidebar-link);
-    box-sizing: border-box;
     word-break: break-word;
 }
 
 .nav-link:hover,
 .sidebar a:hover,
 .sidebar button:hover,
-.sidebar select:hover {
+.sidebar select:hover,
+#mainSidebar a:hover,
+#mainSidebar button:hover,
+#mainSidebar select:hover,
+.nav-link:focus,
+.sidebar a:focus,
+.sidebar button:focus,
+.sidebar select:focus,
+#mainSidebar a:focus,
+#mainSidebar button:focus,
+#mainSidebar select:focus {
     color: var(--app-sidebar-hover);
     background-color: var(--app-sidebar-hover-bg);
+    outline: none;
 }
 
 .nav-link.highlight {
@@ -238,7 +443,6 @@ SIDEBAR
     margin-top: 0;
     border-top: 1px solid var(--app-sidebar-border);
     padding: 10px 14px 12px 14px;
-    box-sizing: border-box;
     overflow-y: auto;
     overflow-x: hidden;
     max-height: 34%;
@@ -264,90 +468,10 @@ SIDEBAR
     background-color: var(--app-control-bg);
     color: var(--app-control-text);
     font-size: 14px;
-    box-sizing: border-box;
 }
 
-/* Optional sidebar content cleanup */
 .voice-controls {
     margin-bottom: 10px;
-}
-
-.toggle-button {
-    background-color: var(--app-control-bg) !important;
-    color: var(--app-control-text) !important;
-    border: 1px solid var(--app-control-border);
-    padding: 7px 10px !important;
-    margin: 0 0 8px 0;
-    border-radius: var(--app-radius-sm);
-    cursor: pointer;
-    width: 100%;
-    text-align: center !important;
-    box-sizing: border-box;
-    font-size: 14px;
-    line-height: 1.2;
-}
-
-.toggle-button:hover {
-    background-color: var(--app-control-hover-bg) !important;
-}
-
-#voice-selection {
-    width: 100%;
-    padding: 6px 8px;
-    margin: 0;
-    background-color: var(--app-control-bg);
-    color: var(--app-control-text);
-    border: 1px solid var(--app-control-border);
-    box-sizing: border-box;
-    font-size: 14px;
-}
-
-.model-display-section {
-    font-size: 11px;
-    opacity: 0.8;
-    margin: 8px 0;
-    color: var(--app-sidebar-link);
-    line-height: 1.25;
-    word-break: break-word;
-}
-
-.model-display-section p {
-    margin: 0 0 4px 0;
-}
-
-.logout-button {
-    display: block;
-    color: #FF5F1F !important;
-    text-align: left;
-    margin-top: 8px;
-    padding-top: 8px !important;
-}
-
-/* Sidebar scrollbars */
-.sidebar-nav::-webkit-scrollbar,
-.sidebar-utils::-webkit-scrollbar {
-    width: 10px;
-}
-
-.sidebar-nav::-webkit-scrollbar-thumb,
-.sidebar-utils::-webkit-scrollbar-thumb {
-    background: #444;
-    border-radius: 8px;
-}
-
-.sidebar-nav::-webkit-scrollbar-track,
-.sidebar-utils::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-/* Body-driven desktop collapse */
-body.sidebar-is-collapsed .sidebar {
-    transform: translateX(calc(-1 * var(--app-sidebar-width)));
-}
-
-/* Legacy class support */
-.sidebar.collapsed {
-    transform: translateX(calc(-1 * var(--app-sidebar-width)));
 }
 
 .toggle-button {
@@ -360,25 +484,24 @@ body.sidebar-is-collapsed .sidebar {
     cursor: pointer;
     width: 100%;
     text-align: center !important;
-    box-sizing: border-box;
+    font-size: 14px;
+    line-height: 1.2;
 }
 
-.toggle-button:hover {
+.toggle-button:hover,
+.toggle-button:focus {
     background-color: var(--app-control-hover-bg) !important;
+    outline: none;
 }
 
 #voice-selection {
     width: 100%;
-    padding: 5px;
-    margin: 5px 0 0 0;
+    padding: 6px 8px;
+    margin: 0;
     background-color: var(--app-control-bg);
     color: var(--app-control-text);
     border: 1px solid var(--app-control-border);
-    box-sizing: border-box;
-}
-
-.voice-controls {
-    margin-bottom: 15px;
+    font-size: 14px;
 }
 
 .model-display-section {
@@ -419,44 +542,27 @@ body.sidebar-is-collapsed .sidebar {
     background: rgba(255, 255, 255, 0.05);
 }
 
-/* Body-driven desktop collapse */
-body.sidebar-is-collapsed .sidebar {
+/* Desktop collapse */
+body.sidebar-is-collapsed .sidebar,
+body.sidebar-is-collapsed #mainSidebar,
+.sidebar.collapsed,
+#mainSidebar.collapsed {
     transform: translateX(calc(-1 * var(--app-sidebar-width)));
-}
-
-/* Legacy class support */
-.sidebar.collapsed {
-    transform: translateX(calc(-1 * var(--app-sidebar-width)));
-}
-
-/* ==================================
-HAMBURGER
-================================== */
-.hamburger {
-    font-size: 30px;
-    cursor: pointer;
-    color: var(--app-sidebar-link);
-    position: fixed;
-    top: calc(var(--app-banner-height) - 35px);
-    left: 10px;
-    z-index: 1001;
-    background: none;
-    border: none;
-    outline: none;
-}
-
-.hamburger:hover {
-    color: var(--app-sidebar-hover);
 }
 
 /* ==================================
 CONTENT
 ================================== */
 .content {
+    position: relative;
+    z-index: 1;
     margin-left: var(--app-sidebar-width);
     width: calc(100% - var(--app-sidebar-width));
     min-height: calc(100vh - var(--app-banner-height));
-    transition: margin-left var(--app-transition-main), width var(--app-transition-main);
+    min-height: calc(100dvh - var(--app-banner-height));
+    transition:
+        margin-left var(--app-transition-main),
+        width var(--app-transition-main);
     padding: var(--app-spacing-lg);
     background: var(--app-content-bg);
     color: var(--app-content-text);
@@ -464,60 +570,147 @@ CONTENT
     min-width: 0;
 }
 
-/* Body-driven desktop collapse */
-body.sidebar-is-collapsed .content {
-    margin-left: 0;
-    width: 100%;
-}
-
-/* Legacy class support */
+/* Desktop collapse */
+body.sidebar-is-collapsed .content,
 .content.sidebar-collapsed {
     margin-left: 0;
     width: 100%;
 }
 
-/* ==================================
-COMMENT POPUP MODAL
-================================== */
-#commentPopup {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: var(--app-popup-bg);
-    padding: var(--app-spacing-lg);
-    border-radius: var(--app-radius-lg);
-    box-shadow: var(--app-shadow-md);
-    z-index: 1003;
-    color: var(--app-popup-text);
-    width: 400px;
-    max-width: 90%;
+/* Keep page panels below header / sidebar toggle */
+.mt-layout,
+.mt-grid,
+.mt-panel,
+.mt-panel-header,
+.mt-panel-body,
+.mt-panel-content {
+    position: relative;
+    z-index: 1;
 }
 
+/* ==================================
+COMMENT POPUP MODAL
+Supports new partial and older fallback ids
+================================== */
+.comment-popup-overlay[hidden] {
+    display: none !important;
+}
+
+.comment-popup-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: var(--app-z-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: var(--app-popup-overlay);
+}
+
+.comment-popup {
+    position: relative;
+    z-index: var(--app-z-popup);
+    width: min(100%, 640px);
+    max-height: min(88vh, 820px);
+    overflow: auto;
+    background-color: var(--app-popup-bg);
+    color: var(--app-popup-text);
+    border: 1px solid var(--app-popup-border);
+    border-radius: var(--app-radius-lg);
+    box-shadow: var(--app-shadow-md);
+}
+
+.comment-popup-form,
 #commentForm {
     display: flex;
     flex-direction: column;
 }
 
-#commentForm h2 {
-    margin-top: 0;
-    color: var(--app-popup-accent);
+.comment-popup-header,
+.comment-popup-footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px;
 }
 
+.comment-popup-header {
+    justify-content: space-between;
+    border-bottom: 1px solid var(--app-popup-border);
+}
+
+.comment-popup-footer {
+    justify-content: flex-end;
+    border-top: 1px solid var(--app-popup-border);
+}
+
+.comment-popup-body {
+    padding: 18px;
+    display: grid;
+    gap: 12px;
+}
+
+.comment-popup-header h2,
+#commentForm h2 {
+    margin: 0;
+    color: var(--app-popup-accent);
+    font-size: 1.15rem;
+    line-height: 1.2;
+}
+
+.comment-popup-help {
+    margin: 0;
+    line-height: 1.45;
+}
+
+.comment-popup-label {
+    font-weight: 600;
+}
+
+.comment-popup-textarea,
 #commentForm textarea {
     width: 100%;
-    height: 100px;
+    min-height: 120px;
     padding: 10px;
-    margin: 10px 0;
+    margin: 0;
     border-radius: var(--app-radius-md);
-    border: none;
+    border: 1px solid var(--app-control-border);
     outline: none;
     background-color: var(--app-control-bg);
     color: var(--app-control-text);
+    resize: vertical;
 }
 
+.comment-popup-textarea:focus,
+#commentForm textarea:focus,
+.comment-popup-file:focus,
+.comment-popup-submit:focus,
+.comment-popup-cancel:focus,
+.comment-popup-close:focus,
+#commentForm button:focus {
+    outline: 2px solid var(--app-sidebar-hover);
+    outline-offset: 2px;
+}
+
+.comment-popup-feedback {
+    padding: 10px 12px;
+    border-radius: var(--app-radius-md);
+    background: rgba(57, 255, 20, 0.12);
+    color: var(--app-popup-text);
+}
+
+.comment-popup-preview {
+    max-width: 100%;
+    max-height: 220px;
+    border-radius: var(--app-radius-md);
+    border: 1px solid var(--app-popup-border);
+}
+
+.comment-popup-submit,
+.comment-popup-cancel,
+.comment-popup-close,
 #commentForm button {
-    margin-top: 10px;
+    margin-top: 0;
     padding: 10px 15px;
     border: none;
     border-radius: var(--app-radius-md);
@@ -527,17 +720,54 @@ COMMENT POPUP MODAL
     font-size: 14px;
 }
 
+.comment-popup-submit,
 #commentForm button[type="submit"] {
     background-color: var(--app-popup-accent);
     color: var(--app-popup-submit-text);
 }
 
-#commentForm button:hover {
+.comment-popup-submit:hover,
+.comment-popup-submit:focus,
+#commentForm button[type="submit"]:hover,
+#commentForm button[type="submit"]:focus {
+    background-color: #45a049;
+}
+
+.comment-popup-cancel:hover,
+.comment-popup-cancel:focus,
+.comment-popup-close:hover,
+.comment-popup-close:focus,
+#commentForm button:hover,
+#commentForm button:focus {
     background-color: var(--app-control-hover-bg);
 }
 
-#commentForm button[type="submit"]:hover {
-    background-color: #45a049;
+.comment-popup-close {
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 20px;
+    line-height: 1;
+    padding: 0;
+}
+
+.comment-popup-file {
+    width: 100%;
+}
+
+/* Fallback legacy popup styling */
+#commentPopup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--app-popup-bg);
+    padding: var(--app-spacing-lg);
+    border-radius: var(--app-radius-lg);
+    box-shadow: var(--app-shadow-md);
+    z-index: var(--app-z-popup);
+    color: var(--app-popup-text);
+    width: 400px;
+    max-width: 90%;
 }
 
 /* ==================================
@@ -581,25 +811,112 @@ RESULTS / THUMBNAILS
 RESPONSIVE
 ================================== */
 @media (max-width: 768px) {
-    .sidebar {
-        transform: translateX(calc(-1 * var(--app-sidebar-width)));
-        width: min(82vw, var(--app-sidebar-width));
+    body {
+        overflow-x: hidden;
     }
 
-    .sidebar.active {
+    .main-container {
+        min-height: calc(100dvh - var(--app-banner-height));
+    }
+
+    .sidebar,
+    #mainSidebar {
+        top: var(--app-banner-height);
+        left: 0;
+        width: var(--app-mobile-sidebar-width);
+        height: calc(100dvh - var(--app-banner-height));
+        transform: translateX(-100%);
+        z-index: var(--app-z-sidebar);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    .sidebar.active,
+    #mainSidebar.active {
         transform: translateX(0);
     }
 
-    .sidebar.collapsed {
-        transform: translateX(calc(-1 * var(--app-sidebar-width)));
+    .sidebar.collapsed,
+    #mainSidebar.collapsed {
+        transform: translateX(-100%);
+    }
+
+    body.sidebar-is-collapsed .sidebar,
+    body.sidebar-is-collapsed #mainSidebar {
+        transform: translateX(-100%);
     }
 
     .content {
         margin-left: 0;
         width: 100%;
+        min-height: calc(100dvh - var(--app-banner-height));
+        padding-top: 16px;
     }
 
+    .banner {
+        padding: 8px 12px 8px 56px;
+    }
+
+    .banner-text {
+        font-size: 1rem;
+        line-height: 1.2;
+    }
+
+    #sidebarCollapse,
+    button#sidebarCollapse,
     .hamburger {
-        display: block;
+        left: 8px;
+        width: 48px;
+        height: 48px;
+        gap: 5px;
+    }
+
+    .hamburger-line {
+        width: 20px;
+        height: 2px;
+    }
+
+    .comment-popup-overlay {
+        padding: 12px;
+    }
+
+    .comment-popup {
+        width: 100%;
+        max-height: 90vh;
+    }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --app-banner-height: 72px;
+    }
+
+    .banner {
+        padding: 8px 10px 8px 54px;
+    }
+
+    .banner-text {
+        font-size: 0.9rem;
+        line-height: 1.2;
+    }
+
+    #sidebarCollapse,
+    button#sidebarCollapse,
+    .hamburger {
+        left: 6px;
+        width: 44px;
+        height: 44px;
+        gap: 4px;
+    }
+
+    .hamburger-line {
+        width: 18px;
+        height: 2px;
+    }
+
+    .content {
+        padding-left: 12px;
+        padding-right: 12px;
+        padding-bottom: 12px;
     }
 }
