@@ -81,8 +81,8 @@ function renderParts(parts) {
                 const images = Array.isArray(imgData.images)
                     ? imgData.images
                           .map(img => ({
-                              src: img.src || img.file_path || img.url,
-                              title: img.title || img.name || ""
+                              src: img.src || img.url || img.image_url || img.file_path,
+                              title: img.title || img.name || img.description || ""
                           }))
                           .filter(img => img.src)
                     : [];
@@ -115,21 +115,37 @@ function renderParts(parts) {
                 console.log("[renderParts] images:", images);
                 console.log("[renderParts] drawings:", drawings);
 
-                // -----------------------------
+                              // -----------------------------
                 // Open viewer
                 // -----------------------------
-                if (images.length || drawings.length) {
-                    window.openPartDetailsViewer(label, images, drawings);
+                // Always open the part details viewer, even when the part has
+                // no images or drawings. The viewer already handles empty states.
+                if (typeof window.openPartDetailsViewer !== "function") {
+                    console.error(
+                        "[renderParts] window.openPartDetailsViewer is not available"
+                    );
                     return;
                 }
 
-                console.warn(
-                    "[renderParts] No images or drawings for part:",
-                    partId
-                );
+                window.openPartDetailsViewer(label, images, drawings);
+
+                if (!images.length && !drawings.length) {
+                    console.warn(
+                        "[renderParts] Part details opened with no images or drawings for part:",
+                        partId
+                    );
+                }
+
+                return;
 
             } catch (err) {
                 console.error("[renderParts] Error:", err);
+
+                // If fetching images/drawings fails, still open the popup so
+                // the user gets the part details view instead of nothing.
+                if (typeof window.openPartDetailsViewer === "function") {
+                    window.openPartDetailsViewer(label, [], []);
+                }
             }
         });
 
