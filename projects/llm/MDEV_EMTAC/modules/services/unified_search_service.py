@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import Dict, Any, Optional, List, Tuple
 
 from modules.configuration.log_config import (
@@ -44,6 +45,12 @@ class UnifiedSearchService:
         ChatOrchestrator owns the answer transaction/session.
         ChatPayloadOrchestrator owns the payload transaction/session.
         AIStewardManagerService passes include_payload=False for answer-first mode.
+
+    Performance notes:
+        - Answer-first mode intentionally skips relationship/payload work.
+        - Payload fallback document aggregation is lazy.
+        - Relationship projection is attempted before fallback aggregation.
+        - Expensive stages are timed and returned in payload_performance.
     """
 
     def __init__(
@@ -101,6 +108,7 @@ class UnifiedSearchService:
         include_payload=False:
             Answer-first behavior.
             Returns answer plus chunks/used_chunks only.
+
             Skips:
                 - relationship_map build
                 - ChunkRelationshipProjection
@@ -146,11 +154,15 @@ class UnifiedSearchService:
                 include_payload=include_payload,
             )
 
+        rag_start = time.perf_counter()
+
         with tracer.span("rag_run", meta={"include_payload": include_payload}):
             rag_result = self.rag_pipeline.run(
                 question=question,
                 request_id=request_id,
             )
+
+        rag_time = time.perf_counter() - rag_start
 
         if not isinstance(rag_result, dict):
             warning_id(
@@ -163,13 +175,14 @@ class UnifiedSearchService:
                 payload_status="unavailable",
             )
 
-        used_chunks = rag_result.get("used_chunks", []) or rag_result.get("chunks", []) or []
+        used_chunks = self._resolve_seed_chunks(rag_result)
         answer = rag_result.get("answer", "") or ""
 
         debug_id(
             "[UnifiedSearchService] Normal RAG result "
             f"include_payload={include_payload} "
-            f"used_chunks={len(used_chunks)}",
+            f"used_chunks={len(used_chunks)} "
+            f"rag_time={rag_time:.3f}s",
             request_id,
         )
 
@@ -194,6 +207,15 @@ class UnifiedSearchService:
                 "payload_status": "pending",
                 "retriever_top_k": rag_result.get("retriever_top_k"),
                 "query_embedding": rag_result.get("query_embedding", []),
+                "payload_performance": {
+                    "rag_time": rag_time,
+                    "relationship_map_time": 0.0,
+                    "projection_time": 0.0,
+                    "fallback_document_time": 0.0,
+                    "post_process_time": 0.0,
+                    "payload_build_time": 0.0,
+                    "fallback_documents_built": False,
+                },
             }
 
         return self._build_full_payload_response(
@@ -210,6 +232,9 @@ class UnifiedSearchService:
             request_id=request_id,
             debug_mode=False,
             debug_chunk_id=None,
+            base_performance={
+                "rag_time": rag_time,
+            },
         )
 
     # ------------------------------------------------------------------
@@ -239,7 +264,13 @@ class UnifiedSearchService:
             - optional relationship_map
 
         If relationship_map is missing, this method builds it now.
+
+        Performance improvement:
+            Fallback DocumentUIPayload aggregation is lazy. It is only built
+            if projection is skipped or fails.
         """
+
+        payload_start = time.perf_counter()
 
         if not isinstance(result, dict):
             warning_id(
@@ -262,28 +293,40 @@ class UnifiedSearchService:
             result.setdefault("drawings", [])
             result.setdefault("relationship_map", {})
             result["payload_status"] = "unavailable"
+            result["payload_performance"] = {
+                "relationship_map_time": 0.0,
+                "projection_time": 0.0,
+                "fallback_document_time": 0.0,
+                "post_process_time": 0.0,
+                "payload_build_time": time.perf_counter() - payload_start,
+                "fallback_documents_built": False,
+            }
             return result
 
-        fallback_documents = result.get("documents")
-        if not isinstance(fallback_documents, list) or not fallback_documents:
-            fallback_documents = (
-                DocumentUIPayload()
-                .aggregate_from_chunks(
-                    chunks,
-                    request_id=request_id,
-                )
-                .build()
-            )
+        existing_documents = result.get("documents")
+        fallback_documents = (
+            existing_documents
+            if isinstance(existing_documents, list) and existing_documents
+            else None
+        )
 
         relationship_map = result.get("relationship_map")
+        relationship_map_time = 0.0
+
         if not isinstance(relationship_map, dict) or not relationship_map:
+            relationship_start = time.perf_counter()
+
             relationship_map = self._build_relationship_map(
                 session=session,
                 chunks=chunks,
                 request_id=request_id,
             )
 
-        documents = self._project_chunks_for_ui(
+            relationship_map_time = time.perf_counter() - relationship_start
+
+        projection_start = time.perf_counter()
+
+        documents, fallback_document_time, fallback_built = self._project_chunks_for_ui(
             session=session,
             chunks=chunks,
             relationship_map=relationship_map,
@@ -291,7 +334,13 @@ class UnifiedSearchService:
             request_id=request_id,
         )
 
+        projection_time = time.perf_counter() - projection_start
+
+        post_process_start = time.perf_counter()
         drawings, images, parts = self._post_process_documents(documents)
+        post_process_time = time.perf_counter() - post_process_start
+
+        payload_build_time = time.perf_counter() - payload_start
 
         result["documents"] = documents
         result["drawings"] = drawings
@@ -299,6 +348,14 @@ class UnifiedSearchService:
         result["parts"] = parts
         result["relationship_map"] = relationship_map
         result["payload_status"] = "complete"
+        result["payload_performance"] = {
+            "relationship_map_time": relationship_map_time,
+            "projection_time": projection_time,
+            "fallback_document_time": fallback_document_time,
+            "post_process_time": post_process_time,
+            "payload_build_time": payload_build_time,
+            "fallback_documents_built": fallback_built,
+        }
 
         debug_id(
             "[UnifiedSearchService] Payload built from seed "
@@ -306,7 +363,13 @@ class UnifiedSearchService:
             f"images={len(images)} "
             f"parts={len(parts)} "
             f"drawings={len(drawings)} "
-            f"relationship_map={'yes' if relationship_map else 'no'}",
+            f"relationship_map={'yes' if relationship_map else 'no'} "
+            f"relationship_map_time={relationship_map_time:.3f}s "
+            f"projection_time={projection_time:.3f}s "
+            f"fallback_document_time={fallback_document_time:.3f}s "
+            f"post_process_time={post_process_time:.3f}s "
+            f"payload_build_time={payload_build_time:.3f}s "
+            f"fallback_built={fallback_built}",
             request_id,
         )
 
@@ -427,6 +490,8 @@ class UnifiedSearchService:
         used_chunks = ctx.get("used_chunks", []) or forced_chunks
         context = ctx.get("context", "") or forced_chunks[0]["content"]
 
+        answer_start = time.perf_counter()
+
         with tracer.span("forced_chunk_generate_answer"):
             answer_result = self.rag_pipeline.answer_generator.generate_answer(
                 question=question,
@@ -434,6 +499,7 @@ class UnifiedSearchService:
                 request_id=request_id,
             )
 
+        answer_time = time.perf_counter() - answer_start
         answer = self._extract_answer_text(answer_result)
 
         if not include_payload:
@@ -459,24 +525,16 @@ class UnifiedSearchService:
                 "debug_chunk_id": chunk_id,
                 "retriever_top_k": 1,
                 "query_embedding": [],
+                "payload_performance": {
+                    "forced_answer_time": answer_time,
+                    "relationship_map_time": 0.0,
+                    "projection_time": 0.0,
+                    "fallback_document_time": 0.0,
+                    "post_process_time": 0.0,
+                    "payload_build_time": 0.0,
+                    "fallback_documents_built": False,
+                },
             }
-
-        fallback_documents = (
-            DocumentUIPayload()
-            .aggregate_from_chunks(
-                used_chunks,
-                request_id=request_id,
-            )
-            .build()
-        )
-
-        debug_id(
-            "[UnifiedSearchService] Forced chunk base payload "
-            f"documents={len(fallback_documents)} "
-            f"used_chunks={len(used_chunks)} "
-            f"complete_document_id={complete_document_id}",
-            request_id,
-        )
 
         return self._build_full_payload_response(
             session=session,
@@ -485,13 +543,16 @@ class UnifiedSearchService:
             answer=answer,
             chunks=used_chunks,
             used_chunks=used_chunks,
-            fallback_documents=fallback_documents,
+            fallback_documents=None,
             relationship_map=None,
             retriever_top_k=1,
             query_embedding=[],
             request_id=request_id,
             debug_mode=True,
             debug_chunk_id=chunk_id,
+            base_performance={
+                "forced_answer_time": answer_time,
+            },
         )
 
     # ------------------------------------------------------------------
@@ -507,23 +568,34 @@ class UnifiedSearchService:
         answer: str,
         chunks: List[Dict[str, Any]],
         used_chunks: List[Dict[str, Any]],
-        fallback_documents: List[Dict[str, Any]],
+        fallback_documents: Optional[List[Dict[str, Any]]],
         relationship_map: Optional[Dict[str, Any]],
         retriever_top_k: Optional[int],
         query_embedding: List[Any],
         request_id: Optional[str],
         debug_mode: bool = False,
         debug_chunk_id: Optional[int] = None,
+        base_performance: Optional[Dict[str, float]] = None,
     ) -> Dict[str, Any]:
 
+        payload_start = time.perf_counter()
+
+        relationship_map_time = 0.0
+
         if not isinstance(relationship_map, dict) or not relationship_map:
+            relationship_start = time.perf_counter()
+
             relationship_map = self._build_relationship_map(
                 session=session,
                 chunks=used_chunks,
                 request_id=request_id,
             )
 
-        documents = self._project_chunks_for_ui(
+            relationship_map_time = time.perf_counter() - relationship_start
+
+        projection_start = time.perf_counter()
+
+        documents, fallback_document_time, fallback_built = self._project_chunks_for_ui(
             session=session,
             chunks=used_chunks,
             relationship_map=relationship_map,
@@ -531,7 +603,25 @@ class UnifiedSearchService:
             request_id=request_id,
         )
 
+        projection_time = time.perf_counter() - projection_start
+
+        post_process_start = time.perf_counter()
         drawings, images, parts = self._post_process_documents(documents)
+        post_process_time = time.perf_counter() - post_process_start
+
+        payload_build_time = time.perf_counter() - payload_start
+
+        payload_performance = {
+            "relationship_map_time": relationship_map_time,
+            "projection_time": projection_time,
+            "fallback_document_time": fallback_document_time,
+            "post_process_time": post_process_time,
+            "payload_build_time": payload_build_time,
+            "fallback_documents_built": fallback_built,
+        }
+
+        if base_performance:
+            payload_performance.update(base_performance)
 
         debug_id(
             "[UnifiedSearchService] Full payload built "
@@ -540,7 +630,13 @@ class UnifiedSearchService:
             f"images={len(images)} "
             f"parts={len(parts)} "
             f"drawings={len(drawings)} "
-            f"relationship_map={'yes' if relationship_map else 'no'}",
+            f"relationship_map={'yes' if relationship_map else 'no'} "
+            f"relationship_map_time={relationship_map_time:.3f}s "
+            f"projection_time={projection_time:.3f}s "
+            f"fallback_document_time={fallback_document_time:.3f}s "
+            f"post_process_time={post_process_time:.3f}s "
+            f"payload_build_time={payload_build_time:.3f}s "
+            f"fallback_built={fallback_built}",
             request_id,
         )
 
@@ -560,6 +656,7 @@ class UnifiedSearchService:
             "debug_chunk_id": debug_chunk_id,
             "retriever_top_k": retriever_top_k,
             "query_embedding": query_embedding,
+            "payload_performance": payload_performance,
         }
 
     # ------------------------------------------------------------------
@@ -589,30 +686,9 @@ class UnifiedSearchService:
             )
             return {}
 
-        chunk_ids: List[int] = []
-        document_ids: List[int] = []
-        complete_document_ids: List[int] = []
-
-        for ch in chunks:
-            if not isinstance(ch, dict):
-                continue
-
-            chunk_id = ch.get("chunk_id") or ch.get("id")
-            document_id = ch.get("document_id") or ch.get("chunk_document_id")
-            complete_document_id = ch.get("complete_document_id")
-
-            if chunk_id:
-                chunk_ids.append(chunk_id)
-
-            if document_id:
-                document_ids.append(document_id)
-
-            if complete_document_id:
-                complete_document_ids.append(complete_document_id)
-
-        chunk_ids = self._dedupe_preserve_order(chunk_ids)
-        document_ids = self._dedupe_preserve_order(document_ids)
-        complete_document_ids = self._dedupe_preserve_order(complete_document_ids)
+        chunk_ids, document_ids, complete_document_ids = self._extract_relationship_ids(
+            chunks
+        )
 
         if not chunk_ids and not document_ids and not complete_document_ids:
             debug_id(
@@ -671,13 +747,19 @@ class UnifiedSearchService:
         session,
         chunks: List[Dict[str, Any]],
         relationship_map: Dict[str, Any],
-        fallback_documents: List[Dict[str, Any]],
+        fallback_documents: Optional[List[Dict[str, Any]]],
         request_id: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> Tuple[List[Dict[str, Any]], float, bool]:
         """
         Applies ChunkRelationshipProjection and returns enriched documents.
 
+        Returns:
+            documents, fallback_document_time, fallback_documents_built
+
         If projection is unavailable or fails, returns fallback_documents.
+
+        Performance improvement:
+            fallback_documents are built lazily only when needed.
         """
 
         if not relationship_map:
@@ -685,14 +767,24 @@ class UnifiedSearchService:
                 "[UnifiedSearchService] Projection skipped: no relationship_map.",
                 request_id,
             )
-            return fallback_documents
+            documents, fallback_time, fallback_built = self._resolve_fallback_documents(
+                fallback_documents=fallback_documents,
+                chunks=chunks,
+                request_id=request_id,
+            )
+            return documents, fallback_time, fallback_built
 
         if not chunks:
             debug_id(
                 "[UnifiedSearchService] Projection skipped: no chunks.",
                 request_id,
             )
-            return fallback_documents
+            documents, fallback_time, fallback_built = self._resolve_fallback_documents(
+                fallback_documents=fallback_documents,
+                chunks=chunks,
+                request_id=request_id,
+            )
+            return documents, fallback_time, fallback_built
 
         try:
             from modules.ai.search_pathway.rag_core.chunk_relationship_projection import (
@@ -711,7 +803,12 @@ class UnifiedSearchService:
                     "[UnifiedSearchService] Projection returned non-dict payload.",
                     request_id,
                 )
-                return fallback_documents
+                documents, fallback_time, fallback_built = self._resolve_fallback_documents(
+                    fallback_documents=fallback_documents,
+                    chunks=chunks,
+                    request_id=request_id,
+                )
+                return documents, fallback_time, fallback_built
 
             documents = projected.get("documents-container")
 
@@ -721,7 +818,12 @@ class UnifiedSearchService:
                     "documents-container list.",
                     request_id,
                 )
-                return fallback_documents
+                documents, fallback_time, fallback_built = self._resolve_fallback_documents(
+                    fallback_documents=fallback_documents,
+                    chunks=chunks,
+                    request_id=request_id,
+                )
+                return documents, fallback_time, fallback_built
 
             debug_id(
                 "[UnifiedSearchService] Projection applied "
@@ -729,14 +831,65 @@ class UnifiedSearchService:
                 request_id,
             )
 
-            return documents
+            return documents, 0.0, False
 
         except Exception as e:
             warning_id(
                 f"[UnifiedSearchService] Relationship projection failed: {e}",
                 request_id,
             )
-            return fallback_documents
+
+            documents, fallback_time, fallback_built = self._resolve_fallback_documents(
+                fallback_documents=fallback_documents,
+                chunks=chunks,
+                request_id=request_id,
+            )
+            return documents, fallback_time, fallback_built
+
+    def _resolve_fallback_documents(
+        self,
+        *,
+        fallback_documents: Optional[List[Dict[str, Any]]],
+        chunks: List[Dict[str, Any]],
+        request_id: Optional[str] = None,
+    ) -> Tuple[List[Dict[str, Any]], float, bool]:
+        """
+        Returns fallback documents.
+
+        If fallback_documents were already supplied, use them.
+        Otherwise build them from chunks.
+
+        Returns:
+            fallback_documents, fallback_document_time, fallback_documents_built
+        """
+
+        if isinstance(fallback_documents, list) and fallback_documents:
+            return fallback_documents, 0.0, False
+
+        fallback_start = time.perf_counter()
+
+        documents = (
+            DocumentUIPayload()
+            .aggregate_from_chunks(
+                chunks,
+                request_id=request_id,
+            )
+            .build()
+        )
+
+        fallback_time = time.perf_counter() - fallback_start
+
+        if not isinstance(documents, list):
+            documents = []
+
+        debug_id(
+            "[UnifiedSearchService] Fallback documents built "
+            f"documents={len(documents)} "
+            f"fallback_document_time={fallback_time:.3f}s",
+            request_id,
+        )
+
+        return documents, fallback_time, True
 
     # ------------------------------------------------------------------
     # POST PROCESS HELPERS
@@ -751,9 +904,11 @@ class UnifiedSearchService:
             drawings, images, parts
         """
 
-        drawings = self._extract_drawings(documents)
-        images = self._promote_images(documents)
-        parts = self._promote_parts(documents)
+        safe_documents = documents if isinstance(documents, list) else []
+
+        drawings = self._extract_drawings(safe_documents)
+        images = self._promote_images(safe_documents)
+        parts = self._promote_parts(safe_documents)
 
         return drawings, images, parts
 
@@ -769,12 +924,14 @@ class UnifiedSearchService:
             if not isinstance(drw, dict):
                 return
 
-            key = (
-                drw.get("id")
-                or drw.get("drawing_id")
-                or drw.get("drw_number")
-                or drw.get("drawing_number")
-                or str(drw)
+            key = self._item_key(
+                item=drw,
+                preferred_fields=(
+                    "id",
+                    "drawing_id",
+                    "drw_number",
+                    "drawing_number",
+                ),
             )
 
             if key in seen:
@@ -825,7 +982,10 @@ class UnifiedSearchService:
             if not isinstance(img, dict):
                 return
 
-            key = img.get("id") or img.get("src") or str(img)
+            key = self._item_key(
+                item=img,
+                preferred_fields=("id", "image_id", "src", "file_path"),
+            )
 
             if key in seen:
                 return
@@ -865,7 +1025,10 @@ class UnifiedSearchService:
             if not isinstance(part, dict):
                 return
 
-            key = part.get("id") or part.get("part_number") or str(part)
+            key = self._item_key(
+                item=part,
+                preferred_fields=("id", "part_id", "part_number"),
+            )
 
             if key in seen:
                 return
@@ -928,6 +1091,46 @@ class UnifiedSearchService:
 
         return ""
 
+    @classmethod
+    def _extract_relationship_ids(
+        cls,
+        chunks: List[Dict[str, Any]],
+    ) -> Tuple[List[int], List[int], List[int]]:
+        """
+        Extracts chunk_ids, document_ids, and complete_document_ids from chunks.
+        """
+
+        chunk_ids: List[int] = []
+        document_ids: List[int] = []
+        complete_document_ids: List[int] = []
+
+        for ch in chunks or []:
+            if not isinstance(ch, dict):
+                continue
+
+            chunk_id = ch.get("chunk_id") or ch.get("id")
+            document_id = ch.get("document_id") or ch.get("chunk_document_id")
+            complete_document_id = ch.get("complete_document_id")
+
+            normalized_chunk_id = cls._safe_int(chunk_id)
+            normalized_document_id = cls._safe_int(document_id)
+            normalized_complete_document_id = cls._safe_int(complete_document_id)
+
+            if normalized_chunk_id is not None:
+                chunk_ids.append(normalized_chunk_id)
+
+            if normalized_document_id is not None:
+                document_ids.append(normalized_document_id)
+
+            if normalized_complete_document_id is not None:
+                complete_document_ids.append(normalized_complete_document_id)
+
+        return (
+            cls._dedupe_preserve_order(chunk_ids),
+            cls._dedupe_preserve_order(document_ids),
+            cls._dedupe_preserve_order(complete_document_ids),
+        )
+
     @staticmethod
     def _dedupe_preserve_order(items: List[Any]) -> List[Any]:
         seen = set()
@@ -941,6 +1144,30 @@ class UnifiedSearchService:
             output.append(item)
 
         return output
+
+    @staticmethod
+    def _safe_int(value: Any) -> Optional[int]:
+        if value in (None, "", "None"):
+            return None
+
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _item_key(
+        *,
+        item: Dict[str, Any],
+        preferred_fields: Tuple[str, ...],
+    ) -> Tuple[str, Any]:
+        for field_name in preferred_fields:
+            value = item.get(field_name)
+
+            if value not in (None, "", "None"):
+                return field_name, value
+
+        return "repr", repr(sorted(item.items()))
 
     def _empty_response(
         self,
@@ -963,4 +1190,12 @@ class UnifiedSearchService:
             "payload_status": payload_status,
             "retriever_top_k": None,
             "query_embedding": [],
+            "payload_performance": {
+                "relationship_map_time": 0.0,
+                "projection_time": 0.0,
+                "fallback_document_time": 0.0,
+                "post_process_time": 0.0,
+                "payload_build_time": 0.0,
+                "fallback_documents_built": False,
+            },
         }
