@@ -1,7 +1,10 @@
 # services/part_service.py
+from __future__ import annotations
+
 from typing import Optional, List, Dict, Any
+
+from sqlalchemy import select, func
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from modules.emtacdb.emtacdb_fts import (
@@ -20,7 +23,17 @@ class PartService:
     - Legacy wrapper methods remain for compatibility.
     - New session-aware methods are provided so orchestrators can own
       transaction boundaries cleanly.
+
+    Performance notes:
+    - get_parts_for_positions() is kept as a legacy-compatible method that
+      returns all matching distinct parts.
+    - search_distinct_parts_for_positions() is the optimized BOM-search method
+      that pushes DISTINCT, COUNT, LIMIT, and OFFSET into SQL.
     """
+
+    DEFAULT_INDEX = 0
+    DEFAULT_PER_PAGE = 25
+    MAX_PER_PAGE = 100
 
     def __init__(self, db_config: DatabaseConfig = None):
         self.db_config = db_config or DatabaseConfig()
@@ -113,9 +126,18 @@ class PartService:
         if not part_numbers:
             return []
 
+        normalized_part_numbers = sorted({
+            str(part_number).strip()
+            for part_number in part_numbers
+            if part_number is not None and str(part_number).strip()
+        })
+
+        if not normalized_part_numbers:
+            return []
+
         return (
             session.query(Part)
-            .filter(Part.part_number.in_(part_numbers))
+            .filter(Part.part_number.in_(normalized_part_numbers))
             .all()
         )
 
@@ -144,6 +166,8 @@ class PartService:
         if not query:
             return []
 
+        limit = self._normalize_limit(limit)
+
         if use_fts and hasattr(Part, "fts_search"):
             try:
                 results = Part.fts_search(search_text=query, limit=limit)
@@ -162,6 +186,7 @@ class PartService:
                 (Part.oem_mfg.ilike(like_query)) |
                 (Part.model.ilike(like_query))
             )
+            .order_by(Part.part_number.asc().nullslast(), Part.id.asc())
             .limit(limit)
             .all()
         )
@@ -180,10 +205,17 @@ class PartService:
         session: Session,
     ) -> List[Part]:
         """
-        Return all Parts associated with the given Position IDs.
-        Service-backed (NO ORM traversal).
+        Return all distinct Parts associated with the given Position IDs.
+
+        Compatibility method.
+
+        IMPORTANT:
+        - This method returns all matching parts.
+        - For paged BOM search, prefer search_distinct_parts_for_positions().
         """
-        if not position_ids:
+        normalized_position_ids = self._normalize_int_list(position_ids)
+
+        if not normalized_position_ids:
             return []
 
         stmt = (
@@ -192,11 +224,154 @@ class PartService:
                 PartsPositionImageAssociation,
                 PartsPositionImageAssociation.part_id == Part.id,
             )
-            .where(PartsPositionImageAssociation.position_id.in_(position_ids))
+            .where(
+                PartsPositionImageAssociation.position_id.in_(normalized_position_ids),
+                PartsPositionImageAssociation.part_id.isnot(None),
+            )
             .distinct()
+            .order_by(Part.part_number.asc().nullslast(), Part.id.asc())
         )
 
         return session.execute(stmt).scalars().all()
+
+    def search_distinct_parts_for_positions(
+        self,
+        *,
+        position_ids: List[int],
+        session: Session,
+        index: int = DEFAULT_INDEX,
+        per_page: int = DEFAULT_PER_PAGE,
+    ) -> Dict[str, Any]:
+        """
+        Return a paged list of distinct Parts associated with the given Position IDs.
+
+        This is the optimized service method for BOM search.
+
+        Why this is faster:
+        - Counts distinct part IDs in SQL.
+        - Applies LIMIT/OFFSET in SQL.
+        - Loads only the Part rows needed for the current page.
+        - Avoids loading all matching parts into Python just to paginate.
+
+        Returns:
+            {
+                "parts": List[Part],
+                "total_count": int,
+                "index": int,
+                "per_page": int,
+            }
+        """
+        normalized_position_ids = self._normalize_int_list(position_ids)
+        index = self._normalize_index(index)
+        per_page = self._normalize_limit(per_page)
+
+        if not normalized_position_ids:
+            return {
+                "parts": [],
+                "total_count": 0,
+                "index": index,
+                "per_page": per_page,
+            }
+
+        total_count = (
+            session.query(
+                func.count(
+                    func.distinct(PartsPositionImageAssociation.part_id)
+                )
+            )
+            .filter(
+                PartsPositionImageAssociation.position_id.in_(normalized_position_ids),
+                PartsPositionImageAssociation.part_id.isnot(None),
+            )
+            .scalar()
+        ) or 0
+
+        if total_count == 0:
+            return {
+                "parts": [],
+                "total_count": 0,
+                "index": index,
+                "per_page": per_page,
+            }
+
+        paged_part_ids_subquery = (
+            session.query(
+                Part.id.label("part_id")
+            )
+            .join(
+                PartsPositionImageAssociation,
+                PartsPositionImageAssociation.part_id == Part.id,
+            )
+            .filter(
+                PartsPositionImageAssociation.position_id.in_(normalized_position_ids),
+                PartsPositionImageAssociation.part_id.isnot(None),
+            )
+            .group_by(Part.id, Part.part_number)
+            .order_by(Part.part_number.asc().nullslast(), Part.id.asc())
+            .offset(index)
+            .limit(per_page)
+            .subquery()
+        )
+
+        parts = (
+            session.query(Part)
+            .join(
+                paged_part_ids_subquery,
+                Part.id == paged_part_ids_subquery.c.part_id,
+            )
+            .order_by(Part.part_number.asc().nullslast(), Part.id.asc())
+            .all()
+        )
+
+        return {
+            "parts": parts,
+            "total_count": total_count,
+            "index": index,
+            "per_page": per_page,
+        }
+
+    # ============================================================
+    # INTERNAL NORMALIZATION HELPERS
+    # ============================================================
+
+    @classmethod
+    def _normalize_index(cls, value: Any) -> int:
+        try:
+            index = int(value)
+        except (TypeError, ValueError):
+            return cls.DEFAULT_INDEX
+
+        return max(index, 0)
+
+    @classmethod
+    def _normalize_limit(cls, value: Any) -> int:
+        try:
+            limit = int(value)
+        except (TypeError, ValueError):
+            return cls.DEFAULT_PER_PAGE
+
+        limit = max(limit, 1)
+        limit = min(limit, cls.MAX_PER_PAGE)
+
+        return limit
+
+    @staticmethod
+    def _normalize_int_list(values: Optional[List[int]]) -> List[int]:
+        if not values:
+            return []
+
+        normalized = set()
+
+        for value in values:
+            if value in (None, "", "None"):
+                continue
+
+            try:
+                normalized.add(int(value))
+            except (TypeError, ValueError):
+                continue
+
+        return sorted(normalized)
 
     # ============================================================
     # LEGACY WRAPPERS
@@ -252,6 +427,7 @@ class PartService:
     @with_request_id
     def fts_search(self, search_text: str, limit: int = 100) -> List[tuple]:
         try:
+            limit = self._normalize_limit(limit)
             return Part.fts_search(search_text=search_text, limit=limit)
         except SQLAlchemyError as e:
             error_id(f"PartService.fts_search failed: {e}", None)
