@@ -11848,99 +11848,134 @@ class PartsPositionImageAssociation(Base):
 
     @classmethod
     @with_request_id
-    def get_corresponding_position_ids(cls, session, area_id=None, equipment_group_id=None, model_id=None,
-                                       asset_number_id=None, location_id=None):
+    def get_corresponding_position_ids(
+        cls,
+        session,
+        area_id=None,
+        equipment_group_id=None,
+        model_id=None,
+        asset_number_id=None,
+        location_id=None,
+    ):
         """
-        Search for corresponding Position IDs based on the provided filters.
-        Traverses the hierarchy and retrieves matching Position IDs.
+        Return Position IDs based on the provided hierarchy filters.
 
-        Args:
-            session: SQLAlchemy session
-            area_id: ID of the area (optional)
-            equipment_group_id: ID of the equipment group (optional)
-            model_id: ID of the model (optional)
-            asset_number_id: ID of the asset number (optional)
-            location_id: ID of the location (optional)
-
-        Returns:
-            List of Position IDs that match the criteria
+        Performance improvement:
+        - Queries Position.id only.
+        - Does not load full Position ORM objects.
+        - Prevents broad unfiltered position scans.
         """
-        # Get the request ID for logging
+
         request_id = get_request_id()
 
-        # Log the start of the operation
-        info_id(f"Starting get_corresponding_position_ids with filters: "
-                f"area_id={area_id}, equipment_group_id={equipment_group_id}, "
-                f"model_id={model_id}, asset_number_id={asset_number_id}, "
-                f"location_id={location_id}", request_id=request_id)
+        info_id(
+            "Starting get_corresponding_position_ids with filters: "
+            f"area_id={area_id}, equipment_group_id={equipment_group_id}, "
+            f"model_id={model_id}, asset_number_id={asset_number_id}, "
+            f"location_id={location_id}",
+            request_id=request_id,
+        )
 
-        # Start by fetching the root-level positions based on area_id (or first level in hierarchy)
         try:
-            positions = cls._get_positions_by_hierarchy(session, area_id=area_id,
-                                                        equipment_group_id=equipment_group_id,
-                                                        model_id=model_id,
-                                                        asset_number_id=asset_number_id,
-                                                        location_id=location_id)
-            position_ids = [position.id for position in positions]
+            position_ids = cls._get_position_ids_by_hierarchy(
+                session,
+                area_id=area_id,
+                equipment_group_id=equipment_group_id,
+                model_id=model_id,
+                asset_number_id=asset_number_id,
+                location_id=location_id,
+            )
 
-            # Log the number of Position IDs found
-            info_id(f"Found {len(position_ids)} Position IDs for the given filters", request_id=request_id)
+            info_id(
+                f"Found {len(position_ids)} Position IDs for the given filters",
+                request_id=request_id,
+            )
 
             return position_ids
+
         except SQLAlchemyError as e:
-            error_id(f"Error during get_corresponding_position_ids with filters "
-                     f"area_id={area_id}, equipment_group_id={equipment_group_id}, "
-                     f"model_id={model_id}, asset_number_id={asset_number_id}, "
-                     f"location_id={location_id}: {e}", request_id=request_id, exc_info=True)
+            error_id(
+                "Error during get_corresponding_position_ids with filters "
+                f"area_id={area_id}, equipment_group_id={equipment_group_id}, "
+                f"model_id={model_id}, asset_number_id={asset_number_id}, "
+                f"location_id={location_id}: {e}",
+                request_id=request_id,
+                exc_info=True,
+            )
             raise
 
     @classmethod
     @with_request_id
-    def _get_positions_by_hierarchy(cls, session, area_id=None, equipment_group_id=None, model_id=None,
-                                    asset_number_id=None, location_id=None):
+    def _get_position_ids_by_hierarchy(
+        cls,
+        session,
+        area_id=None,
+        equipment_group_id=None,
+        model_id=None,
+        asset_number_id=None,
+        location_id=None,
+    ):
         """
-        Helper method to fetch positions based on hierarchical filters.
+        Helper method to fetch Position IDs based on hierarchy filters.
 
-        Args:
-            session: SQLAlchemy session
-            area_id, equipment_group_id, model_id, asset_number_id, location_id: IDs for filtering
-
-        Returns:
-            List of Position objects that match the criteria
+        This replaces the older pattern that loaded full Position objects.
         """
-        # Get the request ID for logging
+
         request_id = get_request_id()
 
-        # Building the filter dynamically based on input parameters
         filters = {}
-        if area_id:
-            filters['area_id'] = area_id
-        if equipment_group_id:
-            filters['equipment_group_id'] = equipment_group_id
-        if model_id:
-            filters['model_id'] = model_id
-        if asset_number_id:
-            filters['asset_number_id'] = asset_number_id
-        if location_id:
-            filters['location_id'] = location_id
+
+        if area_id is not None:
+            filters["area_id"] = area_id
+
+        if equipment_group_id is not None:
+            filters["equipment_group_id"] = equipment_group_id
+
+        if model_id is not None:
+            filters["model_id"] = model_id
+
+        if asset_number_id is not None:
+            filters["asset_number_id"] = asset_number_id
+
+        if location_id is not None:
+            filters["location_id"] = location_id
+
+        if not filters:
+            warning_id(
+                "No hierarchy filters provided to _get_position_ids_by_hierarchy. "
+                "Returning no positions to avoid a broad Position table scan.",
+                request_id=request_id,
+            )
+            return []
 
         try:
-            # Log the filter being applied
-            info_id(f"Applying filters to query: {filters}", request_id=request_id)
+            info_id(
+                f"Applying filters to Position.id query: {filters}",
+                request_id=request_id,
+            )
 
-            # Query the Position table based on the filters
-            query = session.query(Position).filter_by(**filters)
+            rows = (
+                session.query(Position.id)
+                .filter_by(**filters)
+                .order_by(Position.id.asc())
+                .all()
+            )
 
-            # Execute and return the results
-            positions = query.all()
+            position_ids = [row[0] for row in rows if row and row[0] is not None]
 
-            # Log the number of results
-            info_id(f"Found {len(positions)} positions for the given filters", request_id=request_id)
+            info_id(
+                f"Found {len(position_ids)} position IDs for the given filters",
+                request_id=request_id,
+            )
 
-            return positions
+            return position_ids
+
         except SQLAlchemyError as e:
-            error_id(f"Error during _get_positions_by_hierarchy with filters {filters}: {e}", request_id=request_id,
-                     exc_info=True)
+            error_id(
+                f"Error during _get_position_ids_by_hierarchy with filters {filters}: {e}",
+                request_id=request_id,
+                exc_info=True,
+            )
             raise
 
 class ImagePositionAssociation(Base):
