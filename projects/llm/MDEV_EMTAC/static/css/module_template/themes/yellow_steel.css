@@ -10,6 +10,8 @@ Role:
 - Provide a complete Yellow Steel visual identity
 - Support reusable neppy-* utility classes
 - Theme the standardized .mt-* module template layouts
+- Theme content-area form controls and dropdowns
+- Support native selects, Bootstrap dropdowns, and Select2 widgets
 
 Important:
 - Does NOT style the standalone banner system
@@ -41,6 +43,7 @@ body.yellow-steel {
     --app-control-text: #E7E9EC;
     --app-control-border: rgba(231, 233, 236, 0.20);
     --app-control-hover-bg: rgba(42, 42, 42, 0.96);
+    --app-control-focus-ring: rgba(255, 214, 0, 0.18);
 
     --app-results-bg: rgba(35, 35, 35, 0.80);
     --app-results-text: #E7E9EC;
@@ -119,7 +122,11 @@ body.yellow-steel .model-display-section {
 
 html.yellow-steel .content,
 body.yellow-steel .content {
-    background: linear-gradient(180deg, rgba(35, 35, 35, 0.84) 0%, rgba(22, 22, 22, 0.92) 100%);
+    background: linear-gradient(
+        180deg,
+        rgba(35, 35, 35, 0.84) 0%,
+        rgba(22, 22, 22, 0.92) 100%
+    );
     color: var(--app-content-text);
 }
 
@@ -161,7 +168,11 @@ STANDARD CONTROLS
 ================================== */
 html.yellow-steel .toggle-button,
 body.yellow-steel .toggle-button {
-    background: linear-gradient(180deg, rgba(48, 48, 48, 0.98) 0%, rgba(28, 28, 28, 0.98) 100%) !important;
+    background: linear-gradient(
+        180deg,
+        rgba(48, 48, 48, 0.98) 0%,
+        rgba(28, 28, 28, 0.98) 100%
+    ) !important;
     color: var(--app-control-text) !important;
     border: 1px solid var(--app-control-border) !important;
     border-radius: 6px;
@@ -171,7 +182,11 @@ body.yellow-steel .toggle-button {
 
 html.yellow-steel .toggle-button:hover,
 body.yellow-steel .toggle-button:hover {
-    background: linear-gradient(180deg, rgba(64, 64, 64, 0.98) 0%, rgba(38, 38, 38, 0.98) 100%) !important;
+    background: linear-gradient(
+        180deg,
+        rgba(64, 64, 64, 0.98) 0%,
+        rgba(38, 38, 38, 0.98) 100%
+    ) !important;
     border-color: rgba(255, 214, 0, 0.40) !important;
 }
 
@@ -185,12 +200,424 @@ body.yellow-steel .sidebar select {
     border-radius: 5px;
 }
 
+html.yellow-steel #voice-selection option,
+html.yellow-steel .sidebar select option,
+body.yellow-steel #voice-selection option,
+body.yellow-steel .sidebar select option {
+    background: #FFD600;
+    color: #232323;
+}
+
 html.yellow-steel #voice-selection:focus,
 html.yellow-steel .sidebar select:focus,
 body.yellow-steel #voice-selection:focus,
 body.yellow-steel .sidebar select:focus {
     outline: 2px solid rgba(35, 35, 35, 0.40);
     outline-offset: 2px;
+}
+
+/* ==================================
+CONTENT AREA FORM CONTROLS
+Fixes white-on-white dropdowns in main panels.
+Supports:
+- Native inputs/selects/textareas
+- Bootstrap .form-control / .form-select
+- Module template .mt-panel-body controls
+- Upload/search forms
+================================== */
+html.yellow-steel .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.yellow-steel .content select,
+html.yellow-steel .content textarea,
+html.yellow-steel .content .form-control,
+html.yellow-steel .content .form-select,
+html.yellow-steel .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.yellow-steel .mt-panel-body select,
+html.yellow-steel .mt-panel-body textarea,
+html.yellow-steel .mt-panel-body .form-control,
+html.yellow-steel .mt-panel-body .form-select,
+html.yellow-steel .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.yellow-steel .upload-search-form select,
+html.yellow-steel .upload-search-form textarea,
+html.yellow-steel .upload-search-form .form-control,
+html.yellow-steel .upload-search-form .form-select,
+body.yellow-steel .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.yellow-steel .content select,
+body.yellow-steel .content textarea,
+body.yellow-steel .content .form-control,
+body.yellow-steel .content .form-select,
+body.yellow-steel .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.yellow-steel .mt-panel-body select,
+body.yellow-steel .mt-panel-body textarea,
+body.yellow-steel .mt-panel-body .form-control,
+body.yellow-steel .mt-panel-body .form-select,
+body.yellow-steel .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.yellow-steel .upload-search-form select,
+body.yellow-steel .upload-search-form textarea,
+body.yellow-steel .upload-search-form .form-control,
+body.yellow-steel .upload-search-form .form-select {
+    background-color: var(--app-control-bg) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.26);
+}
+
+html.yellow-steel .content input::placeholder,
+html.yellow-steel .content textarea::placeholder,
+html.yellow-steel .mt-panel-body input::placeholder,
+html.yellow-steel .mt-panel-body textarea::placeholder,
+html.yellow-steel .upload-search-form input::placeholder,
+html.yellow-steel .upload-search-form textarea::placeholder,
+body.yellow-steel .content input::placeholder,
+body.yellow-steel .content textarea::placeholder,
+body.yellow-steel .mt-panel-body input::placeholder,
+body.yellow-steel .mt-panel-body textarea::placeholder,
+body.yellow-steel .upload-search-form input::placeholder,
+body.yellow-steel .upload-search-form textarea::placeholder {
+    color: rgba(231, 233, 236, 0.68);
+}
+
+html.yellow-steel .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.yellow-steel .content select:hover,
+html.yellow-steel .content textarea:hover,
+html.yellow-steel .content .form-control:hover,
+html.yellow-steel .content .form-select:hover,
+html.yellow-steel .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.yellow-steel .mt-panel-body select:hover,
+html.yellow-steel .mt-panel-body textarea:hover,
+html.yellow-steel .mt-panel-body .form-control:hover,
+html.yellow-steel .mt-panel-body .form-select:hover,
+html.yellow-steel .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.yellow-steel .upload-search-form select:hover,
+html.yellow-steel .upload-search-form textarea:hover,
+html.yellow-steel .upload-search-form .form-control:hover,
+html.yellow-steel .upload-search-form .form-select:hover,
+body.yellow-steel .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.yellow-steel .content select:hover,
+body.yellow-steel .content textarea:hover,
+body.yellow-steel .content .form-control:hover,
+body.yellow-steel .content .form-select:hover,
+body.yellow-steel .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.yellow-steel .mt-panel-body select:hover,
+body.yellow-steel .mt-panel-body textarea:hover,
+body.yellow-steel .mt-panel-body .form-control:hover,
+body.yellow-steel .mt-panel-body .form-select:hover,
+body.yellow-steel .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.yellow-steel .upload-search-form select:hover,
+body.yellow-steel .upload-search-form textarea:hover,
+body.yellow-steel .upload-search-form .form-control:hover,
+body.yellow-steel .upload-search-form .form-select:hover {
+    background-color: var(--app-control-hover-bg) !important;
+    border-color: rgba(255, 214, 0, 0.40) !important;
+}
+
+html.yellow-steel .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.yellow-steel .content select:focus,
+html.yellow-steel .content textarea:focus,
+html.yellow-steel .content .form-control:focus,
+html.yellow-steel .content .form-select:focus,
+html.yellow-steel .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.yellow-steel .mt-panel-body select:focus,
+html.yellow-steel .mt-panel-body textarea:focus,
+html.yellow-steel .mt-panel-body .form-control:focus,
+html.yellow-steel .mt-panel-body .form-select:focus,
+html.yellow-steel .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.yellow-steel .upload-search-form select:focus,
+html.yellow-steel .upload-search-form textarea:focus,
+html.yellow-steel .upload-search-form .form-control:focus,
+html.yellow-steel .upload-search-form .form-select:focus,
+body.yellow-steel .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.yellow-steel .content select:focus,
+body.yellow-steel .content textarea:focus,
+body.yellow-steel .content .form-control:focus,
+body.yellow-steel .content .form-select:focus,
+body.yellow-steel .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.yellow-steel .mt-panel-body select:focus,
+body.yellow-steel .mt-panel-body textarea:focus,
+body.yellow-steel .mt-panel-body .form-control:focus,
+body.yellow-steel .mt-panel-body .form-select:focus,
+body.yellow-steel .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.yellow-steel .upload-search-form select:focus,
+body.yellow-steel .upload-search-form textarea:focus,
+body.yellow-steel .upload-search-form .form-control:focus,
+body.yellow-steel .upload-search-form .form-select:focus {
+    outline: none;
+    border-color: var(--neppy-accent) !important;
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+/* Native select dropdown list */
+html.yellow-steel .content select option,
+html.yellow-steel .mt-panel-body select option,
+html.yellow-steel .upload-search-form select option,
+body.yellow-steel .content select option,
+body.yellow-steel .mt-panel-body select option,
+body.yellow-steel .upload-search-form select option {
+    background: #1C1C1C;
+    color: #E7E9EC;
+}
+
+/* Native selected option state */
+html.yellow-steel .content select option:checked,
+html.yellow-steel .mt-panel-body select option:checked,
+html.yellow-steel .upload-search-form select option:checked,
+body.yellow-steel .content select option:checked,
+body.yellow-steel .mt-panel-body select option:checked,
+body.yellow-steel .upload-search-form select option:checked {
+    background: #FFD600;
+    color: #232323;
+}
+
+/* Disabled states */
+html.yellow-steel .content input:disabled,
+html.yellow-steel .content select:disabled,
+html.yellow-steel .content textarea:disabled,
+html.yellow-steel .content .form-control:disabled,
+html.yellow-steel .content .form-select:disabled,
+html.yellow-steel .mt-panel-body input:disabled,
+html.yellow-steel .mt-panel-body select:disabled,
+html.yellow-steel .mt-panel-body textarea:disabled,
+html.yellow-steel .mt-panel-body .form-control:disabled,
+html.yellow-steel .mt-panel-body .form-select:disabled,
+html.yellow-steel .upload-search-form input:disabled,
+html.yellow-steel .upload-search-form select:disabled,
+html.yellow-steel .upload-search-form textarea:disabled,
+html.yellow-steel .upload-search-form .form-control:disabled,
+html.yellow-steel .upload-search-form .form-select:disabled,
+body.yellow-steel .content input:disabled,
+body.yellow-steel .content select:disabled,
+body.yellow-steel .content textarea:disabled,
+body.yellow-steel .content .form-control:disabled,
+body.yellow-steel .content .form-select:disabled,
+body.yellow-steel .mt-panel-body input:disabled,
+body.yellow-steel .mt-panel-body select:disabled,
+body.yellow-steel .mt-panel-body textarea:disabled,
+body.yellow-steel .mt-panel-body .form-control:disabled,
+body.yellow-steel .mt-panel-body .form-select:disabled,
+body.yellow-steel .upload-search-form input:disabled,
+body.yellow-steel .upload-search-form select:disabled,
+body.yellow-steel .upload-search-form textarea:disabled,
+body.yellow-steel .upload-search-form .form-control:disabled,
+body.yellow-steel .upload-search-form .form-select:disabled {
+    background: rgba(60, 60, 60, 0.72) !important;
+    color: rgba(231, 233, 236, 0.58) !important;
+    cursor: not-allowed;
+}
+
+/* ==================================
+CONTENT AREA BUTTONS
+================================== */
+html.yellow-steel .content button:not(.mt-toggle-btn):not(.toggle-button),
+html.yellow-steel .content input[type="submit"],
+html.yellow-steel .content input[type="button"],
+html.yellow-steel .content input[type="reset"],
+html.yellow-steel .content .btn,
+body.yellow-steel .content button:not(.mt-toggle-btn):not(.toggle-button),
+body.yellow-steel .content input[type="submit"],
+body.yellow-steel .content input[type="button"],
+body.yellow-steel .content input[type="reset"],
+body.yellow-steel .content .btn {
+    background: linear-gradient(
+        180deg,
+        rgba(48, 48, 48, 0.98) 0%,
+        rgba(28, 28, 28, 0.98) 100%
+    );
+    color: #E7E9EC;
+    border: 1px solid var(--app-control-border);
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.26);
+}
+
+html.yellow-steel .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+html.yellow-steel .content input[type="submit"]:hover,
+html.yellow-steel .content input[type="button"]:hover,
+html.yellow-steel .content input[type="reset"]:hover,
+html.yellow-steel .content .btn:hover,
+body.yellow-steel .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+body.yellow-steel .content input[type="submit"]:hover,
+body.yellow-steel .content input[type="button"]:hover,
+body.yellow-steel .content input[type="reset"]:hover,
+body.yellow-steel .content .btn:hover {
+    border-color: rgba(255, 214, 0, 0.40);
+    background: linear-gradient(
+        180deg,
+        rgba(64, 64, 64, 0.98) 0%,
+        rgba(38, 38, 38, 0.98) 100%
+    );
+    color: #E7E9EC;
+}
+
+/* ==================================
+BOOTSTRAP DROPDOWN MENU SUPPORT
+Needed when dropdowns are button menus instead
+of native <select> elements.
+================================== */
+html.yellow-steel .content .dropdown-menu,
+html.yellow-steel .mt-panel-body .dropdown-menu,
+html.yellow-steel .upload-search-form .dropdown-menu,
+body.yellow-steel .content .dropdown-menu,
+body.yellow-steel .mt-panel-body .dropdown-menu,
+body.yellow-steel .upload-search-form .dropdown-menu {
+    background: #1C1C1C;
+    color: #E7E9EC;
+    border: 1px solid var(--app-control-border);
+    border-radius: 8px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.44);
+}
+
+html.yellow-steel .content .dropdown-item,
+html.yellow-steel .mt-panel-body .dropdown-item,
+html.yellow-steel .upload-search-form .dropdown-item,
+body.yellow-steel .content .dropdown-item,
+body.yellow-steel .mt-panel-body .dropdown-item,
+body.yellow-steel .upload-search-form .dropdown-item {
+    color: #E7E9EC;
+}
+
+html.yellow-steel .content .dropdown-item:hover,
+html.yellow-steel .content .dropdown-item:focus,
+html.yellow-steel .mt-panel-body .dropdown-item:hover,
+html.yellow-steel .mt-panel-body .dropdown-item:focus,
+html.yellow-steel .upload-search-form .dropdown-item:hover,
+html.yellow-steel .upload-search-form .dropdown-item:focus,
+body.yellow-steel .content .dropdown-item:hover,
+body.yellow-steel .content .dropdown-item:focus,
+body.yellow-steel .mt-panel-body .dropdown-item:hover,
+body.yellow-steel .mt-panel-body .dropdown-item:focus,
+body.yellow-steel .upload-search-form .dropdown-item:hover,
+body.yellow-steel .upload-search-form .dropdown-item:focus {
+    background: #FFD600;
+    color: #232323;
+}
+
+html.yellow-steel .content .dropdown-item.active,
+html.yellow-steel .content .dropdown-item:active,
+html.yellow-steel .mt-panel-body .dropdown-item.active,
+html.yellow-steel .mt-panel-body .dropdown-item:active,
+html.yellow-steel .upload-search-form .dropdown-item.active,
+html.yellow-steel .upload-search-form .dropdown-item:active,
+body.yellow-steel .content .dropdown-item.active,
+body.yellow-steel .content .dropdown-item:active,
+body.yellow-steel .mt-panel-body .dropdown-item.active,
+body.yellow-steel .mt-panel-body .dropdown-item:active,
+body.yellow-steel .upload-search-form .dropdown-item.active,
+body.yellow-steel .upload-search-form .dropdown-item:active {
+    background: rgba(255, 214, 0, 0.20);
+    color: #E7E9EC;
+}
+
+/* ==================================
+SELECT2 SUPPORT
+Needed when dropdowns are enhanced by Select2.
+Select2 dropdowns may be appended near <body>,
+so these selectors are scoped to the theme root,
+not only to .content.
+================================== */
+html.yellow-steel .select2-container,
+body.yellow-steel .select2-container {
+    color: #E7E9EC;
+}
+
+html.yellow-steel .select2-container .select2-selection--single,
+html.yellow-steel .select2-container .select2-selection--multiple,
+body.yellow-steel .select2-container .select2-selection--single,
+body.yellow-steel .select2-container .select2-selection--multiple {
+    background: var(--app-control-bg) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    min-height: 38px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.26);
+}
+
+html.yellow-steel .select2-container .select2-selection--single:hover,
+html.yellow-steel .select2-container .select2-selection--multiple:hover,
+body.yellow-steel .select2-container .select2-selection--single:hover,
+body.yellow-steel .select2-container .select2-selection--multiple:hover {
+    background: var(--app-control-hover-bg) !important;
+    border-color: rgba(255, 214, 0, 0.40) !important;
+}
+
+html.yellow-steel .select2-container--default.select2-container--focus .select2-selection--multiple,
+html.yellow-steel .select2-container--default.select2-container--open .select2-selection--single,
+html.yellow-steel .select2-container--default.select2-container--open .select2-selection--multiple,
+body.yellow-steel .select2-container--default.select2-container--focus .select2-selection--multiple,
+body.yellow-steel .select2-container--default.select2-container--open .select2-selection--single,
+body.yellow-steel .select2-container--default.select2-container--open .select2-selection--multiple {
+    border-color: var(--neppy-accent) !important;
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+html.yellow-steel .select2-container--default .select2-selection--single .select2-selection__rendered,
+html.yellow-steel .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.yellow-steel .select2-container--default .select2-selection--single .select2-selection__rendered,
+body.yellow-steel .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    color: #E7E9EC !important;
+    line-height: 36px;
+}
+
+html.yellow-steel .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.yellow-steel .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    line-height: normal;
+    padding-top: 4px;
+}
+
+html.yellow-steel .select2-container--default .select2-selection--single .select2-selection__placeholder,
+html.yellow-steel .select2-container--default .select2-selection--multiple .select2-selection__placeholder,
+body.yellow-steel .select2-container--default .select2-selection--single .select2-selection__placeholder,
+body.yellow-steel .select2-container--default .select2-selection--multiple .select2-selection__placeholder {
+    color: rgba(231, 233, 236, 0.68) !important;
+}
+
+html.yellow-steel .select2-container--default .select2-selection--single .select2-selection__arrow b,
+body.yellow-steel .select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: #E7E9EC transparent transparent transparent;
+}
+
+html.yellow-steel .select2-dropdown,
+body.yellow-steel .select2-dropdown {
+    background: #1C1C1C !important;
+    color: #E7E9EC !important;
+    border: 1px solid var(--app-control-border) !important;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.44);
+}
+
+html.yellow-steel .select2-container--default .select2-search--dropdown .select2-search__field,
+body.yellow-steel .select2-container--default .select2-search--dropdown .select2-search__field {
+    background: rgba(28, 28, 28, 0.98) !important;
+    color: #E7E9EC !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 4px;
+}
+
+html.yellow-steel .select2-results__option,
+body.yellow-steel .select2-results__option {
+    background: #1C1C1C;
+    color: #E7E9EC;
+}
+
+html.yellow-steel .select2-container--default .select2-results__option--highlighted[aria-selected],
+body.yellow-steel .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background: #FFD600 !important;
+    color: #232323 !important;
+}
+
+html.yellow-steel .select2-container--default .select2-results__option[aria-selected="true"],
+body.yellow-steel .select2-container--default .select2-results__option[aria-selected="true"] {
+    background: rgba(255, 214, 0, 0.20) !important;
+    color: #E7E9EC !important;
+}
+
+html.yellow-steel .select2-container--default .select2-selection--multiple .select2-selection__choice,
+body.yellow-steel .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background: rgba(255, 214, 0, 0.16) !important;
+    color: #E7E9EC !important;
+    border: 1px solid rgba(255, 214, 0, 0.30) !important;
+}
+
+html.yellow-steel .select2-container--default .select2-selection--multiple .select2-selection__choice__remove,
+body.yellow-steel .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #FFE033 !important;
 }
 
 /* ==================================
@@ -254,6 +681,12 @@ html.yellow-steel .neppy-btn:focus-visible,
 html.yellow-steel .neppy-input:focus-visible,
 html.yellow-steel .neppy-select:focus-visible,
 html.yellow-steel .neppy-textarea:focus-visible,
+html.yellow-steel .content button:focus-visible,
+html.yellow-steel .content input:focus-visible,
+html.yellow-steel .content select:focus-visible,
+html.yellow-steel .content textarea:focus-visible,
+html.yellow-steel .content .form-control:focus-visible,
+html.yellow-steel .content .form-select:focus-visible,
 body.yellow-steel .toggle-button:focus-visible,
 body.yellow-steel .sidebar button:focus-visible,
 body.yellow-steel .sidebar a:focus-visible,
@@ -262,7 +695,13 @@ body.yellow-steel .mt-toggle-btn:focus-visible,
 body.yellow-steel .neppy-btn:focus-visible,
 body.yellow-steel .neppy-input:focus-visible,
 body.yellow-steel .neppy-select:focus-visible,
-body.yellow-steel .neppy-textarea:focus-visible {
+body.yellow-steel .neppy-textarea:focus-visible,
+body.yellow-steel .content button:focus-visible,
+body.yellow-steel .content input:focus-visible,
+body.yellow-steel .content select:focus-visible,
+body.yellow-steel .content textarea:focus-visible,
+body.yellow-steel .content .form-control:focus-visible,
+body.yellow-steel .content .form-select:focus-visible {
     outline: 2px solid rgba(255, 214, 0, 0.60);
     outline-offset: 2px;
 }
@@ -296,7 +735,11 @@ body.yellow-steel .neppy-text-muted {
 
 html.yellow-steel .neppy-btn,
 body.yellow-steel .neppy-btn {
-    background: linear-gradient(180deg, rgba(48, 48, 48, 0.98) 0%, rgba(28, 28, 28, 0.98) 100%);
+    background: linear-gradient(
+        180deg,
+        rgba(48, 48, 48, 0.98) 0%,
+        rgba(28, 28, 28, 0.98) 100%
+    );
     color: var(--neppy-text);
     border-color: var(--neppy-line);
 }
@@ -304,7 +747,11 @@ body.yellow-steel .neppy-btn {
 html.yellow-steel .neppy-btn:hover,
 body.yellow-steel .neppy-btn:hover {
     border-color: var(--neppy-accent);
-    background: linear-gradient(180deg, rgba(64, 64, 64, 0.98) 0%, rgba(38, 38, 38, 0.98) 100%);
+    background: linear-gradient(
+        180deg,
+        rgba(64, 64, 64, 0.98) 0%,
+        rgba(38, 38, 38, 0.98) 100%
+    );
 }
 
 html.yellow-steel .neppy-input,
@@ -385,7 +832,11 @@ body.yellow-steel .mt-panel-title {
 
 html.yellow-steel .mt-toggle-btn,
 body.yellow-steel .mt-toggle-btn {
-    background: linear-gradient(180deg, rgba(48, 48, 48, 0.98) 0%, rgba(28, 28, 28, 0.98) 100%);
+    background: linear-gradient(
+        180deg,
+        rgba(48, 48, 48, 0.98) 0%,
+        rgba(28, 28, 28, 0.98) 100%
+    );
     border: 1px solid var(--neppy-line);
     color: var(--neppy-text);
     border-radius: 8px;
@@ -395,7 +846,11 @@ body.yellow-steel .mt-toggle-btn {
 html.yellow-steel .mt-toggle-btn:hover,
 body.yellow-steel .mt-toggle-btn:hover {
     border-color: var(--neppy-accent);
-    background: linear-gradient(180deg, rgba(64, 64, 64, 0.98) 0%, rgba(38, 38, 38, 0.98) 100%);
+    background: linear-gradient(
+        180deg,
+        rgba(64, 64, 64, 0.98) 0%,
+        rgba(38, 38, 38, 0.98) 100%
+    );
     color: var(--neppy-text);
 }
 

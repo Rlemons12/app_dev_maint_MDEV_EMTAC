@@ -10,6 +10,8 @@ Role:
 - Provide a complete Professional Blue Grey visual identity
 - Support reusable neppy-* utility classes
 - Theme the standardized .mt-* module template layouts
+- Theme content-area form controls and dropdowns
+- Support native selects, Bootstrap dropdowns, and Select2 widgets
 
 Important:
 - Does NOT style the standalone banner system
@@ -41,6 +43,7 @@ body.professional-blue-grey {
     --app-control-text: #e3f2fd;
     --app-control-border: #78909c;
     --app-control-hover-bg: #78909c;
+    --app-control-focus-ring: rgba(129, 199, 132, 0.18);
 
     --app-results-bg: rgba(84, 110, 122, 0.30);
     --app-results-text: #e3f2fd;
@@ -189,6 +192,402 @@ body.professional-blue-grey .sidebar select:focus {
 }
 
 /* ==================================
+CONTENT AREA FORM CONTROLS
+Fixes white-on-white dropdowns in main panels.
+Supports:
+- Native inputs/selects/textareas
+- Bootstrap .form-control / .form-select
+- Module template .mt-panel-body controls
+- Upload/search forms
+================================== */
+html.professional-blue-grey .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.professional-blue-grey .content select,
+html.professional-blue-grey .content textarea,
+html.professional-blue-grey .content .form-control,
+html.professional-blue-grey .content .form-select,
+html.professional-blue-grey .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.professional-blue-grey .mt-panel-body select,
+html.professional-blue-grey .mt-panel-body textarea,
+html.professional-blue-grey .mt-panel-body .form-control,
+html.professional-blue-grey .mt-panel-body .form-select,
+html.professional-blue-grey .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.professional-blue-grey .upload-search-form select,
+html.professional-blue-grey .upload-search-form textarea,
+html.professional-blue-grey .upload-search-form .form-control,
+html.professional-blue-grey .upload-search-form .form-select,
+body.professional-blue-grey .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.professional-blue-grey .content select,
+body.professional-blue-grey .content textarea,
+body.professional-blue-grey .content .form-control,
+body.professional-blue-grey .content .form-select,
+body.professional-blue-grey .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.professional-blue-grey .mt-panel-body select,
+body.professional-blue-grey .mt-panel-body textarea,
+body.professional-blue-grey .mt-panel-body .form-control,
+body.professional-blue-grey .mt-panel-body .form-select,
+body.professional-blue-grey .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.professional-blue-grey .upload-search-form select,
+body.professional-blue-grey .upload-search-form textarea,
+body.professional-blue-grey .upload-search-form .form-control,
+body.professional-blue-grey .upload-search-form .form-select {
+    background-color: var(--app-control-bg) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.20);
+}
+
+html.professional-blue-grey .content input::placeholder,
+html.professional-blue-grey .content textarea::placeholder,
+html.professional-blue-grey .mt-panel-body input::placeholder,
+html.professional-blue-grey .mt-panel-body textarea::placeholder,
+html.professional-blue-grey .upload-search-form input::placeholder,
+html.professional-blue-grey .upload-search-form textarea::placeholder,
+body.professional-blue-grey .content input::placeholder,
+body.professional-blue-grey .content textarea::placeholder,
+body.professional-blue-grey .mt-panel-body input::placeholder,
+body.professional-blue-grey .mt-panel-body textarea::placeholder,
+body.professional-blue-grey .upload-search-form input::placeholder,
+body.professional-blue-grey .upload-search-form textarea::placeholder {
+    color: rgba(227, 242, 253, 0.68);
+}
+
+html.professional-blue-grey .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.professional-blue-grey .content select:hover,
+html.professional-blue-grey .content textarea:hover,
+html.professional-blue-grey .content .form-control:hover,
+html.professional-blue-grey .content .form-select:hover,
+html.professional-blue-grey .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.professional-blue-grey .mt-panel-body select:hover,
+html.professional-blue-grey .mt-panel-body textarea:hover,
+html.professional-blue-grey .mt-panel-body .form-control:hover,
+html.professional-blue-grey .mt-panel-body .form-select:hover,
+html.professional-blue-grey .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.professional-blue-grey .upload-search-form select:hover,
+html.professional-blue-grey .upload-search-form textarea:hover,
+html.professional-blue-grey .upload-search-form .form-control:hover,
+html.professional-blue-grey .upload-search-form .form-select:hover,
+body.professional-blue-grey .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.professional-blue-grey .content select:hover,
+body.professional-blue-grey .content textarea:hover,
+body.professional-blue-grey .content .form-control:hover,
+body.professional-blue-grey .content .form-select:hover,
+body.professional-blue-grey .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.professional-blue-grey .mt-panel-body select:hover,
+body.professional-blue-grey .mt-panel-body textarea:hover,
+body.professional-blue-grey .mt-panel-body .form-control:hover,
+body.professional-blue-grey .mt-panel-body .form-select:hover,
+body.professional-blue-grey .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.professional-blue-grey .upload-search-form select:hover,
+body.professional-blue-grey .upload-search-form textarea:hover,
+body.professional-blue-grey .upload-search-form .form-control:hover,
+body.professional-blue-grey .upload-search-form .form-select:hover {
+    background-color: var(--app-control-hover-bg) !important;
+    border-color: rgba(129, 199, 132, 0.42) !important;
+}
+
+html.professional-blue-grey .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.professional-blue-grey .content select:focus,
+html.professional-blue-grey .content textarea:focus,
+html.professional-blue-grey .content .form-control:focus,
+html.professional-blue-grey .content .form-select:focus,
+html.professional-blue-grey .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.professional-blue-grey .mt-panel-body select:focus,
+html.professional-blue-grey .mt-panel-body textarea:focus,
+html.professional-blue-grey .mt-panel-body .form-control:focus,
+html.professional-blue-grey .mt-panel-body .form-select:focus,
+html.professional-blue-grey .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.professional-blue-grey .upload-search-form select:focus,
+html.professional-blue-grey .upload-search-form textarea:focus,
+html.professional-blue-grey .upload-search-form .form-control:focus,
+html.professional-blue-grey .upload-search-form .form-select:focus,
+body.professional-blue-grey .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.professional-blue-grey .content select:focus,
+body.professional-blue-grey .content textarea:focus,
+body.professional-blue-grey .content .form-control:focus,
+body.professional-blue-grey .content .form-select:focus,
+body.professional-blue-grey .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.professional-blue-grey .mt-panel-body select:focus,
+body.professional-blue-grey .mt-panel-body textarea:focus,
+body.professional-blue-grey .mt-panel-body .form-control:focus,
+body.professional-blue-grey .mt-panel-body .form-select:focus,
+body.professional-blue-grey .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.professional-blue-grey .upload-search-form select:focus,
+body.professional-blue-grey .upload-search-form textarea:focus,
+body.professional-blue-grey .upload-search-form .form-control:focus,
+body.professional-blue-grey .upload-search-form .form-select:focus {
+    outline: none;
+    border-color: var(--neppy-accent) !important;
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+/* Native select dropdown list */
+html.professional-blue-grey .content select option,
+html.professional-blue-grey .mt-panel-body select option,
+html.professional-blue-grey .upload-search-form select option,
+body.professional-blue-grey .content select option,
+body.professional-blue-grey .mt-panel-body select option,
+body.professional-blue-grey .upload-search-form select option {
+    background: #455a64;
+    color: #e3f2fd;
+}
+
+/* Native selected option state */
+html.professional-blue-grey .content select option:checked,
+html.professional-blue-grey .mt-panel-body select option:checked,
+html.professional-blue-grey .upload-search-form select option:checked,
+body.professional-blue-grey .content select option:checked,
+body.professional-blue-grey .mt-panel-body select option:checked,
+body.professional-blue-grey .upload-search-form select option:checked {
+    background: #81c784;
+    color: #263238;
+}
+
+/* Disabled states */
+html.professional-blue-grey .content input:disabled,
+html.professional-blue-grey .content select:disabled,
+html.professional-blue-grey .content textarea:disabled,
+html.professional-blue-grey .content .form-control:disabled,
+html.professional-blue-grey .content .form-select:disabled,
+html.professional-blue-grey .mt-panel-body input:disabled,
+html.professional-blue-grey .mt-panel-body select:disabled,
+html.professional-blue-grey .mt-panel-body textarea:disabled,
+html.professional-blue-grey .mt-panel-body .form-control:disabled,
+html.professional-blue-grey .mt-panel-body .form-select:disabled,
+html.professional-blue-grey .upload-search-form input:disabled,
+html.professional-blue-grey .upload-search-form select:disabled,
+html.professional-blue-grey .upload-search-form textarea:disabled,
+html.professional-blue-grey .upload-search-form .form-control:disabled,
+html.professional-blue-grey .upload-search-form .form-select:disabled,
+body.professional-blue-grey .content input:disabled,
+body.professional-blue-grey .content select:disabled,
+body.professional-blue-grey .content textarea:disabled,
+body.professional-blue-grey .content .form-control:disabled,
+body.professional-blue-grey .content .form-select:disabled,
+body.professional-blue-grey .mt-panel-body input:disabled,
+body.professional-blue-grey .mt-panel-body select:disabled,
+body.professional-blue-grey .mt-panel-body textarea:disabled,
+body.professional-blue-grey .mt-panel-body .form-control:disabled,
+body.professional-blue-grey .mt-panel-body .form-select:disabled,
+body.professional-blue-grey .upload-search-form input:disabled,
+body.professional-blue-grey .upload-search-form select:disabled,
+body.professional-blue-grey .upload-search-form textarea:disabled,
+body.professional-blue-grey .upload-search-form .form-control:disabled,
+body.professional-blue-grey .upload-search-form .form-select:disabled {
+    background: rgba(84, 110, 122, 0.62) !important;
+    color: rgba(227, 242, 253, 0.58) !important;
+    cursor: not-allowed;
+}
+
+/* ==================================
+CONTENT AREA BUTTONS
+================================== */
+html.professional-blue-grey .content button:not(.mt-toggle-btn):not(.toggle-button),
+html.professional-blue-grey .content input[type="submit"],
+html.professional-blue-grey .content input[type="button"],
+html.professional-blue-grey .content input[type="reset"],
+html.professional-blue-grey .content .btn,
+body.professional-blue-grey .content button:not(.mt-toggle-btn):not(.toggle-button),
+body.professional-blue-grey .content input[type="submit"],
+body.professional-blue-grey .content input[type="button"],
+body.professional-blue-grey .content input[type="reset"],
+body.professional-blue-grey .content .btn {
+    background: linear-gradient(180deg, #546e7a 0%, #455a64 100%);
+    color: #e3f2fd;
+    border: 1px solid var(--app-control-border);
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+
+html.professional-blue-grey .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+html.professional-blue-grey .content input[type="submit"]:hover,
+html.professional-blue-grey .content input[type="button"]:hover,
+html.professional-blue-grey .content input[type="reset"]:hover,
+html.professional-blue-grey .content .btn:hover,
+body.professional-blue-grey .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+body.professional-blue-grey .content input[type="submit"]:hover,
+body.professional-blue-grey .content input[type="button"]:hover,
+body.professional-blue-grey .content input[type="reset"]:hover,
+body.professional-blue-grey .content .btn:hover {
+    border-color: rgba(129, 199, 132, 0.42);
+    background: linear-gradient(180deg, #78909c 0%, #607d8b 100%);
+    color: #e3f2fd;
+}
+
+/* ==================================
+BOOTSTRAP DROPDOWN MENU SUPPORT
+Needed when dropdowns are button menus instead
+of native <select> elements.
+================================== */
+html.professional-blue-grey .content .dropdown-menu,
+html.professional-blue-grey .mt-panel-body .dropdown-menu,
+html.professional-blue-grey .upload-search-form .dropdown-menu,
+body.professional-blue-grey .content .dropdown-menu,
+body.professional-blue-grey .mt-panel-body .dropdown-menu,
+body.professional-blue-grey .upload-search-form .dropdown-menu {
+    background: #455a64;
+    color: #e3f2fd;
+    border: 1px solid var(--app-control-border);
+    border-radius: 8px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.32);
+}
+
+html.professional-blue-grey .content .dropdown-item,
+html.professional-blue-grey .mt-panel-body .dropdown-item,
+html.professional-blue-grey .upload-search-form .dropdown-item,
+body.professional-blue-grey .content .dropdown-item,
+body.professional-blue-grey .mt-panel-body .dropdown-item,
+body.professional-blue-grey .upload-search-form .dropdown-item {
+    color: #e3f2fd;
+}
+
+html.professional-blue-grey .content .dropdown-item:hover,
+html.professional-blue-grey .content .dropdown-item:focus,
+html.professional-blue-grey .mt-panel-body .dropdown-item:hover,
+html.professional-blue-grey .mt-panel-body .dropdown-item:focus,
+html.professional-blue-grey .upload-search-form .dropdown-item:hover,
+html.professional-blue-grey .upload-search-form .dropdown-item:focus,
+body.professional-blue-grey .content .dropdown-item:hover,
+body.professional-blue-grey .content .dropdown-item:focus,
+body.professional-blue-grey .mt-panel-body .dropdown-item:hover,
+body.professional-blue-grey .mt-panel-body .dropdown-item:focus,
+body.professional-blue-grey .upload-search-form .dropdown-item:hover,
+body.professional-blue-grey .upload-search-form .dropdown-item:focus {
+    background: #81c784;
+    color: #263238;
+}
+
+html.professional-blue-grey .content .dropdown-item.active,
+html.professional-blue-grey .content .dropdown-item:active,
+html.professional-blue-grey .mt-panel-body .dropdown-item.active,
+html.professional-blue-grey .mt-panel-body .dropdown-item:active,
+html.professional-blue-grey .upload-search-form .dropdown-item.active,
+html.professional-blue-grey .upload-search-form .dropdown-item:active,
+body.professional-blue-grey .content .dropdown-item.active,
+body.professional-blue-grey .content .dropdown-item:active,
+body.professional-blue-grey .mt-panel-body .dropdown-item.active,
+body.professional-blue-grey .mt-panel-body .dropdown-item:active,
+body.professional-blue-grey .upload-search-form .dropdown-item.active,
+body.professional-blue-grey .upload-search-form .dropdown-item:active {
+    background: rgba(129, 199, 132, 0.22);
+    color: #e3f2fd;
+}
+
+/* ==================================
+SELECT2 SUPPORT
+Needed when dropdowns are enhanced by Select2.
+Select2 dropdowns may be appended near <body>,
+so these selectors are scoped to the theme root,
+not only to .content.
+================================== */
+html.professional-blue-grey .select2-container,
+body.professional-blue-grey .select2-container {
+    color: #e3f2fd;
+}
+
+html.professional-blue-grey .select2-container .select2-selection--single,
+html.professional-blue-grey .select2-container .select2-selection--multiple,
+body.professional-blue-grey .select2-container .select2-selection--single,
+body.professional-blue-grey .select2-container .select2-selection--multiple {
+    background: var(--app-control-bg) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    min-height: 38px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.20);
+}
+
+html.professional-blue-grey .select2-container .select2-selection--single:hover,
+html.professional-blue-grey .select2-container .select2-selection--multiple:hover,
+body.professional-blue-grey .select2-container .select2-selection--single:hover,
+body.professional-blue-grey .select2-container .select2-selection--multiple:hover {
+    background: var(--app-control-hover-bg) !important;
+    border-color: rgba(129, 199, 132, 0.42) !important;
+}
+
+html.professional-blue-grey .select2-container--default.select2-container--focus .select2-selection--multiple,
+html.professional-blue-grey .select2-container--default.select2-container--open .select2-selection--single,
+html.professional-blue-grey .select2-container--default.select2-container--open .select2-selection--multiple,
+body.professional-blue-grey .select2-container--default.select2-container--focus .select2-selection--multiple,
+body.professional-blue-grey .select2-container--default.select2-container--open .select2-selection--single,
+body.professional-blue-grey .select2-container--default.select2-container--open .select2-selection--multiple {
+    border-color: var(--neppy-accent) !important;
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+html.professional-blue-grey .select2-container--default .select2-selection--single .select2-selection__rendered,
+html.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.professional-blue-grey .select2-container--default .select2-selection--single .select2-selection__rendered,
+body.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    color: #e3f2fd !important;
+    line-height: 36px;
+}
+
+html.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    line-height: normal;
+    padding-top: 4px;
+}
+
+html.professional-blue-grey .select2-container--default .select2-selection--single .select2-selection__placeholder,
+html.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__placeholder,
+body.professional-blue-grey .select2-container--default .select2-selection--single .select2-selection__placeholder,
+body.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__placeholder {
+    color: rgba(227, 242, 253, 0.68) !important;
+}
+
+html.professional-blue-grey .select2-container--default .select2-selection--single .select2-selection__arrow b,
+body.professional-blue-grey .select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: #e3f2fd transparent transparent transparent;
+}
+
+html.professional-blue-grey .select2-dropdown,
+body.professional-blue-grey .select2-dropdown {
+    background: #455a64 !important;
+    color: #e3f2fd !important;
+    border: 1px solid var(--app-control-border) !important;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.32);
+}
+
+html.professional-blue-grey .select2-container--default .select2-search--dropdown .select2-search__field,
+body.professional-blue-grey .select2-container--default .select2-search--dropdown .select2-search__field {
+    background: #37474f !important;
+    color: #e3f2fd !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 4px;
+}
+
+html.professional-blue-grey .select2-results__option,
+body.professional-blue-grey .select2-results__option {
+    background: #455a64;
+    color: #e3f2fd;
+}
+
+html.professional-blue-grey .select2-container--default .select2-results__option--highlighted[aria-selected],
+body.professional-blue-grey .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background: #81c784 !important;
+    color: #263238 !important;
+}
+
+html.professional-blue-grey .select2-container--default .select2-results__option[aria-selected="true"],
+body.professional-blue-grey .select2-container--default .select2-results__option[aria-selected="true"] {
+    background: rgba(129, 199, 132, 0.22) !important;
+    color: #e3f2fd !important;
+}
+
+html.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__choice,
+body.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background: rgba(129, 199, 132, 0.16) !important;
+    color: #e3f2fd !important;
+    border: 1px solid rgba(129, 199, 132, 0.28) !important;
+}
+
+html.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__choice__remove,
+body.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #9ad6a0 !important;
+}
+
+/* ==================================
 RESULTS / PANELS / THUMBNAILS
 ================================== */
 html.professional-blue-grey .results-container,
@@ -249,6 +648,12 @@ html.professional-blue-grey .neppy-btn:focus-visible,
 html.professional-blue-grey .neppy-input:focus-visible,
 html.professional-blue-grey .neppy-select:focus-visible,
 html.professional-blue-grey .neppy-textarea:focus-visible,
+html.professional-blue-grey .content button:focus-visible,
+html.professional-blue-grey .content input:focus-visible,
+html.professional-blue-grey .content select:focus-visible,
+html.professional-blue-grey .content textarea:focus-visible,
+html.professional-blue-grey .content .form-control:focus-visible,
+html.professional-blue-grey .content .form-select:focus-visible,
 body.professional-blue-grey .toggle-button:focus-visible,
 body.professional-blue-grey .sidebar button:focus-visible,
 body.professional-blue-grey .sidebar a:focus-visible,
@@ -257,7 +662,13 @@ body.professional-blue-grey .mt-toggle-btn:focus-visible,
 body.professional-blue-grey .neppy-btn:focus-visible,
 body.professional-blue-grey .neppy-input:focus-visible,
 body.professional-blue-grey .neppy-select:focus-visible,
-body.professional-blue-grey .neppy-textarea:focus-visible {
+body.professional-blue-grey .neppy-textarea:focus-visible,
+body.professional-blue-grey .content button:focus-visible,
+body.professional-blue-grey .content input:focus-visible,
+body.professional-blue-grey .content select:focus-visible,
+body.professional-blue-grey .content textarea:focus-visible,
+body.professional-blue-grey .content .form-control:focus-visible,
+body.professional-blue-grey .content .form-select:focus-visible {
     outline: 2px solid rgba(129, 199, 132, 0.55);
     outline-offset: 2px;
 }
