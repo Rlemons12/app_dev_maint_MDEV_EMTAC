@@ -10,6 +10,8 @@ Role:
 - Provide a complete Amber Forge visual identity
 - Support reusable neppy-* utility classes
 - Theme the standardized .mt-* module template layouts
+- Theme content-area form controls and dropdowns
+- Support native selects, Bootstrap dropdowns, and Select2 widgets
 
 Important:
 - Does NOT style the standalone banner system
@@ -41,6 +43,7 @@ body.amber-forge {
     --app-control-text: #FFF3DC;
     --app-control-border: rgba(212, 168, 106, 0.22);
     --app-control-hover-bg: rgba(40, 22, 0, 0.96);
+    --app-control-focus-ring: rgba(255, 174, 66, 0.18);
 
     --app-results-bg: rgba(28, 16, 0, 0.78);
     --app-results-text: #FFF3DC;
@@ -119,7 +122,11 @@ body.amber-forge .model-display-section {
 
 html.amber-forge .content,
 body.amber-forge .content {
-    background: linear-gradient(180deg, rgba(28, 16, 0, 0.84) 0%, rgba(16, 8, 0, 0.92) 100%);
+    background: linear-gradient(
+        180deg,
+        rgba(28, 16, 0, 0.84) 0%,
+        rgba(16, 8, 0, 0.92) 100%
+    );
     color: var(--app-content-text);
 }
 
@@ -161,7 +168,11 @@ STANDARD CONTROLS
 ================================== */
 html.amber-forge .toggle-button,
 body.amber-forge .toggle-button {
-    background: linear-gradient(180deg, rgba(48, 26, 0, 0.98) 0%, rgba(22, 12, 0, 0.98) 100%) !important;
+    background: linear-gradient(
+        180deg,
+        rgba(48, 26, 0, 0.98) 0%,
+        rgba(22, 12, 0, 0.98) 100%
+    ) !important;
     color: var(--app-control-text) !important;
     border: 1px solid var(--app-control-border) !important;
     border-radius: 6px;
@@ -171,7 +182,11 @@ body.amber-forge .toggle-button {
 
 html.amber-forge .toggle-button:hover,
 body.amber-forge .toggle-button:hover {
-    background: linear-gradient(180deg, rgba(68, 36, 0, 0.98) 0%, rgba(30, 16, 0, 0.98) 100%) !important;
+    background: linear-gradient(
+        180deg,
+        rgba(68, 36, 0, 0.98) 0%,
+        rgba(30, 16, 0, 0.98) 100%
+    ) !important;
     border-color: rgba(255, 174, 66, 0.35) !important;
 }
 
@@ -191,6 +206,410 @@ body.amber-forge #voice-selection:focus,
 body.amber-forge .sidebar select:focus {
     outline: 2px solid rgba(255, 174, 66, 0.35);
     outline-offset: 2px;
+}
+
+/* ==================================
+CONTENT AREA FORM CONTROLS
+Fixes white-on-white dropdowns in main panels.
+Supports:
+- Native inputs/selects/textareas
+- Bootstrap .form-control / .form-select
+- Module template .mt-panel-body controls
+- Upload/search forms
+================================== */
+html.amber-forge .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.amber-forge .content select,
+html.amber-forge .content textarea,
+html.amber-forge .content .form-control,
+html.amber-forge .content .form-select,
+html.amber-forge .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.amber-forge .mt-panel-body select,
+html.amber-forge .mt-panel-body textarea,
+html.amber-forge .mt-panel-body .form-control,
+html.amber-forge .mt-panel-body .form-select,
+html.amber-forge .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.amber-forge .upload-search-form select,
+html.amber-forge .upload-search-form textarea,
+html.amber-forge .upload-search-form .form-control,
+html.amber-forge .upload-search-form .form-select,
+body.amber-forge .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.amber-forge .content select,
+body.amber-forge .content textarea,
+body.amber-forge .content .form-control,
+body.amber-forge .content .form-select,
+body.amber-forge .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.amber-forge .mt-panel-body select,
+body.amber-forge .mt-panel-body textarea,
+body.amber-forge .mt-panel-body .form-control,
+body.amber-forge .mt-panel-body .form-select,
+body.amber-forge .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.amber-forge .upload-search-form select,
+body.amber-forge .upload-search-form textarea,
+body.amber-forge .upload-search-form .form-control,
+body.amber-forge .upload-search-form .form-select {
+    background-color: var(--app-control-bg) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+html.amber-forge .content input::placeholder,
+html.amber-forge .content textarea::placeholder,
+html.amber-forge .mt-panel-body input::placeholder,
+html.amber-forge .mt-panel-body textarea::placeholder,
+html.amber-forge .upload-search-form input::placeholder,
+html.amber-forge .upload-search-form textarea::placeholder,
+body.amber-forge .content input::placeholder,
+body.amber-forge .content textarea::placeholder,
+body.amber-forge .mt-panel-body input::placeholder,
+body.amber-forge .mt-panel-body textarea::placeholder,
+body.amber-forge .upload-search-form input::placeholder,
+body.amber-forge .upload-search-form textarea::placeholder {
+    color: rgba(255, 243, 220, 0.68);
+}
+
+html.amber-forge .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.amber-forge .content select:hover,
+html.amber-forge .content textarea:hover,
+html.amber-forge .content .form-control:hover,
+html.amber-forge .content .form-select:hover,
+html.amber-forge .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.amber-forge .mt-panel-body select:hover,
+html.amber-forge .mt-panel-body textarea:hover,
+html.amber-forge .mt-panel-body .form-control:hover,
+html.amber-forge .mt-panel-body .form-select:hover,
+html.amber-forge .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.amber-forge .upload-search-form select:hover,
+html.amber-forge .upload-search-form textarea:hover,
+html.amber-forge .upload-search-form .form-control:hover,
+html.amber-forge .upload-search-form .form-select:hover,
+body.amber-forge .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.amber-forge .content select:hover,
+body.amber-forge .content textarea:hover,
+body.amber-forge .content .form-control:hover,
+body.amber-forge .content .form-select:hover,
+body.amber-forge .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.amber-forge .mt-panel-body select:hover,
+body.amber-forge .mt-panel-body textarea:hover,
+body.amber-forge .mt-panel-body .form-control:hover,
+body.amber-forge .mt-panel-body .form-select:hover,
+body.amber-forge .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.amber-forge .upload-search-form select:hover,
+body.amber-forge .upload-search-form textarea:hover,
+body.amber-forge .upload-search-form .form-control:hover,
+body.amber-forge .upload-search-form .form-select:hover {
+    background-color: var(--app-control-hover-bg) !important;
+    border-color: rgba(255, 174, 66, 0.42) !important;
+}
+
+html.amber-forge .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.amber-forge .content select:focus,
+html.amber-forge .content textarea:focus,
+html.amber-forge .content .form-control:focus,
+html.amber-forge .content .form-select:focus,
+html.amber-forge .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.amber-forge .mt-panel-body select:focus,
+html.amber-forge .mt-panel-body textarea:focus,
+html.amber-forge .mt-panel-body .form-control:focus,
+html.amber-forge .mt-panel-body .form-select:focus,
+html.amber-forge .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.amber-forge .upload-search-form select:focus,
+html.amber-forge .upload-search-form textarea:focus,
+html.amber-forge .upload-search-form .form-control:focus,
+html.amber-forge .upload-search-form .form-select:focus,
+body.amber-forge .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.amber-forge .content select:focus,
+body.amber-forge .content textarea:focus,
+body.amber-forge .content .form-control:focus,
+body.amber-forge .content .form-select:focus,
+body.amber-forge .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.amber-forge .mt-panel-body select:focus,
+body.amber-forge .mt-panel-body textarea:focus,
+body.amber-forge .mt-panel-body .form-control:focus,
+body.amber-forge .mt-panel-body .form-select:focus,
+body.amber-forge .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.amber-forge .upload-search-form select:focus,
+body.amber-forge .upload-search-form textarea:focus,
+body.amber-forge .upload-search-form .form-control:focus,
+body.amber-forge .upload-search-form .form-select:focus {
+    outline: none;
+    border-color: var(--neppy-accent) !important;
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+/* Native select dropdown list */
+html.amber-forge .content select option,
+html.amber-forge .mt-panel-body select option,
+html.amber-forge .upload-search-form select option,
+body.amber-forge .content select option,
+body.amber-forge .mt-panel-body select option,
+body.amber-forge .upload-search-form select option {
+    background: #160C00;
+    color: #FFF3DC;
+}
+
+/* Native selected option state */
+html.amber-forge .content select option:checked,
+html.amber-forge .mt-panel-body select option:checked,
+html.amber-forge .upload-search-form select option:checked,
+body.amber-forge .content select option:checked,
+body.amber-forge .mt-panel-body select option:checked,
+body.amber-forge .upload-search-form select option:checked {
+    background: #FFAE42;
+    color: #1C1000;
+}
+
+/* Disabled states */
+html.amber-forge .content input:disabled,
+html.amber-forge .content select:disabled,
+html.amber-forge .content textarea:disabled,
+html.amber-forge .content .form-control:disabled,
+html.amber-forge .content .form-select:disabled,
+html.amber-forge .mt-panel-body input:disabled,
+html.amber-forge .mt-panel-body select:disabled,
+html.amber-forge .mt-panel-body textarea:disabled,
+html.amber-forge .mt-panel-body .form-control:disabled,
+html.amber-forge .mt-panel-body .form-select:disabled,
+html.amber-forge .upload-search-form input:disabled,
+html.amber-forge .upload-search-form select:disabled,
+html.amber-forge .upload-search-form textarea:disabled,
+html.amber-forge .upload-search-form .form-control:disabled,
+html.amber-forge .upload-search-form .form-select:disabled,
+body.amber-forge .content input:disabled,
+body.amber-forge .content select:disabled,
+body.amber-forge .content textarea:disabled,
+body.amber-forge .content .form-control:disabled,
+body.amber-forge .content .form-select:disabled,
+body.amber-forge .mt-panel-body input:disabled,
+body.amber-forge .mt-panel-body select:disabled,
+body.amber-forge .mt-panel-body textarea:disabled,
+body.amber-forge .mt-panel-body .form-control:disabled,
+body.amber-forge .mt-panel-body .form-select:disabled,
+body.amber-forge .upload-search-form input:disabled,
+body.amber-forge .upload-search-form select:disabled,
+body.amber-forge .upload-search-form textarea:disabled,
+body.amber-forge .upload-search-form .form-control:disabled,
+body.amber-forge .upload-search-form .form-select:disabled {
+    background: rgba(54, 34, 8, 0.72) !important;
+    color: rgba(255, 243, 220, 0.58) !important;
+    cursor: not-allowed;
+}
+
+/* ==================================
+CONTENT AREA BUTTONS
+================================== */
+html.amber-forge .content button:not(.mt-toggle-btn):not(.toggle-button),
+html.amber-forge .content input[type="submit"],
+html.amber-forge .content input[type="button"],
+html.amber-forge .content input[type="reset"],
+html.amber-forge .content .btn,
+body.amber-forge .content button:not(.mt-toggle-btn):not(.toggle-button),
+body.amber-forge .content input[type="submit"],
+body.amber-forge .content input[type="button"],
+body.amber-forge .content input[type="reset"],
+body.amber-forge .content .btn {
+    background: linear-gradient(
+        180deg,
+        rgba(48, 26, 0, 0.98) 0%,
+        rgba(22, 12, 0, 0.98) 100%
+    );
+    color: #FFF3DC;
+    border: 1px solid var(--app-control-border);
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.24);
+}
+
+html.amber-forge .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+html.amber-forge .content input[type="submit"]:hover,
+html.amber-forge .content input[type="button"]:hover,
+html.amber-forge .content input[type="reset"]:hover,
+html.amber-forge .content .btn:hover,
+body.amber-forge .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+body.amber-forge .content input[type="submit"]:hover,
+body.amber-forge .content input[type="button"]:hover,
+body.amber-forge .content input[type="reset"]:hover,
+body.amber-forge .content .btn:hover {
+    border-color: rgba(255, 174, 66, 0.42);
+    background: linear-gradient(
+        180deg,
+        rgba(68, 36, 0, 0.98) 0%,
+        rgba(30, 16, 0, 0.98) 100%
+    );
+    color: #FFF3DC;
+}
+
+/* ==================================
+BOOTSTRAP DROPDOWN MENU SUPPORT
+Needed when dropdowns are button menus instead
+of native <select> elements.
+================================== */
+html.amber-forge .content .dropdown-menu,
+html.amber-forge .mt-panel-body .dropdown-menu,
+html.amber-forge .upload-search-form .dropdown-menu,
+body.amber-forge .content .dropdown-menu,
+body.amber-forge .mt-panel-body .dropdown-menu,
+body.amber-forge .upload-search-form .dropdown-menu {
+    background: #160C00;
+    color: #FFF3DC;
+    border: 1px solid var(--app-control-border);
+    border-radius: 8px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.42);
+}
+
+html.amber-forge .content .dropdown-item,
+html.amber-forge .mt-panel-body .dropdown-item,
+html.amber-forge .upload-search-form .dropdown-item,
+body.amber-forge .content .dropdown-item,
+body.amber-forge .mt-panel-body .dropdown-item,
+body.amber-forge .upload-search-form .dropdown-item {
+    color: #FFF3DC;
+}
+
+html.amber-forge .content .dropdown-item:hover,
+html.amber-forge .content .dropdown-item:focus,
+html.amber-forge .mt-panel-body .dropdown-item:hover,
+html.amber-forge .mt-panel-body .dropdown-item:focus,
+html.amber-forge .upload-search-form .dropdown-item:hover,
+html.amber-forge .upload-search-form .dropdown-item:focus,
+body.amber-forge .content .dropdown-item:hover,
+body.amber-forge .content .dropdown-item:focus,
+body.amber-forge .mt-panel-body .dropdown-item:hover,
+body.amber-forge .mt-panel-body .dropdown-item:focus,
+body.amber-forge .upload-search-form .dropdown-item:hover,
+body.amber-forge .upload-search-form .dropdown-item:focus {
+    background: #FFAE42;
+    color: #1C1000;
+}
+
+html.amber-forge .content .dropdown-item.active,
+html.amber-forge .content .dropdown-item:active,
+html.amber-forge .mt-panel-body .dropdown-item.active,
+html.amber-forge .mt-panel-body .dropdown-item:active,
+html.amber-forge .upload-search-form .dropdown-item.active,
+html.amber-forge .upload-search-form .dropdown-item:active,
+body.amber-forge .content .dropdown-item.active,
+body.amber-forge .content .dropdown-item:active,
+body.amber-forge .mt-panel-body .dropdown-item.active,
+body.amber-forge .mt-panel-body .dropdown-item:active,
+body.amber-forge .upload-search-form .dropdown-item.active,
+body.amber-forge .upload-search-form .dropdown-item:active {
+    background: rgba(255, 174, 66, 0.22);
+    color: #FFF3DC;
+}
+
+/* ==================================
+SELECT2 SUPPORT
+Needed when dropdowns are enhanced by Select2.
+Select2 dropdowns may be appended near <body>,
+so these selectors are scoped to the theme root,
+not only to .content.
+================================== */
+html.amber-forge .select2-container,
+body.amber-forge .select2-container {
+    color: #FFF3DC;
+}
+
+html.amber-forge .select2-container .select2-selection--single,
+html.amber-forge .select2-container .select2-selection--multiple,
+body.amber-forge .select2-container .select2-selection--single,
+body.amber-forge .select2-container .select2-selection--multiple {
+    background: var(--app-control-bg) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    min-height: 38px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+html.amber-forge .select2-container .select2-selection--single:hover,
+html.amber-forge .select2-container .select2-selection--multiple:hover,
+body.amber-forge .select2-container .select2-selection--single:hover,
+body.amber-forge .select2-container .select2-selection--multiple:hover {
+    background: var(--app-control-hover-bg) !important;
+    border-color: rgba(255, 174, 66, 0.42) !important;
+}
+
+html.amber-forge .select2-container--default.select2-container--focus .select2-selection--multiple,
+html.amber-forge .select2-container--default.select2-container--open .select2-selection--single,
+html.amber-forge .select2-container--default.select2-container--open .select2-selection--multiple,
+body.amber-forge .select2-container--default.select2-container--focus .select2-selection--multiple,
+body.amber-forge .select2-container--default.select2-container--open .select2-selection--single,
+body.amber-forge .select2-container--default.select2-container--open .select2-selection--multiple {
+    border-color: var(--neppy-accent) !important;
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+html.amber-forge .select2-container--default .select2-selection--single .select2-selection__rendered,
+html.amber-forge .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.amber-forge .select2-container--default .select2-selection--single .select2-selection__rendered,
+body.amber-forge .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    color: #FFF3DC !important;
+    line-height: 36px;
+}
+
+html.amber-forge .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.amber-forge .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    line-height: normal;
+    padding-top: 4px;
+}
+
+html.amber-forge .select2-container--default .select2-selection--single .select2-selection__placeholder,
+html.amber-forge .select2-container--default .select2-selection--multiple .select2-selection__placeholder,
+body.amber-forge .select2-container--default .select2-selection--single .select2-selection__placeholder,
+body.amber-forge .select2-container--default .select2-selection--multiple .select2-selection__placeholder {
+    color: rgba(255, 243, 220, 0.68) !important;
+}
+
+html.amber-forge .select2-container--default .select2-selection--single .select2-selection__arrow b,
+body.amber-forge .select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: #FFF3DC transparent transparent transparent;
+}
+
+html.amber-forge .select2-dropdown,
+body.amber-forge .select2-dropdown {
+    background: #160C00 !important;
+    color: #FFF3DC !important;
+    border: 1px solid var(--app-control-border) !important;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.42);
+}
+
+html.amber-forge .select2-container--default .select2-search--dropdown .select2-search__field,
+body.amber-forge .select2-container--default .select2-search--dropdown .select2-search__field {
+    background: rgba(22, 12, 0, 0.98) !important;
+    color: #FFF3DC !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 4px;
+}
+
+html.amber-forge .select2-results__option,
+body.amber-forge .select2-results__option {
+    background: #160C00;
+    color: #FFF3DC;
+}
+
+html.amber-forge .select2-container--default .select2-results__option--highlighted[aria-selected],
+body.amber-forge .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background: #FFAE42 !important;
+    color: #1C1000 !important;
+}
+
+html.amber-forge .select2-container--default .select2-results__option[aria-selected="true"],
+body.amber-forge .select2-container--default .select2-results__option[aria-selected="true"] {
+    background: rgba(255, 174, 66, 0.22) !important;
+    color: #FFF3DC !important;
+}
+
+html.amber-forge .select2-container--default .select2-selection--multiple .select2-selection__choice,
+body.amber-forge .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background: rgba(255, 174, 66, 0.16) !important;
+    color: #FFF3DC !important;
+    border: 1px solid rgba(255, 174, 66, 0.28) !important;
+}
+
+html.amber-forge .select2-container--default .select2-selection--multiple .select2-selection__choice__remove,
+body.amber-forge .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #FFD080 !important;
 }
 
 /* ==================================
@@ -254,6 +673,12 @@ html.amber-forge .neppy-btn:focus-visible,
 html.amber-forge .neppy-input:focus-visible,
 html.amber-forge .neppy-select:focus-visible,
 html.amber-forge .neppy-textarea:focus-visible,
+html.amber-forge .content button:focus-visible,
+html.amber-forge .content input:focus-visible,
+html.amber-forge .content select:focus-visible,
+html.amber-forge .content textarea:focus-visible,
+html.amber-forge .content .form-control:focus-visible,
+html.amber-forge .content .form-select:focus-visible,
 body.amber-forge .toggle-button:focus-visible,
 body.amber-forge .sidebar button:focus-visible,
 body.amber-forge .sidebar a:focus-visible,
@@ -262,7 +687,13 @@ body.amber-forge .mt-toggle-btn:focus-visible,
 body.amber-forge .neppy-btn:focus-visible,
 body.amber-forge .neppy-input:focus-visible,
 body.amber-forge .neppy-select:focus-visible,
-body.amber-forge .neppy-textarea:focus-visible {
+body.amber-forge .neppy-textarea:focus-visible,
+body.amber-forge .content button:focus-visible,
+body.amber-forge .content input:focus-visible,
+body.amber-forge .content select:focus-visible,
+body.amber-forge .content textarea:focus-visible,
+body.amber-forge .content .form-control:focus-visible,
+body.amber-forge .content .form-select:focus-visible {
     outline: 2px solid rgba(255, 174, 66, 0.55);
     outline-offset: 2px;
 }
@@ -296,7 +727,11 @@ body.amber-forge .neppy-text-muted {
 
 html.amber-forge .neppy-btn,
 body.amber-forge .neppy-btn {
-    background: linear-gradient(180deg, rgba(48, 26, 0, 0.98) 0%, rgba(22, 12, 0, 0.98) 100%);
+    background: linear-gradient(
+        180deg,
+        rgba(48, 26, 0, 0.98) 0%,
+        rgba(22, 12, 0, 0.98) 100%
+    );
     color: var(--neppy-text);
     border-color: var(--neppy-line);
 }
@@ -304,7 +739,11 @@ body.amber-forge .neppy-btn {
 html.amber-forge .neppy-btn:hover,
 body.amber-forge .neppy-btn:hover {
     border-color: var(--neppy-accent);
-    background: linear-gradient(180deg, rgba(68, 36, 0, 0.98) 0%, rgba(30, 16, 0, 0.98) 100%);
+    background: linear-gradient(
+        180deg,
+        rgba(68, 36, 0, 0.98) 0%,
+        rgba(30, 16, 0, 0.98) 100%
+    );
 }
 
 html.amber-forge .neppy-input,
@@ -385,7 +824,11 @@ body.amber-forge .mt-panel-title {
 
 html.amber-forge .mt-toggle-btn,
 body.amber-forge .mt-toggle-btn {
-    background: linear-gradient(180deg, rgba(48, 26, 0, 0.98) 0%, rgba(22, 12, 0, 0.98) 100%);
+    background: linear-gradient(
+        180deg,
+        rgba(48, 26, 0, 0.98) 0%,
+        rgba(22, 12, 0, 0.98) 100%
+    );
     border: 1px solid var(--neppy-line);
     color: var(--neppy-text);
     border-radius: 8px;
@@ -395,7 +838,11 @@ body.amber-forge .mt-toggle-btn {
 html.amber-forge .mt-toggle-btn:hover,
 body.amber-forge .mt-toggle-btn:hover {
     border-color: var(--neppy-accent);
-    background: linear-gradient(180deg, rgba(68, 36, 0, 0.98) 0%, rgba(30, 16, 0, 0.98) 100%);
+    background: linear-gradient(
+        180deg,
+        rgba(68, 36, 0, 0.98) 0%,
+        rgba(30, 16, 0, 0.98) 100%
+    );
     color: var(--neppy-text);
 }
 

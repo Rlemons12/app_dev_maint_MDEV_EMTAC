@@ -10,6 +10,8 @@ Role:
 - Provide a complete Blue Gray visual identity
 - Support reusable neppy-* utility classes
 - Theme the standardized .mt-* module template layouts
+- Theme content-area form controls and dropdowns
+- Support native selects, Bootstrap dropdowns, and Select2 widgets
 
 Important:
 - Does NOT style the standalone banner system
@@ -41,6 +43,7 @@ body.blue-gray {
     --app-control-text: #F4F7FA;
     --app-control-border: rgba(170, 178, 189, 0.22);
     --app-control-hover-bg: rgba(30, 47, 74, 0.96);
+    --app-control-focus-ring: rgba(21, 212, 216, 0.18);
 
     --app-results-bg: rgba(24, 35, 58, 0.78);
     --app-results-text: #F4F7FA;
@@ -119,7 +122,11 @@ body.blue-gray .model-display-section {
 
 html.blue-gray .content,
 body.blue-gray .content {
-    background: linear-gradient(180deg, rgba(24, 35, 58, 0.84) 0%, rgba(16, 26, 43, 0.92) 100%);
+    background: linear-gradient(
+        180deg,
+        rgba(24, 35, 58, 0.84) 0%,
+        rgba(16, 26, 43, 0.92) 100%
+    );
     color: var(--app-content-text);
 }
 
@@ -161,7 +168,11 @@ STANDARD CONTROLS
 ================================== */
 html.blue-gray .toggle-button,
 body.blue-gray .toggle-button {
-    background: linear-gradient(180deg, rgba(36, 58, 89, 0.98) 0%, rgba(20, 33, 54, 0.98) 100%) !important;
+    background: linear-gradient(
+        180deg,
+        rgba(36, 58, 89, 0.98) 0%,
+        rgba(20, 33, 54, 0.98) 100%
+    ) !important;
     color: var(--app-control-text) !important;
     border: 1px solid var(--app-control-border) !important;
     border-radius: 6px;
@@ -171,7 +182,11 @@ body.blue-gray .toggle-button {
 
 html.blue-gray .toggle-button:hover,
 body.blue-gray .toggle-button:hover {
-    background: linear-gradient(180deg, rgba(48, 74, 110, 0.98) 0%, rgba(28, 43, 68, 0.98) 100%) !important;
+    background: linear-gradient(
+        180deg,
+        rgba(48, 74, 110, 0.98) 0%,
+        rgba(28, 43, 68, 0.98) 100%
+    ) !important;
     border-color: rgba(21, 212, 216, 0.35) !important;
 }
 
@@ -191,6 +206,410 @@ body.blue-gray #voice-selection:focus,
 body.blue-gray .sidebar select:focus {
     outline: 2px solid rgba(21, 212, 216, 0.35);
     outline-offset: 2px;
+}
+
+/* ==================================
+CONTENT AREA FORM CONTROLS
+Fixes white-on-white dropdowns in main panels.
+Supports:
+- Native inputs/selects/textareas
+- Bootstrap .form-control / .form-select
+- Module template .mt-panel-body controls
+- Upload/search forms
+================================== */
+html.blue-gray .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.blue-gray .content select,
+html.blue-gray .content textarea,
+html.blue-gray .content .form-control,
+html.blue-gray .content .form-select,
+html.blue-gray .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.blue-gray .mt-panel-body select,
+html.blue-gray .mt-panel-body textarea,
+html.blue-gray .mt-panel-body .form-control,
+html.blue-gray .mt-panel-body .form-select,
+html.blue-gray .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.blue-gray .upload-search-form select,
+html.blue-gray .upload-search-form textarea,
+html.blue-gray .upload-search-form .form-control,
+html.blue-gray .upload-search-form .form-select,
+body.blue-gray .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.blue-gray .content select,
+body.blue-gray .content textarea,
+body.blue-gray .content .form-control,
+body.blue-gray .content .form-select,
+body.blue-gray .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.blue-gray .mt-panel-body select,
+body.blue-gray .mt-panel-body textarea,
+body.blue-gray .mt-panel-body .form-control,
+body.blue-gray .mt-panel-body .form-select,
+body.blue-gray .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.blue-gray .upload-search-form select,
+body.blue-gray .upload-search-form textarea,
+body.blue-gray .upload-search-form .form-control,
+body.blue-gray .upload-search-form .form-select {
+    background-color: var(--app-control-bg) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+html.blue-gray .content input::placeholder,
+html.blue-gray .content textarea::placeholder,
+html.blue-gray .mt-panel-body input::placeholder,
+html.blue-gray .mt-panel-body textarea::placeholder,
+html.blue-gray .upload-search-form input::placeholder,
+html.blue-gray .upload-search-form textarea::placeholder,
+body.blue-gray .content input::placeholder,
+body.blue-gray .content textarea::placeholder,
+body.blue-gray .mt-panel-body input::placeholder,
+body.blue-gray .mt-panel-body textarea::placeholder,
+body.blue-gray .upload-search-form input::placeholder,
+body.blue-gray .upload-search-form textarea::placeholder {
+    color: rgba(244, 247, 250, 0.68);
+}
+
+html.blue-gray .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.blue-gray .content select:hover,
+html.blue-gray .content textarea:hover,
+html.blue-gray .content .form-control:hover,
+html.blue-gray .content .form-select:hover,
+html.blue-gray .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.blue-gray .mt-panel-body select:hover,
+html.blue-gray .mt-panel-body textarea:hover,
+html.blue-gray .mt-panel-body .form-control:hover,
+html.blue-gray .mt-panel-body .form-select:hover,
+html.blue-gray .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.blue-gray .upload-search-form select:hover,
+html.blue-gray .upload-search-form textarea:hover,
+html.blue-gray .upload-search-form .form-control:hover,
+html.blue-gray .upload-search-form .form-select:hover,
+body.blue-gray .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.blue-gray .content select:hover,
+body.blue-gray .content textarea:hover,
+body.blue-gray .content .form-control:hover,
+body.blue-gray .content .form-select:hover,
+body.blue-gray .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.blue-gray .mt-panel-body select:hover,
+body.blue-gray .mt-panel-body textarea:hover,
+body.blue-gray .mt-panel-body .form-control:hover,
+body.blue-gray .mt-panel-body .form-select:hover,
+body.blue-gray .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.blue-gray .upload-search-form select:hover,
+body.blue-gray .upload-search-form textarea:hover,
+body.blue-gray .upload-search-form .form-control:hover,
+body.blue-gray .upload-search-form .form-select:hover {
+    background-color: var(--app-control-hover-bg) !important;
+    border-color: rgba(21, 212, 216, 0.42) !important;
+}
+
+html.blue-gray .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.blue-gray .content select:focus,
+html.blue-gray .content textarea:focus,
+html.blue-gray .content .form-control:focus,
+html.blue-gray .content .form-select:focus,
+html.blue-gray .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.blue-gray .mt-panel-body select:focus,
+html.blue-gray .mt-panel-body textarea:focus,
+html.blue-gray .mt-panel-body .form-control:focus,
+html.blue-gray .mt-panel-body .form-select:focus,
+html.blue-gray .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.blue-gray .upload-search-form select:focus,
+html.blue-gray .upload-search-form textarea:focus,
+html.blue-gray .upload-search-form .form-control:focus,
+html.blue-gray .upload-search-form .form-select:focus,
+body.blue-gray .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.blue-gray .content select:focus,
+body.blue-gray .content textarea:focus,
+body.blue-gray .content .form-control:focus,
+body.blue-gray .content .form-select:focus,
+body.blue-gray .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.blue-gray .mt-panel-body select:focus,
+body.blue-gray .mt-panel-body textarea:focus,
+body.blue-gray .mt-panel-body .form-control:focus,
+body.blue-gray .mt-panel-body .form-select:focus,
+body.blue-gray .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.blue-gray .upload-search-form select:focus,
+body.blue-gray .upload-search-form textarea:focus,
+body.blue-gray .upload-search-form .form-control:focus,
+body.blue-gray .upload-search-form .form-select:focus {
+    outline: none;
+    border-color: var(--neppy-accent) !important;
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+/* Native select dropdown list */
+html.blue-gray .content select option,
+html.blue-gray .mt-panel-body select option,
+html.blue-gray .upload-search-form select option,
+body.blue-gray .content select option,
+body.blue-gray .mt-panel-body select option,
+body.blue-gray .upload-search-form select option {
+    background: #142136;
+    color: #F4F7FA;
+}
+
+/* Native selected option state */
+html.blue-gray .content select option:checked,
+html.blue-gray .mt-panel-body select option:checked,
+html.blue-gray .upload-search-form select option:checked,
+body.blue-gray .content select option:checked,
+body.blue-gray .mt-panel-body select option:checked,
+body.blue-gray .upload-search-form select option:checked {
+    background: #15D4D8;
+    color: #081A22;
+}
+
+/* Disabled states */
+html.blue-gray .content input:disabled,
+html.blue-gray .content select:disabled,
+html.blue-gray .content textarea:disabled,
+html.blue-gray .content .form-control:disabled,
+html.blue-gray .content .form-select:disabled,
+html.blue-gray .mt-panel-body input:disabled,
+html.blue-gray .mt-panel-body select:disabled,
+html.blue-gray .mt-panel-body textarea:disabled,
+html.blue-gray .mt-panel-body .form-control:disabled,
+html.blue-gray .mt-panel-body .form-select:disabled,
+html.blue-gray .upload-search-form input:disabled,
+html.blue-gray .upload-search-form select:disabled,
+html.blue-gray .upload-search-form textarea:disabled,
+html.blue-gray .upload-search-form .form-control:disabled,
+html.blue-gray .upload-search-form .form-select:disabled,
+body.blue-gray .content input:disabled,
+body.blue-gray .content select:disabled,
+body.blue-gray .content textarea:disabled,
+body.blue-gray .content .form-control:disabled,
+body.blue-gray .content .form-select:disabled,
+body.blue-gray .mt-panel-body input:disabled,
+body.blue-gray .mt-panel-body select:disabled,
+body.blue-gray .mt-panel-body textarea:disabled,
+body.blue-gray .mt-panel-body .form-control:disabled,
+body.blue-gray .mt-panel-body .form-select:disabled,
+body.blue-gray .upload-search-form input:disabled,
+body.blue-gray .upload-search-form select:disabled,
+body.blue-gray .upload-search-form textarea:disabled,
+body.blue-gray .upload-search-form .form-control:disabled,
+body.blue-gray .upload-search-form .form-select:disabled {
+    background: rgba(50, 66, 86, 0.72) !important;
+    color: rgba(244, 247, 250, 0.58) !important;
+    cursor: not-allowed;
+}
+
+/* ==================================
+CONTENT AREA BUTTONS
+================================== */
+html.blue-gray .content button:not(.mt-toggle-btn):not(.toggle-button),
+html.blue-gray .content input[type="submit"],
+html.blue-gray .content input[type="button"],
+html.blue-gray .content input[type="reset"],
+html.blue-gray .content .btn,
+body.blue-gray .content button:not(.mt-toggle-btn):not(.toggle-button),
+body.blue-gray .content input[type="submit"],
+body.blue-gray .content input[type="button"],
+body.blue-gray .content input[type="reset"],
+body.blue-gray .content .btn {
+    background: linear-gradient(
+        180deg,
+        rgba(36, 58, 89, 0.98) 0%,
+        rgba(20, 33, 54, 0.98) 100%
+    );
+    color: #F4F7FA;
+    border: 1px solid var(--app-control-border);
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.24);
+}
+
+html.blue-gray .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+html.blue-gray .content input[type="submit"]:hover,
+html.blue-gray .content input[type="button"]:hover,
+html.blue-gray .content input[type="reset"]:hover,
+html.blue-gray .content .btn:hover,
+body.blue-gray .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+body.blue-gray .content input[type="submit"]:hover,
+body.blue-gray .content input[type="button"]:hover,
+body.blue-gray .content input[type="reset"]:hover,
+body.blue-gray .content .btn:hover {
+    border-color: rgba(21, 212, 216, 0.42);
+    background: linear-gradient(
+        180deg,
+        rgba(48, 74, 110, 0.98) 0%,
+        rgba(28, 43, 68, 0.98) 100%
+    );
+    color: #F4F7FA;
+}
+
+/* ==================================
+BOOTSTRAP DROPDOWN MENU SUPPORT
+Needed when dropdowns are button menus instead
+of native <select> elements.
+================================== */
+html.blue-gray .content .dropdown-menu,
+html.blue-gray .mt-panel-body .dropdown-menu,
+html.blue-gray .upload-search-form .dropdown-menu,
+body.blue-gray .content .dropdown-menu,
+body.blue-gray .mt-panel-body .dropdown-menu,
+body.blue-gray .upload-search-form .dropdown-menu {
+    background: #142136;
+    color: #F4F7FA;
+    border: 1px solid var(--app-control-border);
+    border-radius: 8px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.34);
+}
+
+html.blue-gray .content .dropdown-item,
+html.blue-gray .mt-panel-body .dropdown-item,
+html.blue-gray .upload-search-form .dropdown-item,
+body.blue-gray .content .dropdown-item,
+body.blue-gray .mt-panel-body .dropdown-item,
+body.blue-gray .upload-search-form .dropdown-item {
+    color: #F4F7FA;
+}
+
+html.blue-gray .content .dropdown-item:hover,
+html.blue-gray .content .dropdown-item:focus,
+html.blue-gray .mt-panel-body .dropdown-item:hover,
+html.blue-gray .mt-panel-body .dropdown-item:focus,
+html.blue-gray .upload-search-form .dropdown-item:hover,
+html.blue-gray .upload-search-form .dropdown-item:focus,
+body.blue-gray .content .dropdown-item:hover,
+body.blue-gray .content .dropdown-item:focus,
+body.blue-gray .mt-panel-body .dropdown-item:hover,
+body.blue-gray .mt-panel-body .dropdown-item:focus,
+body.blue-gray .upload-search-form .dropdown-item:hover,
+body.blue-gray .upload-search-form .dropdown-item:focus {
+    background: #15D4D8;
+    color: #081A22;
+}
+
+html.blue-gray .content .dropdown-item.active,
+html.blue-gray .content .dropdown-item:active,
+html.blue-gray .mt-panel-body .dropdown-item.active,
+html.blue-gray .mt-panel-body .dropdown-item:active,
+html.blue-gray .upload-search-form .dropdown-item.active,
+html.blue-gray .upload-search-form .dropdown-item:active,
+body.blue-gray .content .dropdown-item.active,
+body.blue-gray .content .dropdown-item:active,
+body.blue-gray .mt-panel-body .dropdown-item.active,
+body.blue-gray .mt-panel-body .dropdown-item:active,
+body.blue-gray .upload-search-form .dropdown-item.active,
+body.blue-gray .upload-search-form .dropdown-item:active {
+    background: rgba(21, 212, 216, 0.22);
+    color: #F4F7FA;
+}
+
+/* ==================================
+SELECT2 SUPPORT
+Needed when dropdowns are enhanced by Select2.
+Select2 dropdowns may be appended near <body>,
+so these selectors are scoped to the theme root,
+not only to .content.
+================================== */
+html.blue-gray .select2-container,
+body.blue-gray .select2-container {
+    color: #F4F7FA;
+}
+
+html.blue-gray .select2-container .select2-selection--single,
+html.blue-gray .select2-container .select2-selection--multiple,
+body.blue-gray .select2-container .select2-selection--single,
+body.blue-gray .select2-container .select2-selection--multiple {
+    background: var(--app-control-bg) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    min-height: 38px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+html.blue-gray .select2-container .select2-selection--single:hover,
+html.blue-gray .select2-container .select2-selection--multiple:hover,
+body.blue-gray .select2-container .select2-selection--single:hover,
+body.blue-gray .select2-container .select2-selection--multiple:hover {
+    background: var(--app-control-hover-bg) !important;
+    border-color: rgba(21, 212, 216, 0.42) !important;
+}
+
+html.blue-gray .select2-container--default.select2-container--focus .select2-selection--multiple,
+html.blue-gray .select2-container--default.select2-container--open .select2-selection--single,
+html.blue-gray .select2-container--default.select2-container--open .select2-selection--multiple,
+body.blue-gray .select2-container--default.select2-container--focus .select2-selection--multiple,
+body.blue-gray .select2-container--default.select2-container--open .select2-selection--single,
+body.blue-gray .select2-container--default.select2-container--open .select2-selection--multiple {
+    border-color: var(--neppy-accent) !important;
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+html.blue-gray .select2-container--default .select2-selection--single .select2-selection__rendered,
+html.blue-gray .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.blue-gray .select2-container--default .select2-selection--single .select2-selection__rendered,
+body.blue-gray .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    color: #F4F7FA !important;
+    line-height: 36px;
+}
+
+html.blue-gray .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.blue-gray .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    line-height: normal;
+    padding-top: 4px;
+}
+
+html.blue-gray .select2-container--default .select2-selection--single .select2-selection__placeholder,
+html.blue-gray .select2-container--default .select2-selection--multiple .select2-selection__placeholder,
+body.blue-gray .select2-container--default .select2-selection--single .select2-selection__placeholder,
+body.blue-gray .select2-container--default .select2-selection--multiple .select2-selection__placeholder {
+    color: rgba(244, 247, 250, 0.68) !important;
+}
+
+html.blue-gray .select2-container--default .select2-selection--single .select2-selection__arrow b,
+body.blue-gray .select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: #F4F7FA transparent transparent transparent;
+}
+
+html.blue-gray .select2-dropdown,
+body.blue-gray .select2-dropdown {
+    background: #142136 !important;
+    color: #F4F7FA !important;
+    border: 1px solid var(--app-control-border) !important;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.34);
+}
+
+html.blue-gray .select2-container--default .select2-search--dropdown .select2-search__field,
+body.blue-gray .select2-container--default .select2-search--dropdown .select2-search__field {
+    background: rgba(20, 33, 54, 0.98) !important;
+    color: #F4F7FA !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 4px;
+}
+
+html.blue-gray .select2-results__option,
+body.blue-gray .select2-results__option {
+    background: #142136;
+    color: #F4F7FA;
+}
+
+html.blue-gray .select2-container--default .select2-results__option--highlighted[aria-selected],
+body.blue-gray .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background: #15D4D8 !important;
+    color: #081A22 !important;
+}
+
+html.blue-gray .select2-container--default .select2-results__option[aria-selected="true"],
+body.blue-gray .select2-container--default .select2-results__option[aria-selected="true"] {
+    background: rgba(21, 212, 216, 0.22) !important;
+    color: #F4F7FA !important;
+}
+
+html.blue-gray .select2-container--default .select2-selection--multiple .select2-selection__choice,
+body.blue-gray .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background: rgba(21, 212, 216, 0.16) !important;
+    color: #F4F7FA !important;
+    border: 1px solid rgba(21, 212, 216, 0.28) !important;
+}
+
+html.blue-gray .select2-container--default .select2-selection--multiple .select2-selection__choice__remove,
+body.blue-gray .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #56E8EB !important;
 }
 
 /* ==================================
@@ -254,6 +673,12 @@ html.blue-gray .neppy-btn:focus-visible,
 html.blue-gray .neppy-input:focus-visible,
 html.blue-gray .neppy-select:focus-visible,
 html.blue-gray .neppy-textarea:focus-visible,
+html.blue-gray .content button:focus-visible,
+html.blue-gray .content input:focus-visible,
+html.blue-gray .content select:focus-visible,
+html.blue-gray .content textarea:focus-visible,
+html.blue-gray .content .form-control:focus-visible,
+html.blue-gray .content .form-select:focus-visible,
 body.blue-gray .toggle-button:focus-visible,
 body.blue-gray .sidebar button:focus-visible,
 body.blue-gray .sidebar a:focus-visible,
@@ -262,7 +687,13 @@ body.blue-gray .mt-toggle-btn:focus-visible,
 body.blue-gray .neppy-btn:focus-visible,
 body.blue-gray .neppy-input:focus-visible,
 body.blue-gray .neppy-select:focus-visible,
-body.blue-gray .neppy-textarea:focus-visible {
+body.blue-gray .neppy-textarea:focus-visible,
+body.blue-gray .content button:focus-visible,
+body.blue-gray .content input:focus-visible,
+body.blue-gray .content select:focus-visible,
+body.blue-gray .content textarea:focus-visible,
+body.blue-gray .content .form-control:focus-visible,
+body.blue-gray .content .form-select:focus-visible {
     outline: 2px solid rgba(21, 212, 216, 0.55);
     outline-offset: 2px;
 }
@@ -296,7 +727,11 @@ body.blue-gray .neppy-text-muted {
 
 html.blue-gray .neppy-btn,
 body.blue-gray .neppy-btn {
-    background: linear-gradient(180deg, rgba(36, 58, 89, 0.98) 0%, rgba(20, 33, 54, 0.98) 100%);
+    background: linear-gradient(
+        180deg,
+        rgba(36, 58, 89, 0.98) 0%,
+        rgba(20, 33, 54, 0.98) 100%
+    );
     color: var(--neppy-text);
     border-color: var(--neppy-line);
 }
@@ -304,7 +739,11 @@ body.blue-gray .neppy-btn {
 html.blue-gray .neppy-btn:hover,
 body.blue-gray .neppy-btn:hover {
     border-color: var(--neppy-accent);
-    background: linear-gradient(180deg, rgba(48, 74, 110, 0.98) 0%, rgba(28, 43, 68, 0.98) 100%);
+    background: linear-gradient(
+        180deg,
+        rgba(48, 74, 110, 0.98) 0%,
+        rgba(28, 43, 68, 0.98) 100%
+    );
 }
 
 html.blue-gray .neppy-input,
@@ -385,7 +824,11 @@ body.blue-gray .mt-panel-title {
 
 html.blue-gray .mt-toggle-btn,
 body.blue-gray .mt-toggle-btn {
-    background: linear-gradient(180deg, rgba(36, 58, 89, 0.98) 0%, rgba(20, 33, 54, 0.98) 100%);
+    background: linear-gradient(
+        180deg,
+        rgba(36, 58, 89, 0.98) 0%,
+        rgba(20, 33, 54, 0.98) 100%
+    );
     border: 1px solid var(--neppy-line);
     color: var(--neppy-text);
     border-radius: 8px;
@@ -395,7 +838,11 @@ body.blue-gray .mt-toggle-btn {
 html.blue-gray .mt-toggle-btn:hover,
 body.blue-gray .mt-toggle-btn:hover {
     border-color: var(--neppy-accent);
-    background: linear-gradient(180deg, rgba(48, 74, 110, 0.98) 0%, rgba(28, 43, 68, 0.98) 100%);
+    background: linear-gradient(
+        180deg,
+        rgba(48, 74, 110, 0.98) 0%,
+        rgba(28, 43, 68, 0.98) 100%
+    );
     color: var(--neppy-text);
 }
 
