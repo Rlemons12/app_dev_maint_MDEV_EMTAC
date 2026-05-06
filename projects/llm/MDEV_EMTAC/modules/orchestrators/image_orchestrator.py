@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import os
+import uuid
 import inspect
 from pathlib import Path
 from typing import Optional, Dict, Any, List
-from modules.configuration.config import DATABASE_DIR, DATABASE_PATH_IMAGES_FOLDER
-from modules.services.ai_model_image_service import AIModelImageService
+
 from werkzeug.utils import secure_filename
-from modules.orchestrators.base_orchestrator import BaseOrchestrator
+
+from modules.configuration.config import DATABASE_DIR, DATABASE_PATH_IMAGES_FOLDER
 from modules.configuration.log_config import (
     with_request_id,
     get_request_id,
@@ -19,6 +20,11 @@ from modules.configuration.log_config import (
     error_id,
 )
 
+from modules.emtacdb.emtacdb_fts import Image as DBImage
+
+from modules.orchestrators.base_orchestrator import BaseOrchestrator
+
+from modules.services.ai_model_image_service import AIModelImageService
 from modules.services.image_service import ImageService
 from modules.services.image_embedding_service import ImageEmbeddingService
 from modules.services.image_position_service import ImagePositionService
@@ -42,7 +48,32 @@ class ImageOrchestrator(BaseOrchestrator):
     - Coordinate image + embedding + associations
     - Return structured domain results
     - Never leak ORM dependency across boundary responses when avoidable
+
+    Important workflow distinction:
+
+    process_upload():
+        - Saves images permanently
+        - Creates Image rows
+        - Generates and stores embeddings
+
+    compare_uploaded_image():
+        - Saves a temporary query image
+        - Generates a query embedding
+        - Searches existing stored image embeddings
+        - Does NOT create a new Image row
+        - Does NOT store the temporary query embedding
     """
+
+    COMPARE_IMAGE_EXTENSIONS = {
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".gif",
+        ".bmp",
+        ".tif",
+        ".tiff",
+        ".webp",
+    }
 
     def __init__(self):
         super().__init__()
@@ -88,6 +119,7 @@ class ImageOrchestrator(BaseOrchestrator):
         """
         if image_obj is None:
             return None
+
         return self.image_service.serialize(image_obj)
 
     @staticmethod
@@ -113,6 +145,7 @@ class ImageOrchestrator(BaseOrchestrator):
             return None
 
         data: Dict[str, Any] = {}
+
         for attr in (
             "id",
             "image_id",
@@ -135,6 +168,7 @@ class ImageOrchestrator(BaseOrchestrator):
 
         for item in items or []:
             row: Dict[str, Any] = {}
+
             for attr in (
                 "id",
                 "image_id",
@@ -262,6 +296,7 @@ class ImageOrchestrator(BaseOrchestrator):
                 image_id=image.id,
                 model_name=model_name,
                 embedding=embedding,
+                request_id=rid,
             )
 
             image_payload = self._serialize_image(image)
@@ -455,13 +490,17 @@ class ImageOrchestrator(BaseOrchestrator):
             )
 
             if not removed:
-                warning_id(f"[ImageOrchestrator] Image not found for delete id={image_id}", rid)
+                warning_id(
+                    f"[ImageOrchestrator] Image not found for delete id={image_id}",
+                    rid,
+                )
                 return {
                     "status": "not_found",
                     "image_id": image_id,
                 }
 
             info_id(f"[ImageOrchestrator] Deleted image id={image_id}", rid)
+
             return {
                 "status": "deleted",
                 "image_id": image_id,
@@ -565,7 +604,10 @@ class ImageOrchestrator(BaseOrchestrator):
             filename = secure_filename(getattr(file_obj, "filename", "") or "")
 
             if not filename:
-                warning_id("[ImageOrchestrator] Skipping upload with empty filename", rid)
+                warning_id(
+                    "[ImageOrchestrator] Skipping upload with empty filename",
+                    rid,
+                )
                 results.append(
                     self._build_upload_result(
                         success=False,
@@ -596,7 +638,11 @@ class ImageOrchestrator(BaseOrchestrator):
                     img_metadata = {}
 
                 file_obj.save(absolute_file_path)
-                info_id(f"Saved image file to {absolute_file_path}", rid)
+
+                info_id(
+                    f"[ImageOrchestrator] Saved image file to {absolute_file_path}",
+                    rid,
+                )
 
                 db_relative_path = os.path.normpath(
                     os.path.relpath(absolute_file_path, DATABASE_DIR)
@@ -643,13 +689,15 @@ class ImageOrchestrator(BaseOrchestrator):
                     )
 
                 debug_id(
-                    f"[ImageOrchestrator] Upload staged successfully | file={filename} | image_id={image_id}",
+                    f"[ImageOrchestrator] Upload staged successfully | "
+                    f"file={filename} | image_id={image_id}",
                     rid,
                 )
 
             except ValueError as exc:
                 warning_id(
-                    f"[ImageOrchestrator] Validation error while processing file '{filename}': {exc}",
+                    f"[ImageOrchestrator] Validation error while processing file "
+                    f"'{filename}': {exc}",
                     rid,
                 )
                 results.append(
@@ -665,7 +713,8 @@ class ImageOrchestrator(BaseOrchestrator):
 
             except Exception as exc:
                 error_id(
-                    f"Image orchestrator processing error for file '{filename}': {exc}",
+                    f"[ImageOrchestrator] Image processing error for file "
+                    f"'{filename}': {exc}",
                     rid,
                     exc_info=True,
                 )
@@ -735,13 +784,16 @@ class ImageOrchestrator(BaseOrchestrator):
                 stored_embeddings: Dict[int, Dict[str, Any]] = {}
 
                 with self.transaction() as session:
-                    for pending_row, embedding_vector in zip(pending_embeddings, batch_vectors):
+                    for pending_row, embedding_vector in zip(
+                        pending_embeddings,
+                        batch_vectors,
+                    ):
                         image_id = pending_row["image_id"]
 
                         if embedding_vector is None:
                             warning_id(
-                                f"[ImageOrchestrator] No embedding generated for image_id={image_id} "
-                                f"file={pending_row['file_name']}",
+                                f"[ImageOrchestrator] No embedding generated for "
+                                f"image_id={image_id} file={pending_row['file_name']}",
                                 rid,
                             )
                             continue
@@ -754,14 +806,17 @@ class ImageOrchestrator(BaseOrchestrator):
                                 embedding=embedding_vector,
                                 request_id=rid,
                             )
-                            stored_embeddings[image_id] = self._serialize_embedding(embedding_obj)
+                            stored_embeddings[image_id] = self._serialize_embedding(
+                                embedding_obj
+                            )
                         except Exception as exc:
                             warning_id(
-                                f"[ImageOrchestrator] Failed storing embedding for image_id={image_id}: {exc}",
+                                f"[ImageOrchestrator] Failed storing embedding for "
+                                f"image_id={image_id}: {exc}",
                                 rid,
                             )
 
-                # Patch embedding payloads back into existing results
+                # Patch embedding payloads back into existing results.
                 for result_row in results:
                     if not result_row.get("success"):
                         continue
@@ -778,14 +833,16 @@ class ImageOrchestrator(BaseOrchestrator):
 
                 debug_id(
                     f"[ImageOrchestrator] Batch embedding phase complete | "
-                    f"staged={len(pending_embeddings)} stored={len(stored_embeddings)} "
+                    f"staged={len(pending_embeddings)} "
+                    f"stored={len(stored_embeddings)} "
                     f"model={current_model_name}",
                     rid,
                 )
 
             except Exception as embed_exc:
                 warning_id(
-                    f"[ImageOrchestrator] Batch embedding phase failed after image creation: {embed_exc}",
+                    f"[ImageOrchestrator] Batch embedding phase failed after "
+                    f"image creation: {embed_exc}",
                     rid,
                 )
 
@@ -832,7 +889,8 @@ class ImageOrchestrator(BaseOrchestrator):
         so sequential processing remains the safest default.
         """
         debug_id(
-            f"[ImageOrchestrator] process_upload_concurrent delegating to sequential path | max_workers={max_workers}",
+            f"[ImageOrchestrator] process_upload_concurrent delegating to sequential "
+            f"path | max_workers={max_workers}",
             request_id or get_request_id(),
         )
 
@@ -841,6 +899,333 @@ class ImageOrchestrator(BaseOrchestrator):
             metadata=metadata,
             request_id=request_id,
         )
+
+    # ---------------------------------------------------------
+    # COMPARE UPLOADED IMAGE AGAINST EXISTING IMAGE EMBEDDINGS
+    # ---------------------------------------------------------
+
+    @with_request_id
+    def compare_uploaded_image(
+        self,
+        *,
+        file_obj: Any,
+        similarity_threshold: float = 0.3,
+        limit: int = 10,
+        cleanup_query_file: bool = True,
+        request_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Compare a temporary uploaded query image against stored image embeddings.
+
+        This does not persist the query image as a new Image row.
+
+        Returns:
+            {
+                "status": "success" | "validation_error" | "processing_error",
+                "message": str,
+                "error": optional str,
+                "image_similarity_search": [...],
+                "http_status": int
+            }
+
+        Existing frontend expects:
+            {
+                "image_similarity_search": [...]
+            }
+        """
+        rid = request_id or get_request_id()
+
+        if file_obj is None:
+            warning_id(
+                "[ImageOrchestrator] Compare request missing file object",
+                rid,
+            )
+            return {
+                "status": "validation_error",
+                "error": "No file part in the request",
+                "image_similarity_search": [],
+                "http_status": 400,
+            }
+
+        original_filename = getattr(file_obj, "filename", "") or ""
+        safe_filename = secure_filename(original_filename)
+
+        if not safe_filename:
+            warning_id(
+                "[ImageOrchestrator] Compare upload missing filename",
+                rid,
+            )
+            return {
+                "status": "validation_error",
+                "error": "No selected file",
+                "image_similarity_search": [],
+                "http_status": 400,
+            }
+
+        file_ext = Path(safe_filename).suffix.lower()
+
+        if file_ext not in self.COMPARE_IMAGE_EXTENSIONS:
+            warning_id(
+                f"[ImageOrchestrator] Compare upload rejected unsupported file type | "
+                f"file='{safe_filename}' | ext='{file_ext}'",
+                rid,
+            )
+            return {
+                "status": "validation_error",
+                "error": f"File type not allowed by image compare route: {file_ext.lstrip('.')}",
+                "allowed_file_types": sorted(
+                    ext.lstrip(".") for ext in self.COMPARE_IMAGE_EXTENSIONS
+                ),
+                "image_similarity_search": [],
+                "http_status": 400,
+            }
+
+        query_file_path: Optional[str] = None
+
+        try:
+            query_file_path = self._save_compare_query_file(
+                file_obj=file_obj,
+                safe_filename=safe_filename,
+                request_id=rid,
+            )
+
+            current_model_name = self.image_model_service.get_current_model_name(
+                request_id=rid,
+            )
+
+            info_id(
+                f"[ImageOrchestrator] Starting image compare | "
+                f"file='{safe_filename}' | model='{current_model_name}' | "
+                f"threshold={similarity_threshold} | limit={limit}",
+                rid,
+            )
+
+            query_embedding = self.image_model_service.get_image_embedding(
+                image_path=query_file_path,
+                request_id=rid,
+            )
+
+            embedding_list = self._normalize_embedding_vector(query_embedding)
+
+            if not embedding_list:
+                warning_id(
+                    f"[ImageOrchestrator] No query embedding generated for "
+                    f"'{safe_filename}'",
+                    rid,
+                )
+                return {
+                    "status": "processing_error",
+                    "error": "Failed to process the uploaded image.",
+                    "image_similarity_search": [],
+                    "http_status": 500,
+                }
+
+            safe_limit = max(1, min(int(limit or 10), 100))
+            safe_threshold = float(similarity_threshold)
+
+            with self.transaction(read_only=True) as session:
+                search_results = DBImage.search_images(
+                    session=session,
+                    similarity_query_embedding=embedding_list,
+                    similarity_threshold=safe_threshold,
+                    embedding_model_name=current_model_name,
+                    use_hybrid_ranking=True,
+                    limit=safe_limit,
+                )
+
+                formatted_results = [
+                    self._format_image_compare_result(row)
+                    for row in search_results or []
+                ]
+
+            info_id(
+                f"[ImageOrchestrator] Image compare completed | "
+                f"file='{safe_filename}' | matches={len(formatted_results)}",
+                rid,
+            )
+
+            return {
+                "status": "success",
+                "message": "Image comparison completed successfully.",
+                "image_similarity_search": formatted_results,
+                "http_status": 200,
+            }
+
+        except ValueError as exc:
+            warning_id(
+                f"[ImageOrchestrator] Image compare validation error for "
+                f"'{safe_filename}': {exc}",
+                rid,
+            )
+            return {
+                "status": "validation_error",
+                "error": str(exc),
+                "image_similarity_search": [],
+                "http_status": 400,
+            }
+
+        except Exception as exc:
+            error_id(
+                f"[ImageOrchestrator] Image compare failed for "
+                f"'{safe_filename}': {exc}",
+                rid,
+                exc_info=True,
+            )
+            return {
+                "status": "processing_error",
+                "error": "An error occurred during the comparison process.",
+                "detail": str(exc),
+                "image_similarity_search": [],
+                "http_status": 500,
+            }
+
+        finally:
+            if cleanup_query_file and query_file_path:
+                try:
+                    if os.path.exists(query_file_path):
+                        os.remove(query_file_path)
+                        debug_id(
+                            f"[ImageOrchestrator] Removed temporary compare file: "
+                            f"{query_file_path}",
+                            rid,
+                        )
+                except Exception as cleanup_exc:
+                    warning_id(
+                        f"[ImageOrchestrator] Failed to remove temporary compare file "
+                        f"'{query_file_path}': {cleanup_exc}",
+                        rid,
+                    )
+
+    def _save_compare_query_file(
+        self,
+        *,
+        file_obj: Any,
+        safe_filename: str,
+        request_id: Optional[str] = None,
+    ) -> str:
+        """
+        Save the uploaded compare image to a temporary compare folder.
+
+        The query image is used only for embedding generation.
+        It is not inserted into the Image table.
+        """
+        rid = request_id or get_request_id()
+
+        compare_upload_dir = os.path.join(
+            DATABASE_PATH_IMAGES_FOLDER,
+            "_compare_uploads",
+        )
+
+        os.makedirs(compare_upload_dir, exist_ok=True)
+
+        filename_path = Path(safe_filename)
+        unique_filename = (
+            f"{filename_path.stem}_{uuid.uuid4().hex}"
+            f"{filename_path.suffix.lower()}"
+        )
+
+        destination_path = os.path.join(compare_upload_dir, unique_filename)
+
+        file_obj.save(destination_path)
+
+        info_id(
+            f"[ImageOrchestrator] Saved temporary compare image | "
+            f"original='{safe_filename}' | path='{destination_path}'",
+            rid,
+        )
+
+        return destination_path
+
+    @staticmethod
+    def _normalize_embedding_vector(embedding: Any) -> List[float]:
+        """
+        Normalize embedding output into a flat list[float].
+
+        Handles:
+        - numpy arrays
+        - tensors with .tolist()
+        - nested lists
+        - tuples
+        """
+        if embedding is None:
+            return []
+
+        if hasattr(embedding, "tolist"):
+            embedding = embedding.tolist()
+
+        def flatten(value: Any):
+            if isinstance(value, (list, tuple)):
+                for item in value:
+                    yield from flatten(item)
+            else:
+                yield value
+
+        try:
+            return [float(x) for x in flatten(embedding)]
+        except Exception as exc:
+            raise ValueError(f"Invalid image embedding format: {exc}") from exc
+
+    @staticmethod
+    def _format_image_compare_result(result: Any) -> Dict[str, Any]:
+        """
+        Format one DBImage.search_images result for the existing frontend.
+
+        Existing JS expects:
+            id
+            title
+            description
+            file_path
+            similarity
+        """
+        if result is None:
+            return {
+                "id": None,
+                "title": "",
+                "description": "",
+                "file_path": "",
+                "similarity": 0.0,
+            }
+
+        if isinstance(result, dict):
+            search_metadata = result.get("search_metadata") or {}
+            similarity_score = search_metadata.get("similarity_score")
+
+            if similarity_score is None:
+                similarity_score = result.get("similarity")
+
+            file_path = result.get("file_path") or ""
+
+            return {
+                "id": result.get("id"),
+                "title": result.get("title") or "",
+                "description": result.get("description") or "",
+                "file_path": os.path.basename(file_path),
+                "similarity": float(similarity_score) if similarity_score is not None else 0.0,
+            }
+
+        search_metadata = getattr(result, "search_metadata", None) or {}
+        similarity_score = None
+
+        if isinstance(search_metadata, dict):
+            similarity_score = search_metadata.get("similarity_score")
+
+        if similarity_score is None:
+            similarity_score = getattr(result, "similarity", None)
+
+        file_path = getattr(result, "file_path", "") or ""
+
+        return {
+            "id": getattr(result, "id", None),
+            "title": getattr(result, "title", "") or "",
+            "description": getattr(result, "description", "") or "",
+            "file_path": os.path.basename(file_path),
+            "similarity": float(similarity_score) if similarity_score is not None else 0.0,
+        }
+
+    # ---------------------------------------------------------
+    # EMBEDDING HELPER METHODS
+    # ---------------------------------------------------------
+
     @staticmethod
     def _call_with_supported_kwargs(func, **kwargs):
         """
@@ -890,22 +1275,25 @@ class ImageOrchestrator(BaseOrchestrator):
                 )
                 if handler is not None:
                     debug_id(
-                        f"[ImageOrchestrator] Resolved image handler via {method_name} | "
-                        f"model={model_name} | handler_type={type(handler).__name__}",
+                        f"[ImageOrchestrator] Resolved image handler via "
+                        f"{method_name} | model={model_name} | "
+                        f"handler_type={type(handler).__name__}",
                         rid,
                     )
                     return handler
             except Exception as exc:
                 warning_id(
-                    f"[ImageOrchestrator] Handler resolution method '{method_name}' failed "
-                    f"for model '{model_name}': {exc}",
+                    f"[ImageOrchestrator] Handler resolution method "
+                    f"'{method_name}' failed for model '{model_name}': {exc}",
                     rid,
                 )
 
         warning_id(
-            f"[ImageOrchestrator] Could not resolve batch-capable handler for model '{model_name}'",
+            f"[ImageOrchestrator] Could not resolve batch-capable handler for "
+            f"model '{model_name}'",
             rid,
         )
+
         return None
 
     def _begin_embedding_batch_session(
@@ -926,12 +1314,14 @@ class ImageOrchestrator(BaseOrchestrator):
                     request_id=rid,
                 )
                 debug_id(
-                    f"[ImageOrchestrator] Began image embedding batch session | batch_key={batch_key}",
+                    f"[ImageOrchestrator] Began image embedding batch session | "
+                    f"batch_key={batch_key}",
                     rid,
                 )
             except Exception as exc:
                 warning_id(
-                    f"[ImageOrchestrator] Failed to begin batch session '{batch_key}': {exc}",
+                    f"[ImageOrchestrator] Failed to begin batch session "
+                    f"'{batch_key}': {exc}",
                     rid,
                 )
 
@@ -953,12 +1343,14 @@ class ImageOrchestrator(BaseOrchestrator):
                     request_id=rid,
                 )
                 debug_id(
-                    f"[ImageOrchestrator] Ended image embedding batch session | batch_key={batch_key}",
+                    f"[ImageOrchestrator] Ended image embedding batch session | "
+                    f"batch_key={batch_key}",
                     rid,
                 )
             except Exception as exc:
                 warning_id(
-                    f"[ImageOrchestrator] Failed to end batch session '{batch_key}': {exc}",
+                    f"[ImageOrchestrator] Failed to end batch session "
+                    f"'{batch_key}': {exc}",
                     rid,
                 )
 
@@ -974,15 +1366,15 @@ class ImageOrchestrator(BaseOrchestrator):
         Try to use handler batch embedding if available.
 
         Returns:
-            list of vectors (same order as image_paths), or None if not available.
+            list of vectors, same order as image_paths, or None if unavailable.
         """
         rid = request_id or get_request_id()
 
         batch_fn = getattr(handler, "get_image_embeddings_batch", None)
         if not callable(batch_fn):
             debug_id(
-                "[ImageOrchestrator] Handler does not expose get_image_embeddings_batch; "
-                "will fall back to single-image embedding",
+                "[ImageOrchestrator] Handler does not expose "
+                "get_image_embeddings_batch; will fall back to single-image embedding",
                 rid,
             )
             return None
@@ -998,14 +1390,16 @@ class ImageOrchestrator(BaseOrchestrator):
 
             if vectors is None:
                 warning_id(
-                    "[ImageOrchestrator] Batch embedding returned None; falling back to singles",
+                    "[ImageOrchestrator] Batch embedding returned None; "
+                    "falling back to singles",
                     rid,
                 )
                 return None
 
             if not isinstance(vectors, list):
                 warning_id(
-                    f"[ImageOrchestrator] Batch embedding returned unexpected type: {type(vectors)}",
+                    f"[ImageOrchestrator] Batch embedding returned unexpected "
+                    f"type: {type(vectors)}",
                     rid,
                 )
                 return None
@@ -1019,14 +1413,17 @@ class ImageOrchestrator(BaseOrchestrator):
                 return None
 
             debug_id(
-                f"[ImageOrchestrator] Batch image embeddings generated successfully | count={len(vectors)}",
+                f"[ImageOrchestrator] Batch image embeddings generated successfully | "
+                f"count={len(vectors)}",
                 rid,
             )
+
             return vectors
 
         except Exception as exc:
             warning_id(
-                f"[ImageOrchestrator] Batch image embedding failed; falling back to singles: {exc}",
+                f"[ImageOrchestrator] Batch image embedding failed; "
+                f"falling back to singles: {exc}",
                 rid,
             )
             return None
@@ -1052,7 +1449,8 @@ class ImageOrchestrator(BaseOrchestrator):
                 vectors.append(vector)
             except Exception as exc:
                 warning_id(
-                    f"[ImageOrchestrator] Single-image embedding fallback failed for '{image_path}': {exc}",
+                    f"[ImageOrchestrator] Single-image embedding fallback failed "
+                    f"for '{image_path}': {exc}",
                     rid,
                 )
                 vectors.append(None)
