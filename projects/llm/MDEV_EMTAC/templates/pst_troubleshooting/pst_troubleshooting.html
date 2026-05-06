@@ -1,117 +1,145 @@
 {% extends "module_template_html/base_template_2_0_0.html" %}
-<!-- REVIEW: SIDEBAR NOT RETRACTING-->
+
 {% block title %}PST Troubleshooting{% endblock %}
 
-
 {% block extra_head %}
-    <style>
-    /* Page-specific styles can go here, or move them into a separate CSS file */
-    /*.wide-select {
-        width: 100%; 
-        min-width: 300px; 
-        max-width: 100%; 
-        resize: both; 
-    }*/
-    </style>
-    <!-- Add these to your extra_head block -->
-<!-- ORIGINAL CDN: <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/6.0.0/introjs.min.css"> -->
-<link rel="stylesheet" href="{{ url_for('static', filename='vendor/introjs/introjs.min.css') }}"/>
-<!-- ORIGINAL CDN: <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/6.0.0/introjs-rtl.min.css"> -->
-<link rel="stylesheet" href="{{ url_for('static', filename='vendor/introjs/introjs-rtl.min.css') }}"/>
-<!-- ORIGINAL CDN: <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> -->
-<link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/all.min.css') }}"/>
-    <!-- Bootstrap CSS -->
-<!-- ORIGINAL CDN: <link href="https://gcore.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> -->
-<link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}"/>
-    <!-- IntroJS CSS -->
+    <!-- Vendor CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/introjs/introjs.min.css') }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/introjs/introjs-rtl.min.css') }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/all.min.css') }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/select2/select2.min.css') }}"/>
 
-    <!-- Select2 CSS -->
-<!-- ORIGINAL CDN: <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet" /> -->
-<link rel="stylesheet" href="{{ url_for('static', filename='vendor/select2/select2.min.css') }}"/>
 
-    <!-- Page-specific CSS -->
-
+    <!-- Page CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pst_troubleshooting/role_base_button_acc_ctrl.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/pst_troubleshooting/pst_troubleshooting.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tutorial/tour.css') }}">
 
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pst_troubleshooting/pst_troubleshooting_module_template.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tutorial/tour.css') }}">
 {% endblock %}
 
 {% block content %}
-<!-- Include Confirmation Modal -->
-{% include 'pst_troubleshooting/partials/confirmation_modal.html' %}
+    {% include 'pst_troubleshooting/partials/confirmation_modal.html' %}
 
-<!-- Main Container -->
-<div class="container mt-5">
-    <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Troubleshooting Entry</h2>
-        <button id="startTourBtn" class="btn btn-info">
-            <i class="fas fa-question-circle me-1"></i> Take a Tour
-        </button>
-    </div>
+    <div class="module-page pst-troubleshooting-page">
 
-    <!-- Alert Container for User Feedback -->
-    <div id="alertContainer" class="mt-3"></div>
+        <header class="module-page-header pst-page-header mb-3">
+            <div>
+                <h2 class="module-page-title mb-1">Troubleshooting Entry</h2>
+                <p class="module-page-subtitle mb-0">
+                    Create, search, update, and connect problems, solutions, tasks, positions, parts, drawings, images, documents, and tools.
+                </p>
+            </div>
 
-    <!-- Loading Spinner (Hidden by Default) -->
-    <div id="loadingSpinner" class="d-none text-center mb-3">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
+            <div class="module-page-actions">
+                <button id="startTourBtn" class="btn btn-info" type="button">
+                    <i class="fas fa-question-circle me-1"></i>
+                    Take a Tour
+                </button>
+            </div>
+        </header>
+
+        <div id="alertContainer" class="mt-3"></div>
+
+        <div id="loadingSpinner" class="d-none text-center mb-3">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
         </div>
+
+        <section class="module-card pst-entry-card">
+            <div class="module-card-header pst-entry-card-header">
+                <ul class="nav nav-tabs module-tabs" id="troubleshootingTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button
+                            class="nav-link active"
+                            id="problem-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#problem"
+                            type="button"
+                            role="tab"
+                            aria-controls="problem"
+                            aria-selected="true">
+                            Problem
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button
+                            class="nav-link"
+                            id="solution-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#solution"
+                            type="button"
+                            role="tab"
+                            aria-controls="solution"
+                            aria-selected="false">
+                            Solutions
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button
+                            class="nav-link"
+                            id="task-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#task"
+                            type="button"
+                            role="tab"
+                            aria-controls="task"
+                            aria-selected="false">
+                            Tasks
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button
+                            class="nav-link"
+                            id="edit-task-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#edit-task"
+                            type="button"
+                            role="tab"
+                            aria-controls="edit-task"
+                            aria-selected="false">
+                            Edit Task
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="module-card-body pst-entry-card-body">
+                <div class="tab-content" id="troubleshootingTabContent">
+                    {% include 'pst_troubleshooting/partials/problem_tab.html' %}
+                    {% include 'pst_troubleshooting/partials/solutions_tab.html' %}
+                    {% include 'pst_troubleshooting/partials/tasks_tab.html' %}
+                    {% include 'pst_troubleshooting/partials/edit_task_tab.html' %}
+                </div>
+            </div>
+        </section>
     </div>
 
-    <!-- Navigation Tabs -->
-    <ul class="nav nav-tabs" id="troubleshootingTab" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="problem-tab" data-bs-toggle="tab" data-bs-target="#problem" type="button" role="tab" aria-controls="problem" aria-selected="true">Problem</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="solution-tab" data-bs-toggle="tab" data-bs-target="#solution" type="button" role="tab" aria-controls="solution" aria-selected="false">Solutions</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="task-tab" data-bs-toggle="tab" data-bs-target="#task" type="button" role="tab" aria-controls="task" aria-selected="false">Tasks</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="edit-task-tab" data-bs-toggle="tab" data-bs-target="#edit-task" type="button" role="tab" aria-controls="edit-task" aria-selected="false">Edit Task</button>
-        </li>
-    </ul>
-
-    <!-- Tab Content -->
-    <div class="tab-content" id="troubleshootingTabContent">
-        <!-- Include Tab Content Partials -->
-        {% include 'pst_troubleshooting/partials/problem_tab.html' %}
-        {% include 'pst_troubleshooting/partials/solutions_tab.html' %}
-        {% include 'pst_troubleshooting/partials/tasks_tab.html' %}
-        {% include 'pst_troubleshooting/partials/edit_task_tab.html' %}
-    </div> <!-- End of Tab Content -->
-</div> <!-- End of Main Container -->
-
-<!-- Include Position Template -->
-{% include 'pst_troubleshooting/partials/position_template.html' %}
+    {% include 'pst_troubleshooting/partials/position_template.html' %}
 {% endblock %}
 
 {% block extra_scripts %}
-<!-- Add this to your extra_scripts block -->
-<!-- ORIGINAL CDN: <script src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/6.0.0/intro.min.js"></script> -->
-<script src="{{ url_for('static', filename='vendor/introjs/intro.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/pst_troubleshooting/tour.js') }}"></script>
-<!-- Bootstrap JS Bundle (Includes Popper) -->
-<!-- ORIGINAL CDN: <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script> -->
-<script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
-<!-- jQuery and Select2 JS -->
-<!-- ORIGINAL CDN: <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script> -->
-<script src="{{ url_for('static', filename='vendor/jquery/jquery-3.6.0.min.js') }}"></script>
-<!-- ORIGINAL CDN: <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script> -->
-<script src="{{ url_for('static', filename='vendor/select2/select2.min.js') }}"></script>
+    <!-- Vendor JS -->
+    <script src="{{ url_for('static', filename='vendor/introjs/intro.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/jquery/jquery-3.6.0.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/select2/select2.min.js') }}"></script>
 
-<!-- Custom JS Files -->
-<script src="{{ url_for('static', filename='js/pst_troubleshooting/role_base_button_acc_ctrl.js') }}"></script>
-<script src="{{ url_for('static', filename='js/pst_troubleshooting/pst_troubleshooting_solution_task.js')}}"></script>
-<script src="{{ url_for('static', filename='js/pst_troubleshooting/pst_troubleshooting.js') }}"></script>
-<script src="{{ url_for('static', filename='js/pst_troubleshooting/pst_troubleshooting_new_entry.js') }}"></script>
-<!--<script src="{{ url_for('static', filename='js/pst_troubleshooting/pst_troubleshooting_position_update.js') }}"></script>
-    removed due to conflict with pst_troubleshooting.js dropdowns(site location)-->
-<script src="{{ url_for('static', filename='js/pst_troubleshooting/pst_troubleshooting_task_edit.js') }}"></script>
+    <!-- Page JS -->
+    <script src="{{ url_for('static', filename='js/pst_troubleshooting/tour.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/pst_troubleshooting/role_base_button_acc_ctrl.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/pst_troubleshooting/pst_troubleshooting_solution_task.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/pst_troubleshooting/pst_troubleshooting.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/pst_troubleshooting/pst_troubleshooting_new_entry.js') }}"></script>
 
+    <!--
+        Removed due to conflict with pst_troubleshooting.js dropdowns/site location:
+        <script src="{{ url_for('static', filename='js/pst_troubleshooting/pst_troubleshooting_position_update.js') }}"></script>
+    -->
+
+    <script src="{{ url_for('static', filename='js/pst_troubleshooting/pst_troubleshooting_task_edit.js') }}"></script>
 {% endblock %}
