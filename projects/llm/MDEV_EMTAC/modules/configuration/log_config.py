@@ -1,4 +1,4 @@
-# modules/configuration/logging_config.py
+# modules/configuration/log_config.py
 
 from __future__ import annotations
 
@@ -977,6 +977,8 @@ class TrainingLogManager:
         self.close()
 
 
+
+
 # ---------------------------------------------------------------------
 # DatabaseMaintLogManager
 # ---------------------------------------------------------------------
@@ -1137,6 +1139,269 @@ class DatabaseMaintLogManager:
             duration = time.time() - start_time
             self.log_failure(operation_name, exc, duration)
             raise
+
+    def close(self):
+        """
+        Flush and close handlers safely.
+
+        Useful for scripts, tests, and repeated maintenance runs.
+        """
+
+        for handler in list(self._logger.handlers):
+            _remove_handler_safely(self._logger, handler)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+
+
+# ---------------------------------------------------------------------
+# SearchAuditLogManager
+# ---------------------------------------------------------------------
+
+class SearchAuditLogManager:
+    """
+    Dedicated search pathway audit logger.
+
+    Purpose:
+        - Keep search/RAG/payload audit logs separate from app.log.
+        - Support per-run logs when needed.
+        - Track request_id, pathway, stage, and audit events clearly.
+        - Avoid polluting the main application logger.
+
+    This logger is for human-readable troubleshooting.
+
+    The PostgreSQL audit schema should remain the source of truth for
+    structured, searchable audit records.
+    """
+
+    def __init__(
+        self,
+        run_dir: Optional[os.PathLike] = None,
+        run_name: Optional[str] = None,
+        to_console: bool = False,
+        level: int = logging.INFO,
+        rotate_mb: int = 10,
+        backups: int = 5,
+    ):
+        self.run_dir = Path(run_dir) if run_dir else None
+        self.run_name = run_name or (
+            self.run_dir.name if self.run_dir else "global"
+        )
+        self.logger_name = f"ematac_search_audit.{self.run_name}"
+        self.level = level
+        self.to_console = to_console
+        self.rotate_mb = rotate_mb
+        self.backups = backups
+
+        self._logger = logging.getLogger(self.logger_name)
+        self._logger.setLevel(level)
+        self._logger.propagate = False
+        self._adapter = None
+
+        self._attach_handlers()
+
+    @property
+    def logger(self) -> logging.LoggerAdapter:
+        return self._adapter
+
+    def _attach_handlers(self):
+        try:
+            from modules.configuration.config import LOGS_DIR
+        except Exception:
+            LOGS_DIR = None
+
+        base_logs_dir = Path(LOGS_DIR) if LOGS_DIR else Path(log_directory)
+        search_audit_log_dir = base_logs_dir / "search_audit"
+        search_audit_log_dir.mkdir(parents=True, exist_ok=True)
+
+        if self.run_dir:
+            self.run_dir.mkdir(parents=True, exist_ok=True)
+            log_path = self.run_dir / "search_audit.log"
+        else:
+            log_path = search_audit_log_dir / "search_audit.log"
+
+        formatter = logging.Formatter(
+            "%(asctime)s - ematac_search_audit - [%(run)s] "
+            "%(levelname)s - %(filename)s:%(lineno)d - "
+            "%(funcName)s() - %(message)s"
+        )
+
+        _ensure_rotating_file_handler(
+            target_logger=self._logger,
+            filename=str(log_path),
+            max_bytes=self.rotate_mb * 1024 * 1024,
+            backup_count=self.backups,
+            level=self.level,
+            formatter=formatter,
+        )
+
+        if self.to_console:
+            console_formatter = logging.Formatter(
+                "%(asctime)s - ematac_search_audit - [%(run)s] "
+                "%(levelname)s - %(message)s"
+            )
+
+            _ensure_console_handler(
+                target_logger=self._logger,
+                level=self.level,
+                formatter=console_formatter,
+            )
+
+        self._adapter = logging.LoggerAdapter(
+            self._logger,
+            extra={"run": self.run_name},
+        )
+
+        if not getattr(self._logger, "_emtac_search_audit_logger_initialized", False):
+            self._adapter.info(
+                "Search audit logger initialized. rotating_handler=%s "
+                "concurrent_available=%s",
+                ACTIVE_ROTATING_HANDLER_NAME,
+                CONCURRENT_LOG_HANDLER_AVAILABLE,
+            )
+            self._logger._emtac_search_audit_logger_initialized = True
+
+    def log_run_start(
+        self,
+        *,
+        request_id: str,
+        pathway_name: str,
+        question: str | None = None,
+    ):
+        self.logger.info(
+            "AUDIT_RUN_START request_id=%s pathway=%s question=%r",
+            request_id,
+            pathway_name,
+            question,
+        )
+
+    def log_run_success(
+        self,
+        *,
+        request_id: str,
+        pathway_name: str,
+        duration_ms: int | None = None,
+        counts: dict | None = None,
+    ):
+        self.logger.info(
+            "AUDIT_RUN_SUCCESS request_id=%s pathway=%s duration_ms=%s counts=%s",
+            request_id,
+            pathway_name,
+            duration_ms,
+            counts or {},
+        )
+
+    def log_run_failure(
+        self,
+        *,
+        request_id: str,
+        pathway_name: str,
+        error: Exception,
+        duration_ms: int | None = None,
+    ):
+        self.logger.error(
+            "AUDIT_RUN_FAILURE request_id=%s pathway=%s duration_ms=%s error=%s",
+            request_id,
+            pathway_name,
+            duration_ms,
+            error,
+            exc_info=True,
+        )
+
+    def log_stage_start(
+        self,
+        *,
+        request_id: str,
+        pathway_name: str,
+        stage_name: str,
+    ):
+        self.logger.debug(
+            "AUDIT_STAGE_START request_id=%s pathway=%s stage=%s",
+            request_id,
+            pathway_name,
+            stage_name,
+        )
+
+    def log_stage_success(
+        self,
+        *,
+        request_id: str,
+        pathway_name: str,
+        stage_name: str,
+        duration_ms: int | None = None,
+        output_count: int | None = None,
+    ):
+        self.logger.debug(
+            "AUDIT_STAGE_SUCCESS request_id=%s pathway=%s stage=%s "
+            "duration_ms=%s output_count=%s",
+            request_id,
+            pathway_name,
+            stage_name,
+            duration_ms,
+            output_count,
+        )
+
+    def log_stage_failure(
+        self,
+        *,
+        request_id: str,
+        pathway_name: str,
+        stage_name: str,
+        error: Exception,
+        duration_ms: int | None = None,
+    ):
+        self.logger.error(
+            "AUDIT_STAGE_FAILURE request_id=%s pathway=%s stage=%s "
+            "duration_ms=%s error=%s",
+            request_id,
+            pathway_name,
+            stage_name,
+            duration_ms,
+            error,
+            exc_info=True,
+        )
+
+    def log_validation_result(
+        self,
+        *,
+        request_id: str,
+        pathway_name: str,
+        check_name: str,
+        check_status: str,
+        details: dict | None = None,
+    ):
+        log_method = self.logger.info
+
+        if check_status in {"failed", "error"}:
+            log_method = self.logger.error
+        elif check_status == "warning":
+            log_method = self.logger.warning
+
+        log_method(
+            "AUDIT_VALIDATION request_id=%s pathway=%s check=%s status=%s details=%s",
+            request_id,
+            pathway_name,
+            check_name,
+            check_status,
+            details or {},
+        )
+
+    def log_payload_counts(
+        self,
+        *,
+        request_id: str,
+        pathway_name: str,
+        counts: dict,
+    ):
+        self.logger.info(
+            "AUDIT_PAYLOAD_COUNTS request_id=%s pathway=%s counts=%s",
+            request_id,
+            pathway_name,
+            counts,
+        )
 
     def close(self):
         """
