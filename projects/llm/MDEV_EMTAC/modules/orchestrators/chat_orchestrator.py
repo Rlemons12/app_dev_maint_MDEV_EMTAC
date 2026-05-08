@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from typing import Dict, Any, Optional
+from uuid import UUID
 
 from modules.observability.high_end_tracer import tracer
 from modules.decorators.trace_decorator import trace_entrypoint
@@ -9,6 +10,12 @@ from modules.orchestrators.base_orchestrator import BaseOrchestrator
 
 from modules.services.ai_steward_manager_service import AIStewardManagerService
 from modules.services.qanda_service import QandAService
+
+from modules.ai.search_pathway.audit.search_audit_logger import (
+    get_search_audit_log_manager,
+)
+from modules.ai.search_pathway.audit.search_audit_service import SearchAuditService
+from modules.ai.search_pathway.audit.search_audit_types import SearchPathwayName
 
 from modules.configuration.config import (
     FORCE_DEBUG_CHUNK,
@@ -32,6 +39,7 @@ class ChatOrchestrator(BaseOrchestrator):
         - Own the database transaction/session boundary for answer generation
         - Coordinate RAG / AI answer generation
         - Persist Q&A seed data for later payload loading
+        - Record search-pathway audit summary for answer-first path
         - Return the text answer quickly
 
     Does NOT:
@@ -42,6 +50,8 @@ class ChatOrchestrator(BaseOrchestrator):
     """
 
     DEFAULT_METHOD = "rag"
+    AUDIT_PATHWAY_NAME = SearchPathwayName.RAG.value
+    AUDIT_PATHWAY_VERSION = "1.0"
 
     EMPTY_BLOCKS = {
         "documents-container": [],
@@ -60,6 +70,7 @@ class ChatOrchestrator(BaseOrchestrator):
 
         self.ai_service = ai_service or AIStewardManagerService()
         self.qanda_service = qanda_service or QandAService()
+        self.audit_log_manager = get_search_audit_log_manager()
 
     @with_request_id
     @trace_entrypoint(
@@ -81,12 +92,21 @@ class ChatOrchestrator(BaseOrchestrator):
 
         ai_time = 0.0
         persist_time = 0.0
+        audit_time = 0.0
 
         ai_result: Dict[str, Any] = {}
+        audit_summary: Dict[str, Any] = {}
+        qanda_id: Optional[Any] = None
 
         normalized_user_id = (user_id or "anonymous").strip() or "anonymous"
         normalized_question = (question or "").strip()
         normalized_client_type = (client_type or "web").strip().lower() or "web"
+
+        self.audit_log_manager.log_run_start(
+            request_id=request_id or "unknown",
+            pathway_name=self.AUDIT_PATHWAY_NAME,
+            question=normalized_question,
+        )
 
         try:
             forced_chunk_id = self._resolve_forced_chunk_id(
@@ -106,6 +126,7 @@ class ChatOrchestrator(BaseOrchestrator):
                         "client_type": normalized_client_type,
                         "forced_chunk_id": forced_chunk_id,
                         "include_payload": False,
+                        "audit_pathway": self.AUDIT_PATHWAY_NAME,
                     },
                 ):
                     ai_result = self.ai_service.execute(
@@ -131,7 +152,7 @@ class ChatOrchestrator(BaseOrchestrator):
             ai_result.setdefault("payload_status", "pending")
 
             # --------------------------------------------------
-            # 2. Persist Q&A seed
+            # 2. Persist Q&A seed and record answer audit summary
             # --------------------------------------------------
             # The raw_response should include the answer, used_chunks,
             # chunks, and relationship_map. The payload orchestrator can
@@ -141,7 +162,7 @@ class ChatOrchestrator(BaseOrchestrator):
             try:
                 with self.transaction() as session:
                     with tracer.span("persist_qanda_seed"):
-                        self.qanda_service.create_interaction(
+                        qanda_record = self.qanda_service.create_interaction(
                             session=session,
                             user_id=normalized_user_id,
                             question=normalized_question,
@@ -151,9 +172,38 @@ class ChatOrchestrator(BaseOrchestrator):
                             raw_response=ai_result,
                         )
 
+                        qanda_id = self._extract_record_id(qanda_record)
+
+                    audit_start = time.perf_counter()
+
+                    with tracer.span(
+                        "audit_answer_search_pathway",
+                        meta={
+                            "request_id": request_id,
+                            "pathway_name": self.AUDIT_PATHWAY_NAME,
+                            "qanda_id": str(qanda_id) if qanda_id else None,
+                        },
+                    ):
+                        audit_summary = SearchAuditService.record_search_result(
+                            session=session,
+                            request_id=request_id or "unknown",
+                            user_id=normalized_user_id,
+                            session_id=None,
+                            qanda_id=self._coerce_uuid_or_none(qanda_id),
+                            question=normalized_question,
+                            answer=ai_result.get("answer", ""),
+                            response=ai_result,
+                            pathway_name=self.AUDIT_PATHWAY_NAME,
+                            pathway_version=self.AUDIT_PATHWAY_VERSION,
+                            duration_ms=int((time.perf_counter() - request_start) * 1000),
+                            model_name=ai_result.get("model_name"),
+                        )
+
+                    audit_time = time.perf_counter() - audit_start
+
             except Exception as persist_error:
                 warning_id(
-                    f"Q&A seed persistence failed but answer response will continue: {persist_error}",
+                    f"Q&A seed persistence or answer audit failed but answer response will continue: {persist_error}",
                     request_id,
                     exc_info=True,
                 )
@@ -172,11 +222,21 @@ class ChatOrchestrator(BaseOrchestrator):
                 total_time=total_time,
                 ai_time=ai_time,
                 persist_time=persist_time,
+                audit_time=audit_time,
+                audit_summary=audit_summary,
+            )
+
+            self.audit_log_manager.log_run_success(
+                request_id=request_id or "unknown",
+                pathway_name=self.AUDIT_PATHWAY_NAME,
+                duration_ms=int(total_time * 1000),
+                counts=(audit_summary or {}).get("counts"),
             )
 
             info_id(
                 f"Chat answer processed in {total_time:.3f}s "
-                f"(AI: {ai_time:.3f}s | Persist seed: {persist_time:.3f}s)",
+                f"(AI: {ai_time:.3f}s | Persist seed: {persist_time:.3f}s | "
+                f"Audit: {audit_time:.3f}s)",
                 request_id,
             )
 
@@ -184,6 +244,13 @@ class ChatOrchestrator(BaseOrchestrator):
 
         except Exception as e:
             total_time = time.perf_counter() - request_start
+
+            self.audit_log_manager.log_run_failure(
+                request_id=request_id or "unknown",
+                pathway_name=self.AUDIT_PATHWAY_NAME,
+                error=e,
+                duration_ms=int(total_time * 1000),
+            )
 
             error_id(
                 f"ChatOrchestrator answer failure after {total_time:.3f}s: {e}",
@@ -196,6 +263,7 @@ class ChatOrchestrator(BaseOrchestrator):
                 total_time=total_time,
                 ai_time=ai_time,
                 persist_time=persist_time,
+                audit_time=audit_time,
             )
 
     def _resolve_forced_chunk_id(
@@ -253,6 +321,8 @@ class ChatOrchestrator(BaseOrchestrator):
         total_time: float,
         ai_time: float,
         persist_time: float,
+        audit_time: float,
+        audit_summary: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
 
         method = ai_result.get("method") or ai_result.get("strategy") or self.DEFAULT_METHOD
@@ -288,11 +358,19 @@ class ChatOrchestrator(BaseOrchestrator):
                 "total_time": total_time,
                 "ai_time": ai_time,
                 "persist_time": persist_time,
+                "audit_time": audit_time,
                 "method": method,
                 "strategy": strategy,
                 "debug_mode": response["debug_mode"],
                 "debug_chunk_id": response["debug_chunk_id"],
             }
+
+            response["audit"] = {
+                "pathway_name": self.AUDIT_PATHWAY_NAME,
+                "pathway_version": self.AUDIT_PATHWAY_VERSION,
+                "summary": audit_summary or {},
+            }
+
         else:
             response["performance"] = {
                 "total_time": total_time,
@@ -309,6 +387,7 @@ class ChatOrchestrator(BaseOrchestrator):
         total_time: float,
         ai_time: float,
         persist_time: float,
+        audit_time: float,
     ) -> Dict[str, Any]:
 
         return {
@@ -338,7 +417,47 @@ class ChatOrchestrator(BaseOrchestrator):
                 "total_time": total_time,
                 "ai_time": ai_time,
                 "persist_time": persist_time,
+                "audit_time": audit_time,
                 "method": "error",
                 "strategy": "error",
             },
         }
+
+    @staticmethod
+    def _extract_record_id(record: Any) -> Optional[Any]:
+        """
+        Extract an id from a Q&A record returned by QandAService.
+
+        Supports:
+            - ORM object with .id
+            - dictionary with "id"
+            - None
+        """
+
+        if record is None:
+            return None
+
+        if isinstance(record, dict):
+            return record.get("id")
+
+        return getattr(record, "id", None)
+
+    @staticmethod
+    def _coerce_uuid_or_none(value: Any) -> Optional[UUID]:
+        """
+        Coerce a value to UUID if possible.
+
+        SearchAuditService currently accepts qanda_id as UUID | None.
+        If a future QandAService returns a non-UUID ID, this safely returns None.
+        """
+
+        if value is None:
+            return None
+
+        if isinstance(value, UUID):
+            return value
+
+        try:
+            return UUID(str(value))
+        except (TypeError, ValueError, AttributeError):
+            return None
