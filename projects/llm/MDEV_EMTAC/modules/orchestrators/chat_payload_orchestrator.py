@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import time
 from typing import Any, Dict, Optional, Tuple
+from uuid import UUID
 
 from modules.observability.high_end_tracer import tracer
 from modules.decorators.trace_decorator import trace_entrypoint
@@ -10,6 +11,12 @@ from modules.orchestrators.base_orchestrator import BaseOrchestrator
 
 from modules.services.ai_steward_manager_service import AIStewardManagerService
 from modules.services.qanda_service import QandAService
+
+from modules.ai.search_pathway.audit.search_audit_logger import (
+    get_search_audit_log_manager,
+)
+from modules.ai.search_pathway.audit.search_audit_service import SearchAuditService
+from modules.ai.search_pathway.audit.search_audit_types import SearchPathwayName
 
 from modules.configuration.log_config import (
     with_request_id,
@@ -27,6 +34,7 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
     Responsibilities:
         - Load answer/RAG seed data from Q&A storage or request payload
         - Build documents/images/parts/drawings UI payload
+        - Record search-pathway audit summary for payload projection
         - Return only supporting UI payload
 
     Does NOT:
@@ -40,6 +48,9 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
         - Heavy database relationship work should live in services.
         - ai_service.project_payload() is the main delegated payload projection step.
     """
+
+    AUDIT_PATHWAY_NAME = SearchPathwayName.PAYLOAD_PROJECTION.value
+    AUDIT_PATHWAY_VERSION = "1.0"
 
     EMPTY_BLOCKS = {
         "documents-container": [],
@@ -60,6 +71,7 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
 
         self.ai_service = ai_service or AIStewardManagerService()
         self.qanda_service = qanda_service or QandAService()
+        self.audit_log_manager = get_search_audit_log_manager()
 
     @with_request_id
     @trace_entrypoint(
@@ -79,9 +91,16 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
         request_start = time.perf_counter()
         seed_time = 0.0
         payload_time = 0.0
+        audit_time = 0.0
         seed_source = "none"
 
         normalized_client_type = self._normalize_client_type(client_type)
+
+        self.audit_log_manager.log_run_start(
+            request_id=request_id or "unknown",
+            pathway_name=self.AUDIT_PATHWAY_NAME,
+            question=self._extract_question_from_seed(payload_seed),
+        )
 
         try:
             # --------------------------------------------------
@@ -103,16 +122,33 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
                     request_id,
                 )
 
-                return self._empty_payload_response(
+                total_time = time.perf_counter() - request_start
+
+                response = self._empty_payload_response(
                     request_id=request_id,
                     status="not_found",
                     payload_status="unavailable",
                     message="No payload seed was found for this request.",
-                    total_time=time.perf_counter() - request_start,
+                    total_time=total_time,
                     seed_time=seed_time,
                     payload_time=payload_time,
+                    audit_time=audit_time,
                     seed_source=seed_source,
                 )
+
+                self.audit_log_manager.log_run_success(
+                    request_id=request_id or "unknown",
+                    pathway_name=self.AUDIT_PATHWAY_NAME,
+                    duration_ms=int(total_time * 1000),
+                    counts={
+                        "documents": 0,
+                        "images": 0,
+                        "parts": 0,
+                        "drawings": 0,
+                    },
+                )
+
+                return response
 
             debug_id(
                 "[ChatPayloadOrchestrator] Payload seed resolved. "
@@ -122,9 +158,11 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
             )
 
             # --------------------------------------------------
-            # 2. Project payload
+            # 2. Project payload and record audit summary
             # --------------------------------------------------
             payload_start = time.perf_counter()
+            projected_result: Dict[str, Any] = {}
+            audit_summary: Dict[str, Any] = {}
 
             with self.transaction() as session:
                 with tracer.span(
@@ -133,6 +171,7 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
                         "request_id": request_id,
                         "client_type": normalized_client_type,
                         "seed_source": seed_source,
+                        "audit_pathway": self.AUDIT_PATHWAY_NAME,
                     },
                 ):
                     projected_result = self.ai_service.project_payload(
@@ -141,13 +180,45 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
                         request_id=request_id,
                     )
 
-            payload_time = time.perf_counter() - payload_start
+                payload_time = time.perf_counter() - payload_start
 
-            if not isinstance(projected_result, dict):
-                raise ValueError(
-                    "AI service returned invalid payload format. "
-                    f"type={type(projected_result).__name__}"
-                )
+                if not isinstance(projected_result, dict):
+                    raise ValueError(
+                        "AI service returned invalid payload format. "
+                        f"type={type(projected_result).__name__}"
+                    )
+
+                audit_start = time.perf_counter()
+
+                with tracer.span(
+                    "audit_payload_search_pathway",
+                    meta={
+                        "request_id": request_id,
+                        "pathway_name": self.AUDIT_PATHWAY_NAME,
+                        "seed_source": seed_source,
+                    },
+                ):
+                    audit_response = dict(projected_result)
+                    audit_response.setdefault("used_chunks", seed_result.get("used_chunks"))
+                    audit_response.setdefault("chunks", seed_result.get("chunks"))
+                    audit_response.setdefault("relationship_map", seed_result.get("relationship_map"))
+
+                    audit_summary = SearchAuditService.record_search_result(
+                        session=session,
+                        request_id=request_id or "unknown",
+                        user_id=self._extract_user_id_from_seed(seed_result),
+                        session_id=self._extract_session_id_from_seed(seed_result),
+                        qanda_id=self._extract_qanda_id_from_seed(seed_result),
+                        question=self._extract_question_from_seed(seed_result) or "",
+                        answer=self._extract_answer_from_seed(seed_result),
+                        response=audit_response,
+                        pathway_name=self.AUDIT_PATHWAY_NAME,
+                        pathway_version=self.AUDIT_PATHWAY_VERSION,
+                        duration_ms=int((time.perf_counter() - request_start) * 1000),
+                        model_name=seed_result.get("model_name") or projected_result.get("model_name"),
+                    )
+
+                audit_time = time.perf_counter() - audit_start
 
             # --------------------------------------------------
             # 3. Return payload-only response
@@ -161,17 +232,33 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
                 total_time=total_time,
                 seed_time=seed_time,
                 payload_time=payload_time,
+                audit_time=audit_time,
                 seed_source=seed_source,
+                audit_summary=audit_summary,
+            )
+
+            counts = {
+                "documents": len(response.get("documents") or []),
+                "images": len(response.get("images") or []),
+                "parts": len(response.get("parts") or []),
+                "drawings": len(response.get("drawings") or []),
+            }
+
+            self.audit_log_manager.log_run_success(
+                request_id=request_id or "unknown",
+                pathway_name=self.AUDIT_PATHWAY_NAME,
+                duration_ms=int(total_time * 1000),
+                counts=counts,
             )
 
             info_id(
                 f"Chat payload processed in {total_time:.3f}s "
                 f"(Seed: {seed_time:.3f}s | Payload: {payload_time:.3f}s | "
-                f"seed_source={seed_source} | "
-                f"docs={len(response.get('documents') or [])} | "
-                f"images={len(response.get('images') or [])} | "
-                f"parts={len(response.get('parts') or [])} | "
-                f"drawings={len(response.get('drawings') or [])})",
+                f"Audit: {audit_time:.3f}s | seed_source={seed_source} | "
+                f"docs={counts['documents']} | "
+                f"images={counts['images']} | "
+                f"parts={counts['parts']} | "
+                f"drawings={counts['drawings']})",
                 request_id,
             )
 
@@ -179,6 +266,13 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
 
         except Exception as exc:
             total_time = time.perf_counter() - request_start
+
+            self.audit_log_manager.log_run_failure(
+                request_id=request_id or "unknown",
+                pathway_name=self.AUDIT_PATHWAY_NAME,
+                error=exc,
+                duration_ms=int(total_time * 1000),
+            )
 
             error_id(
                 f"ChatPayloadOrchestrator failure after {total_time:.3f}s: {exc}",
@@ -194,6 +288,7 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
                 total_time=total_time,
                 seed_time=seed_time,
                 payload_time=payload_time,
+                audit_time=audit_time,
                 seed_source=seed_source,
             )
 
@@ -356,7 +451,9 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
         total_time: float,
         seed_time: float,
         payload_time: float,
+        audit_time: float,
         seed_source: str,
+        audit_summary: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
 
         documents = self._safe_list(result.get("documents"))
@@ -392,6 +489,7 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
                 "total_time": total_time,
                 "seed_time": seed_time,
                 "payload_time": payload_time,
+                "audit_time": audit_time,
                 "seed_source": seed_source,
                 "documents": len(documents),
                 "parts": len(parts),
@@ -412,6 +510,12 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
                 "seed_source": seed_source,
             }
 
+            response["audit"] = {
+                "pathway_name": self.AUDIT_PATHWAY_NAME,
+                "pathway_version": self.AUDIT_PATHWAY_VERSION,
+                "summary": audit_summary or {},
+            }
+
         return response
 
     def _empty_payload_response(
@@ -424,6 +528,7 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
         total_time: float,
         seed_time: float,
         payload_time: float,
+        audit_time: float,
         seed_source: str,
     ) -> Dict[str, Any]:
 
@@ -445,6 +550,7 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
                 "total_time": total_time,
                 "seed_time": seed_time,
                 "payload_time": payload_time,
+                "audit_time": audit_time,
                 "seed_source": seed_source,
                 "documents": 0,
                 "parts": 0,
@@ -494,3 +600,78 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
             "images-container": images,
             "drawings-container": drawings,
         }
+
+    @staticmethod
+    def _extract_question_from_seed(seed: Optional[Dict[str, Any]]) -> Optional[str]:
+        if not isinstance(seed, dict):
+            return None
+
+        return (
+            seed.get("question")
+            or seed.get("user_question")
+            or seed.get("query")
+            or seed.get("prompt")
+        )
+
+    @staticmethod
+    def _extract_answer_from_seed(seed: Optional[Dict[str, Any]]) -> Optional[str]:
+        if not isinstance(seed, dict):
+            return None
+
+        return (
+            seed.get("answer")
+            or seed.get("final_answer")
+            or seed.get("response")
+        )
+
+    @staticmethod
+    def _extract_user_id_from_seed(seed: Optional[Dict[str, Any]]) -> Optional[str]:
+        if not isinstance(seed, dict):
+            return None
+
+        user_id = seed.get("user_id")
+
+        if user_id is None:
+            return None
+
+        return str(user_id)
+
+    @staticmethod
+    def _extract_session_id_from_seed(seed: Optional[Dict[str, Any]]) -> Optional[UUID]:
+        if not isinstance(seed, dict):
+            return None
+
+        value = seed.get("session_id")
+
+        if value is None:
+            return None
+
+        if isinstance(value, UUID):
+            return value
+
+        try:
+            return UUID(str(value))
+        except (TypeError, ValueError, AttributeError):
+            return None
+
+    @staticmethod
+    def _extract_qanda_id_from_seed(seed: Optional[Dict[str, Any]]) -> Optional[UUID]:
+        if not isinstance(seed, dict):
+            return None
+
+        value = (
+            seed.get("qanda_id")
+            or seed.get("qa_id")
+            or seed.get("interaction_id")
+        )
+
+        if value is None:
+            return None
+
+        if isinstance(value, UUID):
+            return value
+
+        try:
+            return UUID(str(value))
+        except (TypeError, ValueError, AttributeError):
+            return None
