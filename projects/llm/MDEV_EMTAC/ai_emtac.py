@@ -398,28 +398,91 @@ def create_app(request_id=None):
 
         @app.before_request
         def global_login_check():
+            """
+            Global login guard.
+
+            Normal EMTAC UI routes still require a logged-in user.
+
+            Tablet Edge routes are allowed through separately because they are
+            API/agent routes used by the Android tablet, PowerShell route tests,
+            and future browser/network monitoring code. These routes should not
+            be redirected to the HTML login page.
+
+            Later, Tablet Edge routes should use their own tablet registration
+            token or API token. For now, during development, they are exempted
+            from the normal browser session login check.
+            """
             current_request_id = get_request_id()
             endpoint = request.endpoint
-            debug_id(f"Incoming endpoint: {endpoint}", current_request_id)
+            request_path = request.path or ""
 
+            debug_id(
+                f"Incoming endpoint: {endpoint}, path: {request_path}",
+                current_request_id,
+            )
+
+            # ------------------------------------------------------------
+            # Public/API bypasses
+            # ------------------------------------------------------------
+            # Allow preflight/API checks.
+            if request.method == "OPTIONS":
+                return
+
+            # Always allow static files.
+            if endpoint == "static" or request_path.startswith("/static/"):
+                return
+
+            # Always allow Tablet Edge API routes.
+            #
+            # This prevents API clients from receiving the HTML login page
+            # when posting to:
+            #   /tablet-edge/register
+            #   /tablet-edge/heartbeat
+            #   /tablet-edge/network-events
+            #   /tablet-edge/health-samples
+            #   /tablet-edge/offline-events/sync
+            #
+            # Endpoint names will look like:
+            #   tablet_edge_bp.health
+            #   tablet_edge_bp.network_events
+            if request_path == "/tablet-edge" or request_path.startswith("/tablet-edge/"):
+                debug_id(
+                    f"Allowing Tablet Edge route without browser login: {request_path}",
+                    current_request_id,
+                )
+                return
+
+            if endpoint and endpoint.startswith("tablet_edge_bp."):
+                debug_id(
+                    f"Allowing Tablet Edge endpoint without browser login: {endpoint}",
+                    current_request_id,
+                )
+                return
+
+            # ------------------------------------------------------------
+            # Update activity for logged-in browser users
+            # ------------------------------------------------------------
             if "user_id" in session and "login_record_id" in session:
                 try:
                     with log_timed_operation(
-                        "user_activity_update",
-                        current_request_id,
+                            "user_activity_update",
+                            current_request_id,
                     ):
                         with db_config.get_main_session() as session_db:
                             login_record = (
                                 session_db.query(UserLogin)
                                 .get(session["login_record_id"])
                             )
+
                             if login_record and login_record.is_active:
                                 login_record.last_activity = datetime.utcnow()
                                 session_db.commit()
+
                                 debug_id(
                                     f"Updated activity for user {session['user_id']}",
                                     current_request_id,
                                 )
+
                 except Exception as e:
                     error_id(
                         f"Error updating activity timestamp: {e}",
@@ -427,12 +490,16 @@ def create_app(request_id=None):
                         exc_info=True,
                     )
 
+            # ------------------------------------------------------------
+            # Public browser/system endpoints
+            # ------------------------------------------------------------
             allowed_routes = [
                 "login_bp.login",
                 "login_bp.logout",
                 "static",
                 "create_user_bp.create_user",
                 "create_user_bp.submit_user_creation",
+                "health_check",
                 "health",
                 "model_status",
                 "api_status",
@@ -441,6 +508,9 @@ def create_app(request_id=None):
             if request.endpoint is None:
                 return
 
+            # ------------------------------------------------------------
+            # Normal login enforcement
+            # ------------------------------------------------------------
             if "user_id" not in session and request.endpoint not in allowed_routes:
                 debug_id(
                     f"Redirecting unauthenticated user from {endpoint} to login",
