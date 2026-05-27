@@ -22,6 +22,8 @@ from flask import Flask
 logger.info("Starting the Flask application")
 
 # Import blueprints
+from blueprints.tablet_edge.tablet_edge_app_download_routes import tablet_edge_app_download_bp
+from blueprints.tablet_edge.tablet_edge_bp import tablet_edge_bp
 from blueprints.bill_of_materials.enter_new_part import enter_new_part_bp
 from blueprints.bill_of_materials.search_bill_of_material_bp import search_bill_of_material_bp
 from blueprints.bill_of_materials.bill_of_materials_bp import bill_of_materials_bp
@@ -156,6 +158,9 @@ def register_blueprints(app):
 
     app.register_blueprint(trace_dashboard_bp, url_prefix="/dashboards")
     app.register_blueprint(theme_utils_bp)
+    app.register_blueprint(tablet_edge_bp)
+    app.register_blueprint(tablet_edge_app_download_bp)
+
 
 app = Flask(__name__)
 app.secret_key = '1234'
