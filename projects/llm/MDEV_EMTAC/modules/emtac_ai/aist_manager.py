@@ -7,6 +7,7 @@ Thin orchestrator around UnifiedSearch:
 - Handles user/session tracking via SearchQueryTracker
 - Formats responses for chatbot frontends
 - Persists interactions (QandA table in emtacdb)
+- Updates QandA question/answer embeddings on the same QandA row
 """
 
 from __future__ import annotations
@@ -36,6 +37,9 @@ from modules.services.image_completed_document_association_service import (
 # GPU / unified AI facade ONLY
 from modules.services.ai_models_service import AIModelsService
 
+# QandA embedding updater
+from modules.services.qanda_embedding_service import QandAEmbeddingService
+
 # DB models
 from modules.emtacdb.emtacdb_fts import QandA, Document
 
@@ -55,7 +59,14 @@ db_config = get_db_config()
 def get_request_id() -> str:
     try:
         from modules.configuration.log_config import get_current_request_id
-        return get_current_request_id()
+
+        current_request_id = get_current_request_id()
+
+        if current_request_id:
+            return current_request_id
+
+        return str(uuid.uuid4())[:8]
+
     except Exception:
         return str(uuid.uuid4())[:8]
 
@@ -77,6 +88,10 @@ class AistManager:
         self.current_user_id: Optional[str] = None
         self.current_session_id: Optional[str] = None
         self.query_tracker = None
+
+        # QandA embedding service
+        # Initialized once so the embedding model/cache can be reused.
+        self.qanda_embedding_service = QandAEmbeddingService()
 
         logger.info("=== AIST MANAGER INITIALIZATION (UnifiedSearch hub) ===")
 
@@ -115,10 +130,12 @@ class AistManager:
         if not self.db_session:
             logger.warning("No DB session - tracking disabled")
             return False
+
         try:
             self.query_tracker = SearchQueryTracker(self.db_session)
             logger.info("Search tracking initialized")
             return True
+
         except Exception as e:
             logger.warning(f"Tracking unavailable: {e}")
             return False
@@ -128,20 +145,27 @@ class AistManager:
     def set_current_user(self, user_id: str, context_data: Dict = None) -> bool:
         try:
             self.current_user_id = user_id
+
             if self.query_tracker:
                 manager = SearchSessionManager(self.db_session)
+
                 self.current_session_id = manager.start_session(
                     user_id=user_id,
-                    context_data=context_data or {
+                    context_data=context_data
+                    or {
                         "component": "aist_manager",
                         "session_started_at": datetime.utcnow().isoformat(),
                     },
                 )
+
                 logger.info(
                     f"Started session {self.current_session_id} for user {user_id}"
                 )
+
                 return True
+
             return False
+
         except Exception as e:
             logger.error(f"set_current_user failed: {e}", exc_info=True)
             return False
@@ -157,11 +181,14 @@ class AistManager:
     ):
         """
         Main entry point.
+
         RAG-FIRST, NER-GATED, LLM ALWAYS ANSWERS.
 
         IMPORTANT:
-        - ALL exits go through _format_final_response()
-        - Frontend UI contract is enforced here
+            - ALL exits go through _format_final_response()
+            - Frontend UI contract is enforced here
+            - Successful answers are persisted through record_interaction()
+            - record_interaction() also updates embeddings on the same QandA row
         """
 
         self.start_time = time.time()
@@ -178,17 +205,24 @@ class AistManager:
             extra={"request_id": self.current_request_id},
         )
 
-        if not question or not question.strip():
+        cleaned_question = question.strip() if isinstance(question, str) else ""
+
+        if not cleaned_question:
             logger.warning(
                 "[AIST] Empty or invalid question received",
                 extra={"request_id": self.current_request_id},
             )
+
             return self._format_final_response(
                 {
                     "answer": "Please provide a more detailed question so I can help you better.",
                     "documents": [],
                     "parts": [],
                     "thumbnails": [],
+                    "drawings": [],
+                    "images": [],
+                    "status": "success",
+                    "method": "invalid_input",
                 }
             )
 
@@ -205,29 +239,49 @@ class AistManager:
                         extra={"request_id": self.current_request_id},
                     )
 
-            if not self.search_engine or not getattr(self.search_engine, "rag_pipeline", None):
+            if not self.search_engine or not getattr(
+                self.search_engine,
+                "rag_pipeline",
+                None,
+            ):
                 logger.error(
                     "[AIST] RAG pipeline not initialized",
                     extra={"request_id": self.current_request_id},
                 )
+
                 return self._format_final_response(
                     {
                         "answer": "The AI assistant is temporarily unavailable.",
                         "documents": [],
                         "parts": [],
                         "thumbnails": [],
+                        "drawings": [],
+                        "images": [],
+                        "status": "error",
+                        "method": "rag_unavailable",
                     }
                 )
 
             with self.db_config.get_main_session() as session:
                 result = self.search_engine.execute_unified_search(
-                    question=question.strip(),
+                    question=cleaned_question,
                     user_id=user_id,
                     request_id=self.current_request_id,
                     session=session,
                 )
 
-            return self._format_final_response(result)
+            formatted_response = self._format_final_response(result)
+
+            # Persist QandA row and update embeddings.
+            # This method is duplicate-safe by request_id.
+            self.record_interaction(
+                user_id=str(user_id),
+                question=cleaned_question,
+                response=formatted_response,
+                request_id=self.current_request_id,
+            )
+
+            return formatted_response
 
         except Exception as e:
             logger.error(
@@ -235,12 +289,17 @@ class AistManager:
                 exc_info=True,
                 extra={"request_id": self.current_request_id},
             )
+
             return self._format_final_response(
                 {
                     "answer": "An unexpected error occurred while processing your request.",
                     "documents": [],
                     "parts": [],
                     "thumbnails": [],
+                    "drawings": [],
+                    "images": [],
+                    "status": "error",
+                    "method": "exception",
                 }
             )
 
@@ -248,19 +307,23 @@ class AistManager:
     # Drawings extraction helpers
     # --------------------------------------------------
     def _flatten_drawing_navigation(
-        self, drawing_navigation: Any
+        self,
+        drawing_navigation: Any,
     ) -> List[Dict[str, Any]]:
         results: List[Dict[str, Any]] = []
+
         if not drawing_navigation or not isinstance(drawing_navigation, dict):
             return results
 
         areas = drawing_navigation.get("areas")
+
         if not isinstance(areas, list):
             return results
 
         for area in areas:
             if not isinstance(area, dict):
                 continue
+
             area_name = area.get("area_name")
 
             models = area.get("models") or []
@@ -270,6 +333,7 @@ class AistManager:
             for model in models:
                 if not isinstance(model, dict):
                     continue
+
                 model_name = model.get("model_name")
 
                 assets = model.get("assets") or []
@@ -279,6 +343,7 @@ class AistManager:
                 for asset in assets:
                     if not isinstance(asset, dict):
                         continue
+
                     asset_name = asset.get("asset_name")
 
                     drawings = asset.get("drawings") or []
@@ -288,6 +353,7 @@ class AistManager:
                     for drw in drawings:
                         if not isinstance(drw, dict):
                             continue
+
                         payload = dict(drw)
                         payload["_area"] = area_name
                         payload["_model"] = model_name
@@ -297,16 +363,20 @@ class AistManager:
         return results
 
     def _extract_drawings_from_documents(
-        self, documents: List[Dict[str, Any]]
+        self,
+        documents: List[Dict[str, Any]],
     ) -> List[Dict[str, Any]]:
         if not isinstance(documents, list):
             return []
 
         all_drawings: List[Dict[str, Any]] = []
+
         for doc in documents:
             if not isinstance(doc, dict):
                 continue
+
             nav = doc.get("drawing_navigation")
+
             if not nav:
                 continue
 
@@ -324,17 +394,73 @@ class AistManager:
                 or drawing.get("url")
                 or str(sorted(drawing.items()))
             )
+
             if key in seen:
                 continue
+
             seen.add(key)
             unique.append(drawing)
 
         return unique
 
+    def _extract_drawings_from_navigation(
+        self,
+        documents: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        seen: set[int] = set()
+        drawings: List[Dict[str, Any]] = []
+
+        if not isinstance(documents, list):
+            return drawings
+
+        for doc in documents:
+            if not isinstance(doc, dict):
+                continue
+
+            nav = doc.get("drawing_navigation")
+
+            if not isinstance(nav, dict):
+                continue
+
+            for area in nav.get("areas", []) or []:
+                if not isinstance(area, dict):
+                    continue
+
+                for model in area.get("models", []) or []:
+                    if not isinstance(model, dict):
+                        continue
+
+                    for asset in model.get("assets", []) or []:
+                        if not isinstance(asset, dict):
+                            continue
+
+                        for drw in asset.get("drawings", []) or []:
+                            if not isinstance(drw, dict):
+                                continue
+
+                            drw_id = drw.get("id")
+
+                            if drw_id is None or drw_id in seen:
+                                continue
+
+                            seen.add(drw_id)
+                            drawings.append(drw)
+
+        return drawings
+
     # ---------- Formatting ----------
     def _format_final_response(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        if not isinstance(result, dict):
+            result = {}
+
         documents = result.get("documents", []) or []
         parts = result.get("parts", []) or []
+
+        if not isinstance(documents, list):
+            documents = []
+
+        if not isinstance(parts, list):
+            parts = []
 
         for doc in documents:
             if not isinstance(doc, dict):
@@ -363,10 +489,24 @@ class AistManager:
             drawings = self._extract_drawings_from_documents(documents)
 
         images: List[Any] = []
+
+        result_images = result.get("images")
+
+        if isinstance(result_images, list):
+            images.extend(result_images)
+
         for doc in documents:
+            if not isinstance(doc, dict):
+                continue
+
             doc_images = doc.get("images")
+
             if isinstance(doc_images, list):
                 images.extend(doc_images)
+
+        images = self._dedupe_payload_items(images)
+        drawings = self._dedupe_payload_items(drawings)
+        parts = self._dedupe_payload_items(parts)
 
         debug_id(
             f"[FORMAT FINAL] passing docs={len(documents)} "
@@ -389,46 +529,248 @@ class AistManager:
             "performance": result.get("performance"),
         }
 
-    def _extract_drawings_from_navigation(
-        self, documents: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        seen: set[int] = set()
-        drawings: List[Dict[str, Any]] = []
+    @staticmethod
+    def _dedupe_payload_items(items: Any) -> List[Any]:
+        """
+        Deduplicate payload items while preserving order.
 
-        for doc in documents:
-            nav = doc.get("drawing_navigation")
-            if not isinstance(nav, dict):
+        Supports dictionaries and non-dictionary values.
+        """
+
+        if not isinstance(items, list):
+            return []
+
+        unique: List[Any] = []
+        seen: set = set()
+
+        for item in items:
+            if isinstance(item, dict):
+                key = (
+                    item.get("id")
+                    or item.get("part_id")
+                    or item.get("image_id")
+                    or item.get("drawing_id")
+                    or item.get("drw_number")
+                    or item.get("drawing_number")
+                    or item.get("src")
+                    or item.get("url")
+                    or str(sorted(item.items()))
+                )
+            else:
+                key = str(item)
+
+            if key in seen:
                 continue
 
-            for area in nav.get("areas", []):
-                for model in area.get("models", []):
-                    for asset in model.get("assets", []):
-                        for drw in asset.get("drawings", []):
-                            drw_id = drw.get("id")
-                            if drw_id is None or drw_id in seen:
-                                continue
-                            seen.add(drw_id)
-                            drawings.append(drw)
+            seen.add(key)
+            unique.append(item)
 
-        return drawings
+        return unique
 
     # ---------- Persistence ----------
     @with_request_id
     def record_interaction(
-        self, user_id: str, question: str, response: Dict[str, Any], request_id: str
+        self,
+        user_id: str,
+        question: str,
+        response: Dict[str, Any],
+        request_id: str,
     ) -> None:
+        """
+        Persist the Q&A interaction, then update the same QandA row with embeddings.
+
+        Important:
+            - Creates one QandA row per request_id.
+            - If called twice for the same request_id, it updates/reuses the same row.
+            - Feedback/rating/comment updates should still happen elsewhere.
+            - Embedding failure should not prevent the Q&A row from being saved.
+        """
+
         try:
-            with db_config.get_main_session() as session:
-                QandA.record_interaction(
+            with self.db_config.get_main_session() as session:
+                answer = response.get("answer", "") if isinstance(response, dict) else ""
+
+                qa_record = self._find_existing_qanda_by_request_id(
+                    session=session,
+                    user_id=user_id,
+                    request_id=request_id,
+                )
+
+                if qa_record:
+                    logger.info(
+                        "[record_interaction] Existing QandA row found. "
+                        "qanda_id=%s user_id=%s request_id=%s",
+                        qa_record.id,
+                        user_id,
+                        request_id,
+                    )
+
+                    self._update_existing_qanda_interaction(
+                        qa_record=qa_record,
+                        question=question,
+                        answer=answer,
+                        raw_response=response,
+                    )
+
+                    try:
+                        session.commit()
+                    except Exception:
+                        session.rollback()
+                        raise
+
+                else:
+                    qa_record = QandA.record_interaction(
+                        user_id=user_id,
+                        question=question,
+                        answer=answer,
+                        session=session,
+                        request_id=request_id,
+                        raw_response=response,
+                    )
+
+                if not qa_record:
+                    logger.warning(
+                        "[record_interaction] No QandA row available after persistence. "
+                        "user_id=%s request_id=%s",
+                        user_id,
+                        request_id,
+                    )
+                    return
+
+                self._update_qanda_embeddings(
+                    session=session,
+                    qa_record=qa_record,
                     user_id=user_id,
                     question=question,
-                    answer=response.get("answer", ""),
-                    session=session,
+                    answer=answer,
                     request_id=request_id,
-                    raw_response=response,
                 )
+
         except Exception:
-            logger.error("record_interaction failed", exc_info=True)
+            logger.error(
+                "[record_interaction] Failed to persist QandA interaction "
+                "user_id=%s request_id=%s",
+                user_id,
+                request_id,
+                exc_info=True,
+            )
+
+    def _find_existing_qanda_by_request_id(
+        self,
+        *,
+        session,
+        user_id: str,
+        request_id: str,
+    ) -> Optional[QandA]:
+        """
+        Finds an existing QandA row for the request_id.
+
+        This prevents duplicate rows if:
+            - answer_question() records the interaction
+            - another route/coordinator also calls record_interaction()
+        """
+
+        if not request_id:
+            return None
+
+        try:
+            query = session.query(QandA).filter(QandA.request_id == request_id)
+
+            if user_id is not None:
+                query = query.filter(QandA.user_id == str(user_id))
+
+            return query.order_by(QandA.timestamp.desc()).first()
+
+        except Exception:
+            logger.error(
+                "[record_interaction] Failed to search existing QandA row "
+                "user_id=%s request_id=%s",
+                user_id,
+                request_id,
+                exc_info=True,
+            )
+            return None
+
+    @staticmethod
+    def _update_existing_qanda_interaction(
+        *,
+        qa_record: QandA,
+        question: str,
+        answer: str,
+        raw_response: Dict[str, Any],
+    ) -> None:
+        """
+        Updates safe QandA fields on an existing row.
+
+        Does not touch:
+            - rating
+            - comment
+            - question_embedding
+            - answer_embedding
+        """
+
+        if question and not getattr(qa_record, "question", None):
+            qa_record.question = question
+
+        if answer and not getattr(qa_record, "answer", None):
+            qa_record.answer = answer
+
+        if hasattr(qa_record, "raw_response") and raw_response:
+            qa_record.raw_response = raw_response
+
+        if hasattr(qa_record, "question_length"):
+            qa_record.question_length = len(qa_record.question or "")
+
+        if hasattr(qa_record, "answer_length"):
+            qa_record.answer_length = len(qa_record.answer or "")
+
+    def _update_qanda_embeddings(
+        self,
+        *,
+        session,
+        qa_record: QandA,
+        user_id: str,
+        question: str,
+        answer: str,
+        request_id: str,
+    ) -> None:
+        """
+        Best-effort embedding update for the same QandA row.
+
+        This method should never break the chatbot response if embedding fails.
+        """
+
+        try:
+            embedded = self.qanda_embedding_service.embed_existing_qanda(
+                session=session,
+                qa_id=qa_record.id,
+                question=question,
+                answer=answer,
+                embed_question=True,
+                embed_answer=True,
+                request_id=request_id,
+                skip_existing=True,
+                commit=True,
+            )
+
+            logger.info(
+                "[record_interaction] QandA embedding update finished "
+                "qanda_id=%s user_id=%s request_id=%s embedded=%s",
+                qa_record.id,
+                user_id,
+                request_id,
+                embedded,
+            )
+
+        except Exception:
+            logger.error(
+                "[record_interaction] QandA embedding update failed "
+                "qanda_id=%s user_id=%s request_id=%s",
+                qa_record.id,
+                user_id,
+                request_id,
+                exc_info=True,
+            )
 
     # ---------- Error ----------
     def _create_error_response(self, error, question, user_id, request_id):
@@ -453,7 +795,9 @@ class AistManager:
         Compatibility shim for legacy endpoints.
         Initializes request timing and request_id.
         """
+
         self.start_time = time.time()
+
         if request_id:
             self.current_request_id = request_id
             info_id(f"[AistManager] Request {request_id} started")
