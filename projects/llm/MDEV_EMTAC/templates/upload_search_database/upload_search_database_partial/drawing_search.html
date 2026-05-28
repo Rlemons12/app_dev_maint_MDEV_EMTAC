@@ -66,41 +66,52 @@
                         <div class="results-grid">`;
 
             data.results.forEach(drawing => {
-                html += `
-                    <div class="result-card">
-                        <h3>${drawing.drw_name || 'Unnamed Drawing'}</h3>
-                        <div class="drawing-details">
-                            <p><strong>ID:</strong> ${drawing.id}</p>
-                            <p><strong>Equipment:</strong> ${drawing.drw_equipment_name || 'N/A'}</p>
-                            <p><strong>Number:</strong> ${drawing.drw_number || 'N/A'}</p>
-                            <p><strong>Revision:</strong> ${drawing.drw_revision || 'N/A'}</p>
-                            <p><strong>Spare Part #:</strong> ${drawing.drw_spare_part_number || 'N/A'}</p>
-                        </div>`;
+    const drawingUrl = drawing.url || `/drawings/view/${encodeURIComponent(drawing.id)}`;
+    const downloadUrl = drawingUrl.includes("?")
+        ? `${drawingUrl}&download=1`
+        : `${drawingUrl}?download=1`;
 
-                // Add part images if they exist
-                if (drawing.part_images && drawing.part_images.length > 0) {
-                    html += `<div class="part-images">
-                              <h4>Associated Part Images (${drawing.part_images.length})</h4>
-                              <div class="image-gallery">`;
+    html += `
+        <div class="result-card">
+            <h3>${drawing.drw_name || 'Unnamed Drawing'}</h3>
+            <div class="drawing-details">
+                <p><strong>ID:</strong> ${drawing.id}</p>
+                <p><strong>Equipment:</strong> ${drawing.drw_equipment_name || 'N/A'}</p>
+                <p><strong>Number:</strong> ${drawing.drw_number || 'N/A'}</p>
+                <p><strong>Revision:</strong> ${drawing.drw_revision || 'N/A'}</p>
+                <p><strong>Spare Part #:</strong> ${drawing.drw_spare_part_number || 'N/A'}</p>
+                <p><strong>File Path:</strong> ${drawing.file_path || 'N/A'}</p>
+            </div>
 
-                    drawing.part_images.forEach(image => {
-                        html += `
-                            <div class="image-item">
-                                <a href="${image.image_url}" target="_blank">
-                                    <img src="${image.image_url}" alt="${image.image_title}" style="max-width: 150px; max-height: 150px;">
-                                </a>
-                                <div class="image-caption">
-                                    <p>${image.image_title}</p>
-                                    <p>Part: ${image.part_name || image.part_number || 'ID: ' + image.part_id}</p>
-                                </div>
-                            </div>`;
-                    });
+            <div class="drawing-actions">
+                <a href="${drawingUrl}" target="_self" class="button">Open Drawing</a>
+                <a href="${downloadUrl}" target="_self" class="button">Download Drawing</a>
+            </div>
+    `;
 
-                    html += `</div></div>`;
-                }
+    if (drawing.part_images && drawing.part_images.length > 0) {
+        html += `<div class="part-images">
+                  <h4>Associated Part Images (${drawing.part_images.length})</h4>
+                  <div class="image-gallery">`;
 
-                html += `</div>`;
-            });
+        drawing.part_images.forEach(image => {
+            html += `
+                <div class="image-item">
+                    <a href="${image.image_url}" target="_self">
+                        <img src="${image.image_url}" alt="${image.image_title}" style="max-width: 150px; max-height: 150px;">
+                    </a>
+                    <div class="image-caption">
+                        <p>${image.image_title}</p>
+                        <p>Part: ${image.part_name || image.part_number || 'ID: ' + image.part_id}</p>
+                    </div>
+                </div>`;
+        });
+
+        html += `</div></div>`;
+    }
+
+    html += `</div>`;
+});
 
             html += '</div>';
             resultsDiv.innerHTML = html;
