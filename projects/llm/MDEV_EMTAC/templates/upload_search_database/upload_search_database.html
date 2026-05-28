@@ -3,8 +3,8 @@
 {% block title %}Database Entry{% endblock %}
 
 {% block extra_head %}
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/module_template/panel_layouts.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/upload_search_database/upload_search_database.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/module_template/panel_layouts.css') }}?v=tablet_search_links_20260512_1">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/upload_search_database/upload_search_database.css') }}?v=tablet_search_links_20260512_1">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/select2/select2_v4_0_13.min.css') }}"/>
 {% endblock %}
 
@@ -18,18 +18,27 @@
 {% endblock %}
 
 {% block extra_scripts %}
+    <!-- Core libraries FIRST -->
     <script src="{{ url_for('static', filename='vendor/jquery/jquery-3.6.0.min.js') }}"></script>
     <script src="{{ url_for('static', filename='vendor/select2/select2_v4_0_13.min.js') }}"></script>
 
-    <script src="{{ url_for('static', filename='js/upload_search_database/upload_document.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/upload_search_database/batch_upload.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/upload_search_database/upload_image.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/upload_search_database/image_upload.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/upload_search_database/upload_powerpoint.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/upload_search_database/document_search.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/upload_search_database/image_search.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/upload_search_database/powerpoint_search.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/upload_search_database/image_compare.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/upload_search_database/search_drawing.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/upload_search_database/upload_search_database_page.js') }}"></script>
+    <!-- WebView-safe global viewer functions BEFORE search/upload scripts -->
+    <script src="{{ url_for('static', filename='js/index/partials/chatbot_global_viewers.js') }}?v=tablet_search_links_20260512_1"></script>
+
+    <!-- Upload scripts -->
+    <script src="{{ url_for('static', filename='js/upload_search_database/upload_document.js') }}?v=tablet_search_links_20260512_1"></script>
+    <script src="{{ url_for('static', filename='js/upload_search_database/batch_upload.js') }}?v=tablet_search_links_20260512_1"></script>
+    <script src="{{ url_for('static', filename='js/upload_search_database/upload_image.js') }}?v=tablet_search_links_20260512_1"></script>
+    <script src="{{ url_for('static', filename='js/upload_search_database/image_upload.js') }}?v=tablet_search_links_20260512_1"></script>
+    <script src="{{ url_for('static', filename='js/upload_search_database/upload_powerpoint.js') }}?v=tablet_search_links_20260512_1"></script>
+
+    <!-- Search/render scripts -->
+    <script src="{{ url_for('static', filename='js/upload_search_database/document_search.js') }}?v=tablet_search_links_20260512_1"></script>
+    <script src="{{ url_for('static', filename='js/upload_search_database/image_search.js') }}?v=tablet_search_links_20260512_1"></script>
+    <script src="{{ url_for('static', filename='js/upload_search_database/powerpoint_search.js') }}?v=tablet_search_links_20260512_1"></script>
+    <script src="{{ url_for('static', filename='js/upload_search_database/image_compare.js') }}?v=tablet_search_links_20260512_1"></script>
+    <script src="{{ url_for('static', filename='js/upload_search_database/search_drawing.js') }}?v=tablet_search_links_20260512_1"></script>
+
+    <!-- Page initializer LAST -->
+    <script src="{{ url_for('static', filename='js/upload_search_database/upload_search_database_page.js') }}?v=tablet_search_links_20260512_6"></script>
 {% endblock %}
