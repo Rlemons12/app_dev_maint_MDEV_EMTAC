@@ -8,21 +8,20 @@
 
 {% block extra_scripts %}
 
-<link rel="stylesheet" href="{{ url_for('static', filename='css/index/chatbot_payload_status.css') }}?v=answer_payload_20260504_3">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index/chatbot_payload_status.css') }}?v=qanda_feedback_20260527_2">
 
-<!-- Shared viewer/popout functions FIRST -->
-<script src="{{ url_for('static', filename='js/index/partials/chatbot_global_viewers.js') }}?v=answer_payload_20260504_4"></script>
+<!-- Shared viewer functions FIRST -->
+<script src="{{ url_for('static', filename='js/index/partials/chatbot_global_viewers.js') }}?v=qanda_feedback_20260527_2"></script>
 
 <!-- Container-specific renderers SECOND -->
-<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_parts.js') }}?v=answer_payload_20260504_4"></script>
-<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_thumbnails.js') }}?v=answer_payload_20260504_4"></script>
-<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_documents.js') }}?v=answer_payload_20260504_4"></script>
-<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_drawings.js') }}?v=answer_payload_20260504_4"></script>
+<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_documents.js') }}?v=document_scope_20260528_1"></script>
+<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_drawings.js') }}?v=qanda_feedback_20260527_2"></script>
+<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_parts.js') }}?v=qanda_feedback_20260527_2"></script>
+<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_thumbnails.js') }}?v=qanda_feedback_20260527_2"></script>
 
-<!-- Main chatbot orchestrator LAST -->
-<script src="{{ url_for('static', filename='js/index/chatbot.js') }}?v=answer_payload_20260504_7"></script>
+<!-- Q&A feedback helper BEFORE chatbot.js -->
+<script src="{{ url_for('static', filename='js/index/update_qanda_table.js') }}?v=qanda_feedback_20260527_7"></script>
 
-<!-- Optional utilities -->
-<script src="{{ url_for('static', filename='js/update_qanda_table.js') }}?v=answer_payload_20260504_4"></script>
+<script src="{{ url_for('static', filename='js/index/chatbot.js') }}?v=document_scope_20260528_2"></script>
 
 {% endblock %}
