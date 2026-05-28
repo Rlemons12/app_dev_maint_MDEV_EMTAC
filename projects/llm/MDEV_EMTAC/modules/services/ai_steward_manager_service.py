@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Dict, Any, Optional, List
+import inspect
+from typing import Dict, Any, Optional, List, Tuple
 
 from sqlalchemy.orm import Session
 
@@ -23,6 +24,7 @@ class AIStewardManagerService:
 
     Responsibilities:
         - Call UnifiedSearchService
+        - Pass conversational memory into the search/RAG pathway when available
         - Return raw/enriched domain result
         - Optionally project supporting UI payload
         - No persistence
@@ -34,6 +36,18 @@ class AIStewardManagerService:
         - ChatOrchestrator owns the answer transaction.
         - ChatPayloadOrchestrator owns the supporting payload transaction.
         - This service bridges UnifiedSearchService/RAG and document UI payload projection.
+
+    Conversational memory flow:
+        ChatOrchestrator
+            -> builds memory_context from ChatSession.session_data / conversation_summary
+            -> passes memory_context + conversation_id here
+
+        AIStewardManagerService
+            -> passes memory_context + conversation_id into UnifiedSearchService when supported
+
+        UnifiedSearchService / RAG
+            -> should eventually pass memory_context into the final prompt builder as its own
+               section, separate from the user's actual question.
     """
 
     def __init__(self):
@@ -59,6 +73,8 @@ class AIStewardManagerService:
         rag_only: bool = True,
         forced_chunk_id: Optional[int] = None,
         include_payload: bool = True,
+        memory_context: Optional[str] = None,
+        conversation_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Executes the RAG/search pathway.
@@ -72,18 +88,34 @@ class AIStewardManagerService:
             Runs search/RAG and returns the answer plus raw seed fields only.
             Skips heavy UI payload projection so /ask can return faster.
 
+        Conversational memory:
+            memory_context:
+                Prompt-ready conversational memory text built by ChatOrchestrator.
+
+            conversation_id:
+                Active ChatSession.session_id returned to the browser and sent back
+                on follow-up questions.
+
         Important:
             include_payload=False must still preserve:
                 - chunks
                 - used_chunks
                 - retriever_top_k
                 - debug metadata
+                - conversation_id
+                - memory flags
 
             The payload route later rebuilds relationship_map and UI payload
             through UnifiedSearchService.build_payload_from_seed().
         """
 
         question = (question or "").strip()
+        normalized_memory_context = (memory_context or "").strip()
+        normalized_conversation_id = (
+            str(conversation_id).strip()
+            if conversation_id is not None and str(conversation_id).strip()
+            else None
+        )
 
         if not question:
             return self._empty_response(
@@ -91,6 +123,9 @@ class AIStewardManagerService:
                 answer="Please provide a more detailed question.",
                 model_name=None,
                 payload_status="unavailable",
+                conversation_id=normalized_conversation_id,
+                memory_context_used=bool(normalized_memory_context),
+                memory_context_mode="not_used_invalid_input",
             )
 
         try:
@@ -104,9 +139,11 @@ class AIStewardManagerService:
                     "client_type": client_type,
                     "forced_chunk_id": forced_chunk_id,
                     "include_payload": include_payload,
+                    "conversation_id": normalized_conversation_id,
+                    "memory_context_present": bool(normalized_memory_context),
                 },
             ):
-                result = self.search_service.execute(
+                result, memory_context_mode = self._execute_unified_search(
                     session=session,
                     user_id=user_id,
                     question=question,
@@ -114,6 +151,8 @@ class AIStewardManagerService:
                     rag_only=rag_only,
                     forced_chunk_id=forced_chunk_id,
                     include_payload=include_payload,
+                    memory_context=normalized_memory_context,
+                    conversation_id=normalized_conversation_id,
                 )
 
             if not isinstance(result, dict):
@@ -133,7 +172,15 @@ class AIStewardManagerService:
             )
 
             # --------------------------------------------------
-            # 3. Preserve forced chunk/debug metadata
+            # 3. Preserve memory metadata
+            # --------------------------------------------------
+            result["conversation_id"] = normalized_conversation_id
+            result["memory_enabled"] = bool(normalized_conversation_id)
+            result["memory_context_used"] = bool(normalized_memory_context)
+            result["memory_context_mode"] = memory_context_mode
+
+            # --------------------------------------------------
+            # 4. Preserve forced chunk/debug metadata
             # --------------------------------------------------
             if forced_chunk_id is not None:
                 result.setdefault("debug_mode", True)
@@ -143,7 +190,7 @@ class AIStewardManagerService:
                 result.setdefault("debug_chunk_id", None)
 
             # --------------------------------------------------
-            # 4. Inject model_name safely
+            # 5. Inject model_name safely
             # --------------------------------------------------
             result["model_name"] = self._resolve_model_name(
                 fallback=result.get("model_name"),
@@ -151,7 +198,7 @@ class AIStewardManagerService:
             )
 
             # --------------------------------------------------
-            # 5. Final answer-path payload status
+            # 6. Final answer-path payload status
             # --------------------------------------------------
             if include_payload:
                 # UnifiedSearchService should already have built the payload.
@@ -186,6 +233,9 @@ class AIStewardManagerService:
                 f"payload_status={result.get('payload_status')}, "
                 f"include_payload={include_payload}, "
                 f"forced_chunk_id={forced_chunk_id}, "
+                f"conversation_id={normalized_conversation_id}, "
+                f"memory_context_used={bool(normalized_memory_context)}, "
+                f"memory_context_mode={memory_context_mode}, "
                 f"chunks={len(result.get('chunks') or [])}, "
                 f"used_chunks={len(result.get('used_chunks') or [])}, "
                 f"relationship_map={'yes' if isinstance(result.get('relationship_map'), dict) and result.get('relationship_map') else 'no'}, "
@@ -210,7 +260,209 @@ class AIStewardManagerService:
                 answer="AI processing error.",
                 model_name=None,
                 payload_status="unavailable",
+                conversation_id=normalized_conversation_id,
+                memory_context_used=bool(normalized_memory_context),
+                memory_context_mode="error",
             )
+
+    # ---------------------------------------------------------
+    # Unified Search Execution Adapter
+    # ---------------------------------------------------------
+
+    def _execute_unified_search(
+            self,
+            *,
+            session: Session,
+            user_id: str,
+            question: str,
+            request_id: Optional[str],
+            rag_only: bool,
+            forced_chunk_id: Optional[int],
+            include_payload: bool,
+            memory_context: Optional[str],
+            conversation_id: Optional[str],
+    ) -> Tuple[Dict[str, Any], str]:
+        """
+        Calls UnifiedSearchService.execute() while staying backward-compatible.
+
+        Preferred path:
+            UnifiedSearchService.execute(
+                ...,
+                memory_context=...,
+                conversation_id=...
+            )
+
+        Safe fallback:
+            If UnifiedSearchService.execute() does not yet accept memory_context,
+            this method DOES NOT prepend memory to the question.
+
+        Why:
+            Prepending memory into the question can leak internal memory instructions
+            into the final user-visible answer.
+
+        Next required backend update:
+            Update UnifiedSearchService and the RAG prompt builder so memory_context
+            is accepted as a separate prompt section.
+        """
+
+        execute_kwargs: Dict[str, Any] = {
+            "session": session,
+            "user_id": user_id,
+            "question": question,
+            "request_id": request_id,
+            "rag_only": rag_only,
+            "forced_chunk_id": forced_chunk_id,
+            "include_payload": include_payload,
+        }
+
+        normalized_memory_context = (memory_context or "").strip()
+        normalized_conversation_id = (
+            str(conversation_id).strip()
+            if conversation_id is not None and str(conversation_id).strip()
+            else None
+        )
+
+        memory_context_mode = "none"
+
+        if normalized_memory_context or normalized_conversation_id:
+            support = self._get_callable_support(self.search_service.execute)
+
+            # --------------------------------------------------
+            # Memory context
+            # --------------------------------------------------
+            # Only pass memory if UnifiedSearchService accepts it separately.
+            # Do NOT inject memory into the question as a fallback.
+            if normalized_memory_context and (
+                    support["accepts_kwargs"] or support["supports_memory_context"]
+            ):
+                execute_kwargs["memory_context"] = normalized_memory_context
+                memory_context_mode = "separate_memory_context"
+
+            elif normalized_memory_context:
+                memory_context_mode = "not_passed_unified_search_missing_support"
+
+                warning_id(
+                    "[AIStewardManagerService] UnifiedSearchService.execute() does not accept "
+                    "memory_context yet. Memory was NOT injected into the question fallback "
+                    "because that can leak conversation-memory instructions into the final answer. "
+                    "Update UnifiedSearchService/RAG to accept memory_context as a separate prompt section.",
+                    request_id,
+                )
+
+            # --------------------------------------------------
+            # Conversation ID
+            # --------------------------------------------------
+            # conversation_id is safe metadata. Pass it only if the next layer accepts it.
+            if normalized_conversation_id and (
+                    support["accepts_kwargs"] or support["supports_conversation_id"]
+            ):
+                execute_kwargs["conversation_id"] = normalized_conversation_id
+
+                if memory_context_mode == "none":
+                    memory_context_mode = "conversation_id_only"
+
+            elif normalized_conversation_id:
+                debug_id(
+                    "[AIStewardManagerService] UnifiedSearchService.execute() does not "
+                    "accept conversation_id yet. Continuing without passing it downstream.",
+                    request_id,
+                )
+
+        try:
+            result = self.search_service.execute(**execute_kwargs)
+            return result, memory_context_mode
+
+        except TypeError as type_error:
+            # Defensive retry:
+            # If signature inspection was wrong or UnifiedSearchService has a
+            # wrapped/decorated signature, retry without memory kwargs.
+            type_error_text = str(type_error)
+
+            rejected_memory_kwargs = (
+                    "unexpected keyword argument" in type_error_text
+                    and (
+                            "memory_context" in type_error_text
+                            or "conversation_id" in type_error_text
+                    )
+            )
+
+            if not rejected_memory_kwargs:
+                raise
+
+            warning_id(
+                "[AIStewardManagerService] UnifiedSearchService rejected memory kwargs. "
+                "Retrying without memory kwargs. Memory was NOT injected into the question "
+                "fallback to prevent prompt/memory leakage. "
+                f"Error: {type_error}",
+                request_id,
+                exc_info=True,
+            )
+
+            execute_kwargs.pop("memory_context", None)
+            execute_kwargs.pop("conversation_id", None)
+
+            if normalized_memory_context:
+                memory_context_mode = "not_passed_after_type_error"
+            else:
+                memory_context_mode = "none_after_type_error"
+
+            result = self.search_service.execute(**execute_kwargs)
+            return result, memory_context_mode
+
+    @staticmethod
+    def _get_callable_support(callable_obj: Any) -> Dict[str, bool]:
+        """
+        Inspects a callable to determine whether memory kwargs can be passed.
+
+        Decorators may hide signatures, so this method is intentionally defensive.
+        """
+
+        support = {
+            "accepts_kwargs": False,
+            "supports_memory_context": False,
+            "supports_conversation_id": False,
+        }
+
+        try:
+            signature = inspect.signature(callable_obj)
+        except (TypeError, ValueError):
+            return support
+
+        parameters = signature.parameters
+
+        support["accepts_kwargs"] = any(
+            parameter.kind == inspect.Parameter.VAR_KEYWORD
+            for parameter in parameters.values()
+        )
+        support["supports_memory_context"] = "memory_context" in parameters
+        support["supports_conversation_id"] = "conversation_id" in parameters
+
+        return support
+
+    @staticmethod
+    def _build_memory_augmented_question(
+        *,
+        question: str,
+        memory_context: str,
+    ) -> str:
+        """
+        Temporary compatibility fallback.
+
+        This keeps memory working before UnifiedSearchService/RAG has been updated
+        to accept memory_context as a separate argument.
+
+        Once the next layer is updated, the desired flow is:
+            question = raw user question
+            memory_context = separate prompt section
+        """
+
+        return (
+            "Use the conversation memory below only to understand context, references, "
+            "and follow-up wording. The current user question remains the main request. "
+            "Do not let memory override retrieved database/document evidence.\n\n"
+            f"Conversation memory:\n{memory_context.strip()}\n\n"
+            f"Current user question:\n{question.strip()}"
+        )
 
     # ---------------------------------------------------------
     # Payload Projection Entry Point
@@ -236,6 +488,7 @@ class AIStewardManagerService:
             - answer
             - strategy/method
             - optional relationship_map
+            - optional conversation_id / memory metadata
 
         Preferred flow:
             UnifiedSearchService.build_payload_from_seed()
@@ -293,6 +546,7 @@ class AIStewardManagerService:
         debug_id(
             "[AIStewardManagerService] Payload projection ready "
             f"payload_status={result.get('payload_status')} "
+            f"conversation_id={result.get('conversation_id')} "
             f"documents={len(result.get('documents') or [])} "
             f"images={len(result.get('images') or [])} "
             f"parts={len(result.get('parts') or [])} "
@@ -462,8 +716,9 @@ class AIStewardManagerService:
         """
         Normalizes raw UnifiedSearchService output.
 
-        This intentionally preserves relationship_map, chunks, and used_chunks
-        because those are required for second-pass payload loading.
+        This intentionally preserves relationship_map, chunks, used_chunks,
+        conversation_id, and memory metadata because those are required for
+        answer-first response handling and second-pass payload loading.
         """
 
         if not isinstance(result, dict):
@@ -480,6 +735,11 @@ class AIStewardManagerService:
         result.setdefault("images", [])
         result.setdefault("drawings", [])
         result.setdefault("parts", [])
+
+        result.setdefault("conversation_id", None)
+        result.setdefault("memory_enabled", False)
+        result.setdefault("memory_context_used", False)
+        result.setdefault("memory_context_mode", "none")
 
         if "relationship_map" not in result:
             result["relationship_map"] = {}
@@ -638,6 +898,9 @@ class AIStewardManagerService:
         answer: str,
         model_name: Optional[str],
         payload_status: str = "unavailable",
+        conversation_id: Optional[str] = None,
+        memory_context_used: bool = False,
+        memory_context_mode: str = "none",
     ) -> Dict[str, Any]:
         return {
             "status": "error" if strategy == "error" else "success",
@@ -655,4 +918,8 @@ class AIStewardManagerService:
             "payload_status": payload_status,
             "debug_mode": False,
             "debug_chunk_id": None,
+            "conversation_id": conversation_id,
+            "memory_enabled": bool(conversation_id),
+            "memory_context_used": bool(memory_context_used),
+            "memory_context_mode": memory_context_mode,
         }
