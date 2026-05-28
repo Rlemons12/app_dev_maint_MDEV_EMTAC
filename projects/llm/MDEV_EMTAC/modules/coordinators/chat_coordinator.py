@@ -15,18 +15,19 @@ class ChatCoordinator:
     """
     Application-layer coordinator for chatbot answer requests.
 
-    This coordinator is now responsible for the ANSWER-FIRST pathway.
+    This coordinator is responsible for the ANSWER-FIRST pathway.
 
     Responsibilities:
         - Input validation
         - Control command handling
+        - Conversation ID pass-through for conversational memory
         - Delegation to ChatOrchestrator.handle_question()
         - Response normalization for the frontend
 
     Does NOT:
         - Open sessions
         - Commit/rollback
-        - Access ORM
+        - Access ORM directly
         - Import analytics/tracking services
         - Build documents/images/parts/drawings payload
         - Call ChatPayloadOrchestrator directly
@@ -36,6 +37,7 @@ class ChatCoordinator:
             -> ChatCoordinator.process_question()
             -> ChatOrchestrator.handle_question()
             -> returns answer immediately with empty payload containers
+            -> also returns conversation_id for continued memory
 
         /ask/payload
             -> ChatPayloadCoordinator or route-level payload handler
@@ -91,13 +93,23 @@ class ChatCoordinator:
         question: str,
         client_type: str,
         request_id: Optional[str] = None,
+        conversation_id: Optional[str] = None,
     ) -> Dict[str, Any]:
+        """
+        Process a user question.
+
+        conversation_id is optional:
+            - If provided, the orchestrator should continue that conversation.
+            - If missing, the orchestrator should create a new conversation/session.
+            - The response should always return the active conversation_id.
+        """
 
         info_id("ChatCoordinator.process_question called", request_id)
 
         normalized_user_id = (user_id or "anonymous").strip() or "anonymous"
         normalized_question = (question or "").strip()
         normalized_client_type = (client_type or "web").strip().lower() or "web"
+        normalized_conversation_id = (conversation_id or "").strip() or None
 
         if len(normalized_question) < self.MIN_QUESTION_LENGTH:
             warning_id(
@@ -108,6 +120,8 @@ class ChatCoordinator:
             return self._normalize_response({
                 "status": "invalid_input",
                 "answer": "Please provide a more detailed question.",
+                "request_id": request_id,
+                "conversation_id": normalized_conversation_id,
                 "payload_status": "unavailable",
                 "payload_endpoint": None,
             })
@@ -122,6 +136,8 @@ class ChatCoordinator:
                 "status": "session_ended",
                 "answer": "Session ended. Thank you for using the chatbot.",
                 "redirect": "/logout",
+                "request_id": request_id,
+                "conversation_id": normalized_conversation_id,
                 "payload_status": "unavailable",
                 "payload_endpoint": None,
             })
@@ -131,6 +147,7 @@ class ChatCoordinator:
             question=normalized_question,
             client_type=normalized_client_type,
             request_id=request_id,
+            conversation_id=normalized_conversation_id,
         )
 
         return self._normalize_response(result)
@@ -145,6 +162,7 @@ class ChatCoordinator:
             "status": "success",
             "answer": "...",
             "request_id": "...",
+            "conversation_id": "...",
             "payload_status": "pending",
             "payload_endpoint": "/ask/payload",
             "blocks": {
@@ -167,6 +185,8 @@ class ChatCoordinator:
             response = {
                 "status": "error",
                 "answer": "Invalid response format.",
+                "request_id": None,
+                "conversation_id": None,
                 "payload_status": "unavailable",
                 "payload_endpoint": None,
             }
@@ -176,6 +196,9 @@ class ChatCoordinator:
 
         if response.get("answer") is None:
             response["answer"] = ""
+
+        response.setdefault("request_id", None)
+        response.setdefault("conversation_id", None)
 
         response.setdefault("payload_status", "pending")
         response.setdefault("payload_endpoint", "/ask/payload")
