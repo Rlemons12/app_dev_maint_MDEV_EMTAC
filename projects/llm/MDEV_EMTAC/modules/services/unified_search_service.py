@@ -149,6 +149,12 @@ class UnifiedSearchService:
         document_scope:
             Optional document-scoped mode metadata. When active, retrieval/answering
             must be limited to the selected complete_document_id.
+
+        Diagnostic additions:
+            - Logs normalized request shape.
+            - Logs RAG pipeline result type, keys, answer preview, and chunk counts.
+            - Warns if the RAG pipeline returns a known placeholder failure answer.
+            - Does not change answer behavior.
         """
 
         question = (question or "").strip()
@@ -159,6 +165,23 @@ class UnifiedSearchService:
             else None
         )
         normalized_document_scope = self._normalize_document_scope(document_scope)
+
+        debug_id(
+            "[UnifiedSearchService] Execute start "
+            f"request_id={request_id} "
+            f"question_chars={len(question)} "
+            f"user_id={user_id} "
+            f"include_payload={include_payload} "
+            f"rag_only={rag_only} "
+            f"forced_chunk_id={forced_chunk_id} "
+            f"memory_context_present={bool(normalized_memory_context)} "
+            f"memory_context_chars={len(normalized_memory_context)} "
+            f"conversation_id={normalized_conversation_id} "
+            f"document_scope_enabled={bool(normalized_document_scope)} "
+            f"complete_document_id="
+            f"{normalized_document_scope.get('complete_document_id') if normalized_document_scope else None}",
+            request_id,
+        )
 
         if not question:
             return self._empty_response(
@@ -177,6 +200,11 @@ class UnifiedSearchService:
             )
 
         if not self.rag_pipeline:
+            warning_id(
+                "[UnifiedSearchService] RAG pipeline unavailable.",
+                request_id,
+            )
+
             return self._empty_response(
                 strategy="rag_unavailable",
                 answer="The AI assistant is temporarily unavailable.",
@@ -203,6 +231,13 @@ class UnifiedSearchService:
         )
 
         if effective_forced_chunk is not None:
+            debug_id(
+                "[UnifiedSearchService] Routing to forced chunk pipeline "
+                f"request_id={request_id} "
+                f"chunk_id={effective_forced_chunk}",
+                request_id,
+            )
+
             return self._run_forced_chunk_pipeline(
                 session=session,
                 question=question,
@@ -245,11 +280,66 @@ class UnifiedSearchService:
 
         rag_time = time.perf_counter() - rag_start
 
+        debug_id(
+            "[UnifiedSearchService] RAG pipeline returned "
+            f"request_id={request_id} "
+            f"result_type={type(rag_result).__name__} "
+            f"context_modes={context_modes} "
+            f"rag_time={rag_time:.3f}s "
+            f"memory_context_present={bool(normalized_memory_context)} "
+            f"conversation_id={normalized_conversation_id} "
+            f"document_scope_enabled={bool(normalized_document_scope)}",
+            request_id,
+        )
+
+        if isinstance(rag_result, dict):
+            rag_answer_preview = str(rag_result.get("answer") or "")
+            rag_chunks = rag_result.get("chunks")
+            rag_used_chunks = rag_result.get("used_chunks")
+
+            rag_chunks_count = len(rag_chunks) if isinstance(rag_chunks, list) else 0
+            rag_used_chunks_count = (
+                len(rag_used_chunks) if isinstance(rag_used_chunks, list) else 0
+            )
+
+            debug_id(
+                "[UnifiedSearchService] RAG result summary "
+                f"request_id={request_id} "
+                f"answer_preview={rag_answer_preview[:300]!r} "
+                f"answer_chars={len(rag_answer_preview)} "
+                f"chunks_count={rag_chunks_count} "
+                f"used_chunks_count={rag_used_chunks_count} "
+                f"retriever_top_k={rag_result.get('retriever_top_k')} "
+                f"keys={sorted(str(key) for key in rag_result.keys())}",
+                request_id,
+            )
+
+            normalized_answer_preview = rag_answer_preview.strip().lower()
+
+            if normalized_answer_preview in {
+                "error generating answer",
+                "error generating answer.",
+                "an unexpected error occurred while processing your request.",
+            }:
+                warning_id(
+                    "[UnifiedSearchService] RAG pipeline returned a placeholder "
+                    "failure answer. This means retrieval may have completed, but "
+                    "answer generation likely failed inside rag_pipeline.run(). "
+                    f"request_id={request_id} "
+                    f"chunks_count={rag_chunks_count} "
+                    f"used_chunks_count={rag_used_chunks_count} "
+                    f"memory_context_present={bool(normalized_memory_context)} "
+                    f"conversation_id={normalized_conversation_id} "
+                    f"document_scope_enabled={bool(normalized_document_scope)}",
+                    request_id,
+                )
+
         if not isinstance(rag_result, dict):
             warning_id(
                 "[UnifiedSearchService] RAG pipeline returned non-dict result.",
                 request_id,
             )
+
             return self._empty_response(
                 strategy="rag_invalid_result",
                 answer="The AI assistant returned an invalid search result.",
@@ -336,6 +426,7 @@ class UnifiedSearchService:
             "[UnifiedSearchService] Normal RAG result "
             f"include_payload={include_payload} "
             f"used_chunks={len(used_chunks)} "
+            f"answer_chars={len(str(answer or ''))} "
             f"rag_time={rag_time:.3f}s "
             f"conversation_id={normalized_conversation_id} "
             f"memory_context_mode={memory_context_mode} "
