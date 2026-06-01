@@ -1,54 +1,58 @@
-# modules/application/feedback_coordinator.py
+from __future__ import annotations
 
-from typing import Dict, Any
+import logging
+from typing import Any, Dict, Optional
 
-from modules.configuration.log_config import (
-    with_request_id,
-    info_id,
-)
-from modules.orchestrators.feedback_orchestrator import (
-    FeedbackOrchestrator,
-)
+from modules.orchestrators.feedback_orchestrator import FeedbackOrchestrator
+
+
+logger = logging.getLogger(__name__)
 
 
 class FeedbackCoordinator:
     """
-    Application-layer coordinator for feedback updates.
+    Coordinator layer for QandA feedback.
 
-    Responsibilities:
-        - Input validation
-        - Delegation to orchestrator
-        - Response normalization
+    The route calls this.
+    The orchestrator owns transaction/session flow.
+    The service updates the existing QandA row.
     """
 
-    def __init__(self):
-        self.orchestrator = FeedbackOrchestrator()
+    def __init__(
+        self,
+        *,
+        orchestrator: Optional[FeedbackOrchestrator] = None,
+    ):
+        self.orchestrator = orchestrator or FeedbackOrchestrator()
 
-    @with_request_id
     def process_feedback(
         self,
         *,
-        user_id: str,
-        question: str,
-        answer: str,
-        rating: int,
-        comment: str,
-        request_id: str = None,
+        user_id: Optional[Any],
+        question: Optional[str],
+        answer: Optional[str],
+        rating: Optional[Any],
+        comment: Optional[Any],
+        request_id: Optional[str] = None,
+        qa_id: Optional[Any] = None,
     ) -> Dict[str, Any]:
+        logger.info(
+            "[FeedbackCoordinator] process_feedback called "
+            "user_id=%s request_id=%s has_question=%s has_answer=%s has_rating=%s has_comment=%s",
+            user_id,
+            request_id,
+            bool(question),
+            bool(answer),
+            rating is not None,
+            bool(comment),
+        )
 
-        info_id("FeedbackCoordinator.process_feedback called", request_id)
-
-        if not question:
-            return {
-                "status": "invalid_input",
-                "message": "Question is required",
-            }
-
-        return self.orchestrator.handle_feedback(
+        return self.orchestrator.process_feedback(
             user_id=user_id,
             question=question,
             answer=answer,
             rating=rating,
             comment=comment,
             request_id=request_id,
+            qa_id=qa_id,
         )
