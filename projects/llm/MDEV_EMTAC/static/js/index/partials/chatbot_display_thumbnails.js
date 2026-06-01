@@ -1,14 +1,19 @@
 // ============================================================
 // MDEV_EMTAC\static\js\index\partials\chatbot_display_thumbnails.js
 // Render Images as DOCUMENT-STYLE LINKS
-// Clicking link opens GLOBAL image viewer
+//
+// WebView-safe:
+// - Does NOT use window.open()
+// - Calls in-page image viewer when available
+// - Falls back to window.openImageViewer(), which should also be WebView-safe
 //
 // Rules:
 // - Prefer web-safe image routes: /serve_image/<id>
 // - Never prefer raw DB_IMAGES/file_path paths
 // - Support array input OR { images: [...] }
-// - Force section into 2-column image-link layout via class hooks
 // ============================================================
+
+console.log("[EMTAC] chatbot_display_thumbnails.js loaded - WebView-safe image renderer");
 
 function displayThumbnails(imagePanel) {
     const section = document.getElementById("thumbnails-section");
@@ -20,13 +25,8 @@ function displayThumbnails(imagePanel) {
 
     section.replaceChildren();
 
-    // Add layout hooks so CSS can force 2 columns.
     section.classList.add("images-container", "image-results");
 
-    // Normalize input:
-    // 1. { images: [...] }
-    // 2. [...]
-    // 3. anything else -> []
     const images = Array.isArray(imagePanel?.images)
         ? imagePanel.images
         : Array.isArray(imagePanel)
@@ -41,45 +41,65 @@ function displayThumbnails(imagePanel) {
         return;
     }
 
-    images.forEach((img, index) => {
-        if (!img || typeof img !== "object") {
-            console.warn("[displayThumbnails] Invalid image item:", img);
+    images.forEach((imgData, index) => {
+        if (!imgData || typeof imgData !== "object") {
+            console.warn("[displayThumbnails] Invalid image item:", imgData);
             return;
         }
 
-        const src = resolveImageUrl(img);
+        const src = resolveImageUrl(imgData);
 
         if (!src) {
-            console.warn("[displayThumbnails] Image missing usable src:", img);
+            console.warn("[displayThumbnails] Image missing usable src:", imgData);
             return;
         }
+
+        const title =
+            imgData.title ||
+            imgData.name ||
+            imgData.description ||
+            `View Image ${index + 1}`;
 
         const item = document.createElement("div");
         item.className = "document-item image-document-item";
 
-        const link = document.createElement("a");
-        link.href = "javascript:void(0)";
-        link.className = "document-chunk-link image-document-link";
-        link.textContent = img.title || img.name || `View Image ${index + 1}`;
-        link.title = link.textContent;
+        const imageLink = document.createElement("button");
+        imageLink.type = "button";
+        imageLink.className = "document-chunk-link image-document-link";
+        imageLink.textContent = title;
+        imageLink.title = title;
 
-        link.addEventListener("click", e => {
-            e.preventDefault();
-            e.stopPropagation();
+        imageLink.addEventListener("click", event => {
+            event.preventDefault();
+            event.stopPropagation();
 
-            if (typeof window.openImageViewer !== "function") {
-                console.error("[displayThumbnails] openImageViewer not available");
-                return;
-            }
-
-            window.openImageViewer(
-                img.title || img.name || `Image ${index + 1}`,
-                src
-            );
+            openThumbnailImageViewer(title, src);
         });
 
-        item.appendChild(link);
+        item.appendChild(imageLink);
         section.appendChild(item);
+    });
+}
+
+
+// ------------------------------------------------------------
+// Open image viewer
+// ------------------------------------------------------------
+
+function openThumbnailImageViewer(title, src) {
+    if (typeof window.openImageViewerInPage === "function") {
+        window.openImageViewerInPage(title, src);
+        return;
+    }
+
+    if (typeof window.openImageViewer === "function") {
+        window.openImageViewer(title, src);
+        return;
+    }
+
+    console.error("[openThumbnailImageViewer] No image viewer function available.", {
+        title,
+        src
     });
 }
 
@@ -89,20 +109,6 @@ function displayThumbnails(imagePanel) {
 // ------------------------------------------------------------
 
 function resolveImageUrl(img) {
-    /*
-        Safe priority order:
-
-        1. /serve_image/<id> built from img.id
-        2. img.src if already web-safe
-        3. img.url if already web-safe
-        4. img.href if already web-safe
-        5. convert old /images/<id> to /serve_image/<id>
-        6. only use file_path if it is already /serve_image/<id>
-
-        Important:
-        We intentionally do NOT prefer raw DB_IMAGES paths.
-    */
-
     if (!img || typeof img !== "object") {
         return "";
     }
@@ -120,6 +126,8 @@ function resolveImageUrl(img) {
         img.src,
         img.url,
         img.href,
+        img.image_url,
+        img.file_url,
         img.file_path
     ];
 
@@ -148,7 +156,7 @@ function resolveImageUrl(img) {
             }
         }
 
-        // Absolute same-host serve route.
+        // Absolute same-host route support.
         try {
             const parsed = new URL(value, window.location.origin);
 
@@ -164,9 +172,18 @@ function resolveImageUrl(img) {
                 }
             }
         } catch (err) {
-            // Ignore invalid URL values and keep checking.
+            // Ignore invalid URL values.
         }
     }
 
     return "";
 }
+
+
+// ------------------------------------------------------------
+// Global exports
+// ------------------------------------------------------------
+
+window.displayThumbnails = displayThumbnails;
+window.resolveImageUrl = resolveImageUrl;
+window.openThumbnailImageViewer = openThumbnailImageViewer;
