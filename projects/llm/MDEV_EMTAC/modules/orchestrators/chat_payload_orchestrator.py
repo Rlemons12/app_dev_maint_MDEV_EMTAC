@@ -15,9 +15,11 @@ from modules.services.qanda_service import QandAService
 from modules.ai.search_pathway.audit.search_audit_logger import (
     get_search_audit_log_manager,
 )
-from modules.ai.search_pathway.audit.search_audit_service import SearchAuditService
-from modules.ai.search_pathway.audit.search_audit_types import SearchPathwayName
-
+from modules.ai.search_pathway.audit import (
+    SearchAuditService,
+    SearchPathwayName,
+    enqueue_search_audit_payload_details,
+)
 from modules.configuration.log_config import (
     with_request_id,
     info_id,
@@ -73,6 +75,13 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
         self.qanda_service = qanda_service or QandAService()
         self.audit_log_manager = get_search_audit_log_manager()
 
+    @with_request_id
+    @trace_entrypoint(
+        name="chat_payload_pipeline",
+        deep_profile=False,
+        capture_args=False,
+        capture_return=False,
+    )
     @with_request_id
     @trace_entrypoint(
         name="chat_payload_pipeline",
@@ -158,11 +167,13 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
             )
 
             # --------------------------------------------------
-            # 2. Project payload and record audit summary
+            # 2. Project payload and record lightweight audit run
             # --------------------------------------------------
             payload_start = time.perf_counter()
+
             projected_result: Dict[str, Any] = {}
             audit_summary: Dict[str, Any] = {}
+            audit_response: Dict[str, Any] = {}
 
             with self.transaction() as session:
                 with tracer.span(
@@ -191,7 +202,7 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
                 audit_start = time.perf_counter()
 
                 with tracer.span(
-                    "audit_payload_search_pathway",
+                    "audit_payload_search_pathway_lightweight",
                     meta={
                         "request_id": request_id,
                         "pathway_name": self.AUDIT_PATHWAY_NAME,
@@ -216,12 +227,44 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
                         pathway_version=self.AUDIT_PATHWAY_VERSION,
                         duration_ms=int((time.perf_counter() - request_start) * 1000),
                         model_name=seed_result.get("model_name") or projected_result.get("model_name"),
+
+                        # Important:
+                        # Do not insert thousands of item rows inline.
+                        # The background worker will do detailed capture after response.
+                        capture_items_inline=False,
+                        store_full_snapshot=False,
                     )
 
                 audit_time = time.perf_counter() - audit_start
 
             # --------------------------------------------------
-            # 3. Return payload-only response
+            # 3. Queue detailed audit capture after DB transaction commits
+            # --------------------------------------------------
+            audit_run_id = audit_summary.get("audit_run_id")
+
+            if audit_run_id:
+                enqueue_search_audit_payload_details(
+                    audit_run_id=audit_run_id,
+                    request_id=request_id or "unknown",
+                    pathway_name=self.AUDIT_PATHWAY_NAME,
+                    response=audit_response,
+                    replace_existing=False,
+                )
+
+                debug_id(
+                    "[ChatPayloadOrchestrator] Background audit detail capture queued. "
+                    f"audit_run_id={audit_run_id}",
+                    request_id,
+                )
+            else:
+                warning_id(
+                    "[ChatPayloadOrchestrator] Background audit detail capture not queued "
+                    "because audit_run_id was missing.",
+                    request_id,
+                )
+
+            # --------------------------------------------------
+            # 4. Return payload-only response immediately
             # --------------------------------------------------
             total_time = time.perf_counter() - request_start
 
@@ -254,7 +297,7 @@ class ChatPayloadOrchestrator(BaseOrchestrator):
             info_id(
                 f"Chat payload processed in {total_time:.3f}s "
                 f"(Seed: {seed_time:.3f}s | Payload: {payload_time:.3f}s | "
-                f"Audit: {audit_time:.3f}s | seed_source={seed_source} | "
+                f"Audit enqueue: {audit_time:.3f}s | seed_source={seed_source} | "
                 f"docs={counts['documents']} | "
                 f"images={counts['images']} | "
                 f"parts={counts['parts']} | "
