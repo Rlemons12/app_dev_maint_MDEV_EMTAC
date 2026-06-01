@@ -349,3 +349,69 @@ class QandAService:
             "rated_answers": len(rated),
             "avg_rating": avg_rating,
         }
+
+    @with_request_id
+    def get_interaction_by_request_id(
+            self,
+            session: Session,
+            *,
+            request_id: str,
+    ) -> Optional[QandA]:
+        """
+        Load a QandA interaction by the original /chatbot/ask request_id.
+        """
+
+        if not request_id:
+            return None
+
+        qa = (
+            session.query(QandA)
+            .filter(QandA.request_id == request_id)
+            .order_by(QandA.timestamp.desc())
+            .first()
+        )
+
+        if qa:
+            debug_id(
+                f"QandA interaction loaded for request_id={request_id} (id={qa.id})",
+                request_id,
+            )
+        else:
+            warning_id(
+                f"No QandA interaction found for request_id={request_id}",
+                request_id,
+            )
+
+        return qa
+
+    @with_request_id
+    def update_feedback_by_request_id(
+            self,
+            session: Session,
+            *,
+            request_id: str,
+            rating: Optional[str] = None,
+            comment: Optional[str] = None,
+    ) -> Optional[QandA]:
+        """
+        Update rating/comment using the original /chatbot/ask request_id.
+        Does NOT commit.
+        """
+
+        qa = self.get_interaction_by_request_id(
+            session=session,
+            request_id=request_id,
+        )
+
+        if not qa:
+            return None
+
+        qa.rating = rating
+        qa.comment = comment
+
+        debug_id(
+            f"QandA feedback updated by request_id={request_id} (id={qa.id})",
+            request_id,
+        )
+
+        return qa
