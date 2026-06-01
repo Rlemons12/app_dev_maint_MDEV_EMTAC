@@ -6,6 +6,21 @@
 #   Generate reports from the PostgreSQL audit schema for AI/search pathway
 #   auditing.
 #
+# Output behavior:
+#   Each report run creates its own folder inside:
+#
+#       logs/search_audit/reports/
+#
+#   Example:
+#
+#       logs/search_audit/reports/request_a10c3a51_all_pathways_20260508_051200/
+#           full_report.json
+#           run_summary.csv
+#           count_summary.csv
+#           item_details.csv
+#           validation_details.csv
+#           report.md
+#
 # Example commands:
 #
 #   cd E:\emtac\projects\llm\MDEV_EMTAC
@@ -266,6 +281,7 @@ def parse_datetime_filter(value: str | None, *, is_end: bool = False) -> datetim
         2026-05-08T03:00:00-05:00
 
     If no timezone is provided, America/Chicago is assumed.
+
     If only a date is provided:
         start -> 00:00:00
         end   -> 23:59:59.999999
@@ -334,7 +350,7 @@ def rows_to_dicts(rows: list[Any]) -> list[dict[str, Any]]:
 
 def safe_filename_part(value: str | None, fallback: str) -> str:
     """
-    Make a string safe for filenames.
+    Make a string safe for filenames/folder names.
     """
 
     if not value:
@@ -349,11 +365,24 @@ def safe_filename_part(value: str | None, fallback: str) -> str:
 
 
 def ensure_report_dir(out_dir: Path) -> Path:
+    """
+    Create a directory if it does not exist.
+    """
+
     out_dir.mkdir(parents=True, exist_ok=True)
     return out_dir
 
 
-def build_report_prefix(args: argparse.Namespace) -> str:
+def build_report_folder_name(args: argparse.Namespace) -> str:
+    """
+    Build a dedicated folder name for one report run.
+
+    Examples:
+        request_a10c3a51_all_pathways_20260508_050500
+        user_anonymous_payload_projection_20260508_050500
+        search_audit_all_pathways_20260508_050500
+    """
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     if args.request_id:
@@ -658,18 +687,63 @@ def write_markdown_report(
         )
 
 
+def write_manifest(
+    path: Path,
+    *,
+    args: argparse.Namespace,
+    report_data: dict[str, list[dict[str, Any]]],
+    written_files: list[Path],
+) -> None:
+    """
+    Write a small manifest describing this report run.
+    """
+
+    manifest = {
+        "created_at": datetime.now().isoformat(),
+        "filters": {
+            "request_id": args.request_id,
+            "user_id": args.user_id,
+            "pathway": args.pathway,
+            "payload_status": args.payload_status,
+            "validation_status": args.validation_status,
+            "start": args.start,
+            "end": args.end,
+            "max_items": args.max_items,
+            "include_evidence": args.include_evidence,
+        },
+        "row_counts": {
+            "run_summary": len(report_data["run_summary"]),
+            "count_summary": len(report_data["count_summary"]),
+            "item_details": len(report_data["item_details"]),
+            "validation_details": len(report_data["validation_details"]),
+        },
+        "files": [
+            str(file_path.name)
+            for file_path in written_files
+        ],
+    }
+
+    write_json(path, manifest)
+
+
 def write_reports(
     *,
     out_dir: Path,
-    prefix: str,
     report_format: str,
     report_data: dict[str, list[dict[str, Any]]],
     args: argparse.Namespace,
 ) -> list[Path]:
+    """
+    Write report files into a dedicated report folder.
+
+    File names are intentionally simple because the folder name already
+    contains request/user/pathway/timestamp context.
+    """
+
     written_files: list[Path] = []
 
     if report_format in {"json", "all"}:
-        json_path = out_dir / f"{prefix}_full_report.json"
+        json_path = out_dir / "full_report.json"
         write_json(json_path, report_data)
         written_files.append(json_path)
 
@@ -682,18 +756,27 @@ def write_reports(
         }
 
         for name, rows in csv_targets.items():
-            csv_path = out_dir / f"{prefix}_{name}.csv"
+            csv_path = out_dir / f"{name}.csv"
             write_csv(csv_path, rows)
             written_files.append(csv_path)
 
     if report_format in {"md", "all"}:
-        md_path = out_dir / f"{prefix}_report.md"
+        md_path = out_dir / "report.md"
         write_markdown_report(
             md_path,
             args=args,
             report_data=report_data,
         )
         written_files.append(md_path)
+
+    manifest_path = out_dir / "manifest.json"
+    write_manifest(
+        manifest_path,
+        args=args,
+        report_data=report_data,
+        written_files=written_files,
+    )
+    written_files.append(manifest_path)
 
     return written_files
 
@@ -772,7 +855,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--out-dir",
         default=str(DEFAULT_REPORT_DIR),
-        help=f"Output directory. Default: {DEFAULT_REPORT_DIR}",
+        help=f"Base output directory. Default: {DEFAULT_REPORT_DIR}",
     )
 
     parser.add_argument(
@@ -826,6 +909,7 @@ def print_report_summary(
     *,
     report_data: dict[str, list[dict[str, Any]]],
     written_files: list[Path],
+    report_out_dir: Path,
 ) -> None:
     run_count = len(report_data["run_summary"])
     count_rows = len(report_data["count_summary"])
@@ -833,6 +917,7 @@ def print_report_summary(
     validation_rows = len(report_data["validation_details"])
 
     logger.info("Report complete.")
+    logger.info("Report folder: %s", report_out_dir)
     logger.info("Runs found: %s", run_count)
     logger.info("Count rows: %s", count_rows)
     logger.info("Item detail rows: %s", item_rows)
@@ -847,18 +932,19 @@ def main() -> int:
     args = parser.parse_args()
     args = normalize_args(args)
 
-    out_dir = ensure_report_dir(Path(args.out_dir))
-    prefix = build_report_prefix(args)
+    base_out_dir = ensure_report_dir(Path(args.out_dir))
+    report_folder_name = build_report_folder_name(args)
+    report_out_dir = ensure_report_dir(base_out_dir / report_folder_name)
 
     logger.info("Starting search audit report.")
-    logger.info("Output directory: %s", out_dir)
+    logger.info("Base output directory: %s", base_out_dir)
+    logger.info("Report output directory: %s", report_out_dir)
 
     reporter = SearchAuditReporter()
     report_data = reporter.run_report(args)
 
     written_files = write_reports(
-        out_dir=out_dir,
-        prefix=prefix,
+        out_dir=report_out_dir,
         report_format=args.format,
         report_data=report_data,
         args=args,
@@ -867,6 +953,7 @@ def main() -> int:
     print_report_summary(
         report_data=report_data,
         written_files=written_files,
+        report_out_dir=report_out_dir,
     )
 
     return 0

@@ -25,6 +25,7 @@ class AIStewardManagerService:
     Responsibilities:
         - Call UnifiedSearchService
         - Pass conversational memory into the search/RAG pathway when available
+        - Pass document_scope into the search/RAG pathway when available
         - Return raw/enriched domain result
         - Optionally project supporting UI payload
         - No persistence
@@ -46,8 +47,22 @@ class AIStewardManagerService:
             -> passes memory_context + conversation_id into UnifiedSearchService when supported
 
         UnifiedSearchService / RAG
-            -> should eventually pass memory_context into the final prompt builder as its own
+            -> should pass memory_context into the final prompt builder as its own
                section, separate from the user's actual question.
+
+    Document-scoped conversation mode flow:
+        Frontend
+            -> sends document_scope with /chatbot/ask
+
+        Route / Coordinator / Orchestrator
+            -> validate and forward document_scope
+
+        AIStewardManagerService
+            -> passes document_scope into UnifiedSearchService when supported
+
+        UnifiedSearchService / RAG
+            -> should restrict retrieval to the selected complete_document_id
+            -> should tell the model it may answer only from the selected document
     """
 
     def __init__(self):
@@ -75,6 +90,7 @@ class AIStewardManagerService:
         include_payload: bool = True,
         memory_context: Optional[str] = None,
         conversation_id: Optional[str] = None,
+        document_scope: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Executes the RAG/search pathway.
@@ -96,6 +112,19 @@ class AIStewardManagerService:
                 Active ChatSession.session_id returned to the browser and sent back
                 on follow-up questions.
 
+        Document-scoped conversation mode:
+            document_scope:
+                {
+                    "enabled": true,
+                    "scope_type": "complete_document",
+                    "document_id": 29,
+                    "complete_document_id": 29,
+                    "document_name": "Document #29"
+                }
+
+            This service only forwards the scope. Actual retrieval filtering belongs
+            in UnifiedSearchService / retriever / RAG pipeline.
+
         Important:
             include_payload=False must still preserve:
                 - chunks
@@ -104,6 +133,7 @@ class AIStewardManagerService:
                 - debug metadata
                 - conversation_id
                 - memory flags
+                - document_scope metadata
 
             The payload route later rebuilds relationship_map and UI payload
             through UnifiedSearchService.build_payload_from_seed().
@@ -116,6 +146,7 @@ class AIStewardManagerService:
             if conversation_id is not None and str(conversation_id).strip()
             else None
         )
+        normalized_document_scope = self._normalize_document_scope(document_scope)
 
         if not question:
             return self._empty_response(
@@ -126,6 +157,7 @@ class AIStewardManagerService:
                 conversation_id=normalized_conversation_id,
                 memory_context_used=bool(normalized_memory_context),
                 memory_context_mode="not_used_invalid_input",
+                document_scope=normalized_document_scope,
             )
 
         try:
@@ -141,9 +173,20 @@ class AIStewardManagerService:
                     "include_payload": include_payload,
                     "conversation_id": normalized_conversation_id,
                     "memory_context_present": bool(normalized_memory_context),
+                    "document_scope_enabled": bool(normalized_document_scope),
+                    "complete_document_id": (
+                        normalized_document_scope.get("complete_document_id")
+                        if normalized_document_scope
+                        else None
+                    ),
+                    "document_name": (
+                        normalized_document_scope.get("document_name")
+                        if normalized_document_scope
+                        else None
+                    ),
                 },
             ):
-                result, memory_context_mode = self._execute_unified_search(
+                result, context_modes = self._execute_unified_search(
                     session=session,
                     user_id=user_id,
                     question=question,
@@ -153,6 +196,7 @@ class AIStewardManagerService:
                     include_payload=include_payload,
                     memory_context=normalized_memory_context,
                     conversation_id=normalized_conversation_id,
+                    document_scope=normalized_document_scope,
                 )
 
             if not isinstance(result, dict):
@@ -171,6 +215,9 @@ class AIStewardManagerService:
                 fallback_strategy="rag",
             )
 
+            memory_context_mode = context_modes.get("memory_context_mode", "none")
+            document_scope_mode = context_modes.get("document_scope_mode", "none")
+
             # --------------------------------------------------
             # 3. Preserve memory metadata
             # --------------------------------------------------
@@ -180,7 +227,18 @@ class AIStewardManagerService:
             result["memory_context_mode"] = memory_context_mode
 
             # --------------------------------------------------
-            # 4. Preserve forced chunk/debug metadata
+            # 4. Preserve document scope metadata
+            # --------------------------------------------------
+            result["document_scope"] = (
+                self._normalize_document_scope(result.get("document_scope"))
+                or self._normalize_document_scope(result.get("documentScope"))
+                or normalized_document_scope
+            )
+            result["document_scope_enabled"] = bool(result["document_scope"])
+            result["document_scope_mode"] = document_scope_mode
+
+            # --------------------------------------------------
+            # 5. Preserve forced chunk/debug metadata
             # --------------------------------------------------
             if forced_chunk_id is not None:
                 result.setdefault("debug_mode", True)
@@ -190,7 +248,7 @@ class AIStewardManagerService:
                 result.setdefault("debug_chunk_id", None)
 
             # --------------------------------------------------
-            # 5. Inject model_name safely
+            # 6. Inject model_name safely
             # --------------------------------------------------
             result["model_name"] = self._resolve_model_name(
                 fallback=result.get("model_name"),
@@ -198,7 +256,7 @@ class AIStewardManagerService:
             )
 
             # --------------------------------------------------
-            # 6. Final answer-path payload status
+            # 7. Final answer-path payload status
             # --------------------------------------------------
             if include_payload:
                 # UnifiedSearchService should already have built the payload.
@@ -236,6 +294,10 @@ class AIStewardManagerService:
                 f"conversation_id={normalized_conversation_id}, "
                 f"memory_context_used={bool(normalized_memory_context)}, "
                 f"memory_context_mode={memory_context_mode}, "
+                f"document_scope_enabled={bool(result.get('document_scope'))}, "
+                f"document_scope_mode={document_scope_mode}, "
+                f"complete_document_id="
+                f"{result.get('document_scope', {}).get('complete_document_id') if isinstance(result.get('document_scope'), dict) else None}, "
                 f"chunks={len(result.get('chunks') or [])}, "
                 f"used_chunks={len(result.get('used_chunks') or [])}, "
                 f"relationship_map={'yes' if isinstance(result.get('relationship_map'), dict) and result.get('relationship_map') else 'no'}, "
@@ -263,6 +325,7 @@ class AIStewardManagerService:
                 conversation_id=normalized_conversation_id,
                 memory_context_used=bool(normalized_memory_context),
                 memory_context_mode="error",
+                document_scope=normalized_document_scope,
             )
 
     # ---------------------------------------------------------
@@ -270,18 +333,19 @@ class AIStewardManagerService:
     # ---------------------------------------------------------
 
     def _execute_unified_search(
-            self,
-            *,
-            session: Session,
-            user_id: str,
-            question: str,
-            request_id: Optional[str],
-            rag_only: bool,
-            forced_chunk_id: Optional[int],
-            include_payload: bool,
-            memory_context: Optional[str],
-            conversation_id: Optional[str],
-    ) -> Tuple[Dict[str, Any], str]:
+        self,
+        *,
+        session: Session,
+        user_id: str,
+        question: str,
+        request_id: Optional[str],
+        rag_only: bool,
+        forced_chunk_id: Optional[int],
+        include_payload: bool,
+        memory_context: Optional[str],
+        conversation_id: Optional[str],
+        document_scope: Optional[Dict[str, Any]],
+    ) -> Tuple[Dict[str, Any], Dict[str, str]]:
         """
         Calls UnifiedSearchService.execute() while staying backward-compatible.
 
@@ -289,20 +353,24 @@ class AIStewardManagerService:
             UnifiedSearchService.execute(
                 ...,
                 memory_context=...,
-                conversation_id=...
+                conversation_id=...,
+                document_scope=...
             )
 
         Safe fallback:
             If UnifiedSearchService.execute() does not yet accept memory_context,
             this method DOES NOT prepend memory to the question.
 
+            If UnifiedSearchService.execute() does not yet accept document_scope,
+            this method DOES NOT pretend scoped retrieval happened. It logs a
+            warning and continues with normal search.
+
         Why:
             Prepending memory into the question can leak internal memory instructions
             into the final user-visible answer.
 
-        Next required backend update:
-            Update UnifiedSearchService and the RAG prompt builder so memory_context
-            is accepted as a separate prompt section.
+            Document scope must be enforced as a retrieval filter, not by adding
+            plain text to the question.
         """
 
         execute_kwargs: Dict[str, Any] = {
@@ -321,98 +389,143 @@ class AIStewardManagerService:
             if conversation_id is not None and str(conversation_id).strip()
             else None
         )
+        normalized_document_scope = self._normalize_document_scope(document_scope)
 
         memory_context_mode = "none"
+        document_scope_mode = "none"
 
-        if normalized_memory_context or normalized_conversation_id:
-            support = self._get_callable_support(self.search_service.execute)
+        support = self._get_callable_support(self.search_service.execute)
 
-            # --------------------------------------------------
-            # Memory context
-            # --------------------------------------------------
-            # Only pass memory if UnifiedSearchService accepts it separately.
-            # Do NOT inject memory into the question as a fallback.
-            if normalized_memory_context and (
-                    support["accepts_kwargs"] or support["supports_memory_context"]
-            ):
-                execute_kwargs["memory_context"] = normalized_memory_context
-                memory_context_mode = "separate_memory_context"
+        # --------------------------------------------------
+        # Memory context
+        # --------------------------------------------------
+        # Only pass memory if UnifiedSearchService accepts it separately.
+        # Do NOT inject memory into the question as a fallback.
+        if normalized_memory_context and (
+            support["accepts_kwargs"] or support["supports_memory_context"]
+        ):
+            execute_kwargs["memory_context"] = normalized_memory_context
+            memory_context_mode = "separate_memory_context"
 
-            elif normalized_memory_context:
-                memory_context_mode = "not_passed_unified_search_missing_support"
+        elif normalized_memory_context:
+            memory_context_mode = "not_passed_unified_search_missing_support"
 
-                warning_id(
-                    "[AIStewardManagerService] UnifiedSearchService.execute() does not accept "
-                    "memory_context yet. Memory was NOT injected into the question fallback "
-                    "because that can leak conversation-memory instructions into the final answer. "
-                    "Update UnifiedSearchService/RAG to accept memory_context as a separate prompt section.",
-                    request_id,
-                )
+            warning_id(
+                "[AIStewardManagerService] UnifiedSearchService.execute() does not accept "
+                "memory_context yet. Memory was NOT injected into the question fallback "
+                "because that can leak conversation-memory instructions into the final answer. "
+                "Update UnifiedSearchService/RAG to accept memory_context as a separate prompt section.",
+                request_id,
+            )
 
-            # --------------------------------------------------
-            # Conversation ID
-            # --------------------------------------------------
-            # conversation_id is safe metadata. Pass it only if the next layer accepts it.
-            if normalized_conversation_id and (
-                    support["accepts_kwargs"] or support["supports_conversation_id"]
-            ):
-                execute_kwargs["conversation_id"] = normalized_conversation_id
+        # --------------------------------------------------
+        # Conversation ID
+        # --------------------------------------------------
+        # conversation_id is safe metadata. Pass it only if the next layer accepts it.
+        if normalized_conversation_id and (
+            support["accepts_kwargs"] or support["supports_conversation_id"]
+        ):
+            execute_kwargs["conversation_id"] = normalized_conversation_id
 
-                if memory_context_mode == "none":
-                    memory_context_mode = "conversation_id_only"
+            if memory_context_mode == "none":
+                memory_context_mode = "conversation_id_only"
 
-            elif normalized_conversation_id:
-                debug_id(
-                    "[AIStewardManagerService] UnifiedSearchService.execute() does not "
-                    "accept conversation_id yet. Continuing without passing it downstream.",
-                    request_id,
-                )
+        elif normalized_conversation_id:
+            debug_id(
+                "[AIStewardManagerService] UnifiedSearchService.execute() does not "
+                "accept conversation_id yet. Continuing without passing it downstream.",
+                request_id,
+            )
+
+        # --------------------------------------------------
+        # Document scope
+        # --------------------------------------------------
+        # document_scope must be passed as structured data.
+        # Do NOT append it to question text as a fallback.
+        if normalized_document_scope and (
+            support["accepts_kwargs"] or support["supports_document_scope"]
+        ):
+            execute_kwargs["document_scope"] = normalized_document_scope
+            document_scope_mode = "separate_document_scope"
+
+            debug_id(
+                "[AIStewardManagerService] Passing document_scope to UnifiedSearchService "
+                f"complete_document_id={normalized_document_scope.get('complete_document_id')} "
+                f"document_name={normalized_document_scope.get('document_name')}",
+                request_id,
+            )
+
+        elif normalized_document_scope:
+            document_scope_mode = "not_passed_unified_search_missing_support"
+
+            warning_id(
+                "[AIStewardManagerService] UnifiedSearchService.execute() does not accept "
+                "document_scope yet. Document-scoped retrieval has NOT been enforced yet. "
+                "Update UnifiedSearchService/RAG retrieval to filter by complete_document_id. "
+                f"complete_document_id={normalized_document_scope.get('complete_document_id')} "
+                f"document_name={normalized_document_scope.get('document_name')}",
+                request_id,
+            )
 
         try:
             result = self.search_service.execute(**execute_kwargs)
-            return result, memory_context_mode
+            return result, {
+                "memory_context_mode": memory_context_mode,
+                "document_scope_mode": document_scope_mode,
+            }
 
         except TypeError as type_error:
             # Defensive retry:
             # If signature inspection was wrong or UnifiedSearchService has a
-            # wrapped/decorated signature, retry without memory kwargs.
+            # wrapped/decorated signature, retry without newer kwargs.
             type_error_text = str(type_error)
 
-            rejected_memory_kwargs = (
-                    "unexpected keyword argument" in type_error_text
-                    and (
-                            "memory_context" in type_error_text
-                            or "conversation_id" in type_error_text
-                    )
+            rejected_kwargs = (
+                "unexpected keyword argument" in type_error_text
+                and (
+                    "memory_context" in type_error_text
+                    or "conversation_id" in type_error_text
+                    or "document_scope" in type_error_text
+                )
             )
 
-            if not rejected_memory_kwargs:
+            if not rejected_kwargs:
                 raise
 
             warning_id(
-                "[AIStewardManagerService] UnifiedSearchService rejected memory kwargs. "
-                "Retrying without memory kwargs. Memory was NOT injected into the question "
-                "fallback to prevent prompt/memory leakage. "
+                "[AIStewardManagerService] UnifiedSearchService rejected optional kwargs. "
+                "Retrying without memory/conversation/document-scope kwargs. "
+                "Memory was NOT injected into the question fallback, and document scope "
+                "was NOT converted into question text. "
                 f"Error: {type_error}",
                 request_id,
                 exc_info=True,
             )
 
-            execute_kwargs.pop("memory_context", None)
-            execute_kwargs.pop("conversation_id", None)
-
-            if normalized_memory_context:
+            if "memory_context" in execute_kwargs:
+                execute_kwargs.pop("memory_context", None)
                 memory_context_mode = "not_passed_after_type_error"
-            else:
-                memory_context_mode = "none_after_type_error"
+
+            if "conversation_id" in execute_kwargs:
+                execute_kwargs.pop("conversation_id", None)
+
+                if memory_context_mode == "conversation_id_only":
+                    memory_context_mode = "none_after_type_error"
+
+            if "document_scope" in execute_kwargs:
+                execute_kwargs.pop("document_scope", None)
+                document_scope_mode = "not_passed_after_type_error"
 
             result = self.search_service.execute(**execute_kwargs)
-            return result, memory_context_mode
+            return result, {
+                "memory_context_mode": memory_context_mode,
+                "document_scope_mode": document_scope_mode,
+            }
 
     @staticmethod
     def _get_callable_support(callable_obj: Any) -> Dict[str, bool]:
         """
-        Inspects a callable to determine whether memory kwargs can be passed.
+        Inspects a callable to determine whether optional kwargs can be passed.
 
         Decorators may hide signatures, so this method is intentionally defensive.
         """
@@ -421,6 +534,7 @@ class AIStewardManagerService:
             "accepts_kwargs": False,
             "supports_memory_context": False,
             "supports_conversation_id": False,
+            "supports_document_scope": False,
         }
 
         try:
@@ -436,6 +550,7 @@ class AIStewardManagerService:
         )
         support["supports_memory_context"] = "memory_context" in parameters
         support["supports_conversation_id"] = "conversation_id" in parameters
+        support["supports_document_scope"] = "document_scope" in parameters
 
         return support
 
@@ -448,12 +563,9 @@ class AIStewardManagerService:
         """
         Temporary compatibility fallback.
 
-        This keeps memory working before UnifiedSearchService/RAG has been updated
-        to accept memory_context as a separate argument.
-
-        Once the next layer is updated, the desired flow is:
-            question = raw user question
-            memory_context = separate prompt section
+        This helper is intentionally NOT used when UnifiedSearchService lacks
+        memory_context support. Keeping it here avoids breaking older imports,
+        but memory should be passed as a separate prompt section.
         """
 
         return (
@@ -489,6 +601,7 @@ class AIStewardManagerService:
             - strategy/method
             - optional relationship_map
             - optional conversation_id / memory metadata
+            - optional document_scope metadata
 
         Preferred flow:
             UnifiedSearchService.build_payload_from_seed()
@@ -509,7 +622,19 @@ class AIStewardManagerService:
             fallback_strategy="rag",
         )
 
-        with tracer.span("ai_payload_projection"):
+        with tracer.span(
+            "ai_payload_projection",
+            meta={
+                "document_scope_enabled": bool(
+                    self._normalize_document_scope(result.get("document_scope"))
+                ),
+                "complete_document_id": (
+                    self._normalize_document_scope(result.get("document_scope")).get("complete_document_id")
+                    if self._normalize_document_scope(result.get("document_scope"))
+                    else None
+                ),
+            },
+        ):
             if hasattr(self.search_service, "build_payload_from_seed"):
                 result = self.search_service.build_payload_from_seed(
                     session=session,
@@ -547,6 +672,9 @@ class AIStewardManagerService:
             "[AIStewardManagerService] Payload projection ready "
             f"payload_status={result.get('payload_status')} "
             f"conversation_id={result.get('conversation_id')} "
+            f"document_scope_enabled={bool(result.get('document_scope'))} "
+            f"complete_document_id="
+            f"{result.get('document_scope', {}).get('complete_document_id') if isinstance(result.get('document_scope'), dict) else None} "
             f"documents={len(result.get('documents') or [])} "
             f"images={len(result.get('images') or [])} "
             f"parts={len(result.get('parts') or [])} "
@@ -717,8 +845,9 @@ class AIStewardManagerService:
         Normalizes raw UnifiedSearchService output.
 
         This intentionally preserves relationship_map, chunks, used_chunks,
-        conversation_id, and memory metadata because those are required for
-        answer-first response handling and second-pass payload loading.
+        conversation_id, memory metadata, and document_scope metadata because
+        those are required for answer-first response handling and second-pass
+        payload loading.
         """
 
         if not isinstance(result, dict):
@@ -741,10 +870,111 @@ class AIStewardManagerService:
         result.setdefault("memory_context_used", False)
         result.setdefault("memory_context_mode", "none")
 
+        normalized_document_scope = AIStewardManagerService._normalize_document_scope(
+            result.get("document_scope") or result.get("documentScope")
+        )
+        result["document_scope"] = normalized_document_scope
+        result["document_scope_enabled"] = bool(normalized_document_scope)
+        result.setdefault("document_scope_mode", "none")
+
         if "relationship_map" not in result:
             result["relationship_map"] = {}
 
         return result
+
+    @staticmethod
+    def _normalize_document_scope(
+        document_scope: Optional[Dict[str, Any]],
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Normalize document_scope before passing it deeper into the backend.
+
+        Expected shape:
+            {
+                "enabled": true,
+                "scope_type": "complete_document",
+                "document_id": 29,
+                "complete_document_id": 29,
+                "document_name": "Document #29"
+            }
+        """
+
+        if not document_scope or not isinstance(document_scope, dict):
+            return None
+
+        enabled = document_scope.get("enabled", True)
+
+        if enabled is False:
+            return None
+
+        scope_type = (
+            document_scope.get("scope_type")
+            or document_scope.get("scopeType")
+            or "complete_document"
+        )
+
+        scope_type = str(scope_type or "").strip() or "complete_document"
+
+        if scope_type != "complete_document":
+            return None
+
+        complete_document_id = (
+            document_scope.get("complete_document_id")
+            or document_scope.get("completed_document_id")
+            or document_scope.get("completeDocumentId")
+            or document_scope.get("completeDocumentID")
+        )
+
+        complete_document_id = AIStewardManagerService._coerce_int_or_none(
+            complete_document_id
+        )
+
+        if complete_document_id is None:
+            return None
+
+        document_id = (
+            document_scope.get("document_id")
+            or document_scope.get("documentId")
+        )
+
+        document_id = AIStewardManagerService._coerce_int_or_none(document_id)
+
+        document_name = (
+            document_scope.get("document_name")
+            or document_scope.get("documentName")
+            or document_scope.get("name")
+            or document_scope.get("title")
+            or f"Document #{complete_document_id}"
+        )
+
+        document_name = str(document_name or "").strip() or f"Document #{complete_document_id}"
+
+        return {
+            "enabled": True,
+            "scope_type": "complete_document",
+            "document_id": document_id,
+            "complete_document_id": complete_document_id,
+            "document_name": document_name,
+        }
+
+    @staticmethod
+    def _coerce_int_or_none(value: Any) -> Optional[int]:
+        if value is None:
+            return None
+
+        if isinstance(value, bool):
+            return None
+
+        try:
+            text = str(value).strip()
+
+            if not text:
+                return None
+
+            return int(text)
+
+        except (TypeError, ValueError):
+            return None
 
     @staticmethod
     def _resolve_projection_chunks(result: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -901,7 +1131,13 @@ class AIStewardManagerService:
         conversation_id: Optional[str] = None,
         memory_context_used: bool = False,
         memory_context_mode: str = "none",
+        document_scope: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
+
+        normalized_document_scope = AIStewardManagerService._normalize_document_scope(
+            document_scope
+        )
+
         return {
             "status": "error" if strategy == "error" else "success",
             "strategy": strategy,
@@ -922,4 +1158,11 @@ class AIStewardManagerService:
             "memory_enabled": bool(conversation_id),
             "memory_context_used": bool(memory_context_used),
             "memory_context_mode": memory_context_mode,
+            "document_scope": normalized_document_scope,
+            "document_scope_enabled": bool(normalized_document_scope),
+            "document_scope_mode": (
+                "empty_response_document_scope_preserved"
+                if normalized_document_scope
+                else "none"
+            ),
         }
