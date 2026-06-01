@@ -3,11 +3,11 @@
     <!-- Sidebar -->
     <aside id="five331-sidebar" class="five331-sidebar five331-closed">
       <div class="five331-sidebar-scroll">
+
         <div class="five331-sidebar-section">
           <h3>Quick Actions</h3>
           <div class="five331-quick-actions">
             <button id="clear-chat" type="button">Clear Chat</button>
-            <button id="export-chat" type="button">Export Chat</button>
             <button id="show-help" type="button">Help</button>
           </div>
         </div>
@@ -31,6 +31,7 @@
           <button id="toggle-voice" type="button">Toggle Text-to-Speech</button>
           <select id="voice-select"></select>
         </div>
+
       </div>
     </aside>
 
@@ -309,39 +310,8 @@
   overflow: hidden;
 }
 
-.five331-panel.is-collapsed .five331-panel-body {
-  display: none;
-}
-
-.five331-panel-head {
-  background: rgba(0,0,0,0.4);
-  padding: 8px 10px;
-  color: #39FF14;
-  font-weight: 700;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.five331-panel-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  min-width: 0;
-  padding: 10px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  display: flex;
-  flex-direction: column;
-}
-<style>
-.five331-panel {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  min-width: 0;
-  background: rgba(255,255,255,0.05);
-  border-radius: 6px;
-  overflow: hidden;
+.five331-panel.is-collapsed {
+  min-height: auto;
 }
 
 .five331-panel-head {
@@ -378,13 +348,8 @@
   flex-direction: column;
 }
 
-/* collapsed state */
 .five331-panel.is-collapsed .five331-panel-body {
   display: none;
-}
-
-.five331-panel.is-collapsed {
-  min-height: auto;
 }
 
 .five331-panel.is-collapsed .toggle-btn::after {
@@ -392,7 +357,7 @@
   font-size: 11px;
   color: #bbb;
 }
-</style>
+
 /* Shared renderer styling */
 .document-item {
   margin-bottom: 14px;
@@ -480,6 +445,8 @@
     grid-template-columns: 1fr;
   }
 }
+</style>
+
 <script>
 (function () {
   let isSubmitting = false;
@@ -509,6 +476,7 @@
   function bindFive331PanelToggles() {
     document.querySelectorAll(".five331-panel .toggle-btn").forEach(function (btn) {
       if (btn.dataset.bound === "true") return;
+
       btn.dataset.bound = "true";
 
       btn.addEventListener("click", function (e) {
@@ -516,29 +484,35 @@
         e.stopPropagation();
 
         const panel = btn.closest(".five331-panel");
+
         if (!panel) return;
 
         panel.classList.toggle("is-collapsed");
 
         const expanded = !panel.classList.contains("is-collapsed");
+
         btn.setAttribute("aria-expanded", expanded ? "true" : "false");
         btn.textContent = expanded ? "Toggle" : "Open";
       });
     });
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
+  function bindFive331SubmitControls() {
     const submitBtn = document.getElementById("submit-question");
     const userInput = document.getElementById("user_input");
 
-    if (submitBtn) {
+    if (submitBtn && submitBtn.dataset.five331Bound !== "true") {
+      submitBtn.dataset.five331Bound = "true";
+
       submitBtn.addEventListener("click", function (e) {
         e.preventDefault();
         safeSubmit();
       });
     }
 
-    if (userInput) {
+    if (userInput && userInput.dataset.five331Bound !== "true") {
+      userInput.dataset.five331Bound = "true";
+
       userInput.addEventListener("keydown", function (e) {
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
@@ -546,13 +520,25 @@
         }
       });
     }
+  }
 
+  function initializeFive331Partial() {
+    bindFive331SubmitControls();
     bindFive331PanelToggles();
-  });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeFive331Partial);
+  } else {
+    initializeFive331Partial();
+  }
+
+  window.initializeFive331Partial = initializeFive331Partial;
 })();
 
 function five331ToggleSidebar() {
   const sidebar = document.getElementById("five331-sidebar");
+
   if (sidebar) {
     sidebar.classList.toggle("five331-closed");
   }
