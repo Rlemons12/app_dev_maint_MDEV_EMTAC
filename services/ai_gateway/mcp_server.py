@@ -12,7 +12,7 @@ import requests
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
-from grafana_service_client import (
+from services.ai_gateway.grafana_service_client import (
     grafana_service_client,
     GRAFANA_URL,
     GRAFANA_SYSTEM_PROMPT,
