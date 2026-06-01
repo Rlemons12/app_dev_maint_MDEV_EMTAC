@@ -1,73 +1,122 @@
-# modules/orchestrators/feedback_orchestrator.py
+from __future__ import annotations
 
-from typing import Dict, Any
+import logging
+from typing import Any, Dict, Optional
 
-from modules.orchestrators.base_orchestrator import BaseOrchestrator
+from sqlalchemy.exc import SQLAlchemyError
+
+from modules.configuration.config_env import get_db_config
 from modules.services.feedback_service import FeedbackService
-from modules.configuration.log_config import (
-    with_request_id,
-    info_id,
-    warning_id,
-    error_id,
-)
 
 
-class FeedbackOrchestrator(BaseOrchestrator):
+logger = logging.getLogger(__name__)
+
+
+class FeedbackOrchestrator:
     """
-    Owns transaction boundary for feedback updates.
+    Orchestrator layer for QandA feedback.
+
+    Owns:
+        - database session lifecycle
+        - commit / rollback
+
+    Does not:
+        - create new QandA rows
     """
 
-    def __init__(self):
-        super().__init__()
-        self.feedback_service = FeedbackService()
-
-    @with_request_id
-    def handle_feedback(
+    def __init__(
         self,
         *,
-        user_id: str,
-        question: str,
-        answer: str,
-        rating: int,
-        comment: str,
-        request_id: str = None,
+        db_config=None,
+        service: Optional[FeedbackService] = None,
+    ):
+        self.db_config = db_config or get_db_config()
+        self.service = service or FeedbackService()
+
+    def process_feedback(
+        self,
+        *,
+        user_id: Optional[Any],
+        question: Optional[str],
+        answer: Optional[str],
+        rating: Optional[Any],
+        comment: Optional[Any],
+        request_id: Optional[str] = None,
+        qa_id: Optional[Any] = None,
     ) -> Dict[str, Any]:
+        session = None
 
         try:
-            with self.transaction() as session:
-
-                success = self.feedback_service.update_feedback(
-                    session=session,
-                    user_id=user_id,
-                    question=question,
-                    answer=answer,
-                    rating=rating,
-                    comment=comment,
-                    request_id=request_id,
-                )
-
-                if not success:
-                    warning_id("Feedback update failed", request_id)
-                    return {
-                        "status": "failed",
-                        "message": "Failed to update Q&A entry",
-                    }
-
-            info_id("Feedback updated successfully", request_id)
-
-            return {
-                "status": "success",
-                "message": "Q&A updated successfully",
-            }
-
-        except Exception as e:
-            error_id(
-                f"FeedbackOrchestrator failure: {e}",
+            logger.info(
+                "[FeedbackOrchestrator] process_feedback started "
+                "user_id=%s request_id=%s has_question=%s has_answer=%s",
+                user_id,
                 request_id,
+                bool(question),
+                bool(answer),
+            )
+
+            session = self.db_config.get_main_session()
+
+            result = self.service.update_feedback(
+                session=session,
+                user_id=user_id,
+                question=question,
+                answer=answer,
+                rating=rating,
+                comment=comment,
+                request_id=request_id,
+                qa_id=qa_id,
+            )
+
+            if result.get("status") != "success":
+                session.rollback()
+                return result
+
+            session.commit()
+
+            logger.info(
+                "[FeedbackOrchestrator] process_feedback committed qanda_id=%s matched_by=%s",
+                result.get("qanda_id"),
+                result.get("matched_by"),
+            )
+
+            return result
+
+        except SQLAlchemyError as exc:
+            if session is not None:
+                session.rollback()
+
+            logger.error(
+                "[FeedbackOrchestrator] Database error while saving feedback: %s",
+                exc,
                 exc_info=True,
             )
 
             return {
                 "status": "error",
-                "message": "An unexpected error occurred",
+                "message": "Database error while saving feedback.",
+                "qanda_id": None,
+                "matched_by": None,
             }
+
+        except Exception as exc:
+            if session is not None:
+                session.rollback()
+
+            logger.error(
+                "[FeedbackOrchestrator] Unexpected error while saving feedback: %s",
+                exc,
+                exc_info=True,
+            )
+
+            return {
+                "status": "error",
+                "message": "Unexpected error while saving feedback.",
+                "qanda_id": None,
+                "matched_by": None,
+            }
+
+        finally:
+            if session is not None:
+                session.close()
