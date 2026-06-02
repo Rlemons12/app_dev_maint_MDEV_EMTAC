@@ -61,7 +61,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from flask import Blueprint, jsonify, make_response, request
+from flask import Blueprint, jsonify, make_response, request, session
 
 from blueprints.tablet_edge.tablet_app_update_bp import tablet_app_update_bp
 from modules.configuration.log_config import logger
