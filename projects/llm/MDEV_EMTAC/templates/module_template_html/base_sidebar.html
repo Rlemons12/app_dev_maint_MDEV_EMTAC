@@ -15,6 +15,7 @@
         <a href="/" class="nav-link highlight">Return to Main</a>
         <a href="/upload_search_database" class="nav-link highlight">Search and Upload</a>
         <a href="/bill_of_materials" class="nav-link highlight">Parts and BOMs</a>
+        <a href="#help-chat" id="helpChatSidebarLink" class="nav-link highlight">Help Chat</a>
 
         <!-- LEVEL_I and above endpoints -->
         {% if session['user_level'] in ['LEVEL_I', 'LEVEL_II', 'LEVEL_III', 'ADMIN'] %}
@@ -29,6 +30,7 @@
         <!-- Admin and Level III endpoints -->
         {% if session['user_level'] in ['ADMIN', 'LEVEL_III'] %}
             <a href="/position_data_assignment" class="nav-link highlight">Position Data Assignment</a>
+             <a href="#help-chat-admin" id="helpChatAdminSidebarLink" class="nav-link highlight">Help Chat Admin</a>
         {% endif %}
 
         <!-- Search page specific forms -->
