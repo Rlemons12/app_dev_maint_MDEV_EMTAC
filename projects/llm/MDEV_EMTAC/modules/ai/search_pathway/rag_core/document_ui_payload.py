@@ -59,40 +59,76 @@ class DocumentUIPayload:
     # ---------------------------------------------------------
     @with_request_id
     def aggregate_from_chunks(
-        self,
-        chunks: List[Dict[str, Any]],
-        request_id: Optional[str] = None,
+            self,
+            chunks: List[Dict[str, Any]],
+            request_id: Optional[str] = None,
     ) -> "DocumentUIPayload":
 
         for ch in chunks:
+            if not isinstance(ch, dict):
+                continue
+
             complete_document_id = ch.get("complete_document_id")
             if not complete_document_id:
                 continue
+
+            document_title = (
+                    ch.get("complete_document_title")
+                    or ch.get("document_title")
+                    or ch.get("document_name")
+                    or ch.get("name")
+                    or ch.get("display_name")
+                    or ch.get("title")
+                    or self._filename_from_path(ch.get("file_path"))
+                    or f"Document #{complete_document_id}"
+            )
 
             doc = self._documents.setdefault(
                 complete_document_id,
                 {
                     "document_id": complete_document_id,
                     "complete_document_id": complete_document_id,
-                    "title": (
-                        ch.get("complete_document_title")
-                        or ch.get("document_title")
-                        or ch.get("title")
-                        or f"Document #{complete_document_id}"
-                    ),
+
+                    # Main display fields for frontend compatibility
+                    "title": document_title,
+                    "document_title": document_title,
+                    "document_name": document_title,
+                    "complete_document_title": document_title,
+                    "display_name": document_title,
+                    "name": document_title,
+
                     "url": ch.get("url"),
                     "file_path": ch.get("file_path"),
                     "chunks": [],
                 },
             )
 
+            # If the document already existed but had a fallback title,
+            # upgrade it when a better title appears later.
+            if (
+                    document_title
+                    and not str(document_title).startswith("Document #")
+                    and str(doc.get("title", "")).startswith("Document #")
+            ):
+                doc["title"] = document_title
+                doc["document_title"] = document_title
+                doc["document_name"] = document_title
+                doc["complete_document_title"] = document_title
+                doc["display_name"] = document_title
+                doc["name"] = document_title
+
             doc["chunks"].append(
                 {
                     "chunk_id": ch.get("chunk_id") or ch.get("id"),
                     "chunk_document_id": ch.get("document_id"),
                     "complete_document_id": complete_document_id,
-                    "text": ch.get("content"),
-                    "score": ch.get("distance"),
+                    "text": (
+                            ch.get("content")
+                            or ch.get("text")
+                            or ch.get("chunk_text")
+                            or ch.get("page_content")
+                    ),
+                    "score": ch.get("distance") or ch.get("score"),
                 }
             )
 
@@ -290,4 +326,10 @@ class DocumentUIPayload:
 
         return self
 
+    @staticmethod
+    def _filename_from_path(file_path: Optional[str]) -> Optional[str]:
+        if not file_path:
+            return None
 
+        filename = str(file_path).replace("\\", "/").split("/")[-1].strip()
+        return filename or None
