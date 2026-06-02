@@ -125,7 +125,9 @@ from modules.configuration.config_env import (
 from utilities.auth_utils import requires_roles
 from utilities.custom_jinja_filters import register_jinja_filters
 from blueprints import register_blueprints
-
+from flask_socketio import SocketIO
+from modules.help_chat.help_chat_socket import register_help_chat_socket_events
+socketio = SocketIO(cors_allowed_origins="*", async_mode="threading")
 
 # Shared DB config singleton only
 db_config = get_db_config()
@@ -337,6 +339,8 @@ def create_app(request_id=None):
         app.config["JSON_AS_ASCII"] = False
         app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
         app.config["db_config"] = db_config
+        socketio.init_app(app)
+        register_help_chat_socket_events(socketio)
 
         register_jinja_filters(app)
 
@@ -867,4 +871,10 @@ if __name__ == "__main__":
     info_id("Flask application ready to serve requests", startup_request_id)
     info_id("Request ID tracking enabled for all operations", startup_request_id)
 
-    app.run(host=host, port=port, debug=debug_mode)
+    socketio.run(
+    app,
+    host=host,
+    port=port,
+    debug=debug_mode,
+    allow_unsafe_werkzeug=True,
+)
