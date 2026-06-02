@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
     <style>
-        /* Admin Dashboard Specific Styles */
         body {
             margin: 0;
             padding: 0;
@@ -26,7 +25,6 @@
             position: relative;
         }
 
-        /* Sidebar Collapse Styles */
         .sidebar {
             width: 280px;
             background-color: #1a1a1a;
@@ -161,7 +159,6 @@
             border-color: #39FF14;
         }
 
-        /* Toggle Button */
         .sidebar-toggle {
             position: fixed;
             top: 15px;
@@ -185,10 +182,6 @@
             transform: scale(1.05);
         }
 
-        .sidebar-toggle.collapsed {
-            left: 15px;
-        }
-
         .content-wrapper {
             flex: 1;
             overflow-y: auto;
@@ -202,7 +195,6 @@
             margin-left: 0;
         }
 
-        /* Status Badges */
         .status-badge {
             display: inline-block;
             padding: 4px 10px;
@@ -212,27 +204,29 @@
             color: white;
             text-transform: uppercase;
         }
+
         .status-badge.current {
             background-color: #28a745;
         }
+
         .status-badge.remote {
             background-color: #fd7e14;
         }
 
-        /* Row Highlighting */
         .current-session {
             background-color: rgba(40, 167, 69, 0.15) !important;
             border-left: 3px solid #28a745;
         }
+
         .remote-session {
             background-color: rgba(253, 126, 20, 0.08);
         }
+
         .admin-row {
             background-color: rgba(57, 255, 20, 0.08);
             border-left: 3px solid #39FF14;
         }
 
-        /* Container Styles */
         .dashboard-section {
             background-color: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -263,14 +257,12 @@
             font-size: 16px;
         }
 
-        /* Info Text */
         .info-text {
             color: #ccc;
             font-size: 14px;
             margin-bottom: 15px;
         }
 
-        /* Tables */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -296,6 +288,7 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             color: #eee;
             font-size: 13px;
+            vertical-align: top;
         }
 
         table tbody tr {
@@ -307,7 +300,6 @@
             background-color: rgba(57, 255, 20, 0.1);
         }
 
-        /* Forms */
         .form-group {
             margin-bottom: 15px;
         }
@@ -338,7 +330,6 @@
             box-shadow: 0 0 5px rgba(57, 255, 20, 0.3);
         }
 
-        /* Buttons */
         .btn {
             padding: 8px 16px;
             background-color: #39FF14;
@@ -369,15 +360,26 @@
             border-color: #39FF14;
         }
 
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #bb2d3b;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
+        }
+
         .refresh-button {
             margin-top: 15px;
         }
 
-        /* Inline Form Controls */
         .inline-form {
             display: flex;
             gap: 8px;
             align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
         }
 
         .inline-form select {
@@ -389,7 +391,31 @@
             flex-shrink: 0;
         }
 
-        /* Links */
+        .password-reset-form {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .password-reset-form input {
+            min-width: 150px;
+            padding: 8px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            color: #eee;
+            font-size: 13px;
+        }
+
+        .password-reset-form input:focus {
+            outline: none;
+            border-color: #39FF14;
+            box-shadow: 0 0 5px rgba(57, 255, 20, 0.3);
+        }
+
         a {
             color: #39FF14;
             text-decoration: none;
@@ -401,7 +427,6 @@
             text-decoration: underline;
         }
 
-        /* User Badge */
         .user-badge {
             display: inline-block;
             padding: 2px 6px;
@@ -414,7 +439,6 @@
             margin-left: 5px;
         }
 
-        /* Current User Info Card */
         .current-user-card {
             background-color: rgba(40, 167, 69, 0.1);
             border: 2px solid #28a745;
@@ -441,36 +465,33 @@
     </style>
 </head>
 <body>
-    <!-- Sidebar Toggle Button -->
     <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
         ☰
     </button>
 
     <div class="main-container">
-        <!-- Admin Sidebar -->
         <div class="sidebar" id="mainSidebar">
-            <!-- Header Section -->
             <div class="sidebar-header">
                 <h1>EMTAC</h1>
                 <p class="user-level">User Level: {{ session['user_level'] }}</p>
                 <h2 class="welcome-message">Welcome {{ session['first_name'] }}! Admin Dashboard</h2>
             </div>
 
-            <!-- Main Navigation Links -->
             <div class="sidebar-nav">
-    <a href="/" class="nav-link highlight">Return to Main Page</a>
+                <a href="/" class="nav-link highlight">Return to Main Page</a>
 
-    <!-- 🔥 GPU Service Dashboard Link -->
-    <a href="http://127.0.0.1:5050/dashboard"
-       class="nav-link"
+                <a href="http://127.0.0.1:5050/dashboard"
+                   class="nav-link"
                    target="_blank">
                     GPU Service Dashboard
                 </a>
+
                 <a href="{{ url_for('trace_dashboard.trace_dashboard') }}"
                    class="nav-link"
                    target="_blank">
                    Trace Monitor
                 </a>
+
                 <a href="#current-user" class="nav-link">Current User</a>
                 <a href="#active-sessions" class="nav-link">Active Sessions</a>
                 <a href="#set-models" class="nav-link">Set Models</a>
@@ -478,19 +499,15 @@
                 <a href="#comments" class="nav-link">Comments</a>
             </div>
 
-            <!-- Utility Section -->
             <div class="sidebar-utils">
-                <!-- Model display section -->
                 <div class="model-display-section" style="display: block;">
                     <p>Current AI Model: {{ current_ai_model|default('Default Model') }}</p>
                     <p>Current Embedding Model: {{ current_embedding_model|default('Default Embedding') }}</p>
                 </div>
 
-                <!-- Logout button at the bottom -->
                 <a href="/logout" class="logout-button">Logout</a>
             </div>
 
-            <!-- Theme Selector (at bottom of sidebar) -->
             <div class="sidebar-theme-selector" style="margin-top: 24px; border-top: 1px solid #333; padding-top: 15px;">
                 <label for="theme-select" style="color: #ccc; font-size: 14px;">Theme:</label>
                 <select id="theme-select" style="width: 100%; margin-top: 8px; padding: 6px 8px;">
@@ -507,15 +524,12 @@
             </div>
         </div>
 
-        <!-- Main Content Area -->
         <div class="content-wrapper" id="contentWrapper">
-            <!-- Page Header -->
             <div class="dashboard-section">
                 <h2>Admin Dashboard</h2>
                 <p class="info-text">Current server time: {{ current_time }}</p>
             </div>
 
-            <!-- Current User Information -->
             <div class="dashboard-section" id="current-user">
                 <h2>Current User Information</h2>
                 <div class="current-user-card">
@@ -537,13 +551,14 @@
                     </div>
                     <div class="info-row">
                         <span class="info-label">Status:</span>
-                        <span class="info-value"><span class="status-badge current">CURRENT SESSION</span></span>
+                        <span class="info-value">
+                            <span class="status-badge current">CURRENT SESSION</span>
+                        </span>
                     </div>
                 </div>
                 <button class="btn refresh-button" onclick="window.location.reload();">Refresh Dashboard</button>
             </div>
 
-            <!-- Active Sessions -->
             <div class="dashboard-section" id="active-sessions">
                 <h2>Active Logins (Last 6 Hours)</h2>
                 <div style="overflow-x: auto;">
@@ -567,8 +582,8 @@
                                 <td>{{ login.user.employee_id }}</td>
                                 <td>
                                     {{ login.user.first_name }} {{ login.user.last_name }}
-                                    {% if login.user.user_level == 'ADMIN' %}
-                                    <span class="user-badge">ADMIN</span>
+                                    {% if login.user.user_level.name == 'ADMIN' %}
+                                        <span class="user-badge">ADMIN</span>
                                     {% endif %}
                                 </td>
                                 <td>{{ login.ip_address }}</td>
@@ -587,7 +602,6 @@
                 </div>
             </div>
 
-            <!-- Set Models Form -->
             <div class="dashboard-section" id="set-models">
                 <h2>Set Models</h2>
                 <form action="{{ url_for('admin_bp.set_models') }}" method="post">
@@ -597,19 +611,23 @@
                             <option value="">Loading models...</option>
                         </select>
                     </div>
+
                     <div class="form-group">
                         <label for="embedding_model">Select Embedding Model:</label>
                         <select id="embedding_model" name="embedding_model">
                             <option value="">Loading models...</option>
                         </select>
                     </div>
+
                     <div class="form-group">
                         <label for="image_model">Select Image Model:</label>
                         <select id="image_model" name="image_model">
                             <option value="">Loading models...</option>
                         </select>
                     </div>
+
                     <button type="submit" class="btn">Set Models</button>
+
                     <hr style="margin: 20px 0; border-color: rgba(57,255,20,0.3);">
 
                     <div class="form-group">
@@ -618,13 +636,15 @@
                             Promote Latest _vXX Model
                         </button>
                     </div>
-
                 </form>
             </div>
 
-            <!-- Users Table -->
             <div class="dashboard-section" id="users">
                 <h2>Users</h2>
+                <p class="info-text">
+                    Use this section to change user levels or reset a user's password.
+                </p>
+
                 <div style="overflow-x: auto;">
                     <table>
                         <thead>
@@ -633,26 +653,46 @@
                                 <th>First Name</th>
                                 <th>Last Name</th>
                                 <th>User Level</th>
+                                <th>Password Status</th>
                                 <th>Role</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             {% for user in users %}
                             <tr {% if user.user_level.name == 'ADMIN' %}class="admin-row"{% endif %}>
                                 <td>{{ user.employee_id }}</td>
                                 <td>{{ user.first_name }}</td>
                                 <td>{{ user.last_name }}</td>
+
                                 <td>
                                     {{ user.user_level.name }}
                                     {% if user.user_level.name == 'ADMIN' %}
-                                    <span class="user-badge">ADMIN</span>
+                                        <span class="user-badge">ADMIN</span>
                                     {% endif %}
                                 </td>
-                                <td>{% if user.user_level.name == 'ADMIN' %}Administrator{% else %}Regular User{% endif %}</td>
+
+                                <td>
+                                    {% if user.must_change_password %}
+                                        <span class="status-badge remote">MUST CHANGE</span>
+                                    {% else %}
+                                        <span class="status-badge current">OK</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if user.user_level.name == 'ADMIN' %}
+                                        Administrator
+                                    {% else %}
+                                        Regular User
+                                    {% endif %}
+                                </td>
+
                                 <td>
                                     <form action="{{ url_for('admin_bp.change_user_level') }}" method="post" class="inline-form">
                                         <input type="hidden" name="user_id" value="{{ user.id }}">
+
                                         <select name="user_level">
                                             <option value="ADMIN" {% if user.user_level.name == 'ADMIN' %}selected{% endif %}>Admin</option>
                                             <option value="LEVEL_III" {% if user.user_level.name == 'LEVEL_III' %}selected{% endif %}>Level III</option>
@@ -660,7 +700,34 @@
                                             <option value="LEVEL_I" {% if user.user_level.name == 'LEVEL_I' %}selected{% endif %}>Level I</option>
                                             <option value="STANDARD" {% if user.user_level.name == 'STANDARD' %}selected{% endif %}>Default</option>
                                         </select>
+
                                         <button type="submit" class="btn">Change</button>
+                                    </form>
+
+                                    <form action="{{ url_for('admin_bp.reset_user_password') }}"
+                                          method="post"
+                                          class="password-reset-form"
+                                          onsubmit="return confirmPasswordReset('{{ user.first_name }} {{ user.last_name }}');">
+
+                                        <input type="hidden" name="user_id" value="{{ user.id }}">
+
+                                        <input type="password"
+                                               name="new_password"
+                                               placeholder="Temporary password"
+                                               autocomplete="new-password"
+                                               minlength="8"
+                                               required>
+
+                                        <input type="password"
+                                               name="confirm_password"
+                                               placeholder="Confirm temporary password"
+                                               autocomplete="new-password"
+                                               minlength="8"
+                                               required>
+
+                                        <button type="submit" class="btn btn-danger">
+                                            Reset Password
+                                        </button>
                                     </form>
                                 </td>
                             </tr>
@@ -670,7 +737,6 @@
                 </div>
             </div>
 
-            <!-- Comments Section -->
             <div class="dashboard-section" id="comments">
                 <h2>Comments</h2>
                 <div style="overflow-x: auto;">
@@ -689,12 +755,21 @@
                             <tr>
                                 <td>{{ comment.user.employee_id if comment.user else 'Anonymous' }}</td>
                                 <td>{{ comment.comment }}</td>
-                                <td><a href="{{ comment.page_url }}" target="_blank">{{ comment.page_url }}</a></td>
+                                <td>
+                                    <a href="{{ comment.page_url }}" target="_blank">
+                                        {{ comment.page_url }}
+                                    </a>
+                                </td>
                                 <td>
                                     {% if comment.screenshot_path %}
-                                    <a href="{{ url_for('static', filename=comment.screenshot_path) }}" target="_blank" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;">View Image</a>
+                                        <a href="{{ url_for('static', filename=comment.screenshot_path) }}"
+                                           target="_blank"
+                                           class="btn btn-secondary"
+                                           style="padding: 4px 8px; font-size: 11px;">
+                                            View Image
+                                        </a>
                                     {% else %}
-                                    <span style="color: #888;">No Image</span>
+                                        <span style="color: #888;">No Image</span>
                                     {% endif %}
                                 </td>
                                 <td>{{ comment.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
@@ -707,10 +782,8 @@
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="{{ url_for('static', filename='js/base_sidebar.js') }}"></script>
     <script>
-        // Sidebar Toggle Functionality
         function toggleSidebar() {
             const sidebar = document.getElementById('mainSidebar');
             const contentWrapper = document.getElementById('contentWrapper');
@@ -720,7 +793,6 @@
             contentWrapper.classList.toggle('expanded');
             toggleBtn.classList.toggle('collapsed');
 
-            // Change icon based on state
             if (sidebar.classList.contains('collapsed')) {
                 toggleBtn.innerHTML = '☰';
                 toggleBtn.style.left = '15px';
@@ -728,139 +800,127 @@
                 toggleBtn.innerHTML = '✕';
             }
 
-            // Save state to localStorage
             const isCollapsed = sidebar.classList.contains('collapsed');
             localStorage.setItem('sidebarCollapsed', isCollapsed);
         }
 
-        // Restore sidebar state on page load
-document.addEventListener('DOMContentLoaded', function () {
-
-    // ----------------------------------------------------
-    // Sidebar Restore
-    // ----------------------------------------------------
-    const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-
-    const sidebar = document.getElementById('mainSidebar');
-    const contentWrapper = document.getElementById('contentWrapper');
-    const toggleBtn = document.getElementById('sidebarToggle');
-
-    if (sidebarCollapsed && sidebar && contentWrapper && toggleBtn) {
-        sidebar.classList.add('collapsed');
-        contentWrapper.classList.add('expanded');
-        toggleBtn.classList.add('collapsed');
-        toggleBtn.innerHTML = '☰';
-        toggleBtn.style.left = '15px';
-    } else if (toggleBtn) {
-        toggleBtn.innerHTML = '✕';
-    }
-
-    // ----------------------------------------------------
-    // Load Available Models
-    // ----------------------------------------------------
-    fetch('/get_available_models')
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                populateDropdown('ai_model', data.models.ai, data.current.ai);
-                populateDropdown('embedding_model', data.models.embedding, data.current.embedding);
-                populateDropdown('image_model', data.models.image, data.current.image);
-            }
-        })
-        .catch(error => {
-            console.error('Error loading models:', error);
-        });
-
-    function populateDropdown(selectId, models, currentModel) {
-        const select = document.getElementById(selectId);
-        if (!select) return;
-
-        select.innerHTML = '';
-
-        if (!models || models.length === 0) {
-            const emptyOption = document.createElement('option');
-            emptyOption.textContent = 'No models available';
-            emptyOption.disabled = true;
-            select.appendChild(emptyOption);
-            return;
+        function confirmPasswordReset(userName) {
+            return confirm("Reset temporary password for " + userName + "? The user will be required to change it on next login.");
         }
 
-        models.forEach(model => {
-            const option = document.createElement('option');
-            option.value = model.name;
+        document.addEventListener('DOMContentLoaded', function () {
+            const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
 
-            option.textContent =
-                model.display_name ||
-                model.label ||
-                model.name;
+            const sidebar = document.getElementById('mainSidebar');
+            const contentWrapper = document.getElementById('contentWrapper');
+            const toggleBtn = document.getElementById('sidebarToggle');
 
-            option.selected = (model.name === currentModel);
-
-            if (model.enabled === false) {
-                option.disabled = true;
-                option.textContent += ' (Disabled)';
+            if (sidebarCollapsed && sidebar && contentWrapper && toggleBtn) {
+                sidebar.classList.add('collapsed');
+                contentWrapper.classList.add('expanded');
+                toggleBtn.classList.add('collapsed');
+                toggleBtn.innerHTML = '☰';
+                toggleBtn.style.left = '15px';
+            } else if (toggleBtn) {
+                toggleBtn.innerHTML = '✕';
             }
 
-            select.appendChild(option);
-        });
-    }
+            fetch('/get_available_models')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        populateDropdown('ai_model', data.models.ai, data.current.ai);
+                        populateDropdown('embedding_model', data.models.embedding, data.current.embedding);
+                        populateDropdown('image_model', data.models.image, data.current.image);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading models:', error);
+                });
 
-    // ----------------------------------------------------
-    // Promote Latest Trained Model
-    // ----------------------------------------------------
-    const promoteBtn = document.getElementById('promote-latest-btn');
+            function populateDropdown(selectId, models, currentModel) {
+                const select = document.getElementById(selectId);
+                if (!select) return;
 
-    if (promoteBtn) {
-        promoteBtn.addEventListener('click', function () {
+                select.innerHTML = '';
 
-            if (!confirm("Promote latest trained model to CURRENT_MODEL?")) {
-                return;
-            }
-
-            promoteBtn.disabled = true;
-            promoteBtn.textContent = "Promoting...";
-
-            fetch('/promote_latest_trained_model', {
-                method: 'POST'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert("Latest trained model promoted successfully.");
-                    location.reload();
-                } else {
-                    alert("Error: " + (data.message || "Promotion failed."));
-                    promoteBtn.disabled = false;
-                    promoteBtn.textContent = "Promote Latest _vXX Model";
+                if (!models || models.length === 0) {
+                    const emptyOption = document.createElement('option');
+                    emptyOption.textContent = 'No models available';
+                    emptyOption.disabled = true;
+                    select.appendChild(emptyOption);
+                    return;
                 }
-            })
-            .catch(err => {
-                console.error("Promotion error:", err);
-                alert("Error promoting model.");
-                promoteBtn.disabled = false;
-                promoteBtn.textContent = "Promote Latest _vXX Model";
-            });
-        });
-    }
 
-    // ----------------------------------------------------
-    // Smooth Scrolling for Sidebar Anchors
-    // ----------------------------------------------------
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
+                models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.name;
+
+                    option.textContent =
+                        model.display_name ||
+                        model.label ||
+                        model.name;
+
+                    option.selected = (model.name === currentModel);
+
+                    if (model.enabled === false) {
+                        option.disabled = true;
+                        option.textContent += ' (Disabled)';
+                    }
+
+                    select.appendChild(option);
                 });
             }
+
+            const promoteBtn = document.getElementById('promote-latest-btn');
+
+            if (promoteBtn) {
+                promoteBtn.addEventListener('click', function () {
+                    if (!confirm("Promote latest trained model to CURRENT_MODEL?")) {
+                        return;
+                    }
+
+                    promoteBtn.disabled = true;
+                    promoteBtn.textContent = "Promoting...";
+
+                    fetch('/promote_latest_trained_model', {
+                        method: 'POST'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            alert("Latest trained model promoted successfully.");
+                            location.reload();
+                        } else {
+                            alert("Error: " + (data.message || "Promotion failed."));
+                            promoteBtn.disabled = false;
+                            promoteBtn.textContent = "Promote Latest _vXX Model";
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Promotion error:", err);
+                        alert("Error promoting model.");
+                        promoteBtn.disabled = false;
+                        promoteBtn.textContent = "Promote Latest _vXX Model";
+                    });
+                });
+            }
+
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    const target = document.querySelector(this.getAttribute('href'));
+
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
         });
-    });
-
-});
-
     </script>
 </body>
 </html>
