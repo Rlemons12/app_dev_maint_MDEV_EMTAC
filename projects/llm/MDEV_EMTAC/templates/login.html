@@ -4,10 +4,8 @@
   <meta charset="UTF-8">
   <title>Login Page</title>
 
-  <!-- Ensure viewport units map correctly -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Existing banner CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/redbanner.css') }}">
 
   <style>
@@ -159,6 +157,26 @@
       overflow-wrap: anywhere;
     }
 
+    .password-reset-note {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      border-radius: 0.25rem;
+      background: rgba(0, 123, 255, 0.12);
+      color: #222;
+      border: 0.0625rem solid rgba(0, 123, 255, 0.25);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    .login-links {
+      margin-top: 1rem;
+    }
+
+    .login-links a {
+      display: inline-block;
+      margin-right: 1rem;
+    }
+
     #fs-btn {
       position: fixed;
       bottom: 1rem;
@@ -216,7 +234,6 @@
     <a href="#" id="commentPopupLink">Leave a Comment</a>
   </div>
 
-  <!-- Flash messages -->
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       <ul class="flashes">
@@ -245,7 +262,6 @@
     {% endif %}
 
     <form action="{{ url_for('login_bp.login') }}" method="post">
-      <!-- Preserve Android/WebView tablet identity during POST /login -->
       <input type="hidden" name="tablet_uid" value="{{ tablet_uid or '' }}">
       <input type="hidden" name="tablet_name" value="{{ tablet_name or '' }}">
 
@@ -270,20 +286,23 @@
       <button type="submit">Log In</button>
     </form>
 
-    <p style="margin-top:1rem;">
-      <a href="{{ url_for('create_user_bp.create_user') }}">Create User</a>
-    </p>
+    <div class="password-reset-note">
+      If an admin reset your password, log in with the temporary password.
+      You will be required to create a new password before continuing.
+    </div>
+
+    <p class="login-links">
+    <a href="{{ url_for('create_user_bp.create_user') }}">Create User</a>
+    <a href="{{ url_for('login_bp.request_password_reset') }}">Request Password Reset</a>
+</p>
   </div>
 
-  <!-- Fullscreen toggle -->
   <button id="fs-btn" type="button">⛶ Fullscreen</button>
 
-  <!-- Comment popup -->
   <div id="commentPopup">
     <!-- Existing comment popup form markup can stay here if needed -->
   </div>
 
-  <!-- Audio & scripts -->
   <audio id="background-audio" src="{{ url_for('static', filename='audio/login_sound') }}"></audio>
 
   <script>
