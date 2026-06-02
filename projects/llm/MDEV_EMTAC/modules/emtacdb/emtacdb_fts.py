@@ -14496,8 +14496,8 @@ class QandA(Base):
     raw_response = Column(JSON)
 
     # Vector embeddings for semantic search
-    question_embedding = Column(Vector(1536))
-    answer_embedding = Column(Vector(1536))
+    question_embedding = Column(Vector(384))
+    answer_embedding = Column(Vector(384))
 
     # Additional metadata
     question_length = Column(Integer)
@@ -14725,6 +14725,7 @@ class ImageModelConfig(Base):
 
 
 # Define the User model
+# Define the User model
 class User(Base):
     __tablename__ = 'users'
 
@@ -14738,27 +14739,45 @@ class User(Base):
     age = Column(Integer, nullable=True)
     education_level = Column(String, nullable=True)
     start_date = Column(DateTime, nullable=True)
+
     hashed_password = Column(String, nullable=False)
 
-    # Store enum as string in the database
-    user_level = Column(SqlEnum(UserLevel, values_callable=lambda obj: [e.value for e in obj]),
-                        default=UserLevel.STANDARD, nullable=False)
+    must_change_password = Column(Boolean, default=False, nullable=False)
+    password_last_changed = Column(DateTime, nullable=True)
 
-    # Relationship to comments
+    user_level = Column(
+        SqlEnum(UserLevel, values_callable=lambda obj: [e.value for e in obj]),
+        default=UserLevel.STANDARD,
+        nullable=False
+    )
+
     comments = relationship("UserComments", back_populates="user")
-    logins = relationship('UserLogin', back_populates='user')
+    logins = relationship("UserLogin", back_populates="user")
 
-    # Add mapper arguments for inheritance
     __mapper_args__ = {
         'polymorphic_identity': 'user',
         'polymorphic_on': type
     }
 
-    def set_password(self, password):
+    def set_password(self, password, must_change_password=False):
         self.hashed_password = generate_password_hash(password)
+        self.must_change_password = must_change_password
+        self.password_last_changed = datetime.now()
 
     def check_password_hash(self, password):
         return check_password_hash(self.hashed_password, password)
+
+    def force_password_change(self, temporary_password):
+        self.set_password(
+            temporary_password,
+            must_change_password=True
+        )
+
+    def clear_force_password_change(self, new_password):
+        self.set_password(
+            new_password,
+            must_change_password=False
+        )
 
     @classmethod
     @with_request_id
@@ -14775,20 +14794,20 @@ class User(Base):
         from sqlalchemy.exc import IntegrityError, SQLAlchemyError
         import traceback
 
-        # Get database session
         try:
             logger.info("Getting database session...")
             db_config = get_db_config()
             session = db_config.get_main_session()
             logger.debug(f"Got database session: {session}")
+
         except Exception as e:
             logger.error(f"ERROR GETTING DATABASE SESSION: {e}")
             logger.error(traceback.format_exc())
             return False, f"Database connection error: {str(e)}"
 
         try:
-            # Create new user object
             logger.info(f"Creating User object with: {employee_id}, {first_name}, {last_name}")
+
             new_user = User(
                 employee_id=employee_id,
                 first_name=first_name,
@@ -14798,21 +14817,21 @@ class User(Base):
                 age=age,
                 education_level=education_level,
                 start_date=start_date,
-                user_level=UserLevel.STANDARD
+                user_level=UserLevel.STANDARD,
+                must_change_password=False,
+                password_last_changed=datetime.now()
             )
+
             logger.debug("Created User object successfully")
 
-            # Set password
             logger.debug("Setting password...")
-            new_user.set_password(password)
+            new_user.set_password(password, must_change_password=False)
             logger.debug("Password set successfully")
 
-            # Add to session
             logger.debug("Adding user to database session...")
             session.add(new_user)
             logger.debug("User added to session")
 
-            # Commit changes
             logger.info("Committing session...")
             session.commit()
             logger.info("Session committed successfully")
@@ -14828,8 +14847,8 @@ class User(Base):
 
             if "UNIQUE constraint failed" in error_msg:
                 return False, f"A user with employee ID {employee_id} already exists."
-            else:
-                return False, f"Database integrity error: {error_msg}"
+
+            return False, f"Database integrity error: {error_msg}"
 
         except SQLAlchemyError as e:
             logger.error(f"SQL ALCHEMY ERROR: {str(e)}")
@@ -14847,11 +14866,11 @@ class User(Base):
             return False, f"An unexpected error occurred: {error_msg}"
 
         finally:
-            # Always close the session
             try:
                 logger.debug("Closing database session")
                 session.close()
                 logger.debug("Database session closed")
+
             except Exception as e:
                 logger.error(f"ERROR CLOSING SESSION: {e}")
 
@@ -15066,17 +15085,32 @@ class UserLayout(Base):
 
 # Define the UserComments model
 class UserComments(Base):
-    __tablename__ = 'user_comments'
+    __tablename__ = "user_comments"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     comment = Column(Text, nullable=False)
     page_url = Column(String, nullable=False)
     screenshot_path = Column(String, nullable=True)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    # Relationship to User
     user = relationship("User", back_populates="comments")
+
+    __table_args__ = (
+        Index("idx_user_comments_user_timestamp", "user_id", "timestamp"),
+        Index("idx_user_comments_page_timestamp", "page_url", "timestamp"),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "comment": self.comment,
+            "page_url": self.page_url,
+            "screenshot_path": self.screenshot_path,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
+        }
+
 
 class BOMResult(Base):
     __tablename__ = 'bom_result'
