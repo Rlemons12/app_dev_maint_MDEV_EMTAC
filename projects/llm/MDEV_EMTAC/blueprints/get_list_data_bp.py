@@ -1,56 +1,102 @@
 from flask import Blueprint, jsonify
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
-from sqlalchemy.ext.declarative import declarative_base
+
 from modules.configuration.config import DATABASE_URL
-from modules.emtacdb.emtacdb_fts import Area, EquipmentGroup, Model, AssetNumber, Location
+from modules.configuration.log_config import (
+    with_request_id,
+    get_request_id,
+    info_id,
+    error_id,
+)
+from modules.emtacdb.emtacdb_fts import (
+    Area,
+    EquipmentGroup,
+    Model,
+    AssetNumber,
+    Location,
+)
 
-get_list_data_bp = Blueprint('get_list_data_bp', __name__)
+get_list_data_bp = Blueprint("get_list_data_bp", __name__)
 
-# Create SQLAlchemy engine
 engine = create_engine(DATABASE_URL)
-Base = declarative_base()
-Session = scoped_session(sessionmaker(bind=engine))  # Use scoped_session here
+Session = scoped_session(sessionmaker(bind=engine))
 
-@get_list_data_bp.route('/get_list_data')
+
+@get_list_data_bp.route("/get_list_data")
+@with_request_id
 def get_list_data():
-    # Create a session
+    request_id = get_request_id()
     session = Session()
 
     try:
-        print(f'data # Query the database to get all areas, equipment groups, models, asset numbers, and locations')
         areas = session.query(Area).all()
         equipment_groups = session.query(EquipmentGroup).all()
         models = session.query(Model).all()
         asset_numbers = session.query(AssetNumber).all()
         locations = session.query(Location).all()
 
-        # Convert queried data to a list of dictionaries for JSON serialization
-        areas_list = [{'id': area.id, 'name': area.name} for area in areas]
-        equipment_groups_list = [{'id': equipment_group.id, 'name': equipment_group.name, 'area_id': equipment_group.area_id} for equipment_group in equipment_groups]
-        models_list = [{'id': model.id, 'name': model.name, 'equipment_group_id': model.equipment_group_id} for model in models]
-        asset_numbers_list = [{'id': number.id, 'number': number.number, 'model_id': number.model_id} for number in asset_numbers]
-        locations_list = [{'id': location.id, 'name': location.name, 'model_id': location.model_id} for location in locations]
+        data = {
+            "areas": [{"id": area.id, "name": area.name} for area in areas],
+            "equipment_groups": [
+                {
+                    "id": group.id,
+                    "name": group.name,
+                    "area_id": group.area_id,
+                }
+                for group in equipment_groups
+            ],
+            "models": [
+                {
+                    "id": model.id,
+                    "name": model.name,
+                    "equipment_group_id": model.equipment_group_id,
+                }
+                for model in models
+            ],
+            "asset_numbers": [
+                {
+                    "id": number.id,
+                    "number": number.number,
+                    "model_id": number.model_id,
+                }
+                for number in asset_numbers
+            ],
+            "locations": [
+                {
+                    "id": location.id,
+                    "name": location.name,
+                    "model_id": location.model_id,
+                }
+                for location in locations
+            ],
+        }
 
-               
-        
+        info_id(
+            f"[LIST-DATA] Loaded dropdown data | "
+            f"areas={len(data['areas'])} | "
+            f"equipment_groups={len(data['equipment_groups'])} | "
+            f"models={len(data['models'])} | "
+            f"asset_numbers={len(data['asset_numbers'])} | "
+            f"locations={len(data['locations'])}",
+            request_id,
+        )
+
+        return jsonify(data), 200
+
     except Exception as e:
-        print("An error occurred:", e)
         session.rollback()
-        raise e
+        error_id(
+            f"[LIST-DATA] Failed loading dropdown data: {e}",
+            request_id,
+            exc_info=True,
+        )
+        return jsonify(
+            {
+                "error": "Failed to load dropdown data",
+                "detail": str(e),
+            }
+        ), 500
 
     finally:
-        # Close the session
-        session.close()
-
-    # Combine all the lists into a single dictionary
-    data = {
-        'areas': areas_list,
-        'equipment_groups': equipment_groups_list,
-        'models': models_list,
-        'asset_numbers': asset_numbers_list,
-        'locations': locations_list
-    }
-
-    # Return the data as JSON
-    return jsonify(data)
+        Session.remove()
