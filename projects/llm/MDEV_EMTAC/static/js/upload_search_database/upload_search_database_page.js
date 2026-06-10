@@ -517,6 +517,61 @@
         showResults();
     }
 
+    function renderUploadResults(data) {
+    const target = byId("documents-list");
+
+    if (!target) {
+        return;
+    }
+
+    target.innerHTML = "";
+
+    const results = Array.isArray(data)
+        ? data
+        : [data];
+
+    const table = document.createElement("table");
+    table.className = "table table-striped table-bordered";
+
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Message</th>
+                <th>Documents</th>
+                <th>Chunks</th>
+                <th>Embeddings</th>
+                <th>Images</th>
+                <th>Position</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+
+    const tbody = table.querySelector("tbody");
+
+    results.forEach(function(result) {
+
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${escapeHtml(result.status || "")}</td>
+            <td>${escapeHtml(result.message || "")}</td>
+            <td>${escapeHtml((result.document_ids || []).join(", "))}</td>
+            <td>${escapeHtml(result.chunks_created || 0)}</td>
+            <td>${escapeHtml(result.embeddings_created || 0)}</td>
+            <td>${escapeHtml(result.images_extracted || 0)}</td>
+            <td>${escapeHtml(result.position_id || "")}</td>
+        `;
+
+        tbody.appendChild(row);
+    });
+
+    target.appendChild(table);
+
+    showResults();
+}
+
     function hasUsableDrawingFile(drawing) {
     const filePath = String(drawing?.file_path || "").trim().toLowerCase();
 
