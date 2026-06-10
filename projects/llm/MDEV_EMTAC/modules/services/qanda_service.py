@@ -30,14 +30,11 @@ class QandAService:
 
     Responsibilities:
     - Create QandA interaction records
+    - Store intent classification metadata
     - Update feedback
     - Retrieve raw saved response seeds for payload loading
     - Lightweight QandA analytics
     """
-
-    # ---------------------------------------------------------
-    # CREATE INTERACTION
-    # ---------------------------------------------------------
 
     @with_request_id
     def create_interaction(
@@ -54,18 +51,17 @@ class QandAService:
         raw_response: Optional[Dict[str, Any]] = None,
         rating: Optional[str] = None,
         comment: Optional[str] = None,
+        intent_type: Optional[str] = None,
+        intent_confidence: Optional[float] = None,
+        intent_reason: Optional[str] = None,
+        intent_rewritten_question: Optional[str] = None,
+        intent_needs_current_session_memory: bool = False,
+        intent_needs_semantic_chat_recall: bool = False,
+        intent_needs_document_scope: bool = False,
     ) -> QandA:
         """
         Create and attach a QandA record to the session.
         Does NOT commit.
-
-        Returns:
-            QandA instance attached to the provided session.
-
-        Notes:
-            request_id is required by the answer-first / payload-second flow.
-            If the caller passes None, this method falls back to the active
-            request context ID.
         """
 
         resolved_request_id = request_id or get_request_id()
@@ -78,18 +74,21 @@ class QandAService:
             timestamp=timestamp,
             rating=rating,
             comment=comment,
+            request_id=resolved_request_id,
+            raw_response=raw_response,
+            processing_time_ms=processing_time_ms,
+            intent_type=intent_type,
+            intent_confidence=intent_confidence,
+            intent_reason=intent_reason,
+            intent_rewritten_question=intent_rewritten_question,
+            intent_needs_current_session_memory=intent_needs_current_session_memory,
+            intent_needs_semantic_chat_recall=intent_needs_semantic_chat_recall,
+            intent_needs_document_scope=intent_needs_document_scope,
         )
 
-        # Optional metadata
-        qa.request_id = resolved_request_id
-        qa.raw_response = raw_response
-        qa.processing_time_ms = processing_time_ms
-
-        # Length metadata
         qa.question_length = len(question) if question else 0
         qa.answer_length = len(answer) if answer else 0
 
-        # Embeddings
         if question_embedding is not None:
             qa.question_embedding = question_embedding
 
@@ -100,15 +99,11 @@ class QandAService:
 
         debug_id(
             f"QandA interaction staged for persistence "
-            f"(user={user_id}, req={resolved_request_id})",
+            f"(user={user_id}, req={resolved_request_id}, intent={intent_type})",
             resolved_request_id,
         )
 
         return qa
-
-    # ---------------------------------------------------------
-    # LOOKUP BY REQUEST ID
-    # ---------------------------------------------------------
 
     @with_request_id
     def get_interaction_by_request_id(
@@ -118,13 +113,7 @@ class QandAService:
         request_id: str,
     ) -> Optional[QandA]:
         """
-        Retrieve the most recent QandA interaction for a request_id.
-
-        Used by:
-            ChatPayloadOrchestrator.load_payload()
-
-        Returns:
-            QandA instance or None.
+        Load the most recent QandA interaction by request_id.
         """
 
         resolved_request_id = request_id or get_request_id()
@@ -139,24 +128,23 @@ class QandAService:
         qa = (
             session.query(QandA)
             .filter(QandA.request_id == resolved_request_id)
-            .order_by(QandA.id.desc())
+            .order_by(QandA.timestamp.desc())
             .first()
         )
 
-        if not qa:
-            warning_id(
-                f"No QandA interaction found for request_id={resolved_request_id}",
+        if qa:
+            debug_id(
+                f"QandA interaction loaded for request_id={resolved_request_id} "
+                f"(id={qa.id})",
                 resolved_request_id,
             )
-            return None
+            return qa
 
-        debug_id(
-            f"QandA interaction loaded for request_id={resolved_request_id} "
-            f"(id={getattr(qa, 'id', None)})",
+        warning_id(
+            f"No QandA interaction found for request_id={resolved_request_id}",
             resolved_request_id,
         )
-
-        return qa
+        return None
 
     @with_request_id
     def get_raw_response_by_request_id(
@@ -173,9 +161,6 @@ class QandAService:
             - images
             - parts
             - drawings
-
-        Returns:
-            dict if found and valid, otherwise {}
         """
 
         resolved_request_id = request_id or get_request_id()
@@ -211,10 +196,6 @@ class QandAService:
         )
 
         return {}
-
-    # ---------------------------------------------------------
-    # UPDATE FEEDBACK
-    # ---------------------------------------------------------
 
     @with_request_id
     def update_feedback(
@@ -252,9 +233,37 @@ class QandAService:
 
         return qa
 
-    # ---------------------------------------------------------
-    # FIND SIMILAR QUESTIONS
-    # ---------------------------------------------------------
+    @with_request_id
+    def update_feedback_by_request_id(
+        self,
+        session: Session,
+        *,
+        request_id: str,
+        rating: Optional[str] = None,
+        comment: Optional[str] = None,
+    ) -> Optional[QandA]:
+        """
+        Update rating/comment using the original /chatbot/ask request_id.
+        Does NOT commit.
+        """
+
+        qa = self.get_interaction_by_request_id(
+            session=session,
+            request_id=request_id,
+        )
+
+        if not qa:
+            return None
+
+        qa.rating = rating
+        qa.comment = comment
+
+        debug_id(
+            f"QandA feedback updated by request_id={request_id} (id={qa.id})",
+            request_id,
+        )
+
+        return qa
 
     def find_similar_questions(
         self,
@@ -292,17 +301,9 @@ class QandAService:
         if user_id:
             query = query.filter(QandA.user_id == user_id)
 
-        results = (
-            query.order_by("distance")
-            .limit(limit)
-            .all()
-        )
+        results = query.order_by("distance").limit(limit).all()
 
         return [(qa, 1 - distance) for qa, distance in results]
-
-    # ---------------------------------------------------------
-    # USER ANALYTICS
-    # ---------------------------------------------------------
 
     def get_user_analytics(
         self,
@@ -323,17 +324,23 @@ class QandAService:
         total = len(qas)
         rated = [qa for qa in qas if qa.rating is not None]
 
-        avg_rating = 0
+        numeric_ratings = [
+            int(qa.rating)
+            for qa in rated
+            if str(qa.rating).isdigit()
+        ]
 
-        if rated:
-            numeric_ratings = [
-                int(qa.rating)
-                for qa in rated
-                if str(qa.rating).isdigit()
-            ]
+        avg_rating = (
+            sum(numeric_ratings) / len(numeric_ratings)
+            if numeric_ratings
+            else 0
+        )
 
-            if numeric_ratings:
-                avg_rating = sum(numeric_ratings) / len(numeric_ratings)
+        intent_counts: Dict[str, int] = {}
+
+        for qa in qas:
+            intent_type = getattr(qa, "intent_type", None) or "UNKNOWN"
+            intent_counts[intent_type] = intent_counts.get(intent_type, 0) + 1
 
         return {
             "total_questions": total,
@@ -348,70 +355,5 @@ class QandAService:
             ),
             "rated_answers": len(rated),
             "avg_rating": avg_rating,
+            "intent_counts": intent_counts,
         }
-
-    @with_request_id
-    def get_interaction_by_request_id(
-            self,
-            session: Session,
-            *,
-            request_id: str,
-    ) -> Optional[QandA]:
-        """
-        Load a QandA interaction by the original /chatbot/ask request_id.
-        """
-
-        if not request_id:
-            return None
-
-        qa = (
-            session.query(QandA)
-            .filter(QandA.request_id == request_id)
-            .order_by(QandA.timestamp.desc())
-            .first()
-        )
-
-        if qa:
-            debug_id(
-                f"QandA interaction loaded for request_id={request_id} (id={qa.id})",
-                request_id,
-            )
-        else:
-            warning_id(
-                f"No QandA interaction found for request_id={request_id}",
-                request_id,
-            )
-
-        return qa
-
-    @with_request_id
-    def update_feedback_by_request_id(
-            self,
-            session: Session,
-            *,
-            request_id: str,
-            rating: Optional[str] = None,
-            comment: Optional[str] = None,
-    ) -> Optional[QandA]:
-        """
-        Update rating/comment using the original /chatbot/ask request_id.
-        Does NOT commit.
-        """
-
-        qa = self.get_interaction_by_request_id(
-            session=session,
-            request_id=request_id,
-        )
-
-        if not qa:
-            return None
-
-        qa.rating = rating
-        qa.comment = comment
-
-        debug_id(
-            f"QandA feedback updated by request_id={request_id} (id={qa.id})",
-            request_id,
-        )
-
-        return qa
