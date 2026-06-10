@@ -17,7 +17,6 @@ from modules.configuration.log_config import (
 )
 
 from modules.services.ai_models_embedding_service import AIModelsEmbeddingService
-
 from modules.emtacdb.emtacdb_fts import QandA
 
 
@@ -25,20 +24,8 @@ class QandAEmbeddingService:
     """
     Handles embedding generation and storage for existing Q&A history rows.
 
-    Responsibilities:
-        - Load an existing QandA row
-        - Generate question and/or answer embeddings
-        - Update that same QandA row
-        - Optionally update embedding status metadata if those columns exist
-
-    This service should NOT:
-        - Create new QandA rows
-        - Create feedback/comment rows
-        - Own the original answer-generation workflow
-        - Generate duplicate Q&A history entries
-
-    Main public method:
-        - embed_existing_qanda(...)
+    Also exposes safe reusable text embedding helpers for other tables,
+    such as chat_sessions.summary_embedding.
     """
 
     STATUS_PENDING = "pending"
@@ -51,7 +38,102 @@ class QandAEmbeddingService:
         self.embedding_service = AIModelsEmbeddingService()
 
     # ---------------------------------------------------------
-    # Main API
+    # Reusable Text Embedding API
+    # ---------------------------------------------------------
+
+    @with_request_id
+    def embed_text(
+        self,
+        *,
+        text: Optional[str],
+        request_id: Optional[str] = None,
+    ) -> Optional[List[float]]:
+        """
+        Generate one embedding vector for one text string.
+
+        Used by:
+            - ChatOrchestrator for chat_sessions.summary_embedding
+            - Any future service that needs a single vector
+
+        Returns:
+            List[float] or None.
+        """
+
+        cleaned_text = self._clean_text(text)
+
+        if not cleaned_text:
+            warning_id(
+                "[QandAEmbeddingService] embed_text skipped because text is empty.",
+                request_id,
+            )
+            return None
+
+        vectors = self.embed_texts(
+            texts=[cleaned_text],
+            request_id=request_id,
+        )
+
+        if not vectors:
+            return None
+
+        return vectors[0]
+
+    @with_request_id
+    def embed_texts(
+        self,
+        *,
+        texts: Sequence[str],
+        request_id: Optional[str] = None,
+    ) -> List[List[float]]:
+        """
+        Generate embedding vectors for a list of text strings.
+
+        This uses the same lower-level AIModelsEmbeddingService path that
+        Q&A embeddings already use.
+        """
+
+        cleaned_texts: List[str] = []
+
+        for value in texts or []:
+            cleaned = self._clean_text(value)
+            if cleaned:
+                cleaned_texts.append(cleaned)
+
+        if not cleaned_texts:
+            warning_id(
+                "[QandAEmbeddingService] embed_texts skipped because no valid text was supplied.",
+                request_id,
+            )
+            return []
+
+        try:
+            debug_id(
+                f"[QandAEmbeddingService] Generating generic text embeddings "
+                f"text_count={len(cleaned_texts)}",
+                request_id,
+            )
+
+            vectors = self.embedding_service.get_embeddings_batch(
+                cleaned_texts,
+                request_id=request_id,
+            )
+
+            return self._validate_vectors(
+                vectors=vectors,
+                expected_count=len(cleaned_texts),
+                labels=[f"text_{index}" for index in range(len(cleaned_texts))],
+            )
+
+        except Exception as exc:
+            error_id(
+                f"[QandAEmbeddingService] Failed to generate generic text embeddings: {exc}",
+                request_id,
+                exc_info=True,
+            )
+            return []
+
+    # ---------------------------------------------------------
+    # Main Q&A API
     # ---------------------------------------------------------
 
     @with_request_id
@@ -70,39 +152,6 @@ class QandAEmbeddingService:
     ) -> bool:
         """
         Generate embeddings for an existing QandA row and update that same row.
-
-        Args:
-            session:
-                Active SQLAlchemy session.
-
-            qa_id:
-                Existing QandA.id value. Can be UUID or UUID string.
-
-            question:
-                Question text. If None, this service will use qa_record.question.
-
-            answer:
-                Answer text. If None, this service will use qa_record.answer.
-
-            embed_question:
-                Whether to generate/update the question embedding.
-
-            embed_answer:
-                Whether to generate/update the answer embedding.
-
-            request_id:
-                Request-scoped logging id.
-
-            skip_existing:
-                If True, do not regenerate an embedding if the row already has one.
-
-            commit:
-                If True, commit after updating the row.
-                If False, caller is responsible for committing.
-
-        Returns:
-            True if embeddings were created/updated successfully.
-            False if no row was found, nothing was embedded, or an error occurred.
         """
 
         qa_record = None
@@ -258,11 +307,6 @@ class QandAEmbeddingService:
         skip_existing: bool = True,
         commit: bool = True,
     ) -> bool:
-        """
-        Convenience method for updating only the answer embedding.
-        Useful after the answer has already been returned to the user.
-        """
-
         return self.embed_existing_qanda(
             session=session,
             qa_id=qa_id,
@@ -286,10 +330,6 @@ class QandAEmbeddingService:
         skip_existing: bool = True,
         commit: bool = True,
     ) -> bool:
-        """
-        Convenience method for updating only the question embedding.
-        """
-
         return self.embed_existing_qanda(
             session=session,
             qa_id=qa_id,
@@ -311,12 +351,6 @@ class QandAEmbeddingService:
         request_id: Optional[str] = None,
         commit: bool = True,
     ) -> bool:
-        """
-        Convenience method for filling only missing embeddings on an existing row.
-
-        This loads question/answer text from the database row.
-        """
-
         return self.embed_existing_qanda(
             session=session,
             qa_id=qa_id,
@@ -335,13 +369,6 @@ class QandAEmbeddingService:
 
     @staticmethod
     def _normalize_qa_id(qa_id):
-        """
-        Normalizes qa_id for UUID(as_uuid=True) primary keys.
-
-        If conversion fails, the original value is returned so SQLAlchemy can
-        still attempt to use it.
-        """
-
         if qa_id is None:
             return None
 
@@ -360,9 +387,6 @@ class QandAEmbeddingService:
         qa_id,
         request_id: Optional[str] = None,
     ) -> Optional[QandA]:
-        """
-        Loads one QandA row by primary key.
-        """
 
         if qa_id is None:
             warning_id(
@@ -406,15 +430,6 @@ class QandAEmbeddingService:
         skip_existing: bool,
         request_id: Optional[str] = None,
     ) -> List[Tuple[str, str]]:
-        """
-        Builds the list of embedding tasks.
-
-        Returns:
-            [
-                ("question", "question text"),
-                ("answer", "answer text"),
-            ]
-        """
 
         tasks: List[Tuple[str, str]] = []
 
@@ -458,23 +473,14 @@ class QandAEmbeddingService:
 
     @staticmethod
     def _clean_text(value: Optional[str]) -> Optional[str]:
-        """
-        Normalizes text input.
-        """
-
         if not isinstance(value, str):
             return None
 
         value = value.strip()
-
         return value or None
 
     @staticmethod
     def _has_vector(value: Any) -> bool:
-        """
-        Returns True if an embedding column appears to contain a usable vector.
-        """
-
         if value is None:
             return False
 
@@ -490,12 +496,6 @@ class QandAEmbeddingService:
         expected_count: int,
         labels: Sequence[str],
     ) -> List[List[float]]:
-        """
-        Validates and normalizes returned vectors.
-
-        AIModelsEmbeddingService should already return List[List[float]], but this
-        gives the QandA update layer one final safety check.
-        """
 
         if vectors is None:
             raise RuntimeError("Embedding service returned None")
@@ -561,10 +561,6 @@ class QandAEmbeddingService:
 
     @staticmethod
     def _resolve_vector_dimension(vectors: Sequence[Sequence[float]]) -> Optional[int]:
-        """
-        Returns the dimension of the first vector, if available.
-        """
-
         if not vectors:
             return None
 
@@ -584,12 +580,6 @@ class QandAEmbeddingService:
         *,
         request_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """
-        Safely resolves embedding model metadata.
-
-        Works with both the older AIModelsEmbeddingService and the updated one
-        that includes get_current_model_details().
-        """
 
         details: Dict[str, Any] = {
             "model_name": None,
@@ -607,7 +597,6 @@ class QandAEmbeddingService:
                     details["model_name"] = model_details.get("model_name")
                     details["backend"] = model_details.get("backend")
                     details["expected_dimension"] = model_details.get("expected_dimension")
-
                     return details
 
             if hasattr(self.embedding_service, "get_current_model_name"):
@@ -631,22 +620,10 @@ class QandAEmbeddingService:
         model_details: Dict[str, Any],
         vector_dimension: Optional[int],
     ) -> None:
-        """
-        Sets optional metadata columns if they exist on the QandA model.
-
-        This lets you add these columns later without breaking this service now:
-
-            embedding_model
-            embedding_backend
-            embedding_dimension
-            embedded_at
-            embedding_error
-        """
 
         model_name = model_details.get("model_name")
         backend = model_details.get("backend")
         expected_dimension = model_details.get("expected_dimension")
-
         dimension = expected_dimension or vector_dimension
 
         self._safe_set_attr(qa_record, "embedding_model", model_name)
@@ -662,9 +639,6 @@ class QandAEmbeddingService:
         status: str,
         error_message: Optional[str],
     ) -> None:
-        """
-        Sets embedding status fields if they exist.
-        """
 
         self._safe_set_attr(qa_record, "embedding_status", status)
         self._safe_set_attr(qa_record, "embedding_error", error_message)
@@ -674,21 +648,10 @@ class QandAEmbeddingService:
 
     @staticmethod
     def _safe_set_attr(obj: Any, attr_name: str, value: Any) -> None:
-        """
-        Sets an attribute only if it exists on the mapped object.
-
-        This keeps the service compatible with the current QandA model even if
-        optional metadata columns have not been added yet.
-        """
-
         if hasattr(obj, attr_name):
             setattr(obj, attr_name, value)
 
     def _resolve_status_from_existing_embeddings(self, qa_record: QandA) -> str:
-        """
-        Determines status from current row embedding columns.
-        """
-
         has_question = self._has_vector(getattr(qa_record, "question_embedding", None))
         has_answer = self._has_vector(getattr(qa_record, "answer_embedding", None))
 
@@ -713,12 +676,6 @@ class QandAEmbeddingService:
         error_message: str,
         request_id: Optional[str] = None,
     ) -> None:
-        """
-        Best-effort update to mark a QandA row as failed if optional status
-        columns exist.
-
-        This should never raise back to the caller.
-        """
 
         try:
             if qa_record is None:
