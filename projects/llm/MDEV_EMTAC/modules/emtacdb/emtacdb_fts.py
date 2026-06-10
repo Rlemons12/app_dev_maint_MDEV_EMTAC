@@ -660,7 +660,6 @@ class Position(Base):
     MODELS_MAP = None
 
     @classmethod
-    @with_request_id
     def get_dependent_items(cls, session, parent_type, parent_id, child_type=None):
         """
         Generic method to get dependent items based on parent type and ID.
@@ -6281,11 +6280,9 @@ def get_dimension_statistics(session):
 class CompleteDocument(Base):
     """
     Modern document model with robust PostgreSQL database handling.
-    Streamlined for PostgreSQL-only operations with enhanced performance.
-    Now includes image extraction capabilities aligned with Image class and DocumentStructureManager.
     """
 
-    __tablename__ = 'complete_document'
+    __tablename__ = "complete_document"
 
     # Core fields
     id = Column(Integer, primary_key=True)
@@ -6294,24 +6291,50 @@ class CompleteDocument(Base):
     content = Column(Text)
     rev = Column(String, nullable=False, default="R0")
 
+    # RAG / AI document-level metadata
+    summary = Column(Text, nullable=True)
+    summary_embedding_vector = Column(Vector(384), nullable=True)
+    rag_metadata = Column(JSONB, nullable=True)
+    topics = Column(JSONB, nullable=True)
+    keywords = Column(JSONB, nullable=True)
+    questions_answered = Column(JSONB, nullable=True)
+    equipment = Column(JSONB, nullable=True)
+
+    # Idempotency / duplicate detection fields
+    file_sha256 = Column(String(64), nullable=True, index=True)
+    file_size = Column(Integer, nullable=True)
+    file_basename = Column(String, nullable=True)
+
+    # Optional useful metadata
+    source_type = Column(String, nullable=True)
+    extraction_method = Column(String, nullable=True)
+
     # Relationships
     document = relationship("Document", back_populates="complete_document")
+
     completed_document_position_association = relationship(
         "CompletedDocumentPositionAssociation",
-        back_populates="complete_document"
+        back_populates="complete_document",
     )
-    powerpoint = relationship("PowerPoint", back_populates="complete_document")
+
+    powerpoint = relationship(
+        "PowerPoint",
+        back_populates="complete_document",
+    )
+
     image_completed_document_association = relationship(
         "ImageCompletedDocumentAssociation",
-        back_populates="complete_document"
+        back_populates="complete_document",
     )
+
     complete_document_problem = relationship(
         "CompleteDocumentProblemAssociation",
-        back_populates="complete_document"
+        back_populates="complete_document",
     )
+
     complete_document_task = relationship(
         "CompleteDocumentTaskAssociation",
-        back_populates="complete_document"
+        back_populates="complete_document",
     )
 
     def __repr__(self):
@@ -6362,6 +6385,12 @@ class CompleteDocument(Base):
         """
         Main upload processing method - now optimized for PostgreSQL with concurrent processing.
         """
+        warning_id(
+            f"[TRACE-DOC-UPLOAD] CompleteDocument.process_upload entered | "
+            f"files={[getattr(f, 'filename', str(f)) for f in files]}",
+            request_id,
+        )
+
         valid_files = [f for f in files if f.filename.strip()]
         if not valid_files:
             warning_id("No valid files provided", request_id)
@@ -7745,16 +7774,67 @@ class CompleteDocument(Base):
     def _extract_content(cls, file_path, request_id):
         """
         Extract text content and preserve source context.
+
+        Legacy ORM upload path compatibility method.
+
         Returns:
             {
                 "text": str,
                 "pdf_path": str | None,
-                "source_type": str
+                "source_type": str,
+                "method": str | None,
+                "pages": list | None
             }
         """
+        warning_id(
+            f"[TRACE-DOC-UPLOAD] CompleteDocument._extract_content entered | "
+            f"file_path={file_path}",
+            request_id,
+        )
+
         ext = os.path.splitext(file_path)[1].lower()
 
         try:
+            # -------------------------------------------------
+            # Prefer the newer ContentExtractionService for
+            # formats it already handles better.
+            #
+            # This fixes .xlsx/.xls/.csv extraction without
+            # duplicating Excel logic inside the ORM model.
+            # -------------------------------------------------
+            if ext in {".xlsx", ".xls", ".csv"}:
+                from modules.services.content_extraction_service import (
+                    ContentExtractionService,
+                )
+
+                info_id(
+                    f"[CompleteDocument._extract_content] Routing {ext} to "
+                    f"ContentExtractionService",
+                    request_id,
+                )
+
+                content_info = ContentExtractionService().extract(
+                    file_path,
+                    request_id=request_id,
+                )
+
+                if not content_info or not content_info.get("text"):
+                    warning_id(
+                        f"[CompleteDocument._extract_content] "
+                        f"ContentExtractionService returned no text | "
+                        f"file={file_path} | ext={ext}",
+                        request_id,
+                    )
+                    return None
+
+                return {
+                    "text": content_info.get("text") or "",
+                    "pdf_path": content_info.get("pdf_path"),
+                    "source_type": content_info.get("source_type") or ext.lstrip("."),
+                    "method": content_info.get("method"),
+                    "pages": content_info.get("pages"),
+                }
+
             # -------------------------
             # PDF
             # -------------------------
@@ -7764,6 +7844,8 @@ class CompleteDocument(Base):
                     "text": text,
                     "pdf_path": file_path,
                     "source_type": "pdf",
+                    "method": "legacy_pdf",
+                    "pages": None,
                 }
 
             # -------------------------
@@ -7775,6 +7857,8 @@ class CompleteDocument(Base):
                     "text": text,
                     "pdf_path": None,
                     "source_type": "txt",
+                    "method": "legacy_txt",
+                    "pages": None,
                 }
 
             # -------------------------
@@ -7792,8 +7876,10 @@ class CompleteDocument(Base):
 
                 return {
                     "text": text,
-                    "pdf_path": pdf_path,  # 🔥 DO NOT CLEANUP HERE
+                    "pdf_path": pdf_path,
                     "source_type": "docx->pdf",
+                    "method": "legacy_docx_to_pdf",
+                    "pages": None,
                 }
 
             # -------------------------
@@ -7819,8 +7905,10 @@ class CompleteDocument(Base):
                 return {
                     "text": text,
                     "pdf_path": pdf_path,
-                    "docx_path": docx_path,  # preserve for later cleanup
+                    "docx_path": docx_path,
                     "source_type": "doc->docx->pdf",
+                    "method": "legacy_doc_to_docx_to_pdf",
+                    "pages": None,
                 }
 
             # -------------------------
@@ -7831,7 +7919,11 @@ class CompleteDocument(Base):
                 return None
 
         except Exception as e:
-            error_id(f"Content extraction failed for {file_path}: {e}", request_id)
+            error_id(
+                f"Content extraction failed for {file_path}: {e}",
+                request_id,
+                exc_info=True,
+            )
             return None
 
     @classmethod
@@ -14350,7 +14442,7 @@ class ChatSession(Base):
     conversation_summary = Column(MutableList.as_mutable(JSON), default=[])
 
     # Vector embeddings for semantic search
-    summary_embedding = Column(Vector(1536))  # OpenAI embedding dimension
+    summary_embedding = Column(Vector(384))
     topic_tags = Column(JSON, default=[])
 
     # PostgreSQL specific optimizations
@@ -14483,9 +14575,10 @@ class ChatSession(Base):
             return False
 
 class QandA(Base):
-    __tablename__ = 'qanda'
+    __tablename__ = "qanda"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
     user_id = Column(String, index=True)
     question = Column(String)
     answer = Column(String)
@@ -14504,132 +14597,207 @@ class QandA(Base):
     answer_length = Column(Integer)
     processing_time_ms = Column(Integer)
 
-    # PostgreSQL specific optimizations
+    # Intent classification metadata
+    intent_type = Column(String(80), index=True)
+    intent_confidence = Column(Float)
+    intent_reason = Column(Text)
+    intent_rewritten_question = Column(Text)
+    intent_needs_current_session_memory = Column(Boolean, default=False)
+    intent_needs_semantic_chat_recall = Column(Boolean, default=False)
+    intent_needs_document_scope = Column(Boolean, default=False)
+
     __table_args__ = (
-        Index('idx_user_timestamp', 'user_id', 'timestamp'),
-        Index('idx_question_embedding_cosine', 'question_embedding', postgresql_using='ivfflat',
-              postgresql_with={'lists': 100}, postgresql_ops={'question_embedding': 'vector_cosine_ops'}),
-        Index('idx_answer_embedding_cosine', 'answer_embedding', postgresql_using='ivfflat',
-              postgresql_with={'lists': 100}, postgresql_ops={'answer_embedding': 'vector_cosine_ops'}),
+        Index("idx_user_timestamp", "user_id", "timestamp"),
+        Index("idx_qanda_intent_type", "intent_type"),
+        Index(
+            "idx_question_embedding_cosine",
+            "question_embedding",
+            postgresql_using="ivfflat",
+            postgresql_with={"lists": 100},
+            postgresql_ops={"question_embedding": "vector_cosine_ops"},
+        ),
+        Index(
+            "idx_answer_embedding_cosine",
+            "answer_embedding",
+            postgresql_using="ivfflat",
+            postgresql_with={"lists": 100},
+            postgresql_ops={"answer_embedding": "vector_cosine_ops"},
+        ),
     )
 
-    def __init__(self, user_id, question, answer, timestamp, rating=None, comment=None):
+    def __init__(
+        self,
+        user_id,
+        question,
+        answer,
+        timestamp,
+        rating=None,
+        comment=None,
+        request_id=None,
+        raw_response=None,
+        processing_time_ms=None,
+        intent_type=None,
+        intent_confidence=None,
+        intent_reason=None,
+        intent_rewritten_question=None,
+        intent_needs_current_session_memory=False,
+        intent_needs_semantic_chat_recall=False,
+        intent_needs_document_scope=False,
+    ):
         self.user_id = user_id
         self.question = question
         self.answer = answer
         self.timestamp = timestamp
         self.rating = rating
         self.comment = comment
+        self.request_id = request_id
+        self.raw_response = raw_response
+        self.processing_time_ms = processing_time_ms
+
         self.question_length = len(question) if question else 0
         self.answer_length = len(answer) if answer else 0
 
+        self.intent_type = intent_type
+        self.intent_confidence = intent_confidence
+        self.intent_reason = intent_reason
+        self.intent_rewritten_question = intent_rewritten_question
+        self.intent_needs_current_session_memory = bool(
+            intent_needs_current_session_memory
+        )
+        self.intent_needs_semantic_chat_recall = bool(
+            intent_needs_semantic_chat_recall
+        )
+        self.intent_needs_document_scope = bool(intent_needs_document_scope)
+
     @classmethod
-    def find_similar_questions(cls, query_embedding, user_id=None, limit=5, similarity_threshold=0.8, db_session=None):
-        """
-        Find similar questions using vector similarity.
+    def find_similar_questions(
+        cls,
+        query_embedding,
+        user_id=None,
+        limit=5,
+        similarity_threshold=0.8,
+        db_session=None,
+    ):
+        if db_session is None:
+            raise ValueError("db_session is required")
 
-        Args:
-            query_embedding: Vector embedding of the query
-            user_id: Optional user ID to filter by
-            limit: Maximum number of results
-            similarity_threshold: Minimum similarity score (0-1)
-            db_session: SQLAlchemy session
-
-        Returns:
-            List of tuples (QandA, similarity_score)
-        """
         query = db_session.query(
             cls,
-            cls.question_embedding.cosine_distance(query_embedding).label('distance')
+            cls.question_embedding.cosine_distance(query_embedding).label("distance"),
         ).filter(
             cls.question_embedding.is_not(None),
-            cls.question_embedding.cosine_distance(query_embedding) < (1 - similarity_threshold)
+            cls.question_embedding.cosine_distance(query_embedding)
+            < (1 - similarity_threshold),
         )
 
         if user_id:
             query = query.filter(cls.user_id == user_id)
 
-        results = query.order_by(text('distance')).limit(limit).all()
+        results = query.order_by(text("distance")).limit(limit).all()
 
         return [(qa, 1 - distance) for qa, distance in results]
 
     @classmethod
     def get_user_analytics(cls, user_id, db_session):
-        """
-        Get analytics for a specific user using PostgreSQL aggregations.
-
-        Args:
-            user_id: The user ID
-            db_session: SQLAlchemy session
-
-        Returns:
-            Dictionary with user analytics
-        """
-        result = db_session.execute(text("""
-            SELECT 
-                COUNT(*) as total_questions,
-                AVG(question_length) as avg_question_length,
-                AVG(answer_length) as avg_answer_length,
-                AVG(processing_time_ms) as avg_processing_time,
-                COUNT(CASE WHEN rating IS NOT NULL THEN 1 END) as rated_answers,
-                AVG(CASE WHEN rating ~ '^[0-9]+$' THEN rating::int END) as avg_rating
-            FROM qanda 
-            WHERE user_id = :user_id
-        """), {"user_id": user_id}).first()
+        result = db_session.execute(
+            text(
+                """
+                SELECT
+                    COUNT(*) AS total_questions,
+                    AVG(question_length) AS avg_question_length,
+                    AVG(answer_length) AS avg_answer_length,
+                    AVG(processing_time_ms) AS avg_processing_time,
+                    COUNT(CASE WHEN rating IS NOT NULL THEN 1 END) AS rated_answers,
+                    AVG(CASE WHEN rating ~ '^[0-9]+$' THEN rating::int END) AS avg_rating,
+                    COUNT(CASE WHEN intent_type = 'NEW_TOPIC' THEN 1 END) AS new_topic_count,
+                    COUNT(CASE WHEN intent_type = 'FOLLOW_UP_CURRENT_SESSION' THEN 1 END) AS follow_up_current_session_count,
+                    COUNT(CASE WHEN intent_type = 'RECALL_PRIOR_CONVERSATION' THEN 1 END) AS recall_prior_conversation_count,
+                    COUNT(CASE WHEN intent_type = 'DOCUMENT_SCOPED_FOLLOW_UP' THEN 1 END) AS document_scoped_follow_up_count,
+                    COUNT(CASE WHEN intent_type = 'CLARIFICATION' THEN 1 END) AS clarification_count
+                FROM qanda
+                WHERE user_id = :user_id
+                """
+            ),
+            {"user_id": user_id},
+        ).first()
 
         if result:
             return {
-                'total_questions': result.total_questions,
-                'avg_question_length': float(result.avg_question_length or 0),
-                'avg_answer_length': float(result.avg_answer_length or 0),
-                'avg_processing_time_ms': float(result.avg_processing_time or 0),
-                'rated_answers': result.rated_answers,
-                'avg_rating': float(result.avg_rating or 0)
+                "total_questions": result.total_questions,
+                "avg_question_length": float(result.avg_question_length or 0),
+                "avg_answer_length": float(result.avg_answer_length or 0),
+                "avg_processing_time_ms": float(result.avg_processing_time or 0),
+                "rated_answers": result.rated_answers,
+                "avg_rating": float(result.avg_rating or 0),
+                "intent_counts": {
+                    "NEW_TOPIC": result.new_topic_count,
+                    "FOLLOW_UP_CURRENT_SESSION": result.follow_up_current_session_count,
+                    "RECALL_PRIOR_CONVERSATION": result.recall_prior_conversation_count,
+                    "DOCUMENT_SCOPED_FOLLOW_UP": result.document_scoped_follow_up_count,
+                    "CLARIFICATION": result.clarification_count,
+                },
             }
+
         return {}
 
     @classmethod
     def record_interaction(
-            cls,
-            user_id,
-            question,
-            answer,
-            session,
-            question_embedding=None,
-            answer_embedding=None,
-            processing_time_ms=None,
-            request_id=None,  # NEW
-            raw_response=None  # NEW
+        cls,
+        user_id,
+        question,
+        answer,
+        session,
+        question_embedding=None,
+        answer_embedding=None,
+        processing_time_ms=None,
+        request_id=None,
+        raw_response=None,
+        intent_type=None,
+        intent_confidence=None,
+        intent_reason=None,
+        intent_rewritten_question=None,
+        intent_needs_current_session_memory=False,
+        intent_needs_semantic_chat_recall=False,
+        intent_needs_document_scope=False,
     ):
-        """
-        Enhanced interaction recording with embeddings, metadata, and request tracking.
-        """
         try:
             timestamp = datetime.utcnow().isoformat()
+
             qa_record = cls(
                 user_id=user_id,
                 question=question,
                 answer=answer,
-                timestamp=timestamp
+                timestamp=timestamp,
+                request_id=request_id,
+                raw_response=raw_response,
+                processing_time_ms=processing_time_ms,
+                intent_type=intent_type,
+                intent_confidence=intent_confidence,
+                intent_reason=intent_reason,
+                intent_rewritten_question=intent_rewritten_question,
+                intent_needs_current_session_memory=(
+                    intent_needs_current_session_memory
+                ),
+                intent_needs_semantic_chat_recall=(
+                    intent_needs_semantic_chat_recall
+                ),
+                intent_needs_document_scope=intent_needs_document_scope,
             )
 
-            # Add embeddings if provided
             if question_embedding is not None:
                 qa_record.question_embedding = question_embedding
+
             if answer_embedding is not None:
                 qa_record.answer_embedding = answer_embedding
-            if processing_time_ms is not None:
-                qa_record.processing_time_ms = processing_time_ms
-
-            # NEW: add request_id + raw_response
-            if request_id:
-                qa_record.request_id = request_id
-            if raw_response:
-                qa_record.raw_response = raw_response
 
             session.add(qa_record)
             session.commit()
-            logger.debug(f"Recorded interaction {qa_record.id} for user {user_id} (req={request_id})")
+
+            logger.debug(
+                f"Recorded interaction {qa_record.id} for user {user_id} "
+                f"(req={request_id}, intent={intent_type})"
+            )
+
             return qa_record
 
         except Exception as e:
@@ -14638,63 +14806,60 @@ class QandA(Base):
             return None
 
     @classmethod
-    def update_embeddings(cls, qa_id, question_embedding=None, answer_embedding=None, db_session=None):
-        """
-        Update embeddings for an existing Q&A record.
-
-        Args:
-            qa_id: The Q&A record ID
-            question_embedding: Optional question embedding
-            answer_embedding: Optional answer embedding
-            db_session: SQLAlchemy session
-
-        Returns:
-            Boolean indicating success
-        """
+    def update_embeddings(
+        cls,
+        qa_id,
+        question_embedding=None,
+        answer_embedding=None,
+        db_session=None,
+    ):
         try:
+            if db_session is None:
+                raise ValueError("db_session is required")
+
             qa_record = db_session.query(cls).filter_by(id=qa_id).first()
+
             if qa_record:
                 if question_embedding is not None:
                     qa_record.question_embedding = question_embedding
+
                 if answer_embedding is not None:
                     qa_record.answer_embedding = answer_embedding
+
                 db_session.commit()
                 logger.debug(f"Embeddings updated for Q&A ID {qa_id}")
                 return True
-            else:
-                logger.error(f"No Q&A record found for ID {qa_id}")
-                return False
+
+            logger.error(f"No Q&A record found for ID {qa_id}")
+            return False
+
         except Exception as e:
             db_session.rollback()
             logger.error(f"Error updating embeddings for Q&A ID {qa_id}: {e}")
             return False
 
     def _record_basic_interaction(self, session, user_id, question, answer):
-        """
-        Fallback method for basic interaction recording when enhanced columns are missing.
-        """
         try:
-            from sqlalchemy import text
-            import uuid
-            from datetime import datetime
-
-            # Use raw SQL for basic recording
             interaction_id = str(uuid.uuid4())
-            current_time = datetime.now()
+            current_time = datetime.utcnow().isoformat()
 
-            # Try with basic columns only
-            basic_insert = text("""
+            basic_insert = text(
+                """
                 INSERT INTO qanda (id, user_id, question, answer, timestamp)
                 VALUES (:id, :user_id, :question, :answer, :timestamp)
-            """)
+                """
+            )
 
-            session.execute(basic_insert, {
-                'id': interaction_id,
-                'user_id': user_id,
-                'question': question,
-                'answer': answer,
-                'timestamp': current_time
-            })
+            session.execute(
+                basic_insert,
+                {
+                    "id": interaction_id,
+                    "user_id": user_id,
+                    "question": question,
+                    "answer": answer,
+                    "timestamp": current_time,
+                },
+            )
 
             session.commit()
             logger.info("Successfully recorded basic interaction")
