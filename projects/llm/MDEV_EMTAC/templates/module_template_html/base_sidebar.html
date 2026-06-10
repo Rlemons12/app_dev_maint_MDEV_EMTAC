@@ -16,6 +16,9 @@
         <a href="/upload_search_database" class="nav-link highlight">Search and Upload</a>
         <a href="/bill_of_materials" class="nav-link highlight">Parts and BOMs</a>
         <a href="#help-chat" id="helpChatSidebarLink" class="nav-link highlight">Help Chat</a>
+        {% if request.path == '/' %}
+    <a href="#emtac-tutorial" id="emtacTutorialSidebarLink" class="nav-link highlight">Tutorial</a>
+{% endif %}
 
         <!-- LEVEL_I and above endpoints -->
         {% if session['user_level'] in ['LEVEL_I', 'LEVEL_II', 'LEVEL_III', 'ADMIN'] %}
