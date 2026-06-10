@@ -12,49 +12,19 @@ from modules.configuration.log_config import (
     with_request_id,
 )
 
-# DB-driven AI component loaders
 from .embedder import DBConfiguredEmbedder, BaseEmbedder
 from .retriever import PgVectorRetriever
 from .context_builder import ContextBuilder
 from .answer_generator import DBConfiguredAnswerGenerator, BaseAnswerGenerator
 from .document_ui_payload import DocumentUIPayload
+
 from modules.observability.high_end_tracer import tracer
+from modules.services.complete_document_profile_service import (
+    CompleteDocumentProfileService,
+)
 
 
 class RAGPipeline:
-    """
-    High-level orchestration for RAG (Retrieval-Augmented Generation).
-
-    Steps:
-        1. Embed question using DB-selected embedding model
-        2. Retrieve top document chunks using pgvector
-        3. Apply document_scope filtering when active
-        4. Build a merged context string
-        5. Aggregate documents from used chunks
-        6. Generate answer using DB-selected LLM
-        7. Return structured outputs for UI
-
-    Document-scoped conversation mode:
-        document_scope shape:
-            {
-                "enabled": true,
-                "scope_type": "complete_document",
-                "document_id": 29,
-                "complete_document_id": 29,
-                "document_name": "Document #29"
-            }
-
-        Preferred behavior:
-            Pass complete_document_id/document_scope into the retriever so the
-            SQL/vector search filters by complete_document_id before returning chunks.
-
-        Safety behavior:
-            If the retriever does not support scoped filtering yet, this pipeline
-            retrieves a larger candidate pool and then filters chunks locally.
-            This prevents answering from unrelated documents, but the best filter
-            is still SQL-level filtering in PgVectorRetriever.
-    """
-
     DOCUMENT_SCOPE_FALLBACK_TOP_K = 8
 
     def __init__(
@@ -66,26 +36,22 @@ class RAGPipeline:
         answer_generator: Optional[BaseAnswerGenerator] = None,
     ):
         self.db_config = db_config or DatabaseConfig()
-
         self.embedder = embedder or DBConfiguredEmbedder()
         self.retriever = retriever or PgVectorRetriever(db_config=self.db_config)
         self.context_builder = context_builder or ContextBuilder()
         self.answer_generator = answer_generator or DBConfiguredAnswerGenerator()
-
-    # ------------------------------------------------------------------
-    # MAIN EXECUTION FUNCTION
-    # ------------------------------------------------------------------
+        self.document_profile_service = CompleteDocumentProfileService()
 
     @with_request_id
     def run(
-        self,
-        question: str,
-        top_k: int = 5,
-        request_id: Optional[str] = None,
-        memory_context: Optional[str] = None,
-        conversation_id: Optional[str] = None,
-        document_scope: Optional[Dict[str, Any]] = None,
-        **answer_kwargs: Any,
+            self,
+            question: str,
+            top_k: int = 5,
+            request_id: Optional[str] = None,
+            memory_context: Optional[str] = None,
+            conversation_id: Optional[str] = None,
+            document_scope: Optional[Dict[str, Any]] = None,
+            **answer_kwargs: Any,
     ) -> Dict[str, Any]:
 
         normalized_question = (question or "").strip()
@@ -107,42 +73,58 @@ class RAGPipeline:
 
         try:
             if not normalized_question:
-                return {
-                    "answer": "Please provide a valid question.",
-                    "documents": [],
-                    "used_chunks": [],
-                    "chunks": [],
-                    "query_embedding": [],
-                    "retriever_top_k": top_k,
-                    "conversation_id": normalized_conversation_id,
-                    "memory_context_used": bool(normalized_memory_context),
-                    "memory_context_mode": (
-                        "separate_memory_context"
-                        if normalized_memory_context
-                        else "none"
-                    ),
-                    "document_scope": normalized_document_scope,
-                    "document_scope_enabled": bool(normalized_document_scope),
-                    "document_scope_mode": (
+                return self._basic_result(
+                    answer="Please provide a valid question.",
+                    top_k=top_k,
+                    conversation_id=normalized_conversation_id,
+                    memory_context=normalized_memory_context,
+                    document_scope=normalized_document_scope,
+                    document_scope_mode=(
                         "not_used_invalid_input"
                         if normalized_document_scope
                         else "none"
                     ),
-                }
+                )
 
-            # -------------------------------
-            # 1. EMBEDDING STAGE
-            # -------------------------------
+            document_profile = self._load_document_profile(
+                document_scope=normalized_document_scope,
+                request_id=request_id,
+            )
+
+            if (
+                    normalized_document_scope
+                    and isinstance(document_profile, dict)
+                    and document_profile.get("found")
+                    and self.document_profile_service.is_overview_question(
+                normalized_question
+            )
+            ):
+                debug_id(
+                    "[RAGPipeline] Answering document overview question from document profile "
+                    f"complete_document_id={document_profile.get('complete_document_id')} "
+                    f"title={document_profile.get('title')!r}",
+                    request_id,
+                )
+
+                return self._document_profile_overview_result(
+                    question=normalized_question,
+                    top_k=top_k,
+                    memory_context=normalized_memory_context,
+                    conversation_id=normalized_conversation_id,
+                    document_scope=normalized_document_scope,
+                    document_profile=document_profile,
+                )
+
             with tracer.span(
-                "embed_query",
-                meta={
-                    "document_scope_enabled": bool(normalized_document_scope),
-                    "complete_document_id": (
-                        normalized_document_scope.get("complete_document_id")
-                        if normalized_document_scope
-                        else None
-                    ),
-                },
+                    "embed_query",
+                    meta={
+                        "document_scope_enabled": bool(normalized_document_scope),
+                        "complete_document_id": (
+                                normalized_document_scope.get("complete_document_id")
+                                if normalized_document_scope
+                                else None
+                        ),
+                    },
             ):
                 query_embedding = self.embedder.embed_query(
                     normalized_question,
@@ -154,49 +136,36 @@ class RAGPipeline:
                     "[RAGPipeline] No embedding produced — stopping RAG.",
                     request_id,
                 )
-                return {
-                    "answer": "Embedding model failed or returned nothing.",
-                    "documents": [],
-                    "used_chunks": [],
-                    "chunks": [],
-                    "query_embedding": [],
-                    "retriever_top_k": top_k,
-                    "conversation_id": normalized_conversation_id,
-                    "memory_context_used": bool(normalized_memory_context),
-                    "memory_context_mode": (
-                        "separate_memory_context"
-                        if normalized_memory_context
-                        else "none"
-                    ),
-                    "document_scope": normalized_document_scope,
-                    "document_scope_enabled": bool(normalized_document_scope),
-                    "document_scope_mode": (
+                return self._basic_result(
+                    answer="Embedding model failed or returned nothing.",
+                    top_k=top_k,
+                    conversation_id=normalized_conversation_id,
+                    memory_context=normalized_memory_context,
+                    document_scope=normalized_document_scope,
+                    document_scope_mode=(
                         "not_used_embedding_failed"
                         if normalized_document_scope
                         else "none"
                     ),
-                }
+                )
 
-            # -------------------------------
-            # 2. RETRIEVAL STAGE
-            # -------------------------------
             retrieval_top_k = self._resolve_retrieval_top_k(
                 top_k=top_k,
                 document_scope=normalized_document_scope,
             )
 
             with tracer.span(
-                "retrieve_chunks",
-                meta={
-                    "top_k": top_k,
-                    "retrieval_top_k": retrieval_top_k,
-                    "document_scope_enabled": bool(normalized_document_scope),
-                    "complete_document_id": (
-                        normalized_document_scope.get("complete_document_id")
-                        if normalized_document_scope
-                        else None
-                    ),
-                },
+                    "retrieve_chunks",
+                    meta={
+                        "top_k": top_k,
+                        "retrieval_top_k": retrieval_top_k,
+                        "document_scope_enabled": bool(normalized_document_scope),
+                        "complete_document_id": (
+                                normalized_document_scope.get("complete_document_id")
+                                if normalized_document_scope
+                                else None
+                        ),
+                    },
             ):
                 retrieved_chunks, retriever_scope_mode = self._retrieve_chunks(
                     query_embedding=query_embedding,
@@ -207,13 +176,24 @@ class RAGPipeline:
 
             if not retrieved_chunks:
                 warning_id(
-                    "[RAGPipeline] No documents retrieved — answering from no context.",
+                    "[RAGPipeline] No relevant documents retrieved after retrieval quality gate.",
                     request_id,
                 )
 
-            # -------------------------------
-            # 3. DOCUMENT SCOPE FILTER
-            # -------------------------------
+                return self._no_relevant_context_result(
+                    question=normalized_question,
+                    top_k=top_k,
+                    query_embedding=query_embedding,
+                    memory_context=normalized_memory_context,
+                    conversation_id=normalized_conversation_id,
+                    document_scope=normalized_document_scope,
+                    document_scope_mode=(
+                        "no_relevant_chunks_after_retrieval"
+                        if not normalized_document_scope
+                        else "no_relevant_chunks_after_retrieval_document_scope"
+                    ),
+                )
+
             document_scope_mode = retriever_scope_mode
 
             if normalized_document_scope:
@@ -237,7 +217,9 @@ class RAGPipeline:
                     if document_scope_mode == "none":
                         document_scope_mode = "local_post_retrieval_filter"
                     elif "local_post_retrieval_filter" not in document_scope_mode:
-                        document_scope_mode = f"{document_scope_mode}+local_post_retrieval_filter"
+                        document_scope_mode = (
+                            f"{document_scope_mode}+local_post_retrieval_filter"
+                        )
 
                 if not retrieved_chunks:
                     return self._document_scope_no_answer_result(
@@ -254,15 +236,12 @@ class RAGPipeline:
                         ),
                     )
 
-            # -------------------------------
-            # 4. CONTEXT BUILDING
-            # -------------------------------
             with tracer.span(
-                "build_context",
-                meta={
-                    "retrieved_chunks": len(retrieved_chunks or []),
-                    "document_scope_enabled": bool(normalized_document_scope),
-                },
+                    "build_context",
+                    meta={
+                        "retrieved_chunks": len(retrieved_chunks or []),
+                        "document_scope_enabled": bool(normalized_document_scope),
+                    },
             ):
                 ctx = self.context_builder.build_context(
                     retrieved_chunks=retrieved_chunks,
@@ -281,7 +260,7 @@ class RAGPipeline:
                 retrieved_chunks
             )
             used_chunks: List[Dict[str, Any]] = (
-                ctx.get("used_chunks", []) or retrieved_chunks
+                    ctx.get("used_chunks", []) or retrieved_chunks
             )
 
             if normalized_document_scope:
@@ -303,15 +282,12 @@ class RAGPipeline:
 
                 context = self._chunks_to_context(used_chunks) or context
 
-            # -------------------------------
-            # 5. DOCUMENT UI PAYLOAD
-            # -------------------------------
             with tracer.span(
-                "build_document_payload",
-                meta={
-                    "used_chunks": len(used_chunks or []),
-                    "document_scope_enabled": bool(normalized_document_scope),
-                },
+                    "build_document_payload",
+                    meta={
+                        "used_chunks": len(used_chunks or []),
+                        "document_scope_enabled": bool(normalized_document_scope),
+                    },
             ):
                 documents = (
                     DocumentUIPayload()
@@ -329,35 +305,33 @@ class RAGPipeline:
                 request_id,
             )
 
-            # -------------------------------
-            # 6. ANSWER GENERATION
-            # -------------------------------
-            # Keep the actual user question clean. Do not place Document Mode
-            # instructions inside the question, because the model may echo them.
-            prompt_question = normalized_question
-
             prompt_context = self._build_prompt_context(
                 context=context,
                 memory_context=normalized_memory_context,
                 document_scope=normalized_document_scope,
+                document_profile=document_profile,
             )
 
             answer_kwargs = self._clean_answer_kwargs(answer_kwargs)
 
             with tracer.span(
-                "generate_answer",
-                meta={
-                    "document_scope_enabled": bool(normalized_document_scope),
-                    "complete_document_id": (
-                        normalized_document_scope.get("complete_document_id")
-                        if normalized_document_scope
-                        else None
-                    ),
-                    "memory_context_present": bool(normalized_memory_context),
-                },
+                    "generate_answer",
+                    meta={
+                        "document_scope_enabled": bool(normalized_document_scope),
+                        "complete_document_id": (
+                                normalized_document_scope.get("complete_document_id")
+                                if normalized_document_scope
+                                else None
+                        ),
+                        "memory_context_present": bool(normalized_memory_context),
+                        "document_profile_present": bool(
+                            isinstance(document_profile, dict)
+                            and document_profile.get("found")
+                        ),
+                    },
             ):
                 answer_result = self.answer_generator.generate_answer(
-                    question=prompt_question,
+                    question=normalized_question,
                     context=prompt_context,
                     request_id=request_id,
                     **answer_kwargs,
@@ -375,9 +349,6 @@ class RAGPipeline:
                     normalized_document_scope
                 )
 
-            # -------------------------------
-            # 7. STRUCTURED RETURN
-            # -------------------------------
             return {
                 "answer": answer,
                 "documents": documents,
@@ -395,15 +366,106 @@ class RAGPipeline:
                 "document_scope": normalized_document_scope,
                 "document_scope_enabled": bool(normalized_document_scope),
                 "document_scope_mode": document_scope_mode,
+                "document_profile_used": bool(
+                    isinstance(document_profile, dict)
+                    and document_profile.get("found")
+                ),
             }
 
         except Exception as e:
             error_id(f"[RAGPipeline] Pipeline failed: {e}", request_id, exc_info=True)
             raise
 
-    # ------------------------------------------------------------------
-    # RETRIEVAL ADAPTER
-    # ------------------------------------------------------------------
+    def _load_document_profile(
+        self,
+        *,
+        document_scope: Optional[Dict[str, Any]],
+        request_id: Optional[str],
+    ) -> Optional[Dict[str, Any]]:
+        normalized_scope = self._normalize_document_scope(document_scope)
+
+        if not normalized_scope:
+            return None
+
+        complete_document_id = normalized_scope.get("complete_document_id")
+
+        try:
+            with self.db_config.main_session() as session:
+                profile = self.document_profile_service.get_profile(
+                    session=session,
+                    complete_document_id=complete_document_id,
+                    request_id=request_id,
+                )
+
+            if isinstance(profile, dict) and profile.get("found"):
+                debug_id(
+                    "[RAGPipeline] Loaded document profile "
+                    f"complete_document_id={complete_document_id} "
+                    f"has_summary={profile.get('has_summary')} "
+                    f"has_profile_signals={profile.get('has_profile_signals')}",
+                    request_id,
+                )
+                return profile
+
+            warning_id(
+                "[RAGPipeline] Document profile unavailable "
+                f"complete_document_id={complete_document_id}",
+                request_id,
+            )
+            return profile if isinstance(profile, dict) else None
+
+        except Exception as exc:
+            warning_id(
+                "[RAGPipeline] Failed to load document profile "
+                f"complete_document_id={complete_document_id}: {exc}",
+                request_id,
+                exc_info=True,
+            )
+            return None
+
+    def _document_profile_overview_result(
+        self,
+        *,
+        question: str,
+        top_k: int,
+        memory_context: str,
+        conversation_id: Optional[str],
+        document_scope: Dict[str, Any],
+        document_profile: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        normalized_scope = self._normalize_document_scope(document_scope)
+
+        if isinstance(document_profile, dict) and document_profile.get("found"):
+            answer = self.document_profile_service.build_overview_answer_from_profile(
+                document_profile
+            )
+            document_scope_mode = "document_profile_overview"
+        else:
+            answer = self._selected_document_not_specified_answer(normalized_scope)
+            document_scope_mode = "document_profile_missing"
+
+        return {
+            "answer": answer,
+            "documents": [],
+            "used_chunks": [],
+            "chunks": [],
+            "query_embedding": [],
+            "retriever_top_k": top_k,
+            "conversation_id": conversation_id,
+            "memory_context_used": bool((memory_context or "").strip()),
+            "memory_context_mode": (
+                "separate_memory_context"
+                if (memory_context or "").strip()
+                else "none"
+            ),
+            "document_scope": normalized_scope,
+            "document_scope_enabled": bool(normalized_scope),
+            "document_scope_mode": document_scope_mode,
+            "document_profile_used": bool(
+                isinstance(document_profile, dict)
+                and document_profile.get("found")
+            ),
+        }
 
     def _retrieve_chunks(
         self,
@@ -413,25 +475,6 @@ class RAGPipeline:
         request_id: Optional[str],
         document_scope: Optional[Dict[str, Any]],
     ) -> Tuple[List[Dict[str, Any]], str]:
-        """
-        Calls retriever.retrieve() with document_scope when supported.
-
-        Preferred retriever signature:
-            retrieve(
-                query_embedding=...,
-                top_k=...,
-                request_id=...,
-                document_scope=...
-            )
-
-        Or:
-            retrieve(
-                query_embedding=...,
-                top_k=...,
-                request_id=...,
-                complete_document_id=...
-            )
-        """
 
         normalized_scope = self._normalize_document_scope(document_scope)
 
@@ -445,7 +488,6 @@ class RAGPipeline:
 
         if normalized_scope:
             support = self._get_callable_support(self.retriever.retrieve)
-
             complete_document_id = normalized_scope.get("complete_document_id")
 
             if support["accepts_kwargs"] or support["supports_document_scope"]:
@@ -551,35 +593,14 @@ class RAGPipeline:
 
         return support
 
-    # ------------------------------------------------------------------
-    # DOCUMENT MODE / PROMPT HELPERS
-    # ------------------------------------------------------------------
-
     @staticmethod
     def _build_prompt_context(
         *,
         context: str,
         memory_context: str,
         document_scope: Optional[Dict[str, Any]],
+        document_profile: Optional[Dict[str, Any]] = None,
     ) -> str:
-        """
-        Build the context string sent to the answer generator.
-
-        Keep the user's actual question clean.
-
-        Why:
-            The answer generator usually builds its final prompt like:
-
-                CONTEXT:
-                ...
-                QUESTION:
-                ...
-
-            If Document Mode rules are inserted into the question, the model may
-            echo those rules back in the final answer. Putting the rules into the
-            context/instructions area keeps the question clean while still guiding
-            the model.
-        """
 
         normalized_scope = RAGPipeline._normalize_document_scope(document_scope)
         memory_context = (memory_context or "").strip()
@@ -596,10 +617,10 @@ class RAGPipeline:
                 f"Selected document: {document_name} "
                 f"(complete_document_id={complete_document_id}).\n\n"
                 "Document Mode rules:\n"
-                "- Answer only from the selected document context below.\n"
-                "- Do not use other manuals, prior answers, or general knowledge as evidence.\n"
-                "- Conversation memory may only help interpret follow-up wording.\n"
-                "- If the selected document does not specify the answer, say: "
+                "- Answer only from the selected document chunk context below.\n"
+                "- Do not use other manuals, prior answers, conversation summaries, or general knowledge as evidence.\n"
+                "- Conversation memory may only help understand references like this, it, that, those, or same issue.\n"
+                "- If the selected document chunk context does not specify the answer, say: "
                 "\"The selected document does not specify that information.\"\n"
                 "- Do not repeat these Document Mode rules in the final answer."
             )
@@ -612,14 +633,20 @@ class RAGPipeline:
             )
 
         if memory_context:
-            sections.append(f"Conversation memory:\n{memory_context}")
+            if normalized_scope:
+                sections.append(
+                    "Conversation memory for reference resolution only:\n"
+                    f"{memory_context}"
+                )
+            else:
+                sections.append(f"Conversation memory:\n{memory_context}")
 
         if normalized_scope:
-            sections.append(f"Selected document context:\n{context}")
+            sections.append(f"Selected document chunk context:\n{context}")
         else:
             sections.append(f"Retrieved context:\n{context}")
 
-        return "\n\n".join(sections).strip()
+        return "\n\n".join(section for section in sections if section).strip()
 
     @staticmethod
     def _clean_document_mode_answer_leakage(
@@ -627,33 +654,18 @@ class RAGPipeline:
         answer: str,
         document_scope: Optional[Dict[str, Any]],
     ) -> str:
-        """
-        Best-effort cleanup if the model echoes Document Mode instructions.
-
-        This should not be the main fix. The main fix is keeping the question
-        clean and placing Document Mode rules in context. This helper only
-        removes obvious leaked prompt headers if they still appear.
-        """
 
         text = str(answer or "").strip()
 
         if not text or not RAGPipeline._normalize_document_scope(document_scope):
             return text
 
-        # If the model produced an explicit final answer marker, keep only that.
-        final_markers = [
-            "FINAL ANSWER:",
-            "Final answer:",
-            "Answer:",
-        ]
-
-        for marker in final_markers:
+        for marker in ["FINAL ANSWER:", "Final answer:", "Answer:"]:
             if marker in text:
                 candidate = text.split(marker, 1)[-1].strip()
                 if candidate:
                     text = candidate
 
-        # Remove obvious leading prompt-instruction leakage.
         leading_markers = [
             "You are answering in Document Mode.",
             "DOCUMENT MODE ACTIVE",
@@ -680,6 +692,7 @@ class RAGPipeline:
                         or stripped.startswith("Document Mode rules:")
                         or stripped.startswith("- Answer only")
                         or stripped.startswith("- Do not use")
+                        or stripped.startswith("- The document profile")
                         or stripped.startswith("- Conversation memory")
                         or stripped.startswith("- If the selected document")
                         or stripped.startswith("- Do not repeat")
@@ -690,7 +703,6 @@ class RAGPipeline:
                     if promptish:
                         continue
 
-                    # First non-prompt-looking line becomes the answer body.
                     skipping_prompt_block = False
                     cleaned_lines.append(line)
                 else:
@@ -701,14 +713,7 @@ class RAGPipeline:
             if cleaned:
                 text = cleaned
 
-        # Remove accidental duplicated question labels if they remain.
-        label_markers = [
-            "Current user question:",
-            "User question:",
-            "QUESTION:",
-        ]
-
-        for marker in label_markers:
+        for marker in ["Current user question:", "User question:", "QUESTION:"]:
             if text.startswith(marker):
                 parts = text.splitlines()
                 text = "\n".join(parts[1:]).strip() if len(parts) > 1 else ""
@@ -751,9 +756,42 @@ class RAGPipeline:
         }
 
     @staticmethod
+    def _basic_result(
+        *,
+        answer: str,
+        top_k: int,
+        conversation_id: Optional[str],
+        memory_context: str,
+        document_scope: Optional[Dict[str, Any]],
+        document_scope_mode: str,
+    ) -> Dict[str, Any]:
+
+        normalized_scope = RAGPipeline._normalize_document_scope(document_scope)
+
+        return {
+            "answer": answer,
+            "documents": [],
+            "used_chunks": [],
+            "chunks": [],
+            "query_embedding": [],
+            "retriever_top_k": top_k,
+            "conversation_id": conversation_id,
+            "memory_context_used": bool((memory_context or "").strip()),
+            "memory_context_mode": (
+                "separate_memory_context"
+                if (memory_context or "").strip()
+                else "none"
+            ),
+            "document_scope": normalized_scope,
+            "document_scope_enabled": bool(normalized_scope),
+            "document_scope_mode": document_scope_mode,
+        }
+
+    @staticmethod
     def _selected_document_not_specified_answer(
         document_scope: Optional[Dict[str, Any]],
     ) -> str:
+
         normalized_scope = RAGPipeline._normalize_document_scope(document_scope)
 
         if not normalized_scope:
@@ -939,19 +977,10 @@ class RAGPipeline:
         if not RAGPipeline._normalize_document_scope(document_scope):
             return safe_top_k
 
-        # Until PgVectorRetriever has true SQL-level document filtering, pull a
-        # larger candidate set so the local safety filter has a chance to find
-        # selected-document chunks. If retriever filtering exists, this only
-        # means it can return up to 50 chunks from that selected document.
         return max(safe_top_k, RAGPipeline.DOCUMENT_SCOPE_FALLBACK_TOP_K)
 
     @staticmethod
     def _clean_answer_kwargs(answer_kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Remove upstream orchestration kwargs that should not be blindly forwarded
-        to the answer generator.
-        """
-
         if not isinstance(answer_kwargs, dict):
             return {}
 
@@ -992,18 +1021,54 @@ class RAGPipeline:
         except (TypeError, ValueError):
             return None
 
+    @staticmethod
 
-# --------------------------------------------------------------------
-# Global Singleton Instance
-# --------------------------------------------------------------------
+    def _no_relevant_context_result(
+        *,
+            question: str,
+            top_k: int,
+            query_embedding: List[Any],
+            memory_context: str,
+            conversation_id: Optional[str],
+            document_scope: Optional[Dict[str, Any]],
+            document_scope_mode: str,
+    ) -> Dict[str, Any]:
+
+        normalized_scope = RAGPipeline._normalize_document_scope(document_scope)
+
+        if normalized_scope:
+            answer = RAGPipeline._selected_document_not_specified_answer(normalized_scope)
+        else:
+            answer = (
+                "I do not have enough relevant document context to answer that from the "
+                "stored manuals. The retrieved results were not close enough to trust. "
+                "Try rephrasing with the equipment name, station, fault, part, or document name."
+            )
+
+        return {
+            "answer": answer,
+            "documents": [],
+            "used_chunks": [],
+            "chunks": [],
+            "query_embedding": query_embedding or [],
+            "retriever_top_k": top_k,
+            "conversation_id": conversation_id,
+            "memory_context_used": bool((memory_context or "").strip()),
+            "memory_context_mode": (
+                "separate_memory_context"
+                if (memory_context or "").strip()
+                else "none"
+            ),
+            "document_scope": normalized_scope,
+            "document_scope_enabled": bool(normalized_scope),
+            "document_scope_mode": document_scope_mode,
+            "document_profile_used": False,
+        }
+
 _default_rag: Optional[RAGPipeline] = None
 
 
 def get_default_rag() -> RAGPipeline:
-    """
-    Factory / accessor for the global RAGPipeline instance.
-    Ensures that any caller receives a valid object.
-    """
     global _default_rag
 
     if _default_rag is None:
@@ -1016,6 +1081,7 @@ def get_default_rag() -> RAGPipeline:
             raise
 
     return _default_rag
+
 
 
 __all__ = ["RAGPipeline", "get_default_rag"]
