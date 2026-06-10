@@ -1,14 +1,80 @@
 {% extends "module_template_html/base_template_2_0_0.html" %}
 
+{% set current_page = 'index' %}
+
 {% block title %}EMTAC Assistant{% endblock %}
 
 {% block content %}
     {% include "module_template_html/partials/index_chatbot_five331.html" %}
+
+    <!-- EMTAC Tutorial Overlay - index page only -->
+    <div
+        id="emtacTutorialOverlay"
+        class="emtac-tutorial-overlay"
+        style="display: none;"
+        aria-hidden="true"
+    >
+        <div
+            class="emtac-tutorial-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="emtacTutorialTitle"
+            aria-describedby="emtacTutorialText"
+        >
+            <div class="emtac-tutorial-header">
+                <h2 id="emtacTutorialTitle">Welcome to EMTAC Assistant</h2>
+
+                <button
+                    id="emtacTutorialCloseBtn"
+                    class="emtac-tutorial-close"
+                    type="button"
+                    aria-label="Close tutorial"
+                >
+                    &times;
+                </button>
+            </div>
+
+            <div class="emtac-tutorial-body">
+                <p id="emtacTutorialText"></p>
+            </div>
+
+            <div class="emtac-tutorial-footer">
+                <button
+                    id="emtacTutorialBackBtn"
+                    type="button"
+                    class="emtac-tutorial-btn secondary"
+                >
+                    Back
+                </button>
+
+                <span
+                    id="emtacTutorialStepText"
+                    class="emtac-tutorial-step-text"
+                ></span>
+
+                <button
+                    id="emtacTutorialNextBtn"
+                    type="button"
+                    class="emtac-tutorial-btn primary"
+                >
+                    Next
+                </button>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block extra_scripts %}
 
-<link rel="stylesheet" href="{{ url_for('static', filename='css/index/chatbot_payload_status.css') }}?v=qanda_feedback_20260527_2">
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/index/chatbot_payload_status.css') }}?v=qanda_feedback_20260527_2"
+>
+
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/index/emtac_tutorial.css') }}?v=tutorial_20260608_2"
+>
 
 <!-- Shared viewer functions FIRST -->
 <script src="{{ url_for('static', filename='js/index/partials/chatbot_global_viewers.js') }}?v=qanda_feedback_20260527_2"></script>
@@ -22,6 +88,10 @@
 <!-- Q&A feedback helper BEFORE chatbot.js -->
 <script src="{{ url_for('static', filename='js/index/update_qanda_table.js') }}?v=qanda_feedback_20260527_7"></script>
 
+<!-- Main chatbot behavior -->
 <script src="{{ url_for('static', filename='js/index/chatbot.js') }}?v=document_scope_20260528_2"></script>
+
+<!-- Tutorial LAST - index page only -->
+<script src="{{ url_for('static', filename='js/index/emtac_tutorial.js') }}?v=tutorial_20260608_2"></script>
 
 {% endblock %}
