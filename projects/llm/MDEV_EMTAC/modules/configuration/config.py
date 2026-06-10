@@ -282,11 +282,15 @@ GIT_REPOS_DIR    = os.getenv("GIT_REPOS_DIR")
 # --------------------------------------------------------
 # 3. Model Paths (derived or direct)
 # --------------------------------------------------------
-MODELS_IMAGE_DIR       = os.getenv("MODELS_IMAGE_DIR", os.path.join(MODELS_DIR, "image"))
-MODELS_LLM_DIR         = os.getenv("MODELS_LLM_DIR", os.path.join(MODELS_DIR, "llm"))
-MODEL_CLIP_DIR        = os.getenv("MODEL_CLIP_DIR", os.path.join(MODELS_DIR, "openai_clip-vit-base-patch32"))
-MODELS_CACHE_DIR       = os.path.join(MODELS_DIR, "cache")  # derived convenience path
+MODELS_IMAGE_DIR = os.getenv("MODELS_IMAGE_DIR", os.path.join(MODELS_DIR, "image"))
+MODELS_LLM_DIR = os.getenv("MODELS_LLM_DIR", os.path.join(MODELS_DIR, "llm"))
+MODEL_CLIP_DIR = os.getenv("MODEL_CLIP_DIR", os.path.join(MODELS_DIR, "openai_clip-vit-base-patch32"))
+MODELS_CACHE_DIR = os.path.join(MODELS_DIR, "cache")
 
+MODELS_DISTILBERT_INTENT = os.getenv(
+    "MODELS_DISTILBERT_INTENT",
+    os.path.join(MODELS_DIR, "modules", "transformers_modules", "chat_intent_distilbert_augmented"),
+)
 
 
 
