@@ -358,6 +358,91 @@ class UnifiedSearchService:
         document_scope_mode = context_modes.get("document_scope_mode", "none")
 
         # --------------------------------------------------------------
+        # Document-profile overview bypass
+        # --------------------------------------------------------------
+        # Profile overview answers intentionally do not use vector chunks.
+        # RAGPipeline returns chunks=[] because it bypasses embedding/retrieval
+        # and answers from CompleteDocumentProfileService instead.
+        #
+        # Do NOT treat zero chunks as a document-scope failure when the result
+        # came from the selected document profile.
+        if (
+            normalized_document_scope
+            and bool(rag_result.get("document_profile_used"))
+            and str(answer or "").strip()
+            and (
+                "document_profile_overview"
+                in str(rag_result.get("document_scope_mode") or "").strip()
+            )
+        ):
+            debug_id(
+                "[UnifiedSearchService] Returning document profile overview answer "
+                "without chunk safety rejection. "
+                f"complete_document_id={normalized_document_scope.get('complete_document_id')} "
+                f"document_name={normalized_document_scope.get('document_name')} "
+                f"answer_chars={len(str(answer or ''))}",
+                request_id,
+            )
+
+            if not include_payload:
+                return {
+                    "strategy": "rag_document_scope",
+                    "method": "rag_document_scope",
+                    "answer": answer,
+                    "chunks": [],
+                    "used_chunks": [],
+                    "documents": [],
+                    "drawings": [],
+                    "images": [],
+                    "parts": [],
+                    "relationship_map": {},
+                    "payload_status": "pending",
+                    "retriever_top_k": rag_result.get("retriever_top_k"),
+                    "query_embedding": rag_result.get("query_embedding", []),
+                    "conversation_id": normalized_conversation_id,
+                    "memory_enabled": bool(normalized_conversation_id),
+                    "memory_context_used": bool(normalized_memory_context),
+                    "memory_context_mode": memory_context_mode,
+                    "document_scope": normalized_document_scope,
+                    "document_scope_enabled": True,
+                    "document_scope_mode": "document_profile_overview",
+                    "document_profile_used": True,
+                    "payload_performance": {
+                        "rag_time": rag_time,
+                        "relationship_map_time": 0.0,
+                        "projection_time": 0.0,
+                        "fallback_document_time": 0.0,
+                        "post_process_time": 0.0,
+                        "payload_build_time": 0.0,
+                        "fallback_documents_built": False,
+                    },
+                }
+
+            return self._build_full_payload_response(
+                session=session,
+                strategy="rag_document_scope",
+                method="rag_document_scope",
+                answer=answer,
+                chunks=[],
+                used_chunks=[],
+                fallback_documents=[],
+                relationship_map={},
+                retriever_top_k=rag_result.get("retriever_top_k"),
+                query_embedding=rag_result.get("query_embedding", []),
+                request_id=request_id,
+                debug_mode=False,
+                debug_chunk_id=None,
+                base_performance={
+                    "rag_time": rag_time,
+                },
+                conversation_id=normalized_conversation_id,
+                memory_context_used=bool(normalized_memory_context),
+                memory_context_mode=memory_context_mode,
+                document_scope=normalized_document_scope,
+                document_scope_mode="document_profile_overview",
+            )
+
+        # --------------------------------------------------------------
         # Document-scope safety enforcement
         # --------------------------------------------------------------
         # Even if the RAG pipeline says it accepted document_scope, keep this
