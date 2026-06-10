@@ -578,7 +578,10 @@ def batch_processing():
         )
 
         if success:
-            return redirect(url_for('upload_image_page'))
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify(response), http_status
+
+            return redirect(url_for("upload_image_page"))
 
         return jsonify(response), http_status
 
