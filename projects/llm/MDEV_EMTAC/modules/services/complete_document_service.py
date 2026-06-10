@@ -1,4 +1,5 @@
 from typing import Optional, List, Dict, Any
+
 from sqlalchemy.orm import Session
 from sqlalchemy import text, and_
 
@@ -59,13 +60,13 @@ class CompleteDocumentService:
 
     @with_request_id
     def get(
-            self,
-            session: Session,
-            *,
-            document_id: Optional[int] = None,
-            complete_document_id: Optional[int] = None,
-            id: Optional[int] = None,
-            request_id: Optional[str] = None,
+        self,
+        session: Session,
+        *,
+        document_id: Optional[int] = None,
+        complete_document_id: Optional[int] = None,
+        id: Optional[int] = None,
+        request_id: Optional[str] = None,
     ) -> Optional[CompleteDocument]:
 
         resolved_id = document_id or complete_document_id or id
@@ -83,6 +84,20 @@ class CompleteDocumentService:
 
         return doc
 
+    @with_request_id
+    def get_by_id(
+        self,
+        session: Session,
+        *,
+        complete_document_id: int,
+        request_id: Optional[str] = None,
+    ) -> Optional[CompleteDocument]:
+        return self.get(
+            session=session,
+            complete_document_id=complete_document_id,
+            request_id=request_id,
+        )
+
     # ==============================================================
     # CREATE
     # ==============================================================
@@ -96,6 +111,22 @@ class CompleteDocumentService:
         file_path: Optional[str] = None,
         content: Optional[str] = None,
         position_id: Optional[int] = None,
+
+        # RAG / AI metadata
+        summary: Optional[str] = None,
+        rag_metadata: Optional[Dict[str, Any]] = None,
+        topics: Optional[List[str]] = None,
+        keywords: Optional[List[str]] = None,
+        questions_answered: Optional[List[str]] = None,
+        equipment: Optional[List[str]] = None,
+
+        # File/extraction metadata
+        file_sha256: Optional[str] = None,
+        file_size: Optional[int] = None,
+        file_basename: Optional[str] = None,
+        source_type: Optional[str] = None,
+        extraction_method: Optional[str] = None,
+
         request_id: Optional[str] = None,
     ) -> CompleteDocument:
 
@@ -104,6 +135,22 @@ class CompleteDocumentService:
             file_path=file_path,
             content=content,
             rev="R0",
+        )
+
+        self._apply_optional_metadata(
+            doc=doc,
+            summary=summary,
+            rag_metadata=rag_metadata,
+            topics=topics,
+            keywords=keywords,
+            questions_answered=questions_answered,
+            equipment=equipment,
+            file_sha256=file_sha256,
+            file_size=file_size,
+            file_basename=file_basename,
+            source_type=source_type,
+            extraction_method=extraction_method,
+            request_id=request_id,
         )
 
         session.add(doc)
@@ -133,10 +180,26 @@ class CompleteDocumentService:
         title: Optional[str] = None,
         file_path: Optional[str] = None,
         content: Optional[str] = None,
+
+        # RAG / AI metadata
+        summary: Optional[str] = None,
+        rag_metadata: Optional[Dict[str, Any]] = None,
+        topics: Optional[List[str]] = None,
+        keywords: Optional[List[str]] = None,
+        questions_answered: Optional[List[str]] = None,
+        equipment: Optional[List[str]] = None,
+
+        # File/extraction metadata
+        file_sha256: Optional[str] = None,
+        file_size: Optional[int] = None,
+        file_basename: Optional[str] = None,
+        source_type: Optional[str] = None,
+        extraction_method: Optional[str] = None,
+
         request_id: Optional[str] = None,
     ) -> Optional[CompleteDocument]:
 
-        doc = self.get(session, document_id=document_id)
+        doc = self.get(session, document_id=document_id, request_id=request_id)
 
         if not doc:
             return None
@@ -155,14 +218,30 @@ class CompleteDocumentService:
             doc.content = content
             updated = True
 
-        if updated:
+        metadata_updated = self._apply_optional_metadata(
+            doc=doc,
+            summary=summary,
+            rag_metadata=rag_metadata,
+            topics=topics,
+            keywords=keywords,
+            questions_answered=questions_answered,
+            equipment=equipment,
+            file_sha256=file_sha256,
+            file_size=file_size,
+            file_basename=file_basename,
+            source_type=source_type,
+            extraction_method=extraction_method,
+            request_id=request_id,
+        )
+
+        if updated or metadata_updated:
             self._bump_revision(doc)
 
         info_id(f"Updated CompleteDocument id={document_id}", request_id)
         return doc
 
     # ==============================================================
-    # UPSERT (BY FILE_PATH)
+    # UPSERT BY FILE_PATH
     # ==============================================================
 
     @with_request_id
@@ -173,6 +252,22 @@ class CompleteDocumentService:
         title: str,
         file_path: str,
         content: Optional[str] = None,
+
+        # RAG / AI metadata
+        summary: Optional[str] = None,
+        rag_metadata: Optional[Dict[str, Any]] = None,
+        topics: Optional[List[str]] = None,
+        keywords: Optional[List[str]] = None,
+        questions_answered: Optional[List[str]] = None,
+        equipment: Optional[List[str]] = None,
+
+        # File/extraction metadata
+        file_sha256: Optional[str] = None,
+        file_size: Optional[int] = None,
+        file_basename: Optional[str] = None,
+        source_type: Optional[str] = None,
+        extraction_method: Optional[str] = None,
+
         request_id: Optional[str] = None,
     ) -> CompleteDocument:
 
@@ -193,7 +288,23 @@ class CompleteDocumentService:
                 existing.content = content
                 updated = True
 
-            if updated:
+            metadata_updated = self._apply_optional_metadata(
+                doc=existing,
+                summary=summary,
+                rag_metadata=rag_metadata,
+                topics=topics,
+                keywords=keywords,
+                questions_answered=questions_answered,
+                equipment=equipment,
+                file_sha256=file_sha256,
+                file_size=file_size,
+                file_basename=file_basename,
+                source_type=source_type,
+                extraction_method=extraction_method,
+                request_id=request_id,
+            )
+
+            if updated or metadata_updated:
                 self._bump_revision(existing)
 
             info_id(
@@ -208,8 +319,83 @@ class CompleteDocumentService:
             title=title,
             file_path=file_path,
             content=content,
+            summary=summary,
+            rag_metadata=rag_metadata,
+            topics=topics,
+            keywords=keywords,
+            questions_answered=questions_answered,
+            equipment=equipment,
+            file_sha256=file_sha256,
+            file_size=file_size,
+            file_basename=file_basename,
+            source_type=source_type,
+            extraction_method=extraction_method,
             request_id=request_id,
         )
+
+    # ==============================================================
+    # METADATA HELPERS
+    # ==============================================================
+
+    def _apply_optional_metadata(
+        self,
+        *,
+        doc: CompleteDocument,
+        summary: Optional[str] = None,
+        rag_metadata: Optional[Dict[str, Any]] = None,
+        topics: Optional[List[str]] = None,
+        keywords: Optional[List[str]] = None,
+        questions_answered: Optional[List[str]] = None,
+        equipment: Optional[List[str]] = None,
+        file_sha256: Optional[str] = None,
+        file_size: Optional[int] = None,
+        file_basename: Optional[str] = None,
+        source_type: Optional[str] = None,
+        extraction_method: Optional[str] = None,
+        request_id: Optional[str] = None,
+    ) -> bool:
+        """
+        Applies optional metadata only when values are provided.
+
+        Returns:
+            True if any field changed.
+        """
+
+        changed = False
+
+        updates = {
+            "summary": summary,
+            "rag_metadata": rag_metadata,
+            "topics": topics,
+            "keywords": keywords,
+            "questions_answered": questions_answered,
+            "equipment": equipment,
+            "file_sha256": file_sha256,
+            "file_size": file_size,
+            "file_basename": file_basename,
+            "source_type": source_type,
+            "extraction_method": extraction_method,
+        }
+
+        for field_name, new_value in updates.items():
+            if new_value is None:
+                continue
+
+            if not hasattr(doc, field_name):
+                warning_id(
+                    f"CompleteDocument has no field '{field_name}'. "
+                    f"Skipping metadata assignment.",
+                    request_id,
+                )
+                continue
+
+            old_value = getattr(doc, field_name)
+
+            if old_value != new_value:
+                setattr(doc, field_name, new_value)
+                changed = True
+
+        return changed
 
     # ==============================================================
     # REVISION
@@ -236,7 +422,11 @@ class CompleteDocumentService:
         request_id: Optional[str] = None,
     ) -> bool:
 
-        doc = self.get(session, document_id=document_id)
+        doc = self.get(
+            session=session,
+            document_id=document_id,
+            request_id=request_id,
+        )
 
         if not doc:
             return False
