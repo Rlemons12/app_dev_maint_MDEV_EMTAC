@@ -14,7 +14,7 @@ from modules.configuration.log_config import (
     warning_id,
     error_id,
 )
-
+from modules.services.document_summary_service import DocumentSummaryService
 from modules.orchestrators.base_orchestrator import BaseOrchestrator
 from modules.emtacdb.emtacdb_fts import (
     Position,
@@ -91,6 +91,7 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
         self.batch_embedding_service = BatchEmbeddingOptimizationService()
         self.concurrent_service = ConcurrentProcessingService()
         self.image_model_service = AIModelImageService()
+        self.document_summary_service = DocumentSummaryService()
 
     # =========================================================
     # MAIN ENTRY
@@ -120,10 +121,18 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
         document_ids: List[int] = []
         position_id: Optional[int] = None
 
-        # ---------------------------------------
-        # PHASE 1 — FILE SAVE + EXTRACTION (NO DB)
-        # ---------------------------------------
         prepared_docs: List[Dict[str, Any]] = []
+
+        native_extraction_extensions = {
+            ".xlsx",
+            ".xls",
+            ".csv",
+            ".txt",
+            ".docx",
+            ".md",
+            ".json",
+            ".xml",
+        }
 
         for file in valid_files:
             original_filename = getattr(file, "filename", None) or str(file)
@@ -131,12 +140,29 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
 
             try:
                 stored_path = self.file_storage_service.save(file)
+                stored_ext = os.path.splitext(stored_path)[1].lower().strip()
 
-                conversion = self.conversion_service.ensure_pdf(
-                    stored_path,
-                    request_id=request_id,
-                )
-                effective_path = conversion.pdf_path or stored_path
+                if stored_ext in native_extraction_extensions:
+                    effective_path = stored_path
+
+                    debug_id(
+                        f"[CompleteDocumentOrchestrator] Native extraction selected "
+                        f"| file='{stored_path}' | ext='{stored_ext}'",
+                        request_id,
+                    )
+
+                else:
+                    conversion = self.conversion_service.ensure_pdf(
+                        stored_path,
+                        request_id=request_id,
+                    )
+                    effective_path = conversion.pdf_path or stored_path
+
+                    debug_id(
+                        f"[CompleteDocumentOrchestrator] PDF conversion path selected "
+                        f"| stored='{stored_path}' | effective='{effective_path}' | ext='{stored_ext}'",
+                        request_id,
+                    )
 
                 content_info = self.content_extraction_service.extract(
                     effective_path,
@@ -145,7 +171,11 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
 
                 if not content_info or not content_info.get("text"):
                     warning_id(
-                        f"[CompleteDocumentOrchestrator] No extractable text; skipping | file={effective_path}",
+                        f"[CompleteDocumentOrchestrator] No extractable text; skipping "
+                        f"| original='{original_filename}' "
+                        f"| stored='{stored_path}' "
+                        f"| effective='{effective_path}' "
+                        f"| ext='{stored_ext}'",
                         request_id,
                     )
 
@@ -164,13 +194,16 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                     else self._clean_filename(filename)
                 )
 
+                extracted_text = content_info.get("text") or ""
+                structured_pages = content_info.get("pages") or []
+
                 prepared_docs.append(
                     {
                         "title": title,
                         "stored_path": stored_path,
                         "effective_path": effective_path,
-                        "text": content_info.get("text") or "",
-                        "pages": content_info.get("pages") or [],
+                        "text": extracted_text,
+                        "pages": structured_pages,
                         "conversion": conversion,
                         "original_filename": original_filename,
                         "source_type": content_info.get("source_type"),
@@ -183,7 +216,10 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                     f"[CompleteDocumentOrchestrator] Prepared doc | "
                     f"title='{title}' | stored_path='{stored_path}' | "
                     f"effective_path='{effective_path}' | "
-                    f"pages={len(content_info.get('pages') or [])} | "
+                    f"source_type='{content_info.get('source_type')}' | "
+                    f"method='{content_info.get('method')}' | "
+                    f"chars={len(extracted_text)} | "
+                    f"pages={len(structured_pages or [])} | "
                     f"scanned={bool(content_info.get('scanned', False))}",
                     request_id,
                 )
@@ -202,9 +238,6 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                     )
                 continue
 
-        # ---------------------------------------
-        # EARLY EXIT — ALL FILES SKIPPED
-        # ---------------------------------------
         if not prepared_docs:
             warning_id(
                 "[CompleteDocumentOrchestrator] No documents prepared for persistence; all files skipped",
@@ -223,9 +256,6 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                 "skip_reason": "unsupported_or_no_extractable_text",
             }
 
-        # ---------------------------------------
-        # PHASE 2 — DATABASE PERSISTENCE (TXN)
-        # ---------------------------------------
         with self.transaction() as session:
             debug_id(
                 f"[CompleteDocumentOrchestrator] Incoming metadata for position resolution: {metadata}",
@@ -269,12 +299,6 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                         request_id,
                     )
 
-                    # -------------------------------------------------
-                    # DEDUPE PATH
-                    # IMPORTANT:
-                    # Even if document already exists, still ensure the
-                    # CompletedDocumentPositionAssociation exists.
-                    # -------------------------------------------------
                     if existing_id:
                         document_ids.append(existing_id)
                         deduped += 1
@@ -360,9 +384,6 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
 
                     document_ids.append(doc.id)
 
-                    # -------------------------
-                    # CHUNKING + EMBEDDINGS
-                    # -------------------------
                     debug_id(
                         f"[CompleteDocumentOrchestrator] structured_pages count={len(structured_pages)} "
                         f"sample={structured_pages[:2] if structured_pages else []}",
@@ -394,18 +415,12 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                             complete_document_id=doc.id,
                         )
 
-                    # -------------------------
-                    # SEARCH INDEX
-                    # -------------------------
                     self.search_index_service.index_complete_document(
                         session=session,
                         title=title,
                         content=extracted_text,
                     )
 
-                    # -------------------------
-                    # VLM STRUCTURED VISUALS
-                    # -------------------------
                     if structured_pages:
                         created = self._store_structured_visuals_no_page_assoc(
                             session=session,
@@ -416,9 +431,6 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                         )
                         total_images += int(created or 0)
 
-                    # -------------------------
-                    # PDF IMAGE EXTRACTION
-                    # -------------------------
                     if effective_path.lower().endswith(".pdf"):
                         extracted = self.image_guided_service.extract_and_associate(
                             session=session,
@@ -430,10 +442,6 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                         )
                         total_images += int(extracted or 0)
 
-                        # -------------------------------------------------
-                        # PAGE-FIRST ASSOCIATION / ENRICHMENT
-                        # Only scope to images already linked to THIS doc.
-                        # -------------------------------------------------
                         try:
                             current_doc_image_id_rows = (
                                 session.query(Image.id)
@@ -449,7 +457,9 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                                 .all()
                             )
 
-                            current_doc_image_ids = [row[0] for row in current_doc_image_id_rows]
+                            current_doc_image_ids = [
+                                row[0] for row in current_doc_image_id_rows
+                            ]
 
                             current_doc_images = []
                             if current_doc_image_ids:
@@ -504,9 +514,6 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
                             request_id=request_id,
                         )
 
-        # ---------------------------------------
-        # FINAL STATUS
-        # ---------------------------------------
         if not document_ids:
             warning_id(
                 "[CompleteDocumentOrchestrator] No documents persisted; returning skipped status",
@@ -629,18 +636,73 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
         session,
         request_id: Optional[str] = None,
     ) -> Optional[int]:
-        filters = {
-            key: metadata.get(key)
-            for key in [
-                "site_location_id",
-                "area_id",
+        """
+        Resolve or create a Position from upload metadata.
+
+        Supports both newer *_id keys and legacy/front-end form keys:
+
+            site_location_id OR site_location
+            area_id OR area
+            equipment_group_id OR equipment_group
+            model_id OR model
+            asset_number_id OR asset_number
+            location_id OR location
+
+        Empty strings, None, "None", "null", and "undefined" are ignored.
+        """
+
+        def clean_id(value: Any) -> Optional[int]:
+            if value is None:
+                return None
+
+            value_text = str(value).strip()
+
+            if not value_text:
+                return None
+
+            if value_text.lower() in {"none", "null", "undefined", "unknown"}:
+                return None
+
+            try:
+                return int(value_text)
+            except (TypeError, ValueError):
+                warning_id(
+                    f"[CompleteDocumentOrchestrator] Invalid position metadata id ignored: {value!r}",
+                    request_id,
+                )
+                return None
+
+        metadata_key_map = {
+            "site_location_id": ["site_location_id", "site_location"],
+            "area_id": ["area_id", "area"],
+            "equipment_group_id": [
                 "equipment_group_id",
-                "model_id",
+                "equipment_group",
+                "equipmentGroup",
+            ],
+            "model_id": ["model_id", "model"],
+            "asset_number_id": [
                 "asset_number_id",
-                "location_id",
-            ]
-            if metadata.get(key)
+                "asset_number",
+                "assetNumber",
+            ],
+            "location_id": ["location_id", "location"],
         }
+
+        filters: Dict[str, int] = {}
+
+        for db_field, possible_keys in metadata_key_map.items():
+            for metadata_key in possible_keys:
+                cleaned_value = clean_id(metadata.get(metadata_key))
+
+                if cleaned_value is not None:
+                    filters[db_field] = cleaned_value
+                    break
+
+        debug_id(
+            f"[CompleteDocumentOrchestrator] Position resolution metadata={metadata}",
+            request_id,
+        )
 
         debug_id(
             f"[CompleteDocumentOrchestrator] Position resolution filters={filters}",
@@ -648,9 +710,15 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
         )
 
         if not filters:
+            warning_id(
+                "[CompleteDocumentOrchestrator] No usable position metadata found; "
+                "document will not be associated to a position",
+                request_id,
+            )
             return None
 
         position = session.query(Position).filter_by(**filters).first()
+
         if position:
             debug_id(
                 f"[CompleteDocumentOrchestrator] Reusing existing position id={position.id}",
@@ -663,7 +731,9 @@ class CompleteDocumentOrchestrator(BaseOrchestrator):
         session.flush()
 
         info_id(
-            f"[CompleteDocumentOrchestrator] Created new position id={position.id} from filters={filters}",
+            f"[CompleteDocumentOrchestrator] Created new position id={position.id} "
+            f"from filters={filters}",
             request_id,
         )
+
         return position.id
