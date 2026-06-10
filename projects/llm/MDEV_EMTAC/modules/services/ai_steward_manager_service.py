@@ -1166,3 +1166,23 @@ class AIStewardManagerService:
                 else "none"
             ),
         }
+
+    @with_request_id
+    def answer_from_context(self, *, question: str, context: str,
+                            request_id: Optional[str] = None) -> str:
+        """Generate an answer from caller-supplied context only (no retrieval)."""
+        rag = getattr(self.search_service, "rag_pipeline", None)
+        if rag is None or getattr(rag, "answer_generator", None) is None:
+            warning_id("[AIStewardManagerService] answer_from_context: no generator.", request_id)
+            return ""
+        try:
+            result = rag.answer_generator.generate_answer(
+                question=question, context=context or "", request_id=request_id,
+            )
+        except Exception as exc:
+            warning_id(f"[AIStewardManagerService] answer_from_context failed: {exc}",
+                       request_id, exc_info=True)
+            return ""
+        if isinstance(result, dict):
+            return str(result.get("answer", "") or "")
+        return result if isinstance(result, str) else ""
