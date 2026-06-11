@@ -333,3 +333,77 @@ def trace_graph(trace_id: str):
             },
         }
     )
+
+# ==========================================================
+# API: Span Events
+# ==========================================================
+
+@trace_dashboard_bp.get("/trace/api/span/<span_id>/events")
+def trace_span_events(span_id: str):
+    """
+    Return TraceEvent rows for a selected span.
+
+    Full URL when blueprint is registered with url_prefix="/dashboards":
+
+        GET /dashboards/trace/api/span/<span_id>/events
+
+    Used by the dashboard Selected Span panel so clicking a span can show:
+        - chat_intent_decision
+        - rag_run_input
+        - rag_chunks_retrieved_raw
+        - rag_chunks_selected_final
+        - rag_run_result
+    """
+
+    try:
+        span_uuid = uuid.UUID(str(span_id))
+    except Exception:
+        return jsonify({
+            "status": "invalid_span_id",
+            "message": "Invalid span_id. Expected UUID.",
+            "span_id": span_id,
+            "events": [],
+        }), 400
+
+    with db.main_session() as session:
+        span = session.get(TraceSpan, span_uuid)
+
+        if span is None:
+            return jsonify({
+                "status": "not_found",
+                "message": "Span not found.",
+                "span_id": str(span_uuid),
+                "events": [],
+            }), 404
+
+        events = (
+            session.query(TraceEvent)
+            .filter(TraceEvent.span_id == span_uuid)
+            .order_by(TraceEvent.created_at.asc(), TraceEvent.id.asc())
+            .all()
+        )
+
+        results = []
+
+        for event in events:
+            results.append({
+                "id": str(event.id),
+                "span_id": str(event.span_id),
+                "event_type": event.event_type,
+                "payload": event.payload if isinstance(event.payload, dict) else event.payload,
+                "created_at": _iso(event.created_at),
+            })
+
+    debug_id(
+        f"[trace_dashboard] Span events loaded span_id={span_id} events={len(results)}",
+        None,
+    )
+
+    return jsonify({
+        "status": "success",
+        "span_id": str(span_uuid),
+        "trace_id": str(span.trace_id),
+        "span_name": span.name,
+        "event_count": len(results),
+        "events": results,
+    })
