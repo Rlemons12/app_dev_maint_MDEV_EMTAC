@@ -412,6 +412,10 @@ def create_app(request_id=None):
             and future browser/network monitoring code. These routes should not
             be redirected to the HTML login page.
 
+            Trace dashboard routes are also allowed through during development so
+            PowerShell/API calls to /dashboards/trace/api/recent return JSON instead
+            of being redirected to the login page.
+
             Later, Tablet Edge routes should use their own tablet registration
             token or API token. For now, during development, they are exempted
             from the normal browser session login check.
@@ -428,6 +432,7 @@ def create_app(request_id=None):
             # ------------------------------------------------------------
             # Public/API bypasses
             # ------------------------------------------------------------
+
             # Allow preflight/API checks.
             if request.method == "OPTIONS":
                 return
@@ -436,8 +441,9 @@ def create_app(request_id=None):
             if endpoint == "static" or request_path.startswith("/static/"):
                 return
 
-            # Always allow Tablet Edge API routes.
-            #
+            # ------------------------------------------------------------
+            # Tablet Edge bypass
+            # ------------------------------------------------------------
             # This prevents API clients from receiving the HTML login page
             # when posting to:
             #   /tablet-edge/register
@@ -462,6 +468,41 @@ def create_app(request_id=None):
                     current_request_id,
                 )
                 return
+
+            # ------------------------------------------------------------
+            # Trace dashboard bypass during development
+            # ------------------------------------------------------------
+            # This keeps the observability dashboard/API from being redirected
+            # to the HTML login page.
+            #
+            # Expected URLs:
+            #   /dashboards/trace
+            #   /dashboards/trace/api/recent
+            #   /dashboards/trace/api/graph/<trace_id>
+            #
+            # To protect this again later, set:
+            #   ALLOW_TRACE_DASHBOARD_WITHOUT_LOGIN=0
+            allow_trace_dashboard_without_login = (
+                    os.environ.get("ALLOW_TRACE_DASHBOARD_WITHOUT_LOGIN", "1")
+                    .strip()
+                    .lower()
+                    in {"1", "true", "yes", "on"}
+            )
+
+            if allow_trace_dashboard_without_login:
+                if request_path == "/dashboards" or request_path.startswith("/dashboards/"):
+                    debug_id(
+                        f"Allowing dashboard route without browser login: {request_path}",
+                        current_request_id,
+                    )
+                    return
+
+                if endpoint and endpoint.startswith("trace_dashboard."):
+                    debug_id(
+                        f"Allowing trace dashboard endpoint without browser login: {endpoint}",
+                        current_request_id,
+                    )
+                    return
 
             # ------------------------------------------------------------
             # Update activity for logged-in browser users
