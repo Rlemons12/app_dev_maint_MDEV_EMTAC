@@ -22,6 +22,7 @@ class ChatCoordinator:
         - Input validation
         - Control command handling
         - Conversation ID pass-through for conversational memory
+        - Conversation ON/OFF pass-through for single-turn mode
         - Document scope pass-through for document-scoped conversation mode
         - Delegation to ChatOrchestrator.handle_question()
         - Response normalization for the frontend
@@ -39,7 +40,7 @@ class ChatCoordinator:
             -> ChatCoordinator.process_question()
             -> ChatOrchestrator.handle_question()
             -> returns answer immediately with empty payload containers
-            -> also returns conversation_id for continued memory
+            -> also returns conversation_id when conversation memory is enabled
 
         /ask/payload
             -> ChatPayloadCoordinator or route-level payload handler
@@ -51,6 +52,16 @@ class ChatCoordinator:
             -> ChatCoordinator.process_question(document_scope=...)
             -> ChatOrchestrator.handle_question(document_scope=...)
             -> later layers restrict retrieval to selected complete_document_id
+
+    Conversation mode flow:
+        conversation_enabled=True
+            -> pass conversation_id normally
+            -> orchestrator may create/use chat_sessions memory
+
+        conversation_enabled=False
+            -> force conversation_id=None
+            -> orchestrator should skip chat_sessions memory
+            -> every question is treated as single-turn / NEW_TOPIC
     """
 
     MIN_QUESTION_LENGTH = 3
@@ -103,14 +114,21 @@ class ChatCoordinator:
         request_id: Optional[str] = None,
         conversation_id: Optional[str] = None,
         document_scope: Optional[Dict[str, Any]] = None,
+        conversation_enabled: bool = True,
     ) -> Dict[str, Any]:
         """
         Process a user question.
 
+        conversation_enabled:
+            - True: normal current-session conversation memory is allowed.
+            - False: force single-turn mode and do not pass conversation_id.
+
         conversation_id is optional:
-            - If provided, the orchestrator should continue that conversation.
-            - If missing, the orchestrator should create a new conversation/session.
-            - The response should always return the active conversation_id.
+            - If provided and conversation_enabled=True, the orchestrator should
+              continue that conversation.
+            - If missing and conversation_enabled=True, the orchestrator may create
+              a new conversation/session.
+            - If conversation_enabled=False, conversation_id is forced to None.
 
         document_scope is optional:
             - If provided, the orchestrator should pass it to the AI/RAG pathway.
@@ -123,8 +141,27 @@ class ChatCoordinator:
         normalized_user_id = (user_id or "anonymous").strip() or "anonymous"
         normalized_question = (question or "").strip()
         normalized_client_type = (client_type or "web").strip().lower() or "web"
-        normalized_conversation_id = (conversation_id or "").strip() or None
+        normalized_conversation_enabled = bool(conversation_enabled)
+
+        normalized_conversation_id = (
+            (conversation_id or "").strip() or None
+        )
+
+        if not normalized_conversation_enabled:
+            normalized_conversation_id = None
+
         normalized_document_scope = self._normalize_document_scope(document_scope)
+
+        info_id(
+            (
+                "[ChatCoordinator] Conversation mode "
+                f"conversation_enabled={normalized_conversation_enabled} "
+                f"conversation_mode="
+                f"{'conversation' if normalized_conversation_enabled else 'single_turn'} "
+                f"conversation_id={normalized_conversation_id}"
+            ),
+            request_id,
+        )
 
         if normalized_document_scope:
             info_id(
@@ -147,6 +184,14 @@ class ChatCoordinator:
                 "answer": "Please provide a more detailed question.",
                 "request_id": request_id,
                 "conversation_id": normalized_conversation_id,
+                "conversation_enabled": normalized_conversation_enabled,
+                "conversation_mode": (
+                    "conversation"
+                    if normalized_conversation_enabled
+                    else "single_turn"
+                ),
+                "memory_enabled": False,
+                "memory_context_used": False,
                 "document_scope": normalized_document_scope,
                 "document_scope_enabled": bool(normalized_document_scope),
                 "payload_status": "unavailable",
@@ -165,6 +210,14 @@ class ChatCoordinator:
                 "redirect": "/logout",
                 "request_id": request_id,
                 "conversation_id": normalized_conversation_id,
+                "conversation_enabled": normalized_conversation_enabled,
+                "conversation_mode": (
+                    "conversation"
+                    if normalized_conversation_enabled
+                    else "single_turn"
+                ),
+                "memory_enabled": False,
+                "memory_context_used": False,
                 "document_scope": normalized_document_scope,
                 "document_scope_enabled": bool(normalized_document_scope),
                 "payload_status": "unavailable",
@@ -178,9 +231,21 @@ class ChatCoordinator:
             request_id=request_id,
             conversation_id=normalized_conversation_id,
             document_scope=normalized_document_scope,
+            conversation_enabled=normalized_conversation_enabled,
         )
 
         if isinstance(result, dict):
+            result.setdefault("conversation_enabled", normalized_conversation_enabled)
+            result.setdefault(
+                "conversation_mode",
+                "conversation" if normalized_conversation_enabled else "single_turn",
+            )
+
+            if not normalized_conversation_enabled:
+                result["conversation_id"] = None
+                result.setdefault("memory_enabled", False)
+                result.setdefault("memory_context_used", False)
+
             result.setdefault("document_scope", normalized_document_scope)
             result.setdefault("document_scope_enabled", bool(normalized_document_scope))
 
@@ -195,25 +260,31 @@ class ChatCoordinator:
         request_id: Optional[str],
         conversation_id: Optional[str],
         document_scope: Optional[Dict[str, Any]],
+        conversation_enabled: bool = True,
     ) -> Dict[str, Any]:
         """
-        Call ChatOrchestrator.handle_question with document_scope when supported.
+        Call ChatOrchestrator.handle_question with document_scope and
+        conversation_enabled when supported.
 
-        This makes this file safe during step-by-step rollout:
-            - If ChatOrchestrator has already been updated, document_scope is forwarded.
-            - If ChatOrchestrator has not been updated yet, the answer flow still works.
+        Safe step-by-step rollout:
+            - If ChatOrchestrator supports conversation_enabled, forward it.
+            - If not, force conversation_id=None when disabled and continue.
+            - If ChatOrchestrator supports document_scope, forward it.
+            - If not, continue without document_scope and log a warning.
         """
+
+        normalized_conversation_enabled = bool(conversation_enabled)
+        normalized_conversation_id = (
+            conversation_id if normalized_conversation_enabled else None
+        )
 
         kwargs: Dict[str, Any] = {
             "user_id": user_id,
             "question": question,
             "client_type": client_type,
             "request_id": request_id,
-            "conversation_id": conversation_id,
+            "conversation_id": normalized_conversation_id,
         }
-
-        if not document_scope:
-            return self.orchestrator.handle_question(**kwargs)
 
         try:
             signature = inspect.signature(self.orchestrator.handle_question)
@@ -224,7 +295,30 @@ class ChatCoordinator:
                 for parameter in parameters.values()
             )
 
-            if "document_scope" in parameters or accepts_kwargs:
+            if "conversation_enabled" in parameters or accepts_kwargs:
+                kwargs["conversation_enabled"] = normalized_conversation_enabled
+
+                info_id(
+                    (
+                        "[ChatCoordinator] Forwarding conversation_enabled "
+                        "to ChatOrchestrator "
+                        f"conversation_enabled={normalized_conversation_enabled} "
+                        f"conversation_id={normalized_conversation_id}"
+                    ),
+                    request_id,
+                )
+
+            elif not normalized_conversation_enabled:
+                warning_id(
+                    (
+                        "[ChatCoordinator] conversation_enabled=False received but "
+                        "ChatOrchestrator.handle_question does not accept "
+                        "conversation_enabled yet. Continuing with conversation_id=None only."
+                    ),
+                    request_id,
+                )
+
+            if document_scope and ("document_scope" in parameters or accepts_kwargs):
                 kwargs["document_scope"] = document_scope
 
                 info_id(
@@ -236,46 +330,59 @@ class ChatCoordinator:
                     request_id,
                 )
 
-                return self.orchestrator.handle_question(**kwargs)
-
-            warning_id(
-                (
-                    "[ChatCoordinator] document_scope received but "
-                    "ChatOrchestrator.handle_question does not accept document_scope yet. "
-                    "Continuing without scoped backend retrieval. "
-                    f"complete_document_id={document_scope.get('complete_document_id')} "
-                    f"document_name={document_scope.get('document_name')}"
-                ),
-                request_id,
-            )
+            elif document_scope:
+                warning_id(
+                    (
+                        "[ChatCoordinator] document_scope received but "
+                        "ChatOrchestrator.handle_question does not accept document_scope yet. "
+                        "Continuing without scoped backend retrieval. "
+                        f"complete_document_id={document_scope.get('complete_document_id')} "
+                        f"document_name={document_scope.get('document_name')}"
+                    ),
+                    request_id,
+                )
 
             return self.orchestrator.handle_question(**kwargs)
 
         except TypeError as type_error:
             warning_id(
                 (
-                    "[ChatCoordinator] ChatOrchestrator rejected document_scope call. "
-                    "Retrying without document_scope. "
+                    "[ChatCoordinator] ChatOrchestrator rejected extended call. "
+                    "Retrying with legacy-safe kwargs. "
                     f"error={type_error}"
                 ),
                 request_id,
             )
 
-            kwargs.pop("document_scope", None)
-            return self.orchestrator.handle_question(**kwargs)
+            legacy_kwargs: Dict[str, Any] = {
+                "user_id": user_id,
+                "question": question,
+                "client_type": client_type,
+                "request_id": request_id,
+                "conversation_id": normalized_conversation_id,
+            }
+
+            return self.orchestrator.handle_question(**legacy_kwargs)
 
         except (ValueError, AttributeError) as signature_error:
             warning_id(
                 (
                     "[ChatCoordinator] Could not inspect ChatOrchestrator.handle_question "
-                    "signature. Continuing without document_scope. "
+                    "signature. Continuing with legacy-safe kwargs. "
                     f"error={signature_error}"
                 ),
                 request_id,
             )
 
-            kwargs.pop("document_scope", None)
-            return self.orchestrator.handle_question(**kwargs)
+            legacy_kwargs = {
+                "user_id": user_id,
+                "question": question,
+                "client_type": client_type,
+                "request_id": request_id,
+                "conversation_id": normalized_conversation_id,
+            }
+
+            return self.orchestrator.handle_question(**legacy_kwargs)
 
     def _normalize_response(self, response: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -288,6 +395,10 @@ class ChatCoordinator:
             "answer": "...",
             "request_id": "...",
             "conversation_id": "...",
+            "conversation_enabled": true | false,
+            "conversation_mode": "conversation" | "single_turn",
+            "memory_enabled": true | false,
+            "memory_context_used": true | false,
             "document_scope": {...} | None,
             "document_scope_enabled": true | false,
             "payload_status": "pending",
@@ -314,6 +425,10 @@ class ChatCoordinator:
                 "answer": "Invalid response format.",
                 "request_id": None,
                 "conversation_id": None,
+                "conversation_enabled": True,
+                "conversation_mode": "conversation",
+                "memory_enabled": False,
+                "memory_context_used": False,
                 "document_scope": None,
                 "document_scope_enabled": False,
                 "payload_status": "unavailable",
@@ -327,7 +442,53 @@ class ChatCoordinator:
             response["answer"] = ""
 
         response.setdefault("request_id", None)
-        response.setdefault("conversation_id", None)
+
+        raw_conversation_enabled = response.get(
+            "conversation_enabled",
+            response.get("conversationEnabled", None),
+        )
+
+        raw_conversation_mode = str(
+            response.get("conversation_mode")
+            or response.get("conversationMode")
+            or ""
+        ).strip().lower()
+
+        if raw_conversation_enabled is None:
+            conversation_enabled = raw_conversation_mode not in {
+                "single_turn",
+                "single-turn",
+                "new_topic",
+                "new-topic",
+                "off",
+                "disabled",
+            }
+        else:
+            conversation_enabled = bool(raw_conversation_enabled)
+
+        if raw_conversation_mode in {
+            "single_turn",
+            "single-turn",
+            "new_topic",
+            "new-topic",
+            "off",
+            "disabled",
+        }:
+            conversation_enabled = False
+
+        response["conversation_enabled"] = conversation_enabled
+        response["conversation_mode"] = (
+            "conversation" if conversation_enabled else "single_turn"
+        )
+
+        if not conversation_enabled:
+            response["conversation_id"] = None
+            response["memory_enabled"] = False
+            response["memory_context_used"] = False
+        else:
+            response.setdefault("conversation_id", None)
+            response.setdefault("memory_enabled", bool(response.get("conversation_id")))
+            response.setdefault("memory_context_used", False)
 
         normalized_document_scope = self._normalize_document_scope(
             response.get("document_scope") or response.get("documentScope")
@@ -415,7 +576,9 @@ class ChatCoordinator:
             or document_scope.get("completeDocumentID")
         )
 
-        complete_document_id = ChatCoordinator._coerce_int_or_none(complete_document_id)
+        complete_document_id = ChatCoordinator._coerce_int_or_none(
+            complete_document_id
+        )
 
         if complete_document_id is None:
             return None
@@ -435,7 +598,10 @@ class ChatCoordinator:
             or f"Document #{complete_document_id}"
         )
 
-        document_name = str(document_name or "").strip() or f"Document #{complete_document_id}"
+        document_name = (
+            str(document_name or "").strip()
+            or f"Document #{complete_document_id}"
+        )
 
         return {
             "enabled": True,

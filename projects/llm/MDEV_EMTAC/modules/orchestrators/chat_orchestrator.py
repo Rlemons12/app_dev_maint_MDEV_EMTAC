@@ -3,17 +3,18 @@ from __future__ import annotations
 import inspect
 import json
 import time
+import re
 from datetime import datetime
 from typing import Dict, Any, Optional, Tuple, List
 from uuid import UUID
 
 from modules.observability.high_end_tracer import tracer
-from modules.decorators.trace_decorator import trace_entrypoint
 from modules.orchestrators.base_orchestrator import BaseOrchestrator
 
 from modules.services.ai_steward_manager_service import AIStewardManagerService
 from modules.services.qanda_service import QandAService
 from modules.services.qanda_embedding_service import QandAEmbeddingService
+from modules.services.chat_session_memory_service import ChatSessionMemoryService
 
 from modules.coordinators.chat_intent_coordinator import ChatIntentCoordinator
 from modules.intent.intent_types import ChatIntent, ChatIntentDecision
@@ -75,6 +76,7 @@ class ChatOrchestrator(BaseOrchestrator):
         qanda_service: Optional[QandAService] = None,
         qanda_embedding_service: Optional[QandAEmbeddingService] = None,
         intent_coordinator: Optional[ChatIntentCoordinator] = None,
+        chat_session_memory_service: Optional[ChatSessionMemoryService] = None,
     ):
         super().__init__()
 
@@ -82,15 +84,19 @@ class ChatOrchestrator(BaseOrchestrator):
         self.qanda_service = qanda_service or QandAService()
         self.qanda_embedding_service = qanda_embedding_service or QandAEmbeddingService()
         self.intent_coordinator = intent_coordinator or ChatIntentCoordinator()
+
+        self.chat_session_memory_service = (
+            chat_session_memory_service
+            or ChatSessionMemoryService(
+                qanda_embedding_service=self.qanda_embedding_service,
+                store_summary_embedding=True,
+                include_assistant_messages_in_memory_context=False,
+            )
+        )
+
         self.audit_log_manager = get_search_audit_log_manager()
 
     @with_request_id
-    @trace_entrypoint(
-        name="chat_answer_pipeline",
-        deep_profile=False,
-        capture_args=False,
-        capture_return=False,
-    )
     def handle_question(
         self,
         *,
@@ -100,6 +106,181 @@ class ChatOrchestrator(BaseOrchestrator):
         request_id: Optional[str] = None,
         conversation_id: Optional[str] = None,
         document_scope: Optional[Dict[str, Any]] = None,
+        conversation_enabled: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Request-level chat answer orchestration.
+
+        Important:
+        - Do NOT use @trace_entrypoint here.
+        - The Flask route owns the root TraceSession.
+        - This method creates a child span so the dashboard can map the
+          answer-first pathway without creating duplicate root traces.
+
+        conversation_enabled:
+            True:
+                Normal conversation memory is allowed.
+            False:
+                Single-turn mode. Do not use or create chat_sessions memory.
+        """
+
+        normalized_user_id = (user_id or "anonymous").strip() or "anonymous"
+        normalized_question = (question or "").strip()
+        normalized_client_type = (client_type or "web").strip().lower() or "web"
+        normalized_conversation_enabled = bool(conversation_enabled)
+
+        normalized_conversation_id = (conversation_id or "").strip() or None
+
+        if not normalized_conversation_enabled:
+            normalized_conversation_id = None
+
+        normalized_document_scope = self._normalize_document_scope(document_scope)
+        document_scope_enabled = bool(normalized_document_scope)
+
+        conversation_mode = (
+            "conversation"
+            if normalized_conversation_enabled
+            else "single_turn"
+        )
+
+        with tracer.span(
+            "chat.orchestrator.handle_question",
+            meta={
+                "request_id": request_id,
+                "user_id": normalized_user_id,
+                "client_type": normalized_client_type,
+                "incoming_conversation_id": normalized_conversation_id,
+                "conversation_enabled": normalized_conversation_enabled,
+                "conversation_mode": conversation_mode,
+                "question_chars": len(normalized_question),
+                "document_scope_enabled": document_scope_enabled,
+                "complete_document_id": (
+                    normalized_document_scope.get("complete_document_id")
+                    if normalized_document_scope
+                    else None
+                ),
+                "document_name": (
+                    normalized_document_scope.get("document_name")
+                    if normalized_document_scope
+                    else None
+                ),
+            },
+        ):
+            try:
+                tracer.event(
+                    "chat_orchestrator_input_received",
+                    {
+                        "request_id": request_id,
+                        "user_id": normalized_user_id,
+                        "client_type": normalized_client_type,
+                        "incoming_conversation_id": normalized_conversation_id,
+                        "conversation_enabled": normalized_conversation_enabled,
+                        "conversation_mode": conversation_mode,
+                        "question_chars": len(normalized_question),
+                        "document_scope_enabled": document_scope_enabled,
+                        "complete_document_id": (
+                            normalized_document_scope.get("complete_document_id")
+                            if normalized_document_scope
+                            else None
+                        ),
+                        "document_name": (
+                            normalized_document_scope.get("document_name")
+                            if normalized_document_scope
+                            else None
+                        ),
+                    },
+                )
+            except Exception:
+                pass
+
+            result = self._handle_question_impl(
+                user_id=normalized_user_id,
+                question=normalized_question,
+                client_type=normalized_client_type,
+                request_id=request_id,
+                conversation_id=normalized_conversation_id,
+                document_scope=normalized_document_scope,
+                conversation_enabled=normalized_conversation_enabled,
+            )
+
+            if isinstance(result, dict):
+                result["conversation_enabled"] = normalized_conversation_enabled
+                result["conversation_mode"] = conversation_mode
+
+                if not normalized_conversation_enabled:
+                    result["conversation_id"] = None
+                    result["memory_enabled"] = False
+                    result["memory_context_used"] = False
+
+            try:
+                result_document_scope = self._normalize_document_scope(
+                    result.get("document_scope")
+                    if isinstance(result, dict)
+                    else None
+                )
+
+                tracer.event(
+                    "chat_orchestrator_response_ready",
+                    {
+                        "request_id": request_id,
+                        "status": (
+                            result.get("status")
+                            if isinstance(result, dict)
+                            else None
+                        ),
+                        "conversation_id": (
+                            result.get("conversation_id")
+                            if isinstance(result, dict)
+                            else None
+                        ),
+                        "conversation_enabled": (
+                            result.get("conversation_enabled")
+                            if isinstance(result, dict)
+                            else normalized_conversation_enabled
+                        ),
+                        "conversation_mode": (
+                            result.get("conversation_mode")
+                            if isinstance(result, dict)
+                            else conversation_mode
+                        ),
+                        "method": (
+                            result.get("method")
+                            if isinstance(result, dict)
+                            else None
+                        ),
+                        "strategy": (
+                            result.get("strategy")
+                            if isinstance(result, dict)
+                            else None
+                        ),
+                        "payload_status": (
+                            result.get("payload_status")
+                            if isinstance(result, dict)
+                            else None
+                        ),
+                        "document_scope_enabled": bool(result_document_scope),
+                        "complete_document_id": (
+                            result_document_scope.get("complete_document_id")
+                            if result_document_scope
+                            else None
+                        ),
+                    },
+                )
+            except Exception:
+                pass
+
+            return result
+
+    def _handle_question_impl(
+        self,
+        *,
+        user_id: str,
+        question: str,
+        client_type: str,
+        request_id: Optional[str] = None,
+        conversation_id: Optional[str] = None,
+        document_scope: Optional[Dict[str, Any]] = None,
+        conversation_enabled: bool = True,
     ) -> Dict[str, Any]:
 
         request_start = time.perf_counter()
@@ -110,7 +291,7 @@ class ChatOrchestrator(BaseOrchestrator):
         embedding_time = 0.0
         audit_time = 0.0
 
-        ai_result: Dict[str, Any] = {}
+        ai_result: Optional[Dict[str, Any]] = None
         audit_summary: Dict[str, Any] = {}
         qanda_id: Optional[Any] = None
         embeddings_updated = False
@@ -123,9 +304,21 @@ class ChatOrchestrator(BaseOrchestrator):
         normalized_user_id = (user_id or "anonymous").strip() or "anonymous"
         normalized_question = (question or "").strip()
         normalized_client_type = (client_type or "web").strip().lower() or "web"
+        normalized_conversation_enabled = bool(conversation_enabled)
+
         normalized_conversation_id = (conversation_id or "").strip() or None
+
+        if not normalized_conversation_enabled:
+            normalized_conversation_id = None
+
         normalized_document_scope = self._normalize_document_scope(document_scope)
         document_scope_enabled = bool(normalized_document_scope)
+
+        conversation_mode = (
+            "conversation"
+            if normalized_conversation_enabled
+            else "single_turn"
+        )
 
         self.audit_log_manager.log_run_start(
             request_id=request_id or "unknown",
@@ -141,19 +334,35 @@ class ChatOrchestrator(BaseOrchestrator):
                 request_id,
             )
 
+        if not normalized_conversation_enabled:
+            info_id(
+                "[ChatOrchestrator] Conversation mode disabled. "
+                "This request will run as single-turn NEW_TOPIC. "
+                f"question={normalized_question!r} "
+                f"document_scope_enabled={document_scope_enabled}",
+                request_id,
+            )
+
         try:
             forced_chunk_id = self._resolve_forced_chunk_id(request_id=request_id)
 
             memory_start = time.perf_counter()
 
-            try:
-                with self.transaction() as session:
-                    with tracer.span(
-                        "chat_memory_prepare",
-                        meta={
+            if not normalized_conversation_enabled:
+                active_conversation_id = None
+                memory_context_text = ""
+                memory_context_used = False
+                intent_decision = ChatIntentDecision.fallback_new_topic(
+                    normalized_question
+                )
+
+                try:
+                    tracer.event(
+                        "chat_memory_skipped_single_turn",
+                        {
                             "request_id": request_id,
-                            "incoming_conversation_id": normalized_conversation_id,
-                            "user_id": normalized_user_id,
+                            "conversation_enabled": False,
+                            "conversation_mode": "single_turn",
                             "document_scope_enabled": document_scope_enabled,
                             "complete_document_id": (
                                 normalized_document_scope.get("complete_document_id")
@@ -161,141 +370,225 @@ class ChatOrchestrator(BaseOrchestrator):
                                 else None
                             ),
                         },
-                    ):
-                        chat_session, created_session = self._get_or_create_chat_session(
-                            session=session,
-                            conversation_id=normalized_conversation_id,
-                            user_id=normalized_user_id,
-                            request_id=request_id,
-                        )
+                    )
+                except Exception:
+                    pass
 
-                        active_conversation_id = str(chat_session.session_id)
-
-                        self._append_chat_message(
-                            chat_session=chat_session,
-                            role="user",
-                            content=normalized_question,
-                            request_id=request_id,
-                            metadata={
-                                "client_type": normalized_client_type,
-                                "created_session": created_session,
-                                "document_scope": normalized_document_scope,
+            else:
+                try:
+                    with self.transaction() as session:
+                        with tracer.span(
+                            "chat.orchestrator.memory_prepare",
+                            meta={
+                                "request_id": request_id,
+                                "incoming_conversation_id": normalized_conversation_id,
+                                "user_id": normalized_user_id,
+                                "conversation_enabled": normalized_conversation_enabled,
+                                "conversation_mode": conversation_mode,
                                 "document_scope_enabled": document_scope_enabled,
+                                "complete_document_id": (
+                                    normalized_document_scope.get("complete_document_id")
+                                    if normalized_document_scope
+                                    else None
+                                ),
                             },
-                        )
+                        ):
+                            chat_session, created_session = self._get_or_create_chat_session(
+                                session=session,
+                                conversation_id=normalized_conversation_id,
+                                user_id=normalized_user_id,
+                                request_id=request_id,
+                            )
 
-                        try:
-                            with tracer.span(
-                                "chat_intent_classify",
-                                meta={
-                                    "request_id": request_id,
-                                    "conversation_id": active_conversation_id,
+                            active_conversation_id = str(chat_session.session_id)
+
+                            self._append_chat_message(
+                                chat_session=chat_session,
+                                role="user",
+                                content=normalized_question,
+                                request_id=request_id,
+                                metadata={
+                                    "client_type": normalized_client_type,
+                                    "created_session": created_session,
+                                    "document_scope": normalized_document_scope,
                                     "document_scope_enabled": document_scope_enabled,
-                                    "complete_document_id": (
-                                        normalized_document_scope.get("complete_document_id")
-                                        if normalized_document_scope
-                                        else None
-                                    ),
+                                    "conversation_enabled": normalized_conversation_enabled,
+                                    "conversation_mode": conversation_mode,
                                 },
-                            ):
-                                intent_decision = self.intent_coordinator.classify_question(
-                                    question=normalized_question,
-                                    chat_session=chat_session,
-                                    document_scope=normalized_document_scope,
-                                    request_id=request_id,
+                            )
+
+                            try:
+                                with tracer.span(
+                                    "chat.orchestrator.intent_classify",
+                                    meta={
+                                        "request_id": request_id,
+                                        "conversation_id": active_conversation_id,
+                                        "conversation_enabled": normalized_conversation_enabled,
+                                        "conversation_mode": conversation_mode,
+                                        "document_scope_enabled": document_scope_enabled,
+                                        "complete_document_id": (
+                                            normalized_document_scope.get("complete_document_id")
+                                            if normalized_document_scope
+                                            else None
+                                        ),
+                                    },
+                                ):
+                                    intent_decision = self.intent_coordinator.classify_question(
+                                        question=normalized_question,
+                                        chat_session=chat_session,
+                                        document_scope=normalized_document_scope,
+                                        request_id=request_id,
+                                    )
+
+                                    try:
+                                        tracer.event(
+                                            "chat_intent_decision",
+                                            {
+                                                "request_id": request_id,
+                                                "conversation_id": active_conversation_id,
+                                                "conversation_enabled": normalized_conversation_enabled,
+                                                "conversation_mode": conversation_mode,
+                                                "question": normalized_question,
+                                                "intent": (
+                                                    intent_decision.intent.value
+                                                    if intent_decision
+                                                    else None
+                                                ),
+                                                "confidence": (
+                                                    float(intent_decision.confidence)
+                                                    if intent_decision
+                                                    and intent_decision.confidence is not None
+                                                    else None
+                                                ),
+                                                "needs_current_session_memory": (
+                                                    bool(intent_decision.needs_current_session_memory)
+                                                    if intent_decision
+                                                    else False
+                                                ),
+                                                "needs_semantic_chat_recall": (
+                                                    bool(intent_decision.needs_semantic_chat_recall)
+                                                    if intent_decision
+                                                    else False
+                                                ),
+                                                "needs_document_scope": (
+                                                    bool(intent_decision.needs_document_scope)
+                                                    if intent_decision
+                                                    else False
+                                                ),
+                                                "rewritten_question": (
+                                                    intent_decision.rewritten_question
+                                                    if intent_decision
+                                                    else None
+                                                ),
+                                                "reason": (
+                                                    intent_decision.reason
+                                                    if intent_decision
+                                                    else None
+                                                ),
+                                                "document_scope_enabled": document_scope_enabled,
+                                                "complete_document_id": (
+                                                    normalized_document_scope.get("complete_document_id")
+                                                    if normalized_document_scope
+                                                    else None
+                                                ),
+                                            },
+                                        )
+                                    except Exception:
+                                        pass
+
+                                debug_id(
+                                    "[ChatOrchestrator] Intent pathway returned "
+                                    f"intent={intent_decision.intent.value} "
+                                    f"confidence={intent_decision.confidence:.2f} "
+                                    f"needs_current_session_memory={intent_decision.needs_current_session_memory} "
+                                    f"needs_semantic_chat_recall={intent_decision.needs_semantic_chat_recall} "
+                                    f"needs_document_scope={intent_decision.needs_document_scope} "
+                                    f"rewritten_question={intent_decision.rewritten_question!r} "
+                                    f"reason={intent_decision.reason!r}",
+                                    request_id,
                                 )
 
+                            except Exception as intent_error:
+                                warning_id(
+                                    "[ChatOrchestrator] Intent classification failed; "
+                                    "continuing as NEW_TOPIC. "
+                                    f"Error: {intent_error}",
+                                    request_id,
+                                    exc_info=True,
+                                )
+                                intent_decision = ChatIntentDecision.fallback_new_topic(
+                                    normalized_question
+                                )
+
+                            should_use_memory = self._should_use_memory_for_intent(
+                                intent_decision=intent_decision,
+                                document_scope_enabled=document_scope_enabled,
+                            )
+
+                            if should_use_memory:
+                                memory_context_text = self._build_memory_context_text(
+                                    chat_session=chat_session,
+                                )
+                                memory_context_used = bool(memory_context_text.strip())
+                            else:
+                                memory_context_text = ""
+                                memory_context_used = False
+
+                            memory_context_chars = len(memory_context_text or "")
+                            estimated_memory_tokens = (
+                                int(memory_context_chars / 4)
+                                if memory_context_chars
+                                else 0
+                            )
+
+                            session_messages = self._safe_list(
+                                getattr(chat_session, "session_data", None)
+                            )
+                            summary_items = self._safe_list(
+                                getattr(chat_session, "conversation_summary", None)
+                            )
+
                             debug_id(
-                                "[ChatOrchestrator] Intent pathway returned "
-                                f"intent={intent_decision.intent.value} "
-                                f"confidence={intent_decision.confidence:.2f} "
-                                f"needs_current_session_memory={intent_decision.needs_current_session_memory} "
-                                f"needs_semantic_chat_recall={intent_decision.needs_semantic_chat_recall} "
-                                f"needs_document_scope={intent_decision.needs_document_scope} "
-                                f"rewritten_question={intent_decision.rewritten_question!r} "
-                                f"reason={intent_decision.reason!r}",
-                                request_id,
-                            )
-
-                        except Exception as intent_error:
-                            warning_id(
-                                "[ChatOrchestrator] Intent classification failed; "
-                                "continuing as NEW_TOPIC. "
-                                f"Error: {intent_error}",
-                                request_id,
-                                exc_info=True,
-                            )
-                            intent_decision = ChatIntentDecision.fallback_new_topic(
-                                normalized_question
-                            )
-
-                        should_use_memory = self._should_use_memory_for_intent(
-                            intent_decision=intent_decision,
-                            document_scope_enabled=document_scope_enabled,
-                        )
-
-                        if should_use_memory:
-                            memory_context_text = self._build_memory_context_text(
-                                chat_session=chat_session,
-                            )
-                            memory_context_used = bool(memory_context_text.strip())
-                        else:
-                            memory_context_text = ""
-                            memory_context_used = False
-
-                        memory_context_chars = len(memory_context_text or "")
-                        estimated_memory_tokens = (
-                            int(memory_context_chars / 4)
-                            if memory_context_chars
-                            else 0
-                        )
-
-                        session_messages = self._safe_list(
-                            getattr(chat_session, "session_data", None)
-                        )
-                        summary_items = self._safe_list(
-                            getattr(chat_session, "conversation_summary", None)
-                        )
-
-                        debug_id(
-                            "[ChatOrchestrator] Intent-controlled memory decision "
-                            f"conversation_id={active_conversation_id} "
-                            f"created_session={created_session} "
-                            f"intent={intent_decision.intent.value if intent_decision else None} "
-                            f"should_use_memory={should_use_memory} "
-                            f"memory_context_used={memory_context_used} "
-                            f"memory_context_chars={memory_context_chars} "
-                            f"estimated_memory_tokens={estimated_memory_tokens} "
-                            f"session_messages_count={len(session_messages)} "
-                            f"summary_items_count={len(summary_items)} "
-                            f"document_scope_enabled={document_scope_enabled}",
-                            request_id,
-                        )
-
-                        if memory_context_text:
-                            debug_id(
-                                "[ChatOrchestrator] Conversation memory preview "
+                                "[ChatOrchestrator] Intent-controlled memory decision "
                                 f"conversation_id={active_conversation_id} "
-                                f"preview={memory_context_text[:1500]!r}",
+                                f"created_session={created_session} "
+                                f"conversation_enabled={normalized_conversation_enabled} "
+                                f"conversation_mode={conversation_mode} "
+                                f"intent={intent_decision.intent.value if intent_decision else None} "
+                                f"should_use_memory={should_use_memory} "
+                                f"memory_context_used={memory_context_used} "
+                                f"memory_context_chars={memory_context_chars} "
+                                f"estimated_memory_tokens={estimated_memory_tokens} "
+                                f"session_messages_count={len(session_messages)} "
+                                f"summary_items_count={len(summary_items)} "
+                                f"document_scope_enabled={document_scope_enabled}",
                                 request_id,
                             )
 
-                        self._touch_chat_session(chat_session)
+                            if memory_context_text:
+                                debug_id(
+                                    "[ChatOrchestrator] Conversation memory preview "
+                                    f"conversation_id={active_conversation_id} "
+                                    f"preview={memory_context_text[:1500]!r}",
+                                    request_id,
+                                )
 
-            except Exception as memory_error:
-                warning_id(
-                    "Chat memory preparation failed; answer generation will continue without memory: "
-                    f"{memory_error}",
-                    request_id,
-                    exc_info=True,
-                )
+                            self._touch_chat_session(chat_session)
 
-                active_conversation_id = normalized_conversation_id
-                memory_context_text = ""
-                memory_context_used = False
-                intent_decision = ChatIntentDecision.fallback_new_topic(
-                    normalized_question
-                )
+                except Exception as memory_error:
+                    warning_id(
+                        "Chat memory preparation failed; answer generation will continue without memory: "
+                        f"{memory_error}",
+                        request_id,
+                        exc_info=True,
+                    )
+
+                    active_conversation_id = normalized_conversation_id
+                    memory_context_text = ""
+                    memory_context_used = False
+                    intent_decision = ChatIntentDecision.fallback_new_topic(
+                        normalized_question
+                    )
 
             memory_time = time.perf_counter() - memory_start
 
@@ -311,6 +604,8 @@ class ChatOrchestrator(BaseOrchestrator):
                 f"original={normalized_question!r} "
                 f"question_for_ai={question_for_ai!r} "
                 f"intent={intent_decision.intent.value if intent_decision else None} "
+                f"conversation_enabled={normalized_conversation_enabled} "
+                f"conversation_mode={conversation_mode} "
                 f"memory_context_used={memory_context_used} "
                 f"document_scope_enabled={document_scope_enabled}",
                 request_id,
@@ -319,45 +614,66 @@ class ChatOrchestrator(BaseOrchestrator):
             with self.transaction() as session:
                 ai_result = None
 
-                # ------------------------------------------------------------
-                # Memory / recall pathway
-                # ------------------------------------------------------------
-                # This must run before normal AI/RAG execution.
-                #
-                # Old behavior:
-                #   Only RECALL_PRIOR_CONVERSATION entered recall cascade.
-                #
-                # Problem:
-                #   FOLLOW_UP_CURRENT_SESSION questions like "What's my name?"
-                #   loaded memory_context_text correctly, but still fell through
-                #   into document/manual RAG.
-                #
-                # Correct behavior:
-                #   If current-session memory is required and memory exists,
-                #   let the recall cascade answer from ChatSession memory first.
-                #
-                # Safety:
-                #   Do not run this branch during Ask This Document mode.
-                #   Selected-document scope should remain authoritative.
+                if (
+                    normalized_conversation_enabled
+                    and intent_decision
+                    and intent_decision.intent == ChatIntent.PERSONAL_MEMORY_UPDATE
+                ):
+                    with tracer.span(
+                        "chat.orchestrator.personal_memory_update_no_rag",
+                        meta={
+                            "request_id": request_id,
+                            "conversation_id": active_conversation_id,
+                            "conversation_enabled": normalized_conversation_enabled,
+                            "conversation_mode": conversation_mode,
+                            "user_id": normalized_user_id,
+                            "intent": intent_decision.intent.value,
+                            "intent_confidence": intent_decision.confidence,
+                            "document_scope_enabled": document_scope_enabled,
+                        },
+                    ):
+                        answer = self._build_personal_memory_update_acknowledgement(
+                            question_for_ai
+                        )
+
+                        ai_result = self._personal_memory_update_result(
+                            answer=answer,
+                            conversation_id=active_conversation_id,
+                        )
+
+                        memory_context_text = ""
+                        memory_context_used = False
+
+                        debug_id(
+                            "[ChatOrchestrator] Personal memory update handled without RAG",
+                            request_id,
+                        )
+
                 should_try_recall_cascade = False
 
-                if intent_decision and not document_scope_enabled:
+                # Narrow recall rule:
+                # Only true recall questions may bypass normal AI/RAG.
+                # FOLLOW_UP_CURRENT_SESSION can still pass memory as context,
+                # but it must not become memory-only retrieval.
+                #
+                # Conversation OFF must never run recall cascade.
+                if (
+                    normalized_conversation_enabled
+                    and ai_result is None
+                    and intent_decision
+                    and not document_scope_enabled
+                ):
                     if intent_decision.intent == ChatIntent.RECALL_PRIOR_CONVERSATION:
-                        should_try_recall_cascade = True
-
-                    elif (
-                        intent_decision.intent == ChatIntent.FOLLOW_UP_CURRENT_SESSION
-                        and bool(intent_decision.needs_current_session_memory)
-                        and bool((memory_context_text or "").strip())
-                    ):
                         should_try_recall_cascade = True
 
                 if should_try_recall_cascade:
                     with tracer.span(
-                        "recall_cascade",
+                        "chat.orchestrator.recall_cascade",
                         meta={
                             "request_id": request_id,
                             "conversation_id": active_conversation_id,
+                            "conversation_enabled": normalized_conversation_enabled,
+                            "conversation_mode": conversation_mode,
                             "memory_context_used": memory_context_used,
                             "memory_context_chars": len(memory_context_text or ""),
                             "user_id": normalized_user_id,
@@ -414,7 +730,7 @@ class ChatOrchestrator(BaseOrchestrator):
 
                 if ai_result is None:
                     with tracer.span(
-                        "ai_answer_execute",
+                        "chat.orchestrator.ai_answer_execute",
                         meta={
                             "user_id": normalized_user_id,
                             "client_type": normalized_client_type,
@@ -422,6 +738,8 @@ class ChatOrchestrator(BaseOrchestrator):
                             "include_payload": False,
                             "audit_pathway": self.AUDIT_PATHWAY_NAME,
                             "conversation_id": active_conversation_id,
+                            "conversation_enabled": normalized_conversation_enabled,
+                            "conversation_mode": conversation_mode,
                             "memory_context_used": memory_context_used,
                             "intent": (
                                 intent_decision.intent.value
@@ -472,8 +790,16 @@ class ChatOrchestrator(BaseOrchestrator):
 
             ai_result.setdefault("payload_status", "pending")
             ai_result["conversation_id"] = active_conversation_id
-            ai_result["memory_enabled"] = bool(active_conversation_id)
-            ai_result["memory_context_used"] = memory_context_used
+            ai_result["conversation_enabled"] = normalized_conversation_enabled
+            ai_result["conversation_mode"] = conversation_mode
+            ai_result["memory_enabled"] = (
+                bool(active_conversation_id)
+                and normalized_conversation_enabled
+            )
+            ai_result["memory_context_used"] = (
+                bool(memory_context_used)
+                and normalized_conversation_enabled
+            )
             ai_result["original_question"] = normalized_question
             ai_result["question_for_ai"] = question_for_ai
             ai_result["document_scope"] = (
@@ -485,6 +811,11 @@ class ChatOrchestrator(BaseOrchestrator):
                 self._normalize_document_scope(ai_result.get("document_scope"))
             )
 
+            if not normalized_conversation_enabled:
+                ai_result["conversation_id"] = None
+                ai_result["memory_enabled"] = False
+                ai_result["memory_context_used"] = False
+
             if intent_decision:
                 ai_result["intent"] = self._intent_decision_to_dict(intent_decision)
 
@@ -493,10 +824,12 @@ class ChatOrchestrator(BaseOrchestrator):
             try:
                 with self.transaction() as session:
                     with tracer.span(
-                        "persist_qanda_seed",
+                        "chat.orchestrator.persist_qanda_seed",
                         meta={
                             "request_id": request_id,
                             "conversation_id": active_conversation_id,
+                            "conversation_enabled": normalized_conversation_enabled,
+                            "conversation_mode": conversation_mode,
                             "document_scope_enabled": document_scope_enabled,
                             "complete_document_id": (
                                 normalized_document_scope.get("complete_document_id")
@@ -543,12 +876,14 @@ class ChatOrchestrator(BaseOrchestrator):
                     audit_start = time.perf_counter()
 
                     with tracer.span(
-                        "audit_answer_search_pathway",
+                        "chat.orchestrator.audit_answer_search_pathway",
                         meta={
                             "request_id": request_id,
                             "pathway_name": self.AUDIT_PATHWAY_NAME,
                             "qanda_id": str(qanda_id) if qanda_id else None,
                             "conversation_id": active_conversation_id,
+                            "conversation_enabled": normalized_conversation_enabled,
+                            "conversation_mode": conversation_mode,
                             "document_scope_enabled": document_scope_enabled,
                             "complete_document_id": (
                                 normalized_document_scope.get("complete_document_id")
@@ -595,14 +930,16 @@ class ChatOrchestrator(BaseOrchestrator):
 
             assistant_memory_start = time.perf_counter()
 
-            if active_conversation_id:
+            if normalized_conversation_enabled and active_conversation_id:
                 try:
                     with self.transaction() as session:
                         with tracer.span(
-                            "chat_memory_store_assistant_answer",
+                            "chat.orchestrator.memory_store_assistant_answer",
                             meta={
                                 "request_id": request_id,
                                 "conversation_id": active_conversation_id,
+                                "conversation_enabled": normalized_conversation_enabled,
+                                "conversation_mode": conversation_mode,
                                 "qanda_id": str(qanda_id) if qanda_id else None,
                                 "document_scope_enabled": document_scope_enabled,
                                 "complete_document_id": (
@@ -645,11 +982,13 @@ class ChatOrchestrator(BaseOrchestrator):
                 try:
                     with self.transaction() as session:
                         with tracer.span(
-                            "qanda_embedding_update",
+                            "chat.orchestrator.qanda_embedding_update",
                             meta={
                                 "request_id": request_id,
                                 "qanda_id": str(qanda_id),
                                 "conversation_id": active_conversation_id,
+                                "conversation_enabled": normalized_conversation_enabled,
+                                "conversation_mode": conversation_mode,
                                 "document_scope_enabled": document_scope_enabled,
                                 "complete_document_id": (
                                     normalized_document_scope.get("complete_document_id")
@@ -729,12 +1068,39 @@ class ChatOrchestrator(BaseOrchestrator):
                 audit_time=audit_time,
                 audit_summary=audit_summary,
                 qanda_id=qanda_id,
-                conversation_id=active_conversation_id,
-                memory_context_used=memory_context_used,
+                conversation_id=(
+                    active_conversation_id
+                    if normalized_conversation_enabled
+                    else None
+                ),
+                memory_context_used=(
+                    memory_context_used
+                    if normalized_conversation_enabled
+                    else False
+                ),
                 embeddings_updated=embeddings_updated,
                 document_scope=normalized_document_scope,
                 intent_decision=intent_decision,
+                conversation_enabled=normalized_conversation_enabled,
             )
+
+            response["conversation_enabled"] = normalized_conversation_enabled
+            response["conversation_mode"] = conversation_mode
+
+            if not normalized_conversation_enabled:
+                response["conversation_id"] = None
+                response["memory_enabled"] = False
+                response["memory_context_used"] = False
+
+                if isinstance(response.get("performance"), dict):
+                    response["performance"]["conversation_enabled"] = False
+                    response["performance"]["conversation_mode"] = "single_turn"
+                    response["performance"]["memory_enabled"] = False
+                    response["performance"]["memory_context_used"] = False
+            else:
+                if isinstance(response.get("performance"), dict):
+                    response["performance"]["conversation_enabled"] = True
+                    response["performance"]["conversation_mode"] = "conversation"
 
             self.audit_log_manager.log_run_success(
                 request_id=request_id or "unknown",
@@ -748,6 +1114,8 @@ class ChatOrchestrator(BaseOrchestrator):
                 f"(Memory: {memory_time:.3f}s | AI: {ai_time:.3f}s | "
                 f"Persist seed: {persist_time:.3f}s | "
                 f"Embeddings: {embedding_time:.3f}s | Audit: {audit_time:.3f}s | "
+                f"conversation_enabled={normalized_conversation_enabled} | "
+                f"conversation_mode={conversation_mode} | "
                 f"conversation_id={active_conversation_id} | "
                 f"memory_context_used={memory_context_used} | "
                 f"intent={intent_decision.intent.value if intent_decision else None} | "
@@ -778,9 +1146,13 @@ class ChatOrchestrator(BaseOrchestrator):
                 exc_info=True,
             )
 
-            return self._error_response(
+            error_response = self._error_response(
                 request_id=request_id,
-                conversation_id=active_conversation_id or normalized_conversation_id,
+                conversation_id=(
+                    active_conversation_id
+                    if normalized_conversation_enabled
+                    else None
+                ),
                 total_time=total_time,
                 memory_time=memory_time,
                 ai_time=ai_time,
@@ -789,7 +1161,24 @@ class ChatOrchestrator(BaseOrchestrator):
                 audit_time=audit_time,
                 document_scope=normalized_document_scope,
                 intent_decision=intent_decision,
+                conversation_enabled=normalized_conversation_enabled,
             )
+
+            error_response["conversation_enabled"] = normalized_conversation_enabled
+            error_response["conversation_mode"] = conversation_mode
+
+            if not normalized_conversation_enabled:
+                error_response["conversation_id"] = None
+                error_response["memory_enabled"] = False
+                error_response["memory_context_used"] = False
+
+                if isinstance(error_response.get("performance"), dict):
+                    error_response["performance"]["conversation_enabled"] = False
+                    error_response["performance"]["conversation_mode"] = "single_turn"
+                    error_response["performance"]["memory_enabled"] = False
+                    error_response["performance"]["memory_context_used"] = False
+
+            return error_response
 
     def _execute_ai_service(
         self,
@@ -851,23 +1240,9 @@ class ChatOrchestrator(BaseOrchestrator):
             if normalized_conversation_id and supports_conversation_id:
                 execute_kwargs["conversation_id"] = normalized_conversation_id
 
-                debug_id(
-                    "[ChatOrchestrator] Passing conversation_id to AI service "
-                    f"request_id={request_id} "
-                    f"conversation_id={normalized_conversation_id}",
-                    request_id,
-                )
-
             if normalized_document_scope:
                 if supports_document_scope:
                     execute_kwargs["document_scope"] = normalized_document_scope
-
-                    debug_id(
-                        "[ChatOrchestrator] Passing document_scope to AI service "
-                        f"complete_document_id={normalized_document_scope.get('complete_document_id')}",
-                        request_id,
-                    )
-
                 else:
                     warning_id(
                         "[ChatOrchestrator] document_scope active but "
@@ -880,26 +1255,8 @@ class ChatOrchestrator(BaseOrchestrator):
             if memory_context_text:
                 if supports_memory_context:
                     execute_kwargs["memory_context"] = memory_context_text
-
-                    debug_id(
-                        "[ChatOrchestrator] Passing conversational memory as memory_context "
-                        f"request_id={request_id} "
-                        f"conversation_id={normalized_conversation_id} "
-                        f"memory_context_chars={len(memory_context_text)}",
-                        request_id,
-                    )
-
                 elif supports_conversation_context:
                     execute_kwargs["conversation_context"] = memory_context_text
-
-                    debug_id(
-                        "[ChatOrchestrator] Passing conversational memory as conversation_context "
-                        f"request_id={request_id} "
-                        f"conversation_id={normalized_conversation_id} "
-                        f"memory_context_chars={len(memory_context_text)}",
-                        request_id,
-                    )
-
                 else:
                     execute_kwargs["question"] = self._build_memory_augmented_question(
                         question=question,
@@ -929,17 +1286,6 @@ class ChatOrchestrator(BaseOrchestrator):
                 execute_kwargs["question"] = self._build_memory_augmented_question(
                     question=question,
                     memory_context_text=memory_context_text,
-                )
-
-                warning_id(
-                    "[ChatOrchestrator] Could not inspect AI service signature. "
-                    "Using memory-augmented question compatibility fallback. "
-                    f"request_id={request_id} "
-                    f"conversation_id={normalized_conversation_id} "
-                    f"memory_context_chars={len(memory_context_text)} "
-                    f"augmented_question_chars={len(str(execute_kwargs.get('question') or ''))}",
-                    request_id,
-                    exc_info=True,
                 )
 
         try:
@@ -992,13 +1338,6 @@ class ChatOrchestrator(BaseOrchestrator):
                             memory_context_text=memory_context_text,
                         )
 
-                    debug_id(
-                        "[ChatOrchestrator] AI service retry kwargs "
-                        f"request_id={request_id} "
-                        f"execute_keys={sorted(execute_kwargs.keys())}",
-                        request_id,
-                    )
-
                     return self.ai_service.execute(**execute_kwargs)
 
             raise
@@ -1025,11 +1364,15 @@ class ChatOrchestrator(BaseOrchestrator):
             return ""
 
         recall_question = (
-            "Answer the user's question using ONLY the conversation memory provided. "
-            "The memory is the authoritative record of this conversation. "
-            "If the memory only contains the user's recall question itself, or if it does "
-            "not contain enough prior conversation to answer, reply with exactly: "
+            "Answer the user's question using ONLY the conversation memory provided.\n"
+            "The memory is only valid for user-stated facts and prior conversation history.\n\n"
+            "Return exactly this sentinel if the memory does not directly answer the question:\n"
             f"{self.RECALL_SESSION_SENTINEL}\n\n"
+            "Do NOT give general troubleshooting guidance.\n"
+            "Do NOT guess causes.\n"
+            "Do NOT say 'however'.\n"
+            "Do NOT use general maintenance knowledge.\n"
+            "Do NOT answer equipment troubleshooting questions unless the exact answer is stated in memory.\n\n"
             f"User question:\n{question}"
         )
 
@@ -1055,6 +1398,32 @@ class ChatOrchestrator(BaseOrchestrator):
         if self.RECALL_SESSION_SENTINEL in answer:
             return ""
 
+        answer_lower = answer.lower()
+
+        weak_memory_answer_fragments = [
+            "the context does not provide",
+            "the context does not contain",
+            "the memory does not provide",
+            "the memory does not contain",
+            "does not provide information",
+            "does not mention",
+            "not enough information",
+            "insufficient information",
+            "however,",
+            "however ",
+            "general guidance",
+            "consult the user manual",
+            "contact technical support",
+        ]
+
+        if any(fragment in answer_lower for fragment in weak_memory_answer_fragments):
+            debug_id(
+                "[ChatOrchestrator] Session memory recall rejected weak/non-authoritative answer. "
+                f"answer_preview={answer[:300]!r}",
+                request_id,
+            )
+            return ""
+
         return answer
 
     def _recall_result(
@@ -1065,11 +1434,13 @@ class ChatOrchestrator(BaseOrchestrator):
         conversation_id: Optional[str],
     ) -> Dict[str, Any]:
 
+        normalized_strategy = (strategy or "recall_session_memory").strip()
+
         return {
             "status": "success",
-            "strategy": strategy,
-            "method": strategy,
-            "answer": answer,
+            "strategy": normalized_strategy,
+            "method": normalized_strategy,
+            "answer": answer or "",
             "chunks": [],
             "used_chunks": [],
             "documents": [],
@@ -1077,7 +1448,8 @@ class ChatOrchestrator(BaseOrchestrator):
             "drawings": [],
             "parts": [],
             "relationship_map": {},
-            "payload_status": "pending",
+            "payload_status": "not_applicable",
+            "payload_endpoint": None,
             "retriever_top_k": None,
             "query_embedding": [],
             "conversation_id": conversation_id,
@@ -1088,22 +1460,25 @@ class ChatOrchestrator(BaseOrchestrator):
             "document_scope_enabled": False,
             "document_scope_mode": "none",
             "model_name": "conversation_recall",
+            "blocks": {
+                "documents-container": [],
+                "parts-container": [],
+                "images-container": [],
+                "drawings-container": [],
+            },
         }
 
     def _handle_recall_cascade(
-            self,
-            *,
-            session,
-            question_for_ai: str,
-            memory_context_text: str,
-            conversation_id: Optional[str],
-            user_id: str,
-            request_id: Optional[str],
+        self,
+        *,
+        session,
+        question_for_ai: str,
+        memory_context_text: str,
+        conversation_id: Optional[str],
+        user_id: str,
+        request_id: Optional[str],
     ) -> Optional[Dict[str, Any]]:
 
-        # --------------------------------------------------
-        # 1. Current ChatSession memory recall
-        # --------------------------------------------------
         answer = self._answer_from_session_memory(
             question=question_for_ai,
             memory_context_text=memory_context_text,
@@ -1128,9 +1503,6 @@ class ChatOrchestrator(BaseOrchestrator):
             request_id,
         )
 
-        # --------------------------------------------------
-        # 2. Cross-session QandA semantic recall
-        # --------------------------------------------------
         answer = self._semantic_recall_qanda(
             session=session,
             question=question_for_ai,
@@ -1150,9 +1522,6 @@ class ChatOrchestrator(BaseOrchestrator):
                 conversation_id=conversation_id,
             )
 
-        # --------------------------------------------------
-        # 3. No memory recall match; caller falls back to RAG
-        # --------------------------------------------------
         debug_id(
             "[ChatOrchestrator] Recall cascade exhausted. "
             "No ChatSession memory answer and no QandA semantic recall answer. "
@@ -1287,6 +1656,7 @@ class ChatOrchestrator(BaseOrchestrator):
             ChatIntent.CLARIFICATION,
             ChatIntent.DOCUMENT_SCOPED_FOLLOW_UP,
             ChatIntent.RECALL_PRIOR_CONVERSATION,
+            ChatIntent.PERSONAL_MEMORY_UPDATE,
         }:
             return rewritten
 
@@ -1301,54 +1671,12 @@ class ChatOrchestrator(BaseOrchestrator):
         request_id: Optional[str],
     ) -> Tuple[ChatSession, bool]:
 
-        parsed_conversation_id = self._coerce_uuid_or_none(conversation_id)
-
-        if parsed_conversation_id is not None:
-            existing_session = session.get(ChatSession, parsed_conversation_id)
-
-            if existing_session is not None:
-                existing_user_id = str(getattr(existing_session, "user_id", "") or "")
-                requested_user_id = str(user_id or "")
-
-                if existing_user_id == requested_user_id:
-                    return existing_session, False
-
-                warning_id(
-                    "[ChatOrchestrator] Conversation ID belongs to a different user. "
-                    f"incoming_conversation_id={conversation_id} "
-                    f"existing_user_id={existing_user_id} requested_user_id={requested_user_id}. "
-                    "Creating a new ChatSession.",
-                    request_id,
-                )
-
-            else:
-                warning_id(
-                    "[ChatOrchestrator] Conversation ID was supplied but no ChatSession was found. "
-                    f"incoming_conversation_id={conversation_id}. Creating a new ChatSession.",
-                    request_id,
-                )
-
-        elif conversation_id:
-            warning_id(
-                f"[ChatOrchestrator] Invalid conversation_id supplied: {conversation_id!r}. "
-                "Creating a new ChatSession.",
-                request_id,
-            )
-
-        now = self._utc_iso()
-
-        chat_session = ChatSession(
-            user_id=str(user_id or "anonymous"),
-            start_time=now,
-            last_interaction=now,
-            session_data=[],
-            conversation_summary=[],
+        return self.chat_session_memory_service.get_or_create_chat_session(
+            session=session,
+            conversation_id=conversation_id,
+            user_id=user_id,
+            request_id=request_id,
         )
-
-        session.add(chat_session)
-        session.flush()
-
-        return chat_session, True
 
     def _store_assistant_memory(
         self,
@@ -1364,61 +1692,17 @@ class ChatOrchestrator(BaseOrchestrator):
         intent_decision: Optional[ChatIntentDecision] = None,
     ) -> None:
 
-        parsed_conversation_id = self._coerce_uuid_or_none(conversation_id)
-        normalized_document_scope = self._normalize_document_scope(document_scope)
-
-        if parsed_conversation_id is None:
-            warning_id(
-                "[ChatOrchestrator] Cannot store assistant memory because conversation_id "
-                f"is invalid: {conversation_id!r}",
-                request_id,
-            )
-            return
-
-        chat_session = session.get(ChatSession, parsed_conversation_id)
-
-        if chat_session is None:
-            warning_id(
-                "[ChatOrchestrator] Cannot store assistant memory because ChatSession "
-                f"was not found. conversation_id={conversation_id}",
-                request_id,
-            )
-            return
-
-        self._append_chat_message(
-            chat_session=chat_session,
-            role="assistant",
-            content=answer or "",
-            request_id=request_id,
-            metadata={
-                "client_type": client_type,
-                "qanda_id": str(qanda_id) if qanda_id else None,
-                "document_scope": normalized_document_scope,
-                "document_scope_enabled": bool(normalized_document_scope),
-                "intent": (
-                    self._intent_decision_to_dict(intent_decision)
-                    if intent_decision
-                    else None
-                ),
-            },
-        )
-
-        self._append_conversation_summary_item(
-            chat_session=chat_session,
+        self.chat_session_memory_service.store_assistant_memory(
+            session=session,
+            conversation_id=conversation_id,
+            answer=answer,
             question=question,
-            answer=answer or "",
             request_id=request_id,
             qanda_id=qanda_id,
-            document_scope=normalized_document_scope,
+            client_type=client_type,
+            document_scope=document_scope,
             intent_decision=intent_decision,
         )
-
-        self._update_chat_session_summary_embedding(
-            chat_session=chat_session,
-            request_id=request_id,
-        )
-
-        self._touch_chat_session(chat_session)
 
     def _append_chat_message(
         self,
@@ -1430,22 +1714,13 @@ class ChatOrchestrator(BaseOrchestrator):
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
 
-        messages = self._safe_list(getattr(chat_session, "session_data", None))
-
-        messages.append(
-            {
-                "role": role,
-                "content": content or "",
-                "request_id": request_id,
-                "created_at": self._utc_iso(),
-                "metadata": metadata or {},
-            }
+        self.chat_session_memory_service.append_chat_message(
+            chat_session=chat_session,
+            role=role,
+            content=content,
+            request_id=request_id,
+            metadata=metadata,
         )
-
-        if len(messages) > self.CHAT_SESSION_MAX_MESSAGES:
-            messages = messages[-self.CHAT_SESSION_MAX_MESSAGES:]
-
-        chat_session.session_data = messages
 
     def _append_conversation_summary_item(
         self,
@@ -1459,33 +1734,15 @@ class ChatOrchestrator(BaseOrchestrator):
         intent_decision: Optional[ChatIntentDecision] = None,
     ) -> None:
 
-        normalized_document_scope = self._normalize_document_scope(document_scope)
-        summaries = self._safe_list(getattr(chat_session, "conversation_summary", None))
-
-        summaries.append(
-            {
-                "request_id": request_id,
-                "qanda_id": str(qanda_id) if qanda_id else None,
-                "created_at": self._utc_iso(),
-                "question": self._preview_text(question, self.MEMORY_PREVIEW_CHARS),
-                "answer_preview": self._preview_text(
-                    answer,
-                    self.SUMMARY_ANSWER_PREVIEW_CHARS,
-                ),
-                "document_scope": normalized_document_scope,
-                "document_scope_enabled": bool(normalized_document_scope),
-                "intent": (
-                    self._intent_decision_to_dict(intent_decision)
-                    if intent_decision
-                    else None
-                ),
-            }
+        self.chat_session_memory_service.append_conversation_summary_item(
+            chat_session=chat_session,
+            question=question,
+            answer=answer,
+            request_id=request_id,
+            qanda_id=qanda_id,
+            document_scope=document_scope,
+            intent_decision=intent_decision,
         )
-
-        if len(summaries) > self.SUMMARY_MAX_ITEMS:
-            summaries = summaries[-self.SUMMARY_MAX_ITEMS:]
-
-        chat_session.conversation_summary = summaries
 
     def _update_chat_session_summary_embedding(
         self,
@@ -1494,67 +1751,10 @@ class ChatOrchestrator(BaseOrchestrator):
         request_id: Optional[str],
     ) -> bool:
 
-        summaries = self._safe_list(getattr(chat_session, "conversation_summary", None))
-
-        summary_text = "\n\n".join(
-            (
-                f"Question: {str(item.get('question') or '').strip()}\n"
-                f"Answer: {str(item.get('answer_preview') or '').strip()}"
-            )
-            for item in summaries
-            if isinstance(item, dict)
-            and (
-                str(item.get("question") or "").strip()
-                or str(item.get("answer_preview") or "").strip()
-            )
-        ).strip()
-
-        if not summary_text:
-            chat_session.summary_embedding = None
-            warning_id(
-                "[ChatOrchestrator] Chat session summary embedding skipped because summary text is empty. "
-                f"conversation_id={getattr(chat_session, 'session_id', None)}",
-                request_id,
-            )
-            return False
-
-        try:
-            embedding = self.qanda_embedding_service.embed_text(
-                text=summary_text,
-                request_id=request_id,
-            )
-
-            if not embedding:
-                warning_id(
-                    "[ChatOrchestrator] Chat session summary embedding returned empty. "
-                    f"conversation_id={getattr(chat_session, 'session_id', None)} "
-                    f"summary_items={len(summaries)} "
-                    f"summary_text_chars={len(summary_text)}",
-                    request_id,
-                )
-                return False
-
-            chat_session.summary_embedding = embedding
-
-            info_id(
-                "[ChatOrchestrator] Chat session summary embedding updated "
-                f"conversation_id={chat_session.session_id} "
-                f"summary_items={len(summaries)} "
-                f"summary_text_chars={len(summary_text)} "
-                f"embedding_dims={len(embedding)}",
-                request_id,
-            )
-
-            return True
-
-        except Exception as exc:
-            error_id(
-                "[ChatOrchestrator] Failed to update chat session summary embedding: "
-                f"{type(exc).__name__}: {exc}",
-                request_id,
-                exc_info=True,
-            )
-            return False
+        return self.chat_session_memory_service.update_chat_session_summary_embedding(
+            chat_session=chat_session,
+            request_id=request_id,
+        )
 
     def _build_memory_context_text(
         self,
@@ -1562,97 +1762,10 @@ class ChatOrchestrator(BaseOrchestrator):
         chat_session: ChatSession,
     ) -> str:
 
-        sections: List[str] = []
-
-        summaries = self._safe_list(getattr(chat_session, "conversation_summary", None))
-        recent_summaries = summaries[-self.MEMORY_SUMMARY_LIMIT:]
-
-        if recent_summaries:
-            rendered_summary_items: List[str] = []
-
-            for item in recent_summaries:
-                if not isinstance(item, dict):
-                    continue
-
-                question = self._preview_text(
-                    str(item.get("question") or ""),
-                    self.MEMORY_PREVIEW_CHARS,
-                )
-                answer_preview = self._preview_text(
-                    str(item.get("answer_preview") or ""),
-                    self.MEMORY_PREVIEW_CHARS,
-                )
-
-                summary_scope = self._normalize_document_scope(
-                    item.get("document_scope")
-                )
-
-                scope_line = ""
-                if summary_scope:
-                    scope_line = (
-                        f"\n  Prior document scope: "
-                        f"{summary_scope.get('document_name')} "
-                        f"(complete_document_id={summary_scope.get('complete_document_id')})"
-                    )
-
-                if question or answer_preview:
-                    rendered_summary_items.append(
-                        f"- Prior question: {question}\n"
-                        f"  Prior answer summary: {answer_preview}"
-                        f"{scope_line}"
-                    )
-
-            if rendered_summary_items:
-                sections.append(
-                    "Rolling conversation summary:\n"
-                    + "\n".join(rendered_summary_items)
-                )
-
-        if self.MEMORY_RECENT_MESSAGE_LIMIT > 0:
-            messages = self._safe_list(getattr(chat_session, "session_data", None))
-            recent_messages = messages[-self.MEMORY_RECENT_MESSAGE_LIMIT:]
-        else:
-            recent_messages = []
-
-        if recent_messages:
-            rendered_messages: List[str] = []
-
-            for item in recent_messages:
-                if not isinstance(item, dict):
-                    continue
-
-                role = str(item.get("role") or "unknown").strip() or "unknown"
-                content = self._preview_text(
-                    str(item.get("content") or ""),
-                    self.MEMORY_PREVIEW_CHARS,
-                )
-
-                metadata = (
-                    item.get("metadata")
-                    if isinstance(item.get("metadata"), dict)
-                    else {}
-                )
-                message_scope = self._normalize_document_scope(
-                    metadata.get("document_scope")
-                )
-
-                scope_suffix = ""
-                if message_scope:
-                    scope_suffix = (
-                        f" [document_scope={message_scope.get('document_name')} "
-                        f"complete_document_id={message_scope.get('complete_document_id')}]"
-                    )
-
-                if content:
-                    rendered_messages.append(f"{role}{scope_suffix}: {content}")
-
-            if rendered_messages:
-                sections.append(
-                    "Recent conversation messages:\n"
-                    + "\n".join(rendered_messages)
-                )
-
-        return "\n\n".join(sections).strip()
+        return self.chat_session_memory_service.build_memory_context_text(
+            chat_session=chat_session,
+            exclude_last_user_message=True,
+        )
 
     @staticmethod
     def _build_memory_augmented_question(
@@ -1780,13 +1893,101 @@ class ChatOrchestrator(BaseOrchestrator):
         embeddings_updated: bool = False,
         document_scope: Optional[Dict[str, Any]] = None,
         intent_decision: Optional[ChatIntentDecision] = None,
+        conversation_enabled: Optional[bool] = None,
     ) -> Dict[str, Any]:
 
-        method = ai_result.get("method") or ai_result.get("strategy") or self.DEFAULT_METHOD
+        method = (
+            ai_result.get("method")
+            or ai_result.get("strategy")
+            or self.DEFAULT_METHOD
+        )
         strategy = ai_result.get("strategy") or method
-        normalized_document_scope = (
-            self._normalize_document_scope(ai_result.get("document_scope"))
-            or self._normalize_document_scope(document_scope)
+
+        payload_status = (
+            str(ai_result.get("payload_status") or "pending").strip()
+            or "pending"
+        )
+
+        if payload_status == "not_applicable":
+            payload_endpoint = None
+        else:
+            payload_endpoint = ai_result.get("payload_endpoint") or "/ask/payload"
+
+        raw_conversation_mode = str(
+            ai_result.get("conversation_mode")
+            or ai_result.get("conversationMode")
+            or ""
+        ).strip().lower()
+
+        raw_conversation_enabled = ai_result.get(
+            "conversation_enabled",
+            ai_result.get("conversationEnabled", conversation_enabled),
+        )
+
+        if raw_conversation_mode in {
+            "single_turn",
+            "single-turn",
+            "new_topic",
+            "new-topic",
+            "off",
+            "disabled",
+        }:
+            normalized_conversation_enabled = False
+        elif isinstance(raw_conversation_enabled, bool):
+            normalized_conversation_enabled = raw_conversation_enabled
+        elif raw_conversation_enabled is None:
+            normalized_conversation_enabled = bool(conversation_id)
+        else:
+            enabled_text = str(raw_conversation_enabled).strip().lower()
+
+            if enabled_text in {"0", "false", "no", "n", "off", "disabled"}:
+                normalized_conversation_enabled = False
+            elif enabled_text in {"1", "true", "yes", "y", "on", "enabled"}:
+                normalized_conversation_enabled = True
+            else:
+                normalized_conversation_enabled = bool(conversation_id)
+
+        normalized_conversation_mode = (
+            "conversation"
+            if normalized_conversation_enabled
+            else "single_turn"
+        )
+
+        normalized_conversation_id = (
+            conversation_id
+            if normalized_conversation_enabled
+            else None
+        )
+
+        normalized_memory_enabled = (
+            bool(normalized_conversation_id)
+            and normalized_conversation_enabled
+        )
+
+        normalized_memory_context_used = (
+            bool(memory_context_used)
+            and normalized_conversation_enabled
+        )
+
+        ai_document_scope = self._normalize_document_scope(
+            ai_result.get("document_scope")
+        )
+
+        if (
+            ai_result.get("document_scope_enabled") is False
+            and ai_document_scope is None
+        ):
+            normalized_document_scope = None
+        else:
+            normalized_document_scope = (
+                ai_document_scope
+                or self._normalize_document_scope(document_scope)
+            )
+
+        intent_payload = (
+            self._intent_decision_to_dict(intent_decision)
+            if intent_decision
+            else None
         )
 
         response: Dict[str, Any] = {
@@ -1795,35 +1996,33 @@ class ChatOrchestrator(BaseOrchestrator):
             "method": method,
             "strategy": strategy,
             "request_id": request_id,
-            "conversation_id": conversation_id,
+            "conversation_id": normalized_conversation_id,
+            "conversation_enabled": normalized_conversation_enabled,
+            "conversation_mode": normalized_conversation_mode,
             "document_scope": normalized_document_scope,
             "document_scope_enabled": bool(normalized_document_scope),
-            "intent": (
-                self._intent_decision_to_dict(intent_decision)
-                if intent_decision
-                else None
-            ),
+            "intent": intent_payload,
             "qanda_id": str(qanda_id) if qanda_id else None,
             "response_time": total_time,
-            "payload_status": "pending",
-            "payload_endpoint": "/ask/payload",
+            "payload_status": payload_status,
+            "payload_endpoint": payload_endpoint,
             "debug_mode": bool(ai_result.get("debug_mode", False)),
             "debug_chunk_id": ai_result.get("debug_chunk_id"),
             "retriever_top_k": ai_result.get("retriever_top_k"),
             "used_chunks_count": len(ai_result.get("used_chunks") or []),
-            "memory_enabled": bool(conversation_id),
-            "memory_context_used": bool(memory_context_used),
+            "memory_enabled": normalized_memory_enabled,
+            "memory_context_used": normalized_memory_context_used,
             "embeddings_updated": bool(embeddings_updated),
-            "blocks": {
+            "blocks": ai_result.get("blocks") or {
                 "documents-container": [],
                 "parts-container": [],
                 "images-container": [],
                 "drawings-container": [],
             },
-            "documents": [],
-            "parts": [],
-            "images": [],
-            "drawings": [],
+            "documents": ai_result.get("documents") or [],
+            "parts": ai_result.get("parts") or [],
+            "images": ai_result.get("images") or [],
+            "drawings": ai_result.get("drawings") or [],
         }
 
         if client_type == "debug":
@@ -1838,8 +2037,11 @@ class ChatOrchestrator(BaseOrchestrator):
                 "strategy": strategy,
                 "debug_mode": response["debug_mode"],
                 "debug_chunk_id": response["debug_chunk_id"],
-                "memory_enabled": bool(conversation_id),
-                "memory_context_used": bool(memory_context_used),
+                "conversation_enabled": normalized_conversation_enabled,
+                "conversation_mode": normalized_conversation_mode,
+                "conversation_id": normalized_conversation_id,
+                "memory_enabled": normalized_memory_enabled,
+                "memory_context_used": normalized_memory_context_used,
                 "embeddings_updated": bool(embeddings_updated),
                 "document_scope_enabled": bool(normalized_document_scope),
                 "complete_document_id": (
@@ -1847,11 +2049,9 @@ class ChatOrchestrator(BaseOrchestrator):
                     if normalized_document_scope
                     else None
                 ),
-                "intent": (
-                    self._intent_decision_to_dict(intent_decision)
-                    if intent_decision
-                    else None
-                ),
+                "payload_status": payload_status,
+                "payload_endpoint": payload_endpoint,
+                "intent": intent_payload,
             }
 
             response["audit"] = {
@@ -1866,14 +2066,15 @@ class ChatOrchestrator(BaseOrchestrator):
                 "memory_time": memory_time,
                 "method": method,
                 "strategy": strategy,
-                "memory_enabled": bool(conversation_id),
-                "memory_context_used": bool(memory_context_used),
+                "conversation_enabled": normalized_conversation_enabled,
+                "conversation_mode": normalized_conversation_mode,
+                "conversation_id": normalized_conversation_id,
+                "memory_enabled": normalized_memory_enabled,
+                "memory_context_used": normalized_memory_context_used,
                 "document_scope_enabled": bool(normalized_document_scope),
-                "intent": (
-                    self._intent_decision_to_dict(intent_decision)
-                    if intent_decision
-                    else None
-                ),
+                "payload_status": payload_status,
+                "payload_endpoint": payload_endpoint,
+                "intent": intent_payload,
             }
 
         return response
@@ -1891,9 +2092,29 @@ class ChatOrchestrator(BaseOrchestrator):
         audit_time: float,
         document_scope: Optional[Dict[str, Any]] = None,
         intent_decision: Optional[ChatIntentDecision] = None,
+        conversation_enabled: bool = True,
     ) -> Dict[str, Any]:
 
+        normalized_conversation_enabled = bool(conversation_enabled)
+        normalized_conversation_mode = (
+            "conversation"
+            if normalized_conversation_enabled
+            else "single_turn"
+        )
+
+        normalized_conversation_id = (
+            conversation_id
+            if normalized_conversation_enabled
+            else None
+        )
+
         normalized_document_scope = self._normalize_document_scope(document_scope)
+
+        intent_payload = (
+            self._intent_decision_to_dict(intent_decision)
+            if intent_decision
+            else None
+        )
 
         return {
             "status": "error",
@@ -1901,21 +2122,22 @@ class ChatOrchestrator(BaseOrchestrator):
             "method": "error",
             "strategy": "error",
             "request_id": request_id,
-            "conversation_id": conversation_id,
+            "conversation_id": normalized_conversation_id,
+            "conversation_enabled": normalized_conversation_enabled,
+            "conversation_mode": normalized_conversation_mode,
             "document_scope": normalized_document_scope,
             "document_scope_enabled": bool(normalized_document_scope),
-            "intent": (
-                self._intent_decision_to_dict(intent_decision)
-                if intent_decision
-                else None
-            ),
+            "intent": intent_payload,
             "qanda_id": None,
             "response_time": total_time,
             "payload_status": "unavailable",
             "payload_endpoint": None,
             "debug_mode": False,
             "debug_chunk_id": None,
-            "memory_enabled": bool(conversation_id),
+            "memory_enabled": (
+                bool(normalized_conversation_id)
+                and normalized_conversation_enabled
+            ),
             "memory_context_used": False,
             "embeddings_updated": False,
             "blocks": {
@@ -1939,12 +2161,21 @@ class ChatOrchestrator(BaseOrchestrator):
                 "audit_time": audit_time,
                 "method": "error",
                 "strategy": "error",
+                "conversation_enabled": normalized_conversation_enabled,
+                "conversation_mode": normalized_conversation_mode,
+                "conversation_id": normalized_conversation_id,
+                "memory_enabled": (
+                    bool(normalized_conversation_id)
+                    and normalized_conversation_enabled
+                ),
+                "memory_context_used": False,
                 "document_scope_enabled": bool(normalized_document_scope),
-                "intent": (
-                    self._intent_decision_to_dict(intent_decision)
-                    if intent_decision
+                "complete_document_id": (
+                    normalized_document_scope.get("complete_document_id")
+                    if normalized_document_scope
                     else None
                 ),
+                "intent": intent_payload,
             },
         }
 
@@ -2123,12 +2354,12 @@ class ChatOrchestrator(BaseOrchestrator):
             return None
 
     def _semantic_recall_qanda(
-            self,
-            *,
-            session,
-            question: str,
-            user_id: str,
-            request_id: Optional[str],
+        self,
+        *,
+        session,
+        question: str,
+        user_id: str,
+        request_id: Optional[str],
     ) -> str:
 
         question = (question or "").strip()
@@ -2210,8 +2441,8 @@ class ChatOrchestrator(BaseOrchestrator):
             return ""
 
         recall_context = (
-                "Prior recalled QandA records:\n\n"
-                + "\n\n---\n\n".join(rendered_items)
+            "Prior recalled QandA records:\n\n"
+            + "\n\n---\n\n".join(rendered_items)
         )
 
         recall_question = (
@@ -2253,3 +2484,134 @@ class ChatOrchestrator(BaseOrchestrator):
         )
 
         return answer
+
+    def _personal_memory_update_result(
+        self,
+        *,
+        answer: str,
+        conversation_id: Optional[str],
+    ) -> Dict[str, Any]:
+        return {
+            "status": "success",
+            "strategy": "chat.orchestrator.personal_memory_update_no_rag",
+            "method": "chat.orchestrator.personal_memory_update_no_rag",
+            "answer": answer,
+            "chunks": [],
+            "used_chunks": [],
+            "documents": [],
+            "images": [],
+            "drawings": [],
+            "parts": [],
+            "relationship_map": {},
+            "payload_status": "not_applicable",
+            "retriever_top_k": None,
+            "query_embedding": [],
+            "conversation_id": conversation_id,
+            "memory_enabled": bool(conversation_id),
+            "memory_context_used": False,
+            "memory_context_mode": "personal_memory_update",
+            "document_scope": None,
+            "document_scope_enabled": False,
+            "document_scope_mode": "none",
+            "model_name": "conversation_memory_update",
+            "blocks": {
+                "documents-container": [],
+                "parts-container": [],
+                "images-container": [],
+                "drawings-container": [],
+            },
+        }
+
+    def _build_personal_memory_update_acknowledgement(self, question: str) -> str:
+        q = (question or "").strip()
+
+        name_patterns = [
+            r"^\s*(?:hi|hello|hey)?\s*,?\s*my\s+name\s+is\s+(.+?)\s*[.!]?\s*$",
+            r"^\s*call\s+me\s+(.+?)\s*[.!]?\s*$",
+            r"^\s*you\s+can\s+call\s+me\s+(.+?)\s*[.!]?\s*$",
+            r"^\s*remember\s+(?:that\s+)?my\s+name\s+is\s+(.+?)\s*[.!]?\s*$",
+        ]
+
+        for pattern in name_patterns:
+            match = re.match(pattern, q, flags=re.IGNORECASE)
+            if match:
+                name = self._clean_memory_value(match.group(1))
+                if name:
+                    return f"Nice to meet you, {name}."
+
+        work_match = re.match(
+            r"^\s*i\s+work\s+(?:on|in)\s+(.+?)\s*[.!]?\s*$",
+            q,
+            flags=re.IGNORECASE,
+        )
+        if work_match:
+            area = self._clean_memory_value(work_match.group(1), title_case=False)
+            if area:
+                return f"Got it — you work in {area}."
+
+        shift_match = re.match(
+            r"^\s*i(?:\s+am|'m)\s+on\s+(.+?)\s*[.!]?\s*$",
+            q,
+            flags=re.IGNORECASE,
+        )
+        if shift_match:
+            shift = self._clean_memory_value(shift_match.group(1), title_case=False)
+            if shift:
+                return f"Got it — you are on {shift}."
+
+        working_match = re.match(
+            r"^\s*i(?:\s+am|'m)\s+working\s+on\s+(.+?)\s*[.!]?\s*$",
+            q,
+            flags=re.IGNORECASE,
+        )
+        if working_match:
+            item = self._clean_memory_value(working_match.group(1), title_case=False)
+            if item:
+                return f"Got it — you are working on {item}."
+
+        troubleshooting_match = re.match(
+            r"^\s*i(?:\s+am|'m)\s+troubleshooting\s+(.+?)\s*[.!]?\s*$",
+            q,
+            flags=re.IGNORECASE,
+        )
+        if troubleshooting_match:
+            item = self._clean_memory_value(
+                troubleshooting_match.group(1),
+                title_case=False,
+            )
+            if item:
+                return f"Got it — you are troubleshooting {item}."
+
+        assigned_match = re.match(
+            r"^\s*(?:remember\s+that\s+)?i(?:\s+am|'m)\s+assigned\s+to\s+(.+?)\s*[.!]?\s*$",
+            q,
+            flags=re.IGNORECASE,
+        )
+        if assigned_match:
+            item = self._clean_memory_value(assigned_match.group(1), title_case=False)
+            if item:
+                return f"Got it — you are assigned to {item}."
+
+        return "Got it — I’ll keep that in this conversation."
+
+    @staticmethod
+    def _clean_memory_value(value: str, *, title_case: bool = True) -> str:
+        text = str(value or "").strip()
+        text = re.sub(r"\s+", " ", text)
+        text = text.strip(" .,!?:;\"'")
+
+        if not text:
+            return ""
+
+        if not title_case:
+            return text
+
+        parts = []
+
+        for part in text.split(" "):
+            if part.isupper() and len(part) <= 5:
+                parts.append(part)
+            else:
+                parts.append(part[:1].upper() + part[1:].lower())
+
+        return " ".join(parts)

@@ -5,9 +5,26 @@
       <div class="five331-sidebar-scroll">
         <div class="five331-sidebar-section">
           <h3>Quick Actions</h3>
+
           <div class="five331-quick-actions">
             <button id="clear-chat" type="button">Clear Chat</button>
-<button id="show-help" type="button">Help</button>
+
+            <button
+              id="conversation-mode-toggle"
+              class="five331-conversation-toggle is-on"
+              type="button"
+              aria-pressed="true"
+              data-conversation-enabled="true"
+              title="When ON, the assistant remembers the current conversation. When OFF, every question is treated as a new topic."
+            >
+              Conversation: ON
+            </button>
+
+            <div id="conversation-mode-status" class="five331-conversation-status">
+              Current chat memory is enabled.
+            </div>
+
+            <button id="show-help" type="button">Help</button>
           </div>
         </div>
 
@@ -51,6 +68,8 @@
 
           <div class="five331-chat-input">
             <input type="text" id="user_id" value="{{ employee_id }}" readonly hidden>
+            <input type="hidden" id="conversation_enabled" value="true">
+            <input type="hidden" id="conversation_mode" value="conversation">
             <select id="area" hidden></select>
             <textarea id="user_input" placeholder="Your Question" rows="2"></textarea>
             <button id="submit-question" type="button">Ask</button>
@@ -61,10 +80,10 @@
       <!-- Right side panels -->
       <section class="five331-panels">
         <!-- Images -->
-       <div class="five331-panel is-collapsed">
+        <div class="five331-panel is-collapsed">
           <div class="five331-panel-head">
             <span>Images</span>
-            <button class="toggle-btn" type="button" aria-expanded="true">Toggle</button>
+            <button class="toggle-btn" type="button" aria-expanded="false">Open</button>
           </div>
           <div class="five331-panel-body" id="images-container">
             <div id="thumbnails-section"></div>
@@ -72,10 +91,10 @@
         </div>
 
         <!-- Documents -->
-       <div class="five331-panel is-collapsed">
+        <div class="five331-panel is-collapsed">
           <div class="five331-panel-head">
             <span>Documents</span>
-            <button class="toggle-btn" type="button" aria-expanded="true">Toggle</button>
+            <button class="toggle-btn" type="button" aria-expanded="false">Open</button>
           </div>
           <div class="five331-panel-body" id="documents-container">
             <div id="doc-links-section"></div>
@@ -83,10 +102,10 @@
         </div>
 
         <!-- Drawings -->
-       <div class="five331-panel is-collapsed">
+        <div class="five331-panel is-collapsed">
           <div class="five331-panel-head">
             <span>Drawings</span>
-            <button class="toggle-btn" type="button" aria-expanded="true">Toggle</button>
+            <button class="toggle-btn" type="button" aria-expanded="false">Open</button>
           </div>
           <div class="five331-panel-body" id="drawings-container">
             <div id="drawing-area-bar" class="drawing-bar"></div>
@@ -96,10 +115,10 @@
         </div>
 
         <!-- Parts -->
-       <div class="five331-panel is-collapsed">
+        <div class="five331-panel is-collapsed">
           <div class="five331-panel-head">
             <span>Parts</span>
-            <button class="toggle-btn" type="button" aria-expanded="true">Toggle</button>
+            <button class="toggle-btn" type="button" aria-expanded="false">Open</button>
           </div>
           <div class="five331-panel-body" id="parts-container">
             <!-- Parts injected by JS -->
@@ -289,6 +308,37 @@
   cursor: pointer;
 }
 
+.five331-sidebar button:hover,
+.five331-chat-input button:hover {
+  filter: brightness(1.08);
+}
+
+.five331-conversation-toggle.is-on {
+  background: #39FF14;
+  color: #111;
+}
+
+.five331-conversation-toggle.is-off {
+  background: #ffb000;
+  color: #111;
+}
+
+.five331-conversation-status {
+  font-size: 12px;
+  line-height: 1.35;
+  color: #bbb;
+  background: rgba(0,0,0,0.24);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  padding: 7px 8px;
+}
+
+.five331-conversation-status.is-off {
+  color: #ffd27a;
+  border-color: rgba(255,176,0,0.35);
+  background: rgba(255,176,0,0.08);
+}
+
 .five331-panels {
   display: flex;
   flex-direction: column;
@@ -311,24 +361,9 @@
   transition: flex 0.2s ease, min-height 0.2s ease;
 }
 
-.five331-panel-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  min-width: 0;
-  padding: 10px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
 .five331-panel.is-collapsed {
   flex: 0 0 auto;
-  min-height: 44px; /* header only */
-}
-
-.five331-panel.is-collapsed .five331-panel-body {
-  display: none;
+  min-height: 44px;
 }
 
 .five331-panel-head {
@@ -341,6 +376,19 @@
   align-items: center;
 }
 
+.five331-panel-head .toggle-btn {
+  background: transparent;
+  color: #39FF14;
+  border: 1px solid rgba(57,255,20,0.35);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.five331-panel-head .toggle-btn:hover {
+  background: rgba(57,255,20,0.12);
+}
+
 .five331-panel-body {
   flex: 1 1 auto;
   min-height: 0;
@@ -350,6 +398,10 @@
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.five331-panel.is-collapsed .five331-panel-body {
+  display: none;
 }
 
 /* Shared renderer styling */
@@ -430,12 +482,6 @@
 }
 
 @media (max-width: 700px) {
-  .five331-chat-input {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 700px) {
   .five331-panels {
     grid-template-columns: 1fr;
   }
@@ -449,6 +495,182 @@
 <script>
 (function () {
   let isSubmitting = false;
+
+  const CONVERSATION_STORAGE_KEY = "emtac_conversation_enabled";
+
+  function readStoredConversationEnabled() {
+    try {
+      const storedValue = localStorage.getItem(CONVERSATION_STORAGE_KEY);
+
+      if (storedValue === null || storedValue === undefined) {
+        return true;
+      }
+
+      return storedValue === "true";
+    } catch (error) {
+      return true;
+    }
+  }
+
+  function writeStoredConversationEnabled(enabled) {
+    try {
+      localStorage.setItem(CONVERSATION_STORAGE_KEY, String(Boolean(enabled)));
+    } catch (error) {
+      // Ignore localStorage errors.
+    }
+  }
+
+  let conversationEnabled = readStoredConversationEnabled();
+
+  function clearConversationIds() {
+    /*
+      Defensive because different chat JS files may use different global names.
+
+      Important:
+      When Conversation is OFF, the next /chatbot/ask request must not send
+      the old chat_sessions.session_id.
+    */
+
+    try { window.EMTAC_ACTIVE_CONVERSATION_ID = null; } catch (error) {}
+    try { window.currentConversationId = null; } catch (error) {}
+    try { window.lastConversationId = null; } catch (error) {}
+    try { window.conversationId = null; } catch (error) {}
+    try { window.activeConversationId = null; } catch (error) {}
+    try { window.current_conversation_id = null; } catch (error) {}
+
+    try {
+      sessionStorage.removeItem("emtac_active_conversation_id");
+    } catch (error) {
+      // Ignore sessionStorage errors.
+    }
+
+    if (typeof window.clearEMTACActiveConversationId === "function") {
+      try {
+        window.clearEMTACActiveConversationId();
+      } catch (error) {
+        // Ignore helper errors.
+      }
+    }
+  }
+
+  function syncConversationModeGlobals() {
+    const enabledInput = document.getElementById("conversation_enabled");
+    const modeInput = document.getElementById("conversation_mode");
+
+    if (enabledInput) {
+      enabledInput.value = conversationEnabled ? "true" : "false";
+    }
+
+    if (modeInput) {
+      modeInput.value = conversationEnabled ? "conversation" : "single_turn";
+    }
+
+    window.EMTAC_CONVERSATION_ENABLED = conversationEnabled;
+    window.five331ConversationEnabled = conversationEnabled;
+    window.emtacConversationEnabled = conversationEnabled;
+    window.conversationEnabled = conversationEnabled;
+    window.conversationMode = conversationEnabled ? "conversation" : "single_turn";
+  }
+
+  function updateConversationModeButton() {
+    const btn = document.getElementById("conversation-mode-toggle");
+    const status = document.getElementById("conversation-mode-status");
+
+    syncConversationModeGlobals();
+
+    if (btn) {
+      btn.dataset.conversationEnabled = conversationEnabled ? "true" : "false";
+      btn.setAttribute("aria-pressed", conversationEnabled ? "true" : "false");
+
+      if (conversationEnabled) {
+        btn.textContent = "Conversation: ON";
+        btn.classList.add("is-on");
+        btn.classList.remove("is-off");
+        btn.title = "Conversation memory is ON. Follow-up questions can use the current chat context.";
+      } else {
+        btn.textContent = "Conversation: OFF";
+        btn.classList.add("is-off");
+        btn.classList.remove("is-on");
+        btn.title = "Single-turn mode is ON. Every question is treated as a new topic.";
+      }
+    }
+
+    if (status) {
+      if (conversationEnabled) {
+        status.textContent = "Current chat memory is enabled.";
+        status.classList.remove("is-off");
+      } else {
+        status.textContent = "Single-turn mode: every question is treated as a new topic.";
+        status.classList.add("is-off");
+      }
+    }
+  }
+
+  function setConversationEnabled(enabled, options) {
+    const opts = options || {};
+    const previousValue = conversationEnabled;
+
+    conversationEnabled = Boolean(enabled);
+
+    writeStoredConversationEnabled(conversationEnabled);
+
+    if (!conversationEnabled) {
+      clearConversationIds();
+    }
+
+    updateConversationModeButton();
+
+    if (previousValue !== conversationEnabled) {
+      try {
+        window.dispatchEvent(
+          new CustomEvent("emtac:conversation-mode-changed", {
+            detail: {
+              conversation_enabled: conversationEnabled,
+              conversation_mode: conversationEnabled ? "conversation" : "single_turn"
+            }
+          })
+        );
+      } catch (error) {
+        // Ignore CustomEvent errors.
+      }
+    }
+
+    if (opts.log !== false) {
+      console.info(
+        "[conversation-mode]",
+        conversationEnabled ? "Conversation enabled" : "Conversation disabled / single-turn mode"
+      );
+    }
+  }
+
+  function getConversationPayloadPatch() {
+    /*
+      chatbot.js uses this to patch the /chatbot/ask payload.
+
+      Sends:
+        conversation_enabled
+        conversation_mode
+        conversation_id
+    */
+
+    let outgoingConversationId = null;
+
+    if (conversationEnabled) {
+      outgoingConversationId =
+        window.currentConversationId ||
+        window.conversationId ||
+        window.activeConversationId ||
+        window.EMTAC_ACTIVE_CONVERSATION_ID ||
+        window.current_conversation_id ||
+        null;
+    }
+
+    return {
+      conversation_enabled: Boolean(conversationEnabled),
+      conversation_mode: conversationEnabled ? "conversation" : "single_turn",
+      conversation_id: conversationEnabled ? outgoingConversationId : null
+    };
+  }
 
   function safeSubmit() {
     if (isSubmitting) {
@@ -464,6 +686,12 @@
     isSubmitting = true;
 
     try {
+      syncConversationModeGlobals();
+
+      if (!conversationEnabled) {
+        clearConversationIds();
+      }
+
       submitQuestion();
     } finally {
       setTimeout(() => {
@@ -472,9 +700,27 @@
     }
   }
 
+  function bindFive331ConversationModeToggle() {
+    const btn = document.getElementById("conversation-mode-toggle");
+
+    if (!btn || btn.dataset.five331Bound === "true") {
+      return;
+    }
+
+    btn.dataset.five331Bound = "true";
+
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      setConversationEnabled(!conversationEnabled);
+    });
+  }
+
   function bindFive331PanelToggles() {
     document.querySelectorAll(".five331-panel .toggle-btn").forEach(function (btn) {
       if (btn.dataset.bound === "true") return;
+
       btn.dataset.bound = "true";
 
       btn.addEventListener("click", function (e) {
@@ -482,29 +728,35 @@
         e.stopPropagation();
 
         const panel = btn.closest(".five331-panel");
+
         if (!panel) return;
 
         panel.classList.toggle("is-collapsed");
 
         const expanded = !panel.classList.contains("is-collapsed");
+
         btn.setAttribute("aria-expanded", expanded ? "true" : "false");
         btn.textContent = expanded ? "Collapse" : "Open";
       });
     });
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
+  function bindFive331SubmitControls() {
     const submitBtn = document.getElementById("submit-question");
     const userInput = document.getElementById("user_input");
 
-    if (submitBtn) {
+    if (submitBtn && submitBtn.dataset.five331Bound !== "true") {
+      submitBtn.dataset.five331Bound = "true";
+
       submitBtn.addEventListener("click", function (e) {
         e.preventDefault();
         safeSubmit();
       });
     }
 
-    if (userInput) {
+    if (userInput && userInput.dataset.five331Bound !== "true") {
+      userInput.dataset.five331Bound = "true";
+
       userInput.addEventListener("keydown", function (e) {
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
@@ -512,15 +764,39 @@
         }
       });
     }
+  }
 
+  function initializeFive331Partial() {
+    updateConversationModeButton();
+    bindFive331ConversationModeToggle();
+    bindFive331SubmitControls();
     bindFive331PanelToggles();
-  });
+  }
+
+  window.setFive331ConversationEnabled = setConversationEnabled;
+
+  window.isFive331ConversationEnabled = function () {
+    return Boolean(conversationEnabled);
+  };
+
+  window.getFive331ConversationPayloadPatch = getConversationPayloadPatch;
+  window.updateFive331ConversationModeButton = updateConversationModeButton;
+  window.initializeFive331Partial = initializeFive331Partial;
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeFive331Partial);
+  } else {
+    initializeFive331Partial();
+  }
 })();
 
 function five331ToggleSidebar() {
   const sidebar = document.getElementById("five331-sidebar");
+
   if (sidebar) {
     sidebar.classList.toggle("five331-closed");
   }
 }
+
+window.five331ToggleSidebar = five331ToggleSidebar;
 </script>

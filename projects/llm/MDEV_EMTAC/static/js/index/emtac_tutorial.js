@@ -1,7 +1,7 @@
 (function () {
     "use strict";
 
-    const STORAGE_KEY = "emtac_index_tutorial_seen_v8";
+    const STORAGE_KEY = "emtac_index_tutorial_seen_v10_conversation_toggle_step";
     const LANGUAGE_STORAGE_KEY = "emtac_index_tutorial_language";
     const HIGHLIGHT_CLASS = "emtac-tutorial-highlight";
 
@@ -36,11 +36,11 @@
             demo: true,
             en: {
                 title: "Welcome to EMTAC Assistant",
-                text: "This tour shows the sidebar, quick actions, question box, answer area, supporting panels, and pop-out viewers."
+                text: "This tour shows the sidebar, quick actions, conversation memory toggle, question box, answer area, supporting panels, and pop-out viewers."
             },
             ja: {
                 title: "EMTACアシスタントへようこそ",
-                text: "このチュートリアルでは、サイドバー、クイック操作、質問欄、回答欄、関連パネル、ポップアウトビューアの使い方を説明します。"
+                text: "このチュートリアルでは、サイドバー、クイック操作、会話メモリ切替、質問欄、回答欄、関連パネル、ポップアウトビューアの使い方を説明します。"
             }
         },
         {
@@ -59,11 +59,11 @@
             openChatSidebar: true,
             en: {
                 title: "Quick Actions Slide-Out",
-                text: "This button opens the assistant slide-out panel with Clear Chat, Help, feedback, rating, and voice controls."
+                text: "This button opens the assistant slide-out panel with Clear Chat, Conversation ON/OFF, Help, feedback, rating, and voice controls."
             },
             ja: {
                 title: "クイック操作スライドパネル",
-                text: "このボタンを押すと、チャットのクリア、ヘルプ、フィードバック、評価、音声操作があるスライドパネルが開きます。"
+                text: "このボタンを押すと、チャットのクリア、会話メモリのオン／オフ、ヘルプ、フィードバック、評価、音声操作があるスライドパネルが開きます。"
             }
         },
         {
@@ -71,11 +71,23 @@
             openChatSidebar: true,
             en: {
                 title: "Quick Actions",
-                text: "Clear Chat starts a fresh conversation. Help is available when the user needs assistance."
+                text: "Use Quick Actions to clear the chat, turn conversation memory on or off, and open Help."
             },
             ja: {
                 title: "クイック操作",
-                text: "Clear Chatは新しい会話を開始します。Helpはユーザーがサポートを必要とするときに使用します。"
+                text: "クイック操作では、チャットのクリア、会話メモリのオン／オフ、ヘルプの表示ができます。"
+            }
+        },
+        {
+            selector: "#conversation-mode-toggle",
+            openChatSidebar: true,
+            en: {
+                title: "Conversation Memory Toggle",
+                text: "Conversation ON lets the assistant remember the current chat for follow-up questions. Conversation OFF uses single-turn mode, so every question is treated as a new topic."
+            },
+            ja: {
+                title: "会話メモリ切替",
+                text: "Conversation ONでは、アシスタントが現在のチャット内容を使ってフォローアップ質問に対応できます。Conversation OFFでは単発モードになり、各質問が新しい話題として扱われます。"
             }
         },
         {
@@ -842,11 +854,7 @@
         }
 
         if (el.stepText) {
-            if (currentLanguage === "ja") {
-                el.stepText.textContent = `${t("step")} ${currentStep + 1} ${t("of")} ${tutorialSteps.length}`;
-            } else {
-                el.stepText.textContent = `${t("step")} ${currentStep + 1} ${t("of")} ${tutorialSteps.length}`;
-            }
+            el.stepText.textContent = `${t("step")} ${currentStep + 1} ${t("of")} ${tutorialSteps.length}`;
         }
 
         if (el.backBtn) {
@@ -1009,6 +1017,8 @@
         },
         reset: function () {
             localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem("emtac_index_tutorial_seen_v8");
+            localStorage.removeItem("emtac_index_tutorial_seen_v9_conversation_toggle");
             localStorage.removeItem(LANGUAGE_STORAGE_KEY);
             currentLanguage = "en";
         },

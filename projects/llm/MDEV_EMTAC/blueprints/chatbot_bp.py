@@ -16,7 +16,8 @@ from modules.configuration.log_config import (
     error_id,
     get_request_id,
 )
-
+from modules.decorators.trace_decorator import trace_entrypoint
+from modules.observability.high_end_tracer import tracer
 from modules.coordinators.chat_coordinator import ChatCoordinator
 from modules.coordinators.chat_payload_coordinator import ChatPayloadCoordinator
 from modules.coordinators.feedback_coordinator import FeedbackCoordinator
@@ -338,26 +339,37 @@ def _process_question_with_optional_document_scope(
     request_id: str,
     conversation_id: Optional[str],
     document_scope: Optional[Dict[str, Any]],
+    conversation_enabled: bool = True,
 ) -> Any:
     """
-    Call ChatCoordinator.process_question with document_scope when supported.
+    Call ChatCoordinator.process_question with optional document_scope and
+    optional conversation_enabled support.
 
-    This keeps the route as a safe drop-in replacement during step-by-step rollout:
-        - If ChatCoordinator has already been updated, document_scope is forwarded.
-        - If ChatCoordinator has not been updated yet, the route still works and logs
-          that document mode is not fully wired through the backend yet.
+    Behavior:
+        - conversation_enabled=True:
+            pass conversation_id normally.
+        - conversation_enabled=False:
+            force conversation_id=None and ask backend to treat this as
+            single-turn / NEW_TOPIC mode.
+
+    Safe rollout:
+        - If ChatCoordinator supports document_scope, forward it.
+        - If ChatCoordinator supports conversation_enabled, forward it.
+        - If not, continue with the older supported arguments and log warnings.
     """
+
+    normalized_conversation_enabled = bool(conversation_enabled)
+    normalized_conversation_id = (
+        conversation_id if normalized_conversation_enabled else None
+    )
 
     base_kwargs: Dict[str, Any] = {
         "user_id": user_id,
         "question": question,
         "client_type": client_type,
         "request_id": request_id,
-        "conversation_id": conversation_id,
+        "conversation_id": normalized_conversation_id,
     }
-
-    if not document_scope:
-        return chat_coordinator.process_question(**base_kwargs)
 
     try:
         signature = inspect.signature(chat_coordinator.process_question)
@@ -368,7 +380,26 @@ def _process_question_with_optional_document_scope(
             for parameter in parameters.values()
         )
 
-        if "document_scope" in parameters or accepts_kwargs:
+        if "conversation_enabled" in parameters or accepts_kwargs:
+            base_kwargs["conversation_enabled"] = normalized_conversation_enabled
+
+            logger.info(
+                "[ChatAskRoute] Forwarding conversation_enabled to ChatCoordinator "
+                "request_id=%s conversation_enabled=%s conversation_id=%s",
+                request_id,
+                normalized_conversation_enabled,
+                normalized_conversation_id,
+            )
+
+        elif not normalized_conversation_enabled:
+            logger.warning(
+                "[ChatAskRoute] conversation_enabled=False received but "
+                "ChatCoordinator.process_question does not accept conversation_enabled yet. "
+                "Continuing with conversation_id=None only. request_id=%s",
+                request_id,
+            )
+
+        if document_scope and ("document_scope" in parameters or accepts_kwargs):
             base_kwargs["document_scope"] = document_scope
 
             logger.info(
@@ -379,29 +410,37 @@ def _process_question_with_optional_document_scope(
                 document_scope.get("document_name"),
             )
 
-            return chat_coordinator.process_question(**base_kwargs)
-
-        logger.warning(
-            "[ChatAskRoute] document_scope received but ChatCoordinator.process_question "
-            "does not accept document_scope yet. Continuing without scoped backend retrieval. "
-            "request_id=%s complete_document_id=%s document_name=%s",
-            request_id,
-            document_scope.get("complete_document_id"),
-            document_scope.get("document_name"),
-        )
+        elif document_scope:
+            logger.warning(
+                "[ChatAskRoute] document_scope received but "
+                "ChatCoordinator.process_question does not accept document_scope yet. "
+                "Continuing without scoped backend retrieval. "
+                "request_id=%s complete_document_id=%s document_name=%s",
+                request_id,
+                document_scope.get("complete_document_id"),
+                document_scope.get("document_name"),
+            )
 
         return chat_coordinator.process_question(**base_kwargs)
 
     except (TypeError, ValueError) as signature_error:
         logger.warning(
             "[ChatAskRoute] Could not inspect ChatCoordinator.process_question signature. "
-            "Continuing without document_scope. request_id=%s error=%s",
+            "Retrying with legacy-safe kwargs. request_id=%s error=%s",
             request_id,
             signature_error,
             exc_info=True,
         )
 
-        return chat_coordinator.process_question(**base_kwargs)
+        legacy_kwargs: Dict[str, Any] = {
+            "user_id": user_id,
+            "question": question,
+            "client_type": client_type,
+            "request_id": request_id,
+            "conversation_id": normalized_conversation_id,
+        }
+
+        return chat_coordinator.process_question(**legacy_kwargs)
 
 
 def _normalize_blocks_and_payload_lists(result: Dict[str, Any]) -> Dict[str, Any]:
@@ -595,19 +634,56 @@ def _user_comment_service_unavailable_response(
 
 @chatbot_bp.route("/ask", methods=["POST"])
 @with_request_id
+@trace_entrypoint(
+    name="chat.ask",
+    enabled_env="EMTAC_TRACE_CHAT_ENABLED",
+    deep_profile=False,
+    capture_args=False,
+    capture_return=False,
+)
 def ask(request_id=None):
     effective_request_id = _resolve_route_request_id(request_id)
 
     try:
         data = _json_data()
 
+        conversation_mode = str(
+            data.get("conversation_mode")
+            or data.get("conversationMode")
+            or ""
+        ).strip().lower()
+
+        conversation_enabled = _coerce_bool(
+            data.get("conversation_enabled", data.get("conversationEnabled")),
+            default=True,
+        )
+
+        if conversation_mode in {
+            "single_turn",
+            "single-turn",
+            "new_topic",
+            "new-topic",
+            "off",
+            "disabled",
+        }:
+            conversation_enabled = False
+
         incoming_conversation_id = _extract_conversation_id(data)
+
+        # Critical:
+        # When Conversation is OFF, do not allow the old session id through.
+        if not conversation_enabled:
+            incoming_conversation_id = None
+
         document_scope = _extract_document_scope(data)
 
         logger.info(
-            "[ChatAskRoute] Incoming ask request request_id=%s conversation_id=%s "
+            "[ChatAskRoute] Incoming ask request request_id=%s "
+            "conversation_enabled=%s conversation_mode=%s conversation_id=%s "
             "has_document_scope=%s complete_document_id=%s document_name=%s",
             effective_request_id,
+            conversation_enabled,
+            conversation_mode or ("conversation" if conversation_enabled else "single_turn"),
             incoming_conversation_id,
             bool(document_scope),
             document_scope.get("complete_document_id") if document_scope else None,
@@ -621,6 +697,7 @@ def ask(request_id=None):
             request_id=effective_request_id,
             conversation_id=incoming_conversation_id,
             document_scope=document_scope,
+            conversation_enabled=conversation_enabled,
         )
 
         result = _normalize_answer_result(
@@ -630,10 +707,19 @@ def ask(request_id=None):
             document_scope=document_scope,
         )
 
+        # Keep this visible in the frontend/debug response.
+        result["conversation_enabled"] = bool(conversation_enabled)
+        result["conversation_mode"] = (
+            "conversation" if conversation_enabled else "single_turn"
+        )
+
         logger.info(
-            "[ChatAskRoute] Answer route complete request_id=%s conversation_id=%s "
+            "[ChatAskRoute] Answer route complete request_id=%s "
+            "conversation_enabled=%s conversation_mode=%s conversation_id=%s "
             "status=%s payload_status=%s document_scope_enabled=%s complete_document_id=%s",
             result.get("request_id"),
+            result.get("conversation_enabled"),
+            result.get("conversation_mode"),
             result.get("conversation_id"),
             result.get("status"),
             result.get("payload_status"),
@@ -695,6 +781,13 @@ def ask(request_id=None):
 
 @chatbot_bp.route("/ask/payload", methods=["POST"])
 @with_request_id
+@trace_entrypoint(
+    name="chat.payload",
+    enabled_env="EMTAC_TRACE_PAYLOAD_ENABLED",
+    deep_profile=False,
+    capture_args=False,
+    capture_return=False,
+)
 def ask_payload(request_id=None):
     """
     Supporting payload route.
@@ -878,6 +971,23 @@ def ask_payload(request_id=None):
         )
 
         return jsonify(response_body), 500
+
+def _coerce_bool(value: Any, default: bool = True) -> bool:
+    if value is None:
+        return default
+
+    if isinstance(value, bool):
+        return value
+
+    text = str(value).strip().lower()
+
+    if text in {"1", "true", "yes", "y", "on", "enabled"}:
+        return True
+
+    if text in {"0", "false", "no", "n", "off", "disabled"}:
+        return False
+
+    return default
 
 
 # ==========================================================

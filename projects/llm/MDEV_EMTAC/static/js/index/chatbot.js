@@ -1,8 +1,9 @@
-console.log("[EMTAC] chatbot.js ANSWER_PAYLOAD_VERSION_2026_05_27_CONVERSATION_MEMORY_1 loaded");
+console.log("[EMTAC] chatbot.js ANSWER_PAYLOAD_VERSION_2026_06_11_CONVERSATION_MODE_TOGGLE loaded");
 
 // ===============================
 // Chatbot Frontend Script
 // Answer-first + payload-second flow
+// Conversation ON/OFF support
 // ===============================
 
 // Prevent duplicate answer submissions while the /ask request is active.
@@ -14,10 +15,20 @@ let activeAnswerRequestId = null;
 
 // Track the active conversational-memory session.
 // Backend returns this as conversation_id from /chatbot/ask.
-// Frontend must send it back on the next /chatbot/ask request.
+// Frontend must send it back on the next /chatbot/ask request when Conversation is ON.
 const EMTAC_CONVERSATION_STORAGE_KEY = "emtac_active_conversation_id";
+const EMTAC_CONVERSATION_ENABLED_STORAGE_KEY = "emtac_conversation_enabled";
+
 let activeConversationId = restoreConversationIdFromSessionStorage();
+let isConversationMemoryEnabled = restoreConversationEnabledFromLocalStorage();
+
+if (!isConversationMemoryEnabled) {
+    activeConversationId = null;
+    persistConversationIdToSessionStorage(null);
+}
+
 syncConversationGlobals(activeConversationId);
+syncConversationModeGlobals(isConversationMemoryEnabled);
 
 // Timer used to fade/clear the payload success visual state.
 let payloadVisualClearTimer = null;
@@ -25,6 +36,200 @@ let payloadVisualClearTimer = null;
 // Text-to-speech state
 let isTextToSpeechEnabled = false;
 let voiceSelect;
+
+
+// ===============================
+// Conversation Mode Helpers
+// ===============================
+
+function restoreConversationEnabledFromLocalStorage() {
+    try {
+        const storedValue = localStorage.getItem(EMTAC_CONVERSATION_ENABLED_STORAGE_KEY);
+
+        if (storedValue === null || storedValue === undefined) {
+            return true;
+        }
+
+        return storedValue === "true";
+    } catch (error) {
+        console.debug("[EMTAC] Unable to restore conversation_enabled from localStorage.", error);
+        return true;
+    }
+}
+
+function persistConversationEnabledToLocalStorage(enabled) {
+    try {
+        localStorage.setItem(EMTAC_CONVERSATION_ENABLED_STORAGE_KEY, String(Boolean(enabled)));
+    } catch (error) {
+        console.debug("[EMTAC] Unable to persist conversation_enabled to localStorage.", error);
+    }
+}
+
+function syncConversationModeGlobals(enabled) {
+    const normalizedEnabled = Boolean(enabled);
+
+    window.EMTAC_CONVERSATION_ENABLED = normalizedEnabled;
+    window.emtacConversationEnabled = normalizedEnabled;
+    window.five331ConversationEnabled = normalizedEnabled;
+    window.conversationEnabled = normalizedEnabled;
+    window.conversationMode = normalizedEnabled ? "conversation" : "single_turn";
+
+    const enabledInput = document.getElementById("conversation_enabled");
+    const modeInput = document.getElementById("conversation_mode");
+
+    if (enabledInput) {
+        enabledInput.value = normalizedEnabled ? "true" : "false";
+    }
+
+    if (modeInput) {
+        modeInput.value = normalizedEnabled ? "conversation" : "single_turn";
+    }
+}
+
+function isConversationEnabledForAsk() {
+    /*
+      Prefer the Quick Actions partial helper when present.
+      Fallback to this file's own localStorage-backed state.
+    */
+
+    try {
+        if (typeof window.isFive331ConversationEnabled === "function") {
+            isConversationMemoryEnabled = Boolean(window.isFive331ConversationEnabled());
+            syncConversationModeGlobals(isConversationMemoryEnabled);
+            return isConversationMemoryEnabled;
+        }
+    } catch (error) {
+        console.debug("[EMTAC] Unable to read five331 conversation mode helper.", error);
+    }
+
+    isConversationMemoryEnabled = Boolean(isConversationMemoryEnabled);
+    syncConversationModeGlobals(isConversationMemoryEnabled);
+    return isConversationMemoryEnabled;
+}
+
+function setEMTACConversationEnabled(enabled, options = {}) {
+    const normalizedEnabled = Boolean(enabled);
+
+    isConversationMemoryEnabled = normalizedEnabled;
+    persistConversationEnabledToLocalStorage(normalizedEnabled);
+    syncConversationModeGlobals(normalizedEnabled);
+
+    if (!normalizedEnabled) {
+        clearActiveConversationId();
+    }
+
+    /*
+      Keep the Quick Actions button in sync when that partial exists.
+      Avoid requiring the partial to exist for this JS to work.
+    */
+    if (
+        options.syncFive331 !== false &&
+        typeof window.setFive331ConversationEnabled === "function"
+    ) {
+        try {
+            window.setFive331ConversationEnabled(normalizedEnabled, {
+                log: false,
+            });
+        } catch (error) {
+            console.debug("[EMTAC] Unable to sync five331 conversation mode button.", error);
+        }
+    }
+
+    console.info("[EMTAC] Conversation mode set:", {
+        conversation_enabled: normalizedEnabled,
+        conversation_mode: normalizedEnabled ? "conversation" : "single_turn",
+        active_conversation_id: getActiveConversationId(),
+    });
+}
+
+function getConversationPayloadPatchForAsk() {
+    /*
+      The Quick Actions partial exposes getFive331ConversationPayloadPatch().
+      Use it when present so the button state is the source of truth.
+
+      Returned shape:
+        {
+          conversation_enabled: boolean,
+          conversation_mode: "conversation" | "single_turn",
+          conversation_id: uuid | null
+        }
+    */
+
+    try {
+        if (typeof window.getFive331ConversationPayloadPatch === "function") {
+            const patch = window.getFive331ConversationPayloadPatch();
+
+            const enabled = Boolean(patch && patch.conversation_enabled);
+
+            isConversationMemoryEnabled = enabled;
+            persistConversationEnabledToLocalStorage(enabled);
+            syncConversationModeGlobals(enabled);
+
+            if (!enabled) {
+                clearActiveConversationId();
+
+                return {
+                    conversation_enabled: false,
+                    conversation_mode: "single_turn",
+                    conversation_id: null,
+                };
+            }
+
+            const patchConversationId =
+                patch && patch.conversation_id
+                    ? String(patch.conversation_id).trim()
+                    : getActiveConversationId();
+
+            return {
+                conversation_enabled: true,
+                conversation_mode: "conversation",
+                conversation_id: patchConversationId || null,
+            };
+        }
+    } catch (error) {
+        console.debug("[EMTAC] Unable to use five331 conversation payload patch.", error);
+    }
+
+    const enabled = isConversationEnabledForAsk();
+
+    if (!enabled) {
+        clearActiveConversationId();
+
+        return {
+            conversation_enabled: false,
+            conversation_mode: "single_turn",
+            conversation_id: null,
+        };
+    }
+
+    return {
+        conversation_enabled: true,
+        conversation_mode: "conversation",
+        conversation_id: getActiveConversationId(),
+    };
+}
+
+window.setEMTACConversationEnabled = setEMTACConversationEnabled;
+window.isEMTACConversationEnabled = isConversationEnabledForAsk;
+window.getEMTACConversationPayloadPatchForAsk = getConversationPayloadPatchForAsk;
+
+window.addEventListener("emtac:conversation-mode-changed", function (event) {
+    const detail = event && event.detail ? event.detail : {};
+    const enabled = Boolean(detail.conversation_enabled);
+
+    isConversationMemoryEnabled = enabled;
+    persistConversationEnabledToLocalStorage(enabled);
+    syncConversationModeGlobals(enabled);
+
+    if (!enabled) {
+        clearActiveConversationId();
+    }
+
+    console.info("[EMTAC] Conversation mode changed event received:", {
+        conversation_enabled: enabled,
+        conversation_mode: enabled ? "conversation" : "single_turn",
+    });
+});
 
 
 // ===============================
@@ -116,10 +321,13 @@ async function submitQuestion(event) {
     isSubmittingQuestion = true;
     activeAnswerRequestId = null;
 
-    const outgoingConversationId = getActiveConversationId();
+    const conversationPatch = getConversationPayloadPatchForAsk();
+    const outgoingConversationId = conversationPatch.conversation_id || null;
     const outgoingDocumentScope = getActiveDocumentScopeForAsk();
 
     console.log("[EMTAC] Conversation memory state before ask:", {
+        conversation_enabled: conversationPatch.conversation_enabled,
+        conversation_mode: conversationPatch.conversation_mode,
         conversation_id: outgoingConversationId,
         hasConversation: Boolean(outgoingConversationId),
     });
@@ -150,6 +358,10 @@ async function submitQuestion(event) {
             area: area,
             question: userInput,
             clientType: "web",
+
+            // Conversation ON/OFF mode.
+            conversation_enabled: conversationPatch.conversation_enabled,
+            conversation_mode: conversationPatch.conversation_mode,
             conversation_id: outgoingConversationId,
 
             // Document-scoped conversation mode.
@@ -161,6 +373,8 @@ async function submitQuestion(event) {
             userId: askRequestBody.userId,
             area: askRequestBody.area,
             clientType: askRequestBody.clientType,
+            conversation_enabled: askRequestBody.conversation_enabled,
+            conversation_mode: askRequestBody.conversation_mode,
             conversation_id: askRequestBody.conversation_id,
             has_document_scope: Boolean(askRequestBody.document_scope),
             document_scope: askRequestBody.document_scope,
@@ -183,14 +397,20 @@ async function submitQuestion(event) {
             payload_status: answerData.payload_status,
             request_id: answerData.request_id,
             payload_endpoint: answerData.payload_endpoint,
+            conversation_enabled: askRequestBody.conversation_enabled,
+            conversation_mode: askRequestBody.conversation_mode,
             conversation_id: extractConversationId(answerData),
             document_scope_sent: outgoingDocumentScope,
         });
 
         const returnedConversationId = extractConversationId(answerData);
 
-        if (returnedConversationId) {
+        if (askRequestBody.conversation_enabled && returnedConversationId) {
             setActiveConversationId(returnedConversationId);
+        }
+
+        if (!askRequestBody.conversation_enabled) {
+            clearActiveConversationId();
         }
 
         if (answerData.status === "session_ended") {
@@ -211,7 +431,9 @@ async function submitQuestion(event) {
 
         // Store the latest Q&A context so update_qanda_table.js can submit
         // rating/comment feedback to /chatbot/update_qanda.
-        const activeFeedbackConversationId = getActiveConversationId();
+        const activeFeedbackConversationId = askRequestBody.conversation_enabled
+            ? getActiveConversationId()
+            : null;
 
         if (typeof window.updateQandAFeedbackContext === "function") {
             window.updateQandAFeedbackContext({
@@ -221,6 +443,11 @@ async function submitQuestion(event) {
                 requestId: answerData.request_id || null,
                 conversationId: activeFeedbackConversationId,
                 conversation_id: activeFeedbackConversationId,
+
+                conversationEnabled: askRequestBody.conversation_enabled,
+                conversation_enabled: askRequestBody.conversation_enabled,
+                conversationMode: askRequestBody.conversation_mode,
+                conversation_mode: askRequestBody.conversation_mode,
 
                 // Helpful for future debugging/auditing.
                 documentScope: outgoingDocumentScope,
@@ -244,7 +471,9 @@ async function submitQuestion(event) {
             console.log("[EMTAC] Triggering supporting payload request now.", {
                 requestId: answerData.request_id,
                 payloadEndpoint: answerData.payload_endpoint,
-                conversationId: getActiveConversationId(),
+                conversationEnabled: askRequestBody.conversation_enabled,
+                conversationMode: askRequestBody.conversation_mode,
+                conversationId: askRequestBody.conversation_enabled ? getActiveConversationId() : null,
                 documentScope: outgoingDocumentScope,
             });
 
@@ -255,13 +484,17 @@ async function submitQuestion(event) {
                 requestId: answerData.request_id,
                 payloadEndpoint: answerData.payload_endpoint,
                 clientType: "web",
-                conversationId: getActiveConversationId(),
+                conversationEnabled: askRequestBody.conversation_enabled,
+                conversationMode: askRequestBody.conversation_mode,
+                conversationId: askRequestBody.conversation_enabled ? getActiveConversationId() : null,
             });
         } else {
             console.log("[EMTAC] No payload request needed.", {
                 payload_status: answerData.payload_status,
                 request_id: answerData.request_id,
-                conversation_id: getActiveConversationId(),
+                conversation_enabled: askRequestBody.conversation_enabled,
+                conversation_mode: askRequestBody.conversation_mode,
+                conversation_id: askRequestBody.conversation_enabled ? getActiveConversationId() : null,
                 document_scope: outgoingDocumentScope,
             });
 
@@ -299,7 +532,14 @@ window.submitQuestion = submitQuestion;
 // Load Supporting Payload
 // ===============================
 
-async function loadSupportingPayload({ requestId, payloadEndpoint, clientType, conversationId }) {
+async function loadSupportingPayload({
+    requestId,
+    payloadEndpoint,
+    clientType,
+    conversationId,
+    conversationEnabled,
+    conversationMode,
+}) {
     if (!requestId) {
         console.warn("[EMTAC] Cannot load payload. Missing original request_id.");
         setPayloadLoadingMessage("");
@@ -308,12 +548,22 @@ async function loadSupportingPayload({ requestId, payloadEndpoint, clientType, c
     }
 
     const endpoint = resolvePayloadEndpoint(payloadEndpoint);
+    const enabled = conversationEnabled !== undefined
+        ? Boolean(conversationEnabled)
+        : isConversationEnabledForAsk();
+
+    const mode = conversationMode || (enabled ? "conversation" : "single_turn");
+    const payloadConversationId = enabled
+        ? (conversationId || getActiveConversationId())
+        : null;
 
     console.log("[EMTAC] Starting payload transaction.", {
         endpoint: endpoint,
         requestId: requestId,
         clientType: clientType || "web",
-        conversationId: conversationId || getActiveConversationId(),
+        conversation_enabled: enabled,
+        conversation_mode: mode,
+        conversationId: payloadConversationId,
     });
 
     try {
@@ -325,7 +575,9 @@ async function loadSupportingPayload({ requestId, payloadEndpoint, clientType, c
             body: JSON.stringify({
                 requestId: requestId,
                 clientType: clientType || "web",
-                conversation_id: conversationId || getActiveConversationId(),
+                conversation_enabled: enabled,
+                conversation_mode: mode,
+                conversation_id: payloadConversationId,
             }),
         });
 
@@ -371,7 +623,11 @@ async function loadSupportingPayload({ requestId, payloadEndpoint, clientType, c
         console.log("[EMTAC] Payload transaction complete.", {
             request_id: payloadData.request_id || requestId,
             payload_route_request_id: payloadData.payload_route_request_id,
-            conversation_id: extractConversationId(payloadData) || conversationId || getActiveConversationId(),
+            conversation_enabled: enabled,
+            conversation_mode: mode,
+            conversation_id: enabled
+                ? (extractConversationId(payloadData) || payloadConversationId || getActiveConversationId())
+                : null,
             payload_status: payloadData.payload_status,
             documents: payloadData.documents?.length || 0,
             parts: payloadData.parts?.length || 0,
@@ -391,6 +647,7 @@ async function loadSupportingPayload({ requestId, payloadEndpoint, clientType, c
         setPayloadVisualState("error");
     }
 }
+
 
 // ===============================
 // Payload Rendering
@@ -655,10 +912,6 @@ function renderDrawingsPayload(drawings, blocks, meta = {}) {
         hasRenderDrawings: typeof renderDrawings === "function",
     });
 
-    /*
-     * Debug helper:
-     * Allows console inspection after payload render.
-     */
     window.__lastDrawingRenderInputs = {
         drawings: safeDrawings,
         blocks: blocks,
@@ -666,17 +919,6 @@ function renderDrawingsPayload(drawings, blocks, meta = {}) {
         hasDrawingNavigationBlocks: hasDrawingNavigationBlocks,
     };
 
-    /*
-     * Important:
-     * Prefer the block renderer when drawing_navigation exists.
-     *
-     * The flat drawings array does not contain Area / Model / Asset Number.
-     * The drawing_navigation blocks do contain the hierarchy needed by the
-     * drawing panel tabs.
-     *
-     * Emergency override:
-     * window.EMTAC_FORCE_FLAT_DRAWING_RENDERER = true
-     */
     if (
         window.EMTAC_FORCE_FLAT_DRAWING_RENDERER !== true &&
         hasDrawingNavigationBlocks &&
@@ -819,8 +1061,6 @@ function getPayloadVisualTargets() {
                 return null;
             }
 
-            // Prefer the full module panel perimeter if present.
-            // This makes the whole container/panel glow, not just the inner content div.
             return inner.closest(".mt-panel") || inner;
         })
         .filter(Boolean)
@@ -1005,9 +1245,16 @@ function syncConversationGlobals(conversationId) {
     window.EMTAC_ACTIVE_CONVERSATION_ID = conversationId || null;
     window.currentConversationId = conversationId || null;
     window.lastConversationId = conversationId || null;
+    window.conversationId = conversationId || null;
+    window.activeConversationId = conversationId || null;
+    window.current_conversation_id = conversationId || null;
 }
 
 function getActiveConversationId() {
+    if (!isConversationEnabledForAsk()) {
+        return null;
+    }
+
     if (activeConversationId) {
         return activeConversationId;
     }
@@ -1024,6 +1271,11 @@ function getActiveConversationId() {
 }
 
 function setActiveConversationId(conversationId) {
+    if (!isConversationEnabledForAsk()) {
+        clearActiveConversationId();
+        return;
+    }
+
     const normalized = conversationId ? String(conversationId).trim() : null;
 
     if (!normalized) {
@@ -1086,6 +1338,8 @@ async function safeJsonResponse(response) {
             payload_status: "error",
             answer: "Invalid server response.",
             message: "Invalid server response.",
+            conversation_enabled: isConversationEnabledForAsk(),
+            conversation_mode: isConversationEnabledForAsk() ? "conversation" : "single_turn",
             conversation_id: getActiveConversationId(),
         };
     }
@@ -1107,17 +1361,14 @@ function resolvePayloadEndpoint(payloadEndpoint) {
         return "/chatbot/ask/payload";
     }
 
-    // Backend may return "/ask/payload", but this blueprint is mounted under "/chatbot".
     if (payloadEndpoint === "/ask/payload") {
         return "/chatbot/ask/payload";
     }
 
-    // If backend already returns full blueprint path, use it.
     if (payloadEndpoint === "/chatbot/ask/payload") {
         return payloadEndpoint;
     }
 
-    // Do not allow unknown/external endpoint values from response payload.
     return "/chatbot/ask/payload";
 }
 
@@ -1162,9 +1413,6 @@ function setPayloadLoadingMessage(message) {
         }
     }
 
-    // IMPORTANT:
-    // Do NOT write status messages into #doc-links-section.
-    // That is the actual Documents panel and would overwrite rendered chunks.
     if (message) {
         console.log("[EMTAC] Payload status:", message);
     }
@@ -1212,16 +1460,26 @@ function clearAllContainers() {
 // ===============================
 
 document.addEventListener("DOMContentLoaded", () => {
-    syncConversationGlobals(getActiveConversationId());
+    syncConversationModeGlobals(isConversationMemoryEnabled);
+
+    if (!isConversationMemoryEnabled) {
+        clearActiveConversationId();
+    } else {
+        syncConversationGlobals(getActiveConversationId());
+    }
 
     console.log("[EMTAC] Conversation memory initialized:", {
+        conversation_enabled: isConversationEnabledForAsk(),
+        conversation_mode: isConversationEnabledForAsk() ? "conversation" : "single_turn",
         conversation_id: getActiveConversationId(),
         hasConversation: Boolean(getActiveConversationId()),
     });
 
     const askBtn = document.getElementById("submit-question");
 
-    if (askBtn) {
+    if (askBtn && askBtn.dataset.emtacChatbotBound !== "true") {
+        askBtn.dataset.emtacChatbotBound = "true";
+
         askBtn.addEventListener("click", (event) => {
             event.preventDefault();
             submitQuestion(event);
@@ -1230,7 +1488,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const inputEl = document.getElementById("user_input");
 
-    if (inputEl) {
+    if (inputEl && inputEl.dataset.emtacChatbotBound !== "true") {
+        inputEl.dataset.emtacChatbotBound = "true";
+
         inputEl.addEventListener("keypress", function (event) {
             if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
@@ -1241,20 +1501,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const clearChatBtn = document.getElementById("clear-chat");
 
-    if (clearChatBtn) {
+    if (clearChatBtn && clearChatBtn.dataset.emtacChatbotBound !== "true") {
+        clearChatBtn.dataset.emtacChatbotBound = "true";
+
         clearChatBtn.addEventListener("click", (event) => {
             event.preventDefault();
             startNewEMTACChat();
         });
-    } else {
+    } else if (!clearChatBtn) {
         console.log("[EMTAC] No #clear-chat button found, skipping clear-chat binding.");
     }
 
     const toggleBtn = document.getElementById("toggle-voice");
 
-    if (toggleBtn) {
+    if (toggleBtn && toggleBtn.dataset.emtacChatbotBound !== "true") {
+        toggleBtn.dataset.emtacChatbotBound = "true";
         toggleBtn.addEventListener("click", toggleTextToSpeech);
-    } else {
+    } else if (!toggleBtn) {
         console.log("[EMTAC] No #toggle-voice button found, skipping voice binding.");
     }
 });
