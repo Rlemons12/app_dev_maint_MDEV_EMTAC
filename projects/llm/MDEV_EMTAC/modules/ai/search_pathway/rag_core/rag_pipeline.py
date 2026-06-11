@@ -54,6 +54,142 @@ class RAGPipeline:
             **answer_kwargs: Any,
     ) -> Dict[str, Any]:
 
+        # ------------------------------------------------------------
+        # Local trace helpers
+        # ------------------------------------------------------------
+        # These helpers are intentionally local so this method can be
+        # dropped in without adding new class methods.
+        # ------------------------------------------------------------
+
+        def _trace_event(event_type: str, payload: Dict[str, Any]) -> None:
+            try:
+                tracer.event(event_type, payload)
+            except Exception:
+                # Observability should never break RAG.
+                pass
+
+        def _item_value(item: Any, keys: List[str]) -> Any:
+            if item is None:
+                return None
+
+            if isinstance(item, dict):
+                for key in keys:
+                    if key in item and item.get(key) is not None:
+                        return item.get(key)
+
+                for nested_key in (
+                        "metadata",
+                        "evidence",
+                        "document",
+                        "complete_document",
+                        "source",
+                ):
+                    nested = item.get(nested_key)
+                    if isinstance(nested, dict):
+                        for key in keys:
+                            if key in nested and nested.get(key) is not None:
+                                return nested.get(key)
+
+                return None
+
+            for key in keys:
+                if hasattr(item, key):
+                    value = getattr(item, key, None)
+                    if value is not None:
+                        return value
+
+            return None
+
+        def _chunk_id(item: Any) -> Any:
+            return _item_value(
+                item,
+                [
+                    "id",
+                    "chunk_id",
+                    "chunkId",
+                    "document_embedding_id",
+                    "documentEmbeddingId",
+                    "source_id",
+                    "sourceId",
+                ],
+            )
+
+        def _chunk_complete_document_id(item: Any) -> Any:
+            return _item_value(
+                item,
+                [
+                    "complete_document_id",
+                    "completed_document_id",
+                    "completeDocumentId",
+                    "completeDocumentID",
+                    "complete_doc_id",
+                    "completeDocId",
+                ],
+            )
+
+        def _chunk_document_id(item: Any) -> Any:
+            return _item_value(
+                item,
+                [
+                    "document_id",
+                    "documentId",
+                    "doc_id",
+                    "docId",
+                ],
+            )
+
+        def _preview_chunk_ids(chunks: Any, limit: int = 20) -> List[Any]:
+            if not chunks:
+                return []
+
+            return [
+                _chunk_id(chunk)
+                for chunk in list(chunks)[:limit]
+            ]
+
+        def _preview_chunk_document_ids(chunks: Any, limit: int = 20) -> List[Any]:
+            if not chunks:
+                return []
+
+            return [
+                _chunk_document_id(chunk)
+                for chunk in list(chunks)[:limit]
+            ]
+
+        def _preview_chunk_complete_document_ids(
+                chunks: Any,
+                limit: int = 20,
+        ) -> List[Any]:
+            if not chunks:
+                return []
+
+            return [
+                _chunk_complete_document_id(chunk)
+                for chunk in list(chunks)[:limit]
+            ]
+
+        def _unique_values(values: List[Any]) -> List[Any]:
+            seen = set()
+            unique: List[Any] = []
+
+            for value in values:
+                if value is None:
+                    continue
+
+                key = str(value)
+
+                if key in seen:
+                    continue
+
+                seen.add(key)
+                unique.append(value)
+
+            return unique
+
+        # ------------------------------------------------------------
+        # Normalize incoming values
+        # ------------------------------------------------------------
+
         normalized_question = (question or "").strip()
         normalized_memory_context = (memory_context or "").strip()
         normalized_conversation_id = (
@@ -63,16 +199,53 @@ class RAGPipeline:
         )
         normalized_document_scope = self._normalize_document_scope(document_scope)
 
+        document_scope_enabled = bool(normalized_document_scope)
+        complete_document_id = (
+            normalized_document_scope.get("complete_document_id")
+            if normalized_document_scope
+            else None
+        )
+        document_name = (
+            normalized_document_scope.get("document_name")
+            if normalized_document_scope
+            else None
+        )
+
+        _trace_event(
+            "rag_run_input",
+            {
+                "request_id": request_id,
+                "question_chars": len(normalized_question),
+                "question_preview": normalized_question[:250],
+                "top_k": top_k,
+                "memory_context_chars": len(normalized_memory_context),
+                "conversation_id": normalized_conversation_id,
+                "document_scope_enabled": document_scope_enabled,
+                "complete_document_id": complete_document_id,
+                "document_name": document_name,
+                "answer_kwargs_keys": sorted(answer_kwargs.keys()),
+            },
+        )
+
         debug_id(
             f"[RAGPipeline] Start RAG: '{normalized_question[:80]}...' "
-            f"document_scope_enabled={bool(normalized_document_scope)} "
-            f"complete_document_id="
-            f"{normalized_document_scope.get('complete_document_id') if normalized_document_scope else None}",
+            f"document_scope_enabled={document_scope_enabled} "
+            f"complete_document_id={complete_document_id}",
             request_id,
         )
 
         try:
             if not normalized_question:
+                _trace_event(
+                    "rag_run_invalid_input",
+                    {
+                        "request_id": request_id,
+                        "reason": "empty_question",
+                        "document_scope_enabled": document_scope_enabled,
+                        "complete_document_id": complete_document_id,
+                    },
+                )
+
                 return self._basic_result(
                     answer="Please provide a valid question.",
                     top_k=top_k,
@@ -86,9 +259,37 @@ class RAGPipeline:
                     ),
                 )
 
+            # ------------------------------------------------------------
+            # Load selected-document profile, if any
+            # ------------------------------------------------------------
+
             document_profile = self._load_document_profile(
                 document_scope=normalized_document_scope,
                 request_id=request_id,
+            )
+
+            _trace_event(
+                "rag_document_profile_loaded",
+                {
+                    "request_id": request_id,
+                    "document_scope_enabled": document_scope_enabled,
+                    "complete_document_id": complete_document_id,
+                    "document_name": document_name,
+                    "document_profile_found": bool(
+                        isinstance(document_profile, dict)
+                        and document_profile.get("found")
+                    ),
+                    "document_profile_complete_document_id": (
+                        document_profile.get("complete_document_id")
+                        if isinstance(document_profile, dict)
+                        else None
+                    ),
+                    "document_profile_title": (
+                        document_profile.get("title")
+                        if isinstance(document_profile, dict)
+                        else None
+                    ),
+                },
             )
 
             if (
@@ -96,14 +297,27 @@ class RAGPipeline:
                     and isinstance(document_profile, dict)
                     and document_profile.get("found")
                     and self.document_profile_service.is_overview_question(
-                normalized_question
-            )
+                        normalized_question
+                    )
             ):
                 debug_id(
                     "[RAGPipeline] Answering document overview question from document profile "
                     f"complete_document_id={document_profile.get('complete_document_id')} "
                     f"title={document_profile.get('title')!r}",
                     request_id,
+                )
+
+                _trace_event(
+                    "rag_document_profile_overview_answer",
+                    {
+                        "request_id": request_id,
+                        "complete_document_id": complete_document_id,
+                        "document_profile_complete_document_id": document_profile.get(
+                            "complete_document_id"
+                        ),
+                        "document_profile_title": document_profile.get("title"),
+                        "question_chars": len(normalized_question),
+                    },
                 )
 
                 return self._document_profile_overview_result(
@@ -115,15 +329,18 @@ class RAGPipeline:
                     document_profile=document_profile,
                 )
 
+            # ------------------------------------------------------------
+            # Embed query
+            # ------------------------------------------------------------
+
             with tracer.span(
                     "embed_query",
                     meta={
-                        "document_scope_enabled": bool(normalized_document_scope),
-                        "complete_document_id": (
-                                normalized_document_scope.get("complete_document_id")
-                                if normalized_document_scope
-                                else None
-                        ),
+                        "request_id": request_id,
+                        "question_chars": len(normalized_question),
+                        "document_scope_enabled": document_scope_enabled,
+                        "complete_document_id": complete_document_id,
+                        "document_name": document_name,
                     },
             ):
                 query_embedding = self.embedder.embed_query(
@@ -131,11 +348,38 @@ class RAGPipeline:
                     request_id=request_id,
                 )
 
+            query_embedding_dims = (
+                len(query_embedding)
+                if isinstance(query_embedding, (list, tuple))
+                else None
+            )
+
+            _trace_event(
+                "rag_query_embedded",
+                {
+                    "request_id": request_id,
+                    "embedding_present": bool(query_embedding),
+                    "embedding_dims": query_embedding_dims,
+                    "document_scope_enabled": document_scope_enabled,
+                    "complete_document_id": complete_document_id,
+                },
+            )
+
             if not query_embedding:
                 warning_id(
                     "[RAGPipeline] No embedding produced — stopping RAG.",
                     request_id,
                 )
+
+                _trace_event(
+                    "rag_run_no_embedding",
+                    {
+                        "request_id": request_id,
+                        "document_scope_enabled": document_scope_enabled,
+                        "complete_document_id": complete_document_id,
+                    },
+                )
+
                 return self._basic_result(
                     answer="Embedding model failed or returned nothing.",
                     top_k=top_k,
@@ -149,22 +393,35 @@ class RAGPipeline:
                     ),
                 )
 
+            # ------------------------------------------------------------
+            # Retrieve chunks
+            # ------------------------------------------------------------
+
             retrieval_top_k = self._resolve_retrieval_top_k(
                 top_k=top_k,
                 document_scope=normalized_document_scope,
             )
 
+            _trace_event(
+                "rag_retrieval_top_k_resolved",
+                {
+                    "request_id": request_id,
+                    "requested_top_k": top_k,
+                    "retrieval_top_k": retrieval_top_k,
+                    "document_scope_enabled": document_scope_enabled,
+                    "complete_document_id": complete_document_id,
+                },
+            )
+
             with tracer.span(
                     "retrieve_chunks",
                     meta={
+                        "request_id": request_id,
                         "top_k": top_k,
                         "retrieval_top_k": retrieval_top_k,
-                        "document_scope_enabled": bool(normalized_document_scope),
-                        "complete_document_id": (
-                                normalized_document_scope.get("complete_document_id")
-                                if normalized_document_scope
-                                else None
-                        ),
+                        "document_scope_enabled": document_scope_enabled,
+                        "complete_document_id": complete_document_id,
+                        "document_name": document_name,
                     },
             ):
                 retrieved_chunks, retriever_scope_mode = self._retrieve_chunks(
@@ -174,10 +431,44 @@ class RAGPipeline:
                     document_scope=normalized_document_scope,
                 )
 
+            raw_retrieved_count = len(retrieved_chunks or [])
+            raw_retrieved_complete_document_ids = _preview_chunk_complete_document_ids(
+                retrieved_chunks
+            )
+
+            _trace_event(
+                "rag_chunks_retrieved_raw",
+                {
+                    "request_id": request_id,
+                    "requested_top_k": top_k,
+                    "retrieval_top_k": retrieval_top_k,
+                    "retrieved_count": raw_retrieved_count,
+                    "retriever_scope_mode": retriever_scope_mode,
+                    "document_scope_enabled": document_scope_enabled,
+                    "expected_complete_document_id": complete_document_id,
+                    "chunk_ids": _preview_chunk_ids(retrieved_chunks),
+                    "chunk_document_ids": _preview_chunk_document_ids(retrieved_chunks),
+                    "chunk_complete_document_ids": raw_retrieved_complete_document_ids,
+                    "unique_complete_document_ids": _unique_values(
+                        raw_retrieved_complete_document_ids
+                    ),
+                },
+            )
+
             if not retrieved_chunks:
                 warning_id(
                     "[RAGPipeline] No relevant documents retrieved after retrieval quality gate.",
                     request_id,
+                )
+
+                _trace_event(
+                    "rag_no_relevant_chunks_after_retrieval",
+                    {
+                        "request_id": request_id,
+                        "retriever_scope_mode": retriever_scope_mode,
+                        "document_scope_enabled": document_scope_enabled,
+                        "complete_document_id": complete_document_id,
+                    },
                 )
 
                 return self._no_relevant_context_result(
@@ -196,8 +487,15 @@ class RAGPipeline:
 
             document_scope_mode = retriever_scope_mode
 
+            # ------------------------------------------------------------
+            # Local selected-document safety filter
+            # ------------------------------------------------------------
+
             if normalized_document_scope:
                 before_filter_count = len(retrieved_chunks or [])
+                before_filter_complete_document_ids = (
+                    _preview_chunk_complete_document_ids(retrieved_chunks)
+                )
 
                 retrieved_chunks = self._filter_chunks_by_document_scope(
                     chunks=retrieved_chunks,
@@ -205,12 +503,39 @@ class RAGPipeline:
                 )
 
                 after_filter_count = len(retrieved_chunks or [])
+                after_filter_complete_document_ids = (
+                    _preview_chunk_complete_document_ids(retrieved_chunks)
+                )
+
+                _trace_event(
+                    "rag_document_scope_local_filter",
+                    {
+                        "request_id": request_id,
+                        "complete_document_id": complete_document_id,
+                        "document_name": document_name,
+                        "before_filter_count": before_filter_count,
+                        "after_filter_count": after_filter_count,
+                        "removed_count": max(
+                            before_filter_count - after_filter_count,
+                            0,
+                        ),
+                        "before_complete_document_ids": before_filter_complete_document_ids,
+                        "after_complete_document_ids": after_filter_complete_document_ids,
+                        "before_unique_complete_document_ids": _unique_values(
+                            before_filter_complete_document_ids
+                        ),
+                        "after_unique_complete_document_ids": _unique_values(
+                            after_filter_complete_document_ids
+                        ),
+                        "retriever_scope_mode_before": document_scope_mode,
+                    },
+                )
 
                 if after_filter_count != before_filter_count:
                     warning_id(
                         "[RAGPipeline] Document scope local filter changed retrieved chunks "
                         f"before={before_filter_count} after={after_filter_count} "
-                        f"complete_document_id={normalized_document_scope.get('complete_document_id')}",
+                        f"complete_document_id={complete_document_id}",
                         request_id,
                     )
 
@@ -222,6 +547,17 @@ class RAGPipeline:
                         )
 
                 if not retrieved_chunks:
+                    _trace_event(
+                        "rag_document_scope_no_chunks_after_filter",
+                        {
+                            "request_id": request_id,
+                            "complete_document_id": complete_document_id,
+                            "document_name": document_name,
+                            "document_scope_mode": document_scope_mode,
+                            "before_filter_count": before_filter_count,
+                        },
+                    )
+
                     return self._document_scope_no_answer_result(
                         question=normalized_question,
                         top_k=top_k,
@@ -236,11 +572,17 @@ class RAGPipeline:
                         ),
                     )
 
+            # ------------------------------------------------------------
+            # Build context
+            # ------------------------------------------------------------
+
             with tracer.span(
                     "build_context",
                     meta={
+                        "request_id": request_id,
                         "retrieved_chunks": len(retrieved_chunks or []),
-                        "document_scope_enabled": bool(normalized_document_scope),
+                        "document_scope_enabled": document_scope_enabled,
+                        "complete_document_id": complete_document_id,
                     },
             ):
                 ctx = self.context_builder.build_context(
@@ -263,13 +605,77 @@ class RAGPipeline:
                     ctx.get("used_chunks", []) or retrieved_chunks
             )
 
+            _trace_event(
+                "rag_context_built",
+                {
+                    "request_id": request_id,
+                    "context_chars": len(context or ""),
+                    "retrieved_chunks_count": len(retrieved_chunks or []),
+                    "used_chunks_count_before_scope_filter": len(used_chunks or []),
+                    "document_scope_enabled": document_scope_enabled,
+                    "complete_document_id": complete_document_id,
+                    "used_chunk_ids": _preview_chunk_ids(used_chunks),
+                    "used_complete_document_ids": _preview_chunk_complete_document_ids(
+                        used_chunks
+                    ),
+                    "used_unique_complete_document_ids": _unique_values(
+                        _preview_chunk_complete_document_ids(used_chunks)
+                    ),
+                },
+            )
+
+            # ------------------------------------------------------------
+            # Final selected-document safety filter on used_chunks
+            # ------------------------------------------------------------
+
             if normalized_document_scope:
+                before_used_count = len(used_chunks or [])
+                before_used_complete_document_ids = (
+                    _preview_chunk_complete_document_ids(used_chunks)
+                )
+
                 used_chunks = self._filter_chunks_by_document_scope(
                     chunks=used_chunks,
                     document_scope=normalized_document_scope,
                 )
 
+                after_used_count = len(used_chunks or [])
+                after_used_complete_document_ids = (
+                    _preview_chunk_complete_document_ids(used_chunks)
+                )
+
+                _trace_event(
+                    "rag_used_chunks_scope_filter",
+                    {
+                        "request_id": request_id,
+                        "complete_document_id": complete_document_id,
+                        "document_name": document_name,
+                        "before_used_count": before_used_count,
+                        "after_used_count": after_used_count,
+                        "removed_count": max(before_used_count - after_used_count, 0),
+                        "before_used_complete_document_ids": before_used_complete_document_ids,
+                        "after_used_complete_document_ids": after_used_complete_document_ids,
+                        "before_used_unique_complete_document_ids": _unique_values(
+                            before_used_complete_document_ids
+                        ),
+                        "after_used_unique_complete_document_ids": _unique_values(
+                            after_used_complete_document_ids
+                        ),
+                    },
+                )
+
                 if not used_chunks:
+                    _trace_event(
+                        "rag_document_scope_no_used_chunks_after_filter",
+                        {
+                            "request_id": request_id,
+                            "complete_document_id": complete_document_id,
+                            "document_name": document_name,
+                            "document_scope_mode": "no_used_chunks_after_scope_filter",
+                            "before_used_count": before_used_count,
+                        },
+                    )
+
                     return self._document_scope_no_answer_result(
                         question=normalized_question,
                         top_k=top_k,
@@ -282,11 +688,39 @@ class RAGPipeline:
 
                 context = self._chunks_to_context(used_chunks) or context
 
+            final_used_complete_document_ids = _preview_chunk_complete_document_ids(
+                used_chunks
+            )
+
+            _trace_event(
+                "rag_chunks_selected_final",
+                {
+                    "request_id": request_id,
+                    "selected_count": len(used_chunks or []),
+                    "selected_chunk_ids": _preview_chunk_ids(used_chunks),
+                    "selected_document_ids": _preview_chunk_document_ids(used_chunks),
+                    "selected_complete_document_ids": final_used_complete_document_ids,
+                    "selected_unique_complete_document_ids": _unique_values(
+                        final_used_complete_document_ids
+                    ),
+                    "document_scope_enabled": document_scope_enabled,
+                    "expected_complete_document_id": complete_document_id,
+                    "document_scope_mode": document_scope_mode,
+                    "context_chars": len(context or ""),
+                },
+            )
+
+            # ------------------------------------------------------------
+            # Build lightweight document payload
+            # ------------------------------------------------------------
+
             with tracer.span(
                     "build_document_payload",
                     meta={
+                        "request_id": request_id,
                         "used_chunks": len(used_chunks or []),
-                        "document_scope_enabled": bool(normalized_document_scope),
+                        "document_scope_enabled": document_scope_enabled,
+                        "complete_document_id": complete_document_id,
                     },
             ):
                 documents = (
@@ -298,12 +732,27 @@ class RAGPipeline:
             if not isinstance(documents, list):
                 documents = []
 
+            _trace_event(
+                "rag_payload_built",
+                {
+                    "request_id": request_id,
+                    "documents_count": len(documents),
+                    "used_chunks_count": len(used_chunks or []),
+                    "document_scope_enabled": document_scope_enabled,
+                    "complete_document_id": complete_document_id,
+                },
+            )
+
             debug_id(
                 f"[RAGPipeline] Built UI payload with {len(documents)} documents "
                 f"from {len(used_chunks)} chunks "
-                f"document_scope_enabled={bool(normalized_document_scope)}",
+                f"document_scope_enabled={document_scope_enabled}",
                 request_id,
             )
+
+            # ------------------------------------------------------------
+            # Build prompt context
+            # ------------------------------------------------------------
 
             prompt_context = self._build_prompt_context(
                 context=context,
@@ -312,18 +761,38 @@ class RAGPipeline:
                 document_profile=document_profile,
             )
 
+            _trace_event(
+                "rag_prompt_context_built",
+                {
+                    "request_id": request_id,
+                    "raw_context_chars": len(context or ""),
+                    "prompt_context_chars": len(prompt_context or ""),
+                    "memory_context_chars": len(normalized_memory_context or ""),
+                    "document_scope_enabled": document_scope_enabled,
+                    "complete_document_id": complete_document_id,
+                    "document_profile_used": bool(
+                        isinstance(document_profile, dict)
+                        and document_profile.get("found")
+                    ),
+                },
+            )
+
             answer_kwargs = self._clean_answer_kwargs(answer_kwargs)
+
+            # ------------------------------------------------------------
+            # Generate final answer
+            # ------------------------------------------------------------
 
             with tracer.span(
                     "generate_answer",
                     meta={
-                        "document_scope_enabled": bool(normalized_document_scope),
-                        "complete_document_id": (
-                                normalized_document_scope.get("complete_document_id")
-                                if normalized_document_scope
-                                else None
-                        ),
+                        "request_id": request_id,
+                        "document_scope_enabled": document_scope_enabled,
+                        "complete_document_id": complete_document_id,
+                        "document_name": document_name,
                         "memory_context_present": bool(normalized_memory_context),
+                        "memory_context_chars": len(normalized_memory_context),
+                        "prompt_context_chars": len(prompt_context or ""),
                         "document_profile_present": bool(
                             isinstance(document_profile, dict)
                             and document_profile.get("found")
@@ -339,6 +808,18 @@ class RAGPipeline:
 
             answer: str = self._extract_answer_text(answer_result)
 
+            _trace_event(
+                "rag_answer_generated",
+                {
+                    "request_id": request_id,
+                    "answer_result_type": type(answer_result).__name__,
+                    "answer_chars_before_cleanup": len(answer or ""),
+                    "document_scope_enabled": document_scope_enabled,
+                    "complete_document_id": complete_document_id,
+                    "document_scope_mode": document_scope_mode,
+                },
+            )
+
             answer = self._clean_document_mode_answer_leakage(
                 answer=answer,
                 document_scope=normalized_document_scope,
@@ -349,7 +830,7 @@ class RAGPipeline:
                     normalized_document_scope
                 )
 
-            return {
+            result = {
                 "answer": answer,
                 "documents": documents,
                 "used_chunks": used_chunks,
@@ -364,7 +845,7 @@ class RAGPipeline:
                     else "none"
                 ),
                 "document_scope": normalized_document_scope,
-                "document_scope_enabled": bool(normalized_document_scope),
+                "document_scope_enabled": document_scope_enabled,
                 "document_scope_mode": document_scope_mode,
                 "document_profile_used": bool(
                     isinstance(document_profile, dict)
@@ -372,7 +853,43 @@ class RAGPipeline:
                 ),
             }
 
+            _trace_event(
+                "rag_run_result",
+                {
+                    "request_id": request_id,
+                    "answer_chars": len(answer or ""),
+                    "documents_count": len(documents or []),
+                    "used_chunks_count": len(used_chunks or []),
+                    "retriever_top_k": top_k,
+                    "retrieval_top_k": retrieval_top_k,
+                    "memory_context_used": bool(normalized_memory_context),
+                    "document_scope_enabled": document_scope_enabled,
+                    "complete_document_id": complete_document_id,
+                    "document_name": document_name,
+                    "document_scope_mode": document_scope_mode,
+                    "document_profile_used": result["document_profile_used"],
+                    "selected_complete_document_ids": final_used_complete_document_ids,
+                    "selected_unique_complete_document_ids": _unique_values(
+                        final_used_complete_document_ids
+                    ),
+                },
+            )
+
+            return result
+
         except Exception as e:
+            _trace_event(
+                "rag_run_exception",
+                {
+                    "request_id": request_id,
+                    "error_type": type(e).__name__,
+                    "error": str(e),
+                    "document_scope_enabled": document_scope_enabled,
+                    "complete_document_id": complete_document_id,
+                    "document_name": document_name,
+                },
+            )
+
             error_id(f"[RAGPipeline] Pipeline failed: {e}", request_id, exc_info=True)
             raise
 
