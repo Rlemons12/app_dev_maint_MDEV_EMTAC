@@ -1,5 +1,3 @@
-# modules/services/intent/chat_intent_classifier_service.py
-
 from __future__ import annotations
 
 import importlib
@@ -33,7 +31,7 @@ class ChatIntentClassifierService:
 
     Example .env value:
 
-        MODELS_DISTILBERT_INTENT=E:\\emtac\\models\\modules\\transformers_modules\\chat_intent_distilbert_augmented
+        MODELS_DISTILBERT_INTENT=E:\\emtac\\models\\modules\\transformers_modules\\chat_intent_distilbert_augmented_v3_gpu
     """
 
     DEFAULT_MODEL_ENV = "MODELS_DISTILBERT_INTENT"
@@ -45,6 +43,7 @@ class ChatIntentClassifierService:
         "RECALL_PRIOR_CONVERSATION": ChatIntent.RECALL_PRIOR_CONVERSATION,
         "DOCUMENT_SCOPED_FOLLOW_UP": ChatIntent.DOCUMENT_SCOPED_FOLLOW_UP,
         "CLARIFICATION": ChatIntent.CLARIFICATION,
+        "PERSONAL_MEMORY_UPDATE": ChatIntent.PERSONAL_MEMORY_UPDATE,
     }
 
     _load_lock = threading.Lock()
@@ -92,6 +91,21 @@ class ChatIntentClassifierService:
         Classify the user's question.
 
         prompt is accepted only for backward compatibility and is ignored.
+
+        Routing safety rule:
+            PERSONAL_MEMORY_UPDATE is a terminal no-RAG pathway in ChatOrchestrator.
+
+            Because of that, DistilBERT is not allowed to route a question into
+            PERSONAL_MEMORY_UPDATE unless the text is also confirmed by the narrow
+            explicit-memory-update rule.
+
+            This prevents examples like:
+                "I want to see some TPP troubleshooting tips"
+
+            from being misrouted as:
+                PERSONAL_MEMORY_UPDATE
+
+            and incorrectly bypassing normal RAG/manual search.
         """
 
         normalized_question = (question or "").strip()
@@ -100,6 +114,19 @@ class ChatIntentClassifierService:
             return ChatIntentDecision.fallback_new_topic("")
 
         try:
+            # ---------------------------------------------------------
+            # 1. Deterministic rules first
+            # ---------------------------------------------------------
+            # Rules are trusted before the model.
+            #
+            # This is where obvious examples like:
+            #   "Hi my name is John"
+            #   "Call me Sam"
+            #   "I work on Bag Fab"
+            #
+            # should be caught as PERSONAL_MEMORY_UPDATE.
+            # ---------------------------------------------------------
+
             rule_decision = self._rule_based_decision(
                 question=normalized_question,
                 recent_messages=recent_messages,
@@ -115,6 +142,10 @@ class ChatIntentClassifierService:
                     request_id,
                 )
                 return rule_decision
+
+            # ---------------------------------------------------------
+            # 2. DistilBERT model classification
+            # ---------------------------------------------------------
 
             tokenizer, model, id2label = self._get_model_bundle(
                 model_path=self.model_path,
@@ -140,26 +171,92 @@ class ChatIntentClassifierService:
                 probabilities = torch.softmax(outputs.logits, dim=-1)[0]
 
             best_index = int(torch.argmax(probabilities).item())
-            confidence = float(probabilities[best_index].item())
+            model_confidence = float(probabilities[best_index].item())
 
-            label = str(id2label.get(best_index, "")).strip().upper()
-            intent = self._coerce_intent(label)
+            model_label = str(id2label.get(best_index, "")).strip().upper()
+            model_intent = self._coerce_intent(model_label)
+
+            final_label = model_label
+            final_intent = model_intent
+            final_confidence = model_confidence
+            safety_override_applied = False
+            safety_override_reason = ""
+
+            # ---------------------------------------------------------
+            # 3. PERSONAL_MEMORY_UPDATE safety gate
+            # ---------------------------------------------------------
+            # The model can suggest PERSONAL_MEMORY_UPDATE, but the route
+            # is only allowed if the text is an explicit memory update.
+            #
+            # Why:
+            #   ChatOrchestrator now treats PERSONAL_MEMORY_UPDATE as a
+            #   terminal no-RAG branch.
+            #
+            # Therefore, this classifier must protect RAG questions such as:
+            #   "I want to see some TPP troubleshooting tips"
+            #   "I need information on Bowl Hoppers"
+            #   "Show me the troubleshooting guide"
+            # ---------------------------------------------------------
+
+            if model_intent == ChatIntent.PERSONAL_MEMORY_UPDATE:
+                if not self._is_personal_memory_update_statement(normalized_question):
+                    safety_override_applied = True
+                    safety_override_reason = (
+                        "Rejected DistilBERT PERSONAL_MEMORY_UPDATE because the "
+                        "question is not an explicit personal memory update."
+                    )
+
+                    warning_id(
+                        "[ChatIntentClassifierService] Rejected model PERSONAL_MEMORY_UPDATE "
+                        "because question is not an explicit personal memory update. "
+                        f"question={normalized_question!r} "
+                        f"model_label={model_label!r} "
+                        f"model_confidence={model_confidence:.4f}",
+                        request_id,
+                    )
+
+                    final_label = "NEW_TOPIC"
+                    final_intent = ChatIntent.NEW_TOPIC
+
+                    # This is a deterministic routing safety override.
+                    # Use high confidence for the routing decision, but keep
+                    # model confidence visible in reason/logs.
+                    final_confidence = 1.0
+
+            # ---------------------------------------------------------
+            # 4. Build final decision
+            # ---------------------------------------------------------
+
+            if safety_override_applied:
+                reason = (
+                    f"{safety_override_reason} "
+                    f"Original model_label={model_label!r}, "
+                    f"model_confidence={model_confidence:.4f}. "
+                    f"Routed as {final_intent.value}."
+                )
+            else:
+                reason = f"DistilBERT predicted {final_label or final_intent.value}."
 
             decision = ChatIntentDecision(
-                intent=intent,
-                confidence=confidence,
+                intent=final_intent,
+                confidence=final_confidence,
                 needs_current_session_memory=False,
                 needs_semantic_chat_recall=False,
                 needs_document_scope=False,
                 rewritten_question=normalized_question,
-                reason=f"DistilBERT predicted {intent.value}.",
+                reason=reason,
             )
 
             decision = self._normalize_flags(decision)
 
             debug_id(
-                f"[ChatIntentClassifierService] model intent={decision.intent.value} "
-                f"confidence={decision.confidence:.4f} "
+                f"[ChatIntentClassifierService] model_label={model_label!r} "
+                f"model_intent={model_intent.value} "
+                f"model_confidence={model_confidence:.4f} "
+                f"final_label={final_label!r} "
+                f"final_intent={decision.intent.value} "
+                f"final_confidence={decision.confidence:.4f} "
+                f"safety_override_applied={safety_override_applied} "
                 f"device={self.device} "
                 f"model_path={self.model_path!r}",
                 request_id,
@@ -347,12 +444,24 @@ class ChatIntentClassifierService:
 
             "CLARIFY": "CLARIFICATION",
             "EXPLAIN_THAT": "CLARIFICATION",
+
+            "PERSONAL_MEMORY": "PERSONAL_MEMORY_UPDATE",
+            "MEMORY_UPDATE": "PERSONAL_MEMORY_UPDATE",
+            "SAVE_MEMORY": "PERSONAL_MEMORY_UPDATE",
+            "PROFILE_UPDATE": "PERSONAL_MEMORY_UPDATE",
+            "USER_MEMORY_UPDATE": "PERSONAL_MEMORY_UPDATE",
         }
 
         text = aliases.get(text, text)
 
         if text in cls.SUPPORTED_INTENTS:
             return cls.SUPPORTED_INTENTS[text]
+
+        warning_id(
+            f"[ChatIntentClassifierService] Unsupported intent label={text!r}; "
+            "falling back to NEW_TOPIC.",
+            None,
+        )
 
         return ChatIntent.NEW_TOPIC
 
@@ -383,6 +492,11 @@ class ChatIntentClassifierService:
             decision.needs_semantic_chat_recall = False
             decision.needs_document_scope = False
 
+        elif decision.intent == ChatIntent.PERSONAL_MEMORY_UPDATE:
+            decision.needs_current_session_memory = True
+            decision.needs_semantic_chat_recall = False
+            decision.needs_document_scope = False
+
         if not decision.rewritten_question:
             decision.rewritten_question = ""
 
@@ -396,24 +510,71 @@ class ChatIntentClassifierService:
         conversation_summary: Optional[List[Dict[str, Any]]],
         document_scope: Optional[Dict[str, Any]],
     ) -> Optional[ChatIntentDecision]:
-        q = self._normalize_text(question)
+        """
+        Narrow deterministic overrides.
 
-        personal_memory_patterns = [
+        These rules protect routing safety. They should only catch obvious
+        conversational/memory statements or obvious recall/follow-up language.
+        """
+
+        raw_question = (question or "").strip()
+        q = self._normalize_text(raw_question)
+
+        # ---------------------------------------------------------
+        # 1. Personal memory update statements
+        # ---------------------------------------------------------
+        # This must run before model classification.
+        #
+        # Examples:
+        #   Hi my name is Sam
+        #   My name is Greg
+        #   Call me Rob
+        #   I work on Bag Fab
+        #   I am on night shift
+        #   I am troubleshooting the RF cabinet
+        #
+        # Must NOT catch:
+        #   What does the RF cabinet do?
+        #   How do I Hi-POT the tube?
+        #   Where is the SWI for Bag Loading?
+        # ---------------------------------------------------------
+
+        if self._is_personal_memory_update_statement(raw_question):
+            return self._make_decision(
+                intent=ChatIntent.PERSONAL_MEMORY_UPDATE,
+                confidence=1.0,
+                rewritten_question=question,
+                reason="matched_personal_memory_update_pattern",
+            )
+
+        # ---------------------------------------------------------
+        # 2. Personal/current memory recall questions
+        # ---------------------------------------------------------
+
+        personal_memory_recall_patterns = [
             r"\bwhat\s+is\s+my\s+name\b",
+            r"\bwhat\s+was\s+my\s+name\b",
+            r"\bwhat\s+did\s+i\s+say\s+my\s+name\s+was\b",
             r"\bdo\s+you\s+remember\s+my\s+name\b",
-            r"\bremember\s+my\s+name\b",
             r"\bwho\s+am\s+i\b",
             r"\bwhat\s+do\s+you\s+remember\s+about\s+me\b",
             r"\bwhat\s+have\s+i\s+told\s+you\s+about\s+me\b",
+            r"\bwhat\s+did\s+i\s+say\s+i\s+was\s+working\s+on\b",
+            r"\bwhat\s+am\s+i\s+working\s+on\b",
+            r"\bwhat\s+was\s+i\s+working\s+on\b",
         ]
 
-        if self._matches_any(q, personal_memory_patterns):
+        if self._matches_any(q, personal_memory_recall_patterns):
             return self._make_decision(
-                intent=ChatIntent.RECALL_PRIOR_CONVERSATION,
+                intent=ChatIntent.FOLLOW_UP_CURRENT_SESSION,
                 confidence=1.0,
                 rewritten_question=question,
-                reason="personal_memory",
+                reason="personal_current_session_recall",
             )
+
+        # ---------------------------------------------------------
+        # 3. Prior semantic recall
+        # ---------------------------------------------------------
 
         prior_conversation_patterns = [
             r"\bwhat\s+were\s+we\s+talking\s+about\b",
@@ -422,6 +583,9 @@ class ChatIntentClassifierService:
             r"\bwhat\s+was\s+my\s+last\s+question\b",
             r"\bwhat\s+did\s+you\s+say\s+earlier\b",
             r"\bwhat\s+did\s+you\s+say\s+before\b",
+            r"\bwhat\s+did\s+we\s+discuss\s+yesterday\b",
+            r"\bwhat\s+did\s+we\s+talk\s+about\s+yesterday\b",
+            r"\byesterday\b",
             r"\bpreviously\b",
             r"\bearlier\b",
             r"\blast\s+time\b",
@@ -436,6 +600,10 @@ class ChatIntentClassifierService:
                 rewritten_question=question,
                 reason="prior_conversation_recall",
             )
+
+        # ---------------------------------------------------------
+        # 4. Clarification / continue current answer
+        # ---------------------------------------------------------
 
         clarification_patterns = [
             r"\bwhat\s+do\s+you\s+mean\b",
@@ -458,6 +626,10 @@ class ChatIntentClassifierService:
                 rewritten_question=question,
                 reason="clarification_phrase",
             )
+
+        # ---------------------------------------------------------
+        # 5. Active Ask This Document follow-up
+        # ---------------------------------------------------------
 
         if self._document_scope_is_active(document_scope):
             document_followup_patterns = [
@@ -508,6 +680,78 @@ class ChatIntentClassifierService:
 
         return self._normalize_flags(decision)
 
+    @classmethod
+    def _is_personal_memory_update_statement(cls, value: str) -> bool:
+        raw = (value or "").strip()
+
+        if not raw:
+            return False
+
+        lowered = raw.lower().strip()
+
+        # Do not steal technical/document questions.
+        if "?" in lowered:
+            return False
+
+        technical_question_starters = (
+            "what ",
+            "what's ",
+            "what is ",
+            "what does ",
+            "how ",
+            "how do ",
+            "where ",
+            "where is ",
+            "when ",
+            "why ",
+            "which ",
+            "show ",
+            "find ",
+            "search ",
+            "look up ",
+            "explain ",
+            "tell me about ",
+        )
+
+        if lowered.startswith(technical_question_starters):
+            return False
+
+        # Name / preferred name updates.
+        name_patterns = [
+            r"^\s*(?:hi|hello|hey)?\s*,?\s*my\s+name\s+is\s+[a-z][a-z .'\-]{1,60}\s*[.!]?\s*$",
+            r"^\s*(?:hi|hello|hey)?\s*,?\s*i\s+am\s+[a-z][a-z .'\-]{1,60}\s*[.!]?\s*$",
+            r"^\s*(?:hi|hello|hey)?\s*,?\s*i'm\s+[a-z][a-z .'\-]{1,60}\s*[.!]?\s*$",
+            r"^\s*call\s+me\s+[a-z][a-z .'\-]{1,60}\s*[.!]?\s*$",
+            r"^\s*you\s+can\s+call\s+me\s+[a-z][a-z .'\-]{1,60}\s*[.!]?\s*$",
+            r"^\s*remember\s+(?:that\s+)?my\s+name\s+is\s+[a-z][a-z .'\-]{1,60}\s*[.!]?\s*$",
+        ]
+
+        if cls._matches_any_raw(raw, name_patterns):
+            return True
+
+        # Work / assignment / shift / task updates.
+        work_patterns = [
+            r"^\s*i\s+work\s+on\s+.{2,100}\s*[.!]?\s*$",
+            r"^\s*i\s+work\s+in\s+.{2,100}\s*[.!]?\s*$",
+            r"^\s*i\s+am\s+on\s+.{2,100}\s*[.!]?\s*$",
+            r"^\s*i'm\s+on\s+.{2,100}\s*[.!]?\s*$",
+            r"^\s*i\s+am\s+working\s+on\s+.{2,120}\s*[.!]?\s*$",
+            r"^\s*i'm\s+working\s+on\s+.{2,120}\s*[.!]?\s*$",
+            r"^\s*i\s+am\s+troubleshooting\s+.{2,120}\s*[.!]?\s*$",
+            r"^\s*i'm\s+troubleshooting\s+.{2,120}\s*[.!]?\s*$",
+            r"^\s*i\s+am\s+assigned\s+to\s+.{2,120}\s*[.!]?\s*$",
+            r"^\s*i'm\s+assigned\s+to\s+.{2,120}\s*[.!]?\s*$",
+            r"^\s*remember\s+that\s+i\s+am\s+assigned\s+to\s+.{2,120}\s*[.!]?\s*$",
+            r"^\s*remember\s+that\s+i\s+work\s+on\s+.{2,120}\s*[.!]?\s*$",
+            r"^\s*remember\s+that\s+i\s+am\s+working\s+on\s+.{2,120}\s*[.!]?\s*$",
+            r"^\s*remember\s+that\s+i\s+am\s+troubleshooting\s+.{2,120}\s*[.!]?\s*$",
+        ]
+
+        if cls._matches_any_raw(raw, work_patterns):
+            return True
+
+        return False
+
     @staticmethod
     def _normalize_text(value: str) -> str:
         text = (value or "").strip().lower()
@@ -517,6 +761,13 @@ class ChatIntentClassifierService:
 
     @staticmethod
     def _matches_any(text: str, patterns: List[str]) -> bool:
+        return any(
+            re.search(pattern, text, flags=re.IGNORECASE)
+            for pattern in patterns
+        )
+
+    @staticmethod
+    def _matches_any_raw(text: str, patterns: List[str]) -> bool:
         return any(
             re.search(pattern, text, flags=re.IGNORECASE)
             for pattern in patterns
