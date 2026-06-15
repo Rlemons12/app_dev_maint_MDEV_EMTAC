@@ -83,13 +83,15 @@
 <script src="{{ url_for('static', filename='js/index/partials/chatbot_display_documents.js') }}?v=document_scope_20260528_1"></script>
 <script src="{{ url_for('static', filename='js/index/partials/chatbot_display_drawings.js') }}?v=qanda_feedback_20260527_2"></script>
 <script src="{{ url_for('static', filename='js/index/partials/chatbot_display_parts.js') }}?v=qanda_feedback_20260527_2"></script>
-<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_thumbnails.js') }}?v=qanda_feedback_20260527_2"></script>
+
+<!-- Updated image renderer with pagination / Load More support -->
+<script src="{{ url_for('static', filename='js/index/partials/chatbot_display_thumbnails.js') }}?v=image_pagination_20260615_1"></script>
 
 <!-- Q&A feedback helper BEFORE chatbot.js -->
 <script src="{{ url_for('static', filename='js/index/update_qanda_table.js') }}?v=qanda_feedback_20260527_7"></script>
 
 <!-- Main chatbot behavior -->
-<script src="{{ url_for('static', filename='js/index/chatbot.js') }}?v=document_scope_20260528_2"></script>
+<script src="{{ url_for('static', filename='js/index/chatbot.js') }}?v=image_pagination_20260615_1"></script>
 
 <!-- Tutorial LAST - index page only -->
 <script src="{{ url_for('static', filename='js/index/emtac_tutorial.js') }}?v=tutorial_20260608_2"></script>
