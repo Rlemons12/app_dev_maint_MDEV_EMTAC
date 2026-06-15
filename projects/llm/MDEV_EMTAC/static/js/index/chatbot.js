@@ -742,22 +742,55 @@ function renderPayloadFromResponse(data) {
     console.time("[EMTAC] render images");
 
     if (Array.isArray(renderPayload.images)) {
-        if (renderPayload.images.length > 0) {
-            if (typeof displayThumbnails === "function") {
-                displayThumbnails(renderPayload.images);
-                appendPayloadLimitNotice(
-                    "thumbnails-section",
-                    "images",
-                    renderPayload.images.length,
-                    payload.images.length
-                );
-            } else {
-                console.warn("[EMTAC] displayThumbnails() is not defined.");
-            }
+    if (renderPayload.images.length > 0) {
+        if (typeof displayThumbnails === "function") {
+            const totalImages =
+                data.images_total ||
+                data.image_count_total ||
+                data.total_images ||
+                payload.images.length ||
+                renderPayload.images.length;
+
+            displayThumbnails({
+                images: renderPayload.images,
+
+                request_id:
+                    data.request_id ||
+                    data.original_request_id ||
+                    null,
+
+                images_total: totalImages,
+                image_count_total: totalImages,
+                total_images: totalImages,
+
+                images_page:
+                    data.images_page ||
+                    1,
+
+                images_page_size:
+                    data.images_page_size ||
+                    24,
+
+                images_has_more:
+                    Boolean(data.images_has_more),
+
+                images_next_page:
+                    data.images_next_page ||
+                    2,
+
+                images_endpoint:
+                    data.images_endpoint ||
+                    data.image_pagination_endpoint ||
+                    "/chatbot/ask/payload/images",
+            });
+
         } else {
-            console.log("[EMTAC] No images in payload.");
+            console.warn("[EMTAC] displayThumbnails() is not defined.");
         }
+    } else {
+        console.log("[EMTAC] No images in payload.");
     }
+}
 
     console.timeEnd("[EMTAC] render images");
 
