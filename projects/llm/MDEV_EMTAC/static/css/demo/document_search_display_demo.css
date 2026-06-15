@@ -1,0 +1,167 @@
+/* ============================================================
+   Hide original selects / Select2 shells for demo tile controls
+============================================================ */
+
+.document-demo-hidden-select {
+    display: none !important;
+}
+
+.document-demo-hidden-select + .select2,
+.document-demo-hidden-select + .select2-container,
+.document-demo-hidden-select ~ .select2,
+.document-demo-hidden-select ~ .select2-container,
+[data-demo-select2-hidden="true"] {
+    display: none !important;
+}
+
+/* ============================================================
+   Generic document search tile dropdown replacement
+============================================================ */
+
+.document-demo-select-tile-picker {
+    width: 100%;
+    margin: 6px 0 14px;
+    padding: 0;
+}
+
+.document-demo-select-tile-header {
+    display: none;
+}
+
+/*
+   No scrolling.
+   Tiles fit the available width and wrap if needed.
+*/
+.document-demo-select-tile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
+    gap: 8px;
+    width: 100%;
+    overflow: visible;
+    padding: 4px 0 8px;
+}
+
+.document-demo-select-tile {
+    min-width: 0;
+    min-height: 58px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 7px 6px;
+
+    border: 1px solid rgba(86, 122, 173, 0.45);
+    border-radius: 10px;
+
+    background:
+        radial-gradient(circle at top left, rgba(24, 210, 255, 0.16), transparent 58%),
+        linear-gradient(
+            180deg,
+            rgba(22, 47, 82, 0.96) 0%,
+            rgba(9, 24, 45, 0.98) 100%
+        );
+
+    color: #e9f3ff;
+    cursor: pointer;
+    text-align: center;
+
+    transition:
+        transform 140ms ease,
+        border-color 140ms ease,
+        box-shadow 140ms ease,
+        background 140ms ease;
+}
+
+.document-demo-select-tile:hover {
+    transform: translateY(-1px);
+    border-color: rgba(24, 210, 255, 0.72);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
+}
+
+.document-demo-select-tile.active {
+    border-color: #18d2ff;
+    box-shadow:
+        0 0 0 1px rgba(24, 210, 255, 0.24),
+        0 6px 16px rgba(0, 0, 0, 0.28);
+
+    background:
+        radial-gradient(circle at top left, rgba(24, 210, 255, 0.22), transparent 58%),
+        linear-gradient(
+            180deg,
+            rgba(30, 83, 135, 0.98) 0%,
+            rgba(10, 34, 64, 0.98) 100%
+        );
+}
+
+.document-demo-select-tile--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.document-demo-select-tile-text {
+    display: block;
+    width: 100%;
+    color: #e8f8ff;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    line-height: 1.15;
+    text-align: center;
+    word-break: break-word;
+}
+
+/* Optional future image/thumb version */
+.document-demo-select-tile--with-thumb {
+    min-height: 86px;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.document-demo-select-tile-thumb {
+    width: 58px;
+    height: 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 8px;
+    border: 1px solid rgba(165, 210, 255, 0.18);
+
+    background:
+        radial-gradient(circle at top left, rgba(24, 210, 255, 0.24), transparent 60%),
+        linear-gradient(135deg, #15365f, #244f86);
+
+    overflow: hidden;
+}
+
+.document-demo-select-tile-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/*
+   Caption only appears if a future tile has an image.
+   Text-only tiles do not duplicate the name underneath.
+*/
+.document-demo-select-tile-caption {
+    display: block;
+    width: 100%;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.15;
+    text-align: center;
+    word-break: break-word;
+}
+
+/* Slightly wider tiles for long fields */
+[data-tile-picker-for="searchdocument_equipmentGroupDropdown"] .document-demo-select-tile-grid,
+[data-tile-picker-for="searchdocument_assetNumberDropdown"] .document-demo-select-tile-grid,
+[data-tile-picker-for="searchdocument_locationDropdown"] .document-demo-select-tile-grid {
+    grid-template-columns: repeat(auto-fit, minmax(94px, 1fr));
+}
