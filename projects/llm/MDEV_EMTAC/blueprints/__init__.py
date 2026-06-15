@@ -22,6 +22,8 @@ from flask import Flask
 logger.info("Starting the Flask application")
 
 # Import blueprints
+from blueprints.test_demo_routes.demo_testpoints_admin import demo_testpoints_admin_bp
+from blueprints.test_demo_routes.document_search_display_demo import document_search_display_demo_bp
 from blueprints.help_chat.help_chat_bp import help_chat_bp
 from modules.help_chat.help_chat_socket import register_help_chat_socket_events
 from blueprints.tablet_edge.tablet_edge_app_download_routes import tablet_edge_app_download_bp
@@ -165,6 +167,9 @@ def register_blueprints(app):
 
     app.register_blueprint(help_chat_bp)
 
+    app.register_blueprint(document_search_display_demo_bp, url_prefix="/test-demos")
+
+    app.register_blueprint(demo_testpoints_admin_bp)
 app = Flask(__name__)
 app.secret_key = '1234'
 
