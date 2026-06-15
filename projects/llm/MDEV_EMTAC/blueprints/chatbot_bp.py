@@ -57,6 +57,18 @@ user_comment_coordinator = (
 )
 
 
+
+# ==========================================================
+# PAYLOAD PAGINATION SETTINGS
+# ==========================================================
+# The images panel can explode if one matched position has thousands of
+# related images. Keep the first /ask/payload response small, then let the
+# frontend request more pages from /ask/payload/images.
+IMAGE_PAYLOAD_INITIAL_PAGE_SIZE = 24
+IMAGE_PAYLOAD_MAX_PAGE_SIZE = 100
+IMAGE_PAYLOAD_DEFAULT_PAGE_SIZE = 24
+IMAGE_PAYLOAD_ENDPOINT = "/chatbot/ask/payload/images"
+
 # ==========================================================
 # SHARED HELPERS
 # ==========================================================
@@ -120,6 +132,216 @@ def _empty_payload_response(
         "relationship_summary": None,
     }
 
+
+
+
+def _mixed_request_data() -> Dict[str, Any]:
+    """
+    Return request data that works for both:
+        - GET query string endpoints
+        - POST JSON endpoints
+
+    Query-string values win only when JSON does not provide the key.
+    """
+
+    data: Dict[str, Any] = {}
+
+    try:
+        for key, value in request.args.items():
+            data[key] = value
+    except Exception:
+        pass
+
+    json_body = _json_data()
+
+    if isinstance(json_body, dict):
+        data.update(json_body)
+
+    return data
+
+
+def _extract_original_request_id(data: Dict[str, Any]) -> Optional[str]:
+    """
+    Extract the original /ask request_id used to load saved payload data.
+    """
+
+    value = (
+        data.get("requestId")
+        or data.get("request_id")
+        or data.get("originalRequestId")
+        or data.get("original_request_id")
+    )
+
+    if value is None:
+        return None
+
+    value = str(value).strip()
+
+    return value or None
+
+
+def _coerce_positive_int(
+    value: Any,
+    *,
+    default: int,
+    minimum: int = 1,
+    maximum: Optional[int] = None,
+) -> int:
+    """
+    Convert browser/query values into a bounded positive integer.
+    """
+
+    try:
+        parsed = int(str(value).strip())
+    except (TypeError, ValueError):
+        parsed = default
+
+    if parsed < minimum:
+        parsed = minimum
+
+    if maximum is not None and parsed > maximum:
+        parsed = maximum
+
+    return parsed
+
+
+def _extract_images_for_payload(result: Dict[str, Any]) -> list:
+    """
+    Read images from the normalized payload.
+
+    Supports both current shapes:
+        result["images"]
+        result["blocks"]["images-container"]
+    """
+
+    if not isinstance(result, dict):
+        return []
+
+    images = result.get("images")
+
+    if isinstance(images, list):
+        return images
+
+    blocks = result.get("blocks")
+
+    if isinstance(blocks, dict):
+        block_images = blocks.get("images-container")
+
+        if isinstance(block_images, list):
+            return block_images
+
+    return []
+
+
+def _set_images_for_payload(
+    result: Dict[str, Any],
+    images: list,
+    *,
+    total_images: int,
+    page: int,
+    page_size: int,
+) -> Dict[str, Any]:
+    """
+    Store a paged image list back into the payload in all shapes the frontend
+    knows how to read.
+    """
+
+    if not isinstance(result, dict):
+        return result
+
+    safe_images = images if isinstance(images, list) else []
+    safe_total = max(int(total_images or 0), len(safe_images))
+    safe_page = max(int(page or 1), 1)
+    safe_page_size = max(int(page_size or IMAGE_PAYLOAD_DEFAULT_PAGE_SIZE), 1)
+
+    result["images"] = safe_images
+
+    blocks = result.get("blocks")
+
+    if not isinstance(blocks, dict):
+        blocks = _empty_blocks()
+        result["blocks"] = blocks
+
+    blocks["images-container"] = safe_images
+
+    returned_count = len(safe_images)
+    has_more = (safe_page * safe_page_size) < safe_total
+
+    result["images_total"] = safe_total
+    result["image_count_total"] = safe_total
+    result["total_images"] = safe_total
+
+    result["images_returned"] = returned_count
+    result["images_page"] = safe_page
+    result["images_page_size"] = safe_page_size
+    result["images_has_more"] = has_more
+    result["images_truncated"] = has_more
+    result["images_next_page"] = safe_page + 1 if has_more else None
+    result["image_pagination_endpoint"] = IMAGE_PAYLOAD_ENDPOINT
+    result["images_endpoint"] = IMAGE_PAYLOAD_ENDPOINT
+
+    return result
+
+
+def _page_images(
+    images: list,
+    *,
+    page: int,
+    page_size: int,
+) -> Dict[str, Any]:
+    """
+    Return one page of images and pagination metadata.
+    """
+
+    safe_images = images if isinstance(images, list) else []
+    safe_page = max(int(page or 1), 1)
+    safe_page_size = max(int(page_size or IMAGE_PAYLOAD_DEFAULT_PAGE_SIZE), 1)
+
+    total = len(safe_images)
+    start = (safe_page - 1) * safe_page_size
+    end = start + safe_page_size
+
+    page_images = safe_images[start:end]
+    has_more = end < total
+
+    return {
+        "images": page_images,
+        "total": total,
+        "page": safe_page,
+        "page_size": safe_page_size,
+        "returned": len(page_images),
+        "has_more": has_more,
+        "next_page": safe_page + 1 if has_more else None,
+    }
+
+
+def _cap_initial_payload_images(result: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Keep the normal /ask/payload response small.
+
+    Important:
+        This is a route-level safety cap. It prevents a huge JSON response from
+        being sent to the browser. The deeper service should still eventually
+        stop loading thousands of images from the database in the first place.
+    """
+
+    if not isinstance(result, dict):
+        return result
+
+    all_images = _extract_images_for_payload(result)
+    page = _page_images(
+        all_images,
+        page=1,
+        page_size=IMAGE_PAYLOAD_INITIAL_PAGE_SIZE,
+    )
+
+    return _set_images_for_payload(
+        result,
+        page["images"],
+        total_images=page["total"],
+        page=page["page"],
+        page_size=page["page_size"],
+    )
 
 def _resolve_route_request_id(request_id: Optional[str]) -> str:
     """
@@ -809,12 +1031,7 @@ def ask_payload(request_id=None):
     try:
         data = _json_data()
 
-        original_request_id = (
-            data.get("requestId")
-            or data.get("request_id")
-            or data.get("originalRequestId")
-            or data.get("original_request_id")
-        )
+        original_request_id = _extract_original_request_id(data)
 
         conversation_id = _extract_conversation_id(data)
         payload_seed = data.get("payload_seed")
@@ -875,6 +1092,8 @@ def ask_payload(request_id=None):
             payload_route_request_id=payload_route_request_id,
             conversation_id=conversation_id,
         )
+
+        result = _cap_initial_payload_images(result)
 
         documents_count = len(result.get("documents") or [])
         parts_count = len(result.get("parts") or [])
@@ -971,6 +1190,191 @@ def ask_payload(request_id=None):
         )
 
         return jsonify(response_body), 500
+
+
+# ==========================================================
+# ASK PAYLOAD IMAGES
+# ==========================================================
+# Paginated image-only endpoint for the Images panel.
+#
+# Frontend flow:
+#   1. POST /chatbot/ask
+#   2. POST /chatbot/ask/payload
+#      - returns first 24 images only
+#      - returns images_total/images_has_more/images_next_page
+#   3. GET /chatbot/ask/payload/images?request_id=<original_request_id>&page=2&page_size=24
+#
+# This is intentionally route-level pagination so it can be dropped in without
+# requiring an immediate rewrite of ChunkRelationshipService.
+#
+# Long-term improvement:
+#   Move the limit/offset down into ChunkRelationshipService so the DB never
+#   returns thousands of images for the first payload.
+# ==========================================================
+
+@chatbot_bp.route("/ask/payload/images", methods=["GET", "POST"])
+@with_request_id
+@trace_entrypoint(
+    name="chat.payload.images",
+    enabled_env="EMTAC_TRACE_PAYLOAD_ENABLED",
+    deep_profile=False,
+    capture_args=False,
+    capture_return=False,
+)
+def ask_payload_images(request_id=None):
+    image_route_request_id = _resolve_route_request_id(request_id)
+    route_start = time.perf_counter()
+
+    original_request_id = None
+    conversation_id = None
+
+    try:
+        data = _mixed_request_data()
+
+        original_request_id = _extract_original_request_id(data)
+        conversation_id = _extract_conversation_id(data)
+
+        page = _coerce_positive_int(
+            data.get("page"),
+            default=1,
+            minimum=1,
+        )
+
+        page_size = _coerce_positive_int(
+            data.get("page_size") or data.get("pageSize"),
+            default=IMAGE_PAYLOAD_DEFAULT_PAGE_SIZE,
+            minimum=1,
+            maximum=IMAGE_PAYLOAD_MAX_PAGE_SIZE,
+        )
+
+        payload_seed = data.get("payload_seed")
+
+        if not original_request_id and not payload_seed:
+            logger.info(
+                "[ChatPayloadImagesRoute] Invalid image payload request "
+                "image_route_request_id=%s original_request_id=%s conversation_id=%s elapsed=%.3fs",
+                image_route_request_id,
+                original_request_id,
+                conversation_id,
+                time.perf_counter() - route_start,
+            )
+
+            return jsonify({
+                "status": "invalid_input",
+                "payload_status": "unavailable",
+                "message": "Missing request_id/requestId or payload_seed.",
+                "request_id": original_request_id,
+                "image_route_request_id": image_route_request_id,
+                "conversation_id": conversation_id,
+                "images": [],
+                "images_total": 0,
+                "images_returned": 0,
+                "images_page": page,
+                "images_page_size": page_size,
+                "images_has_more": False,
+                "images_next_page": None,
+            }), 400
+
+        logger.info(
+            "[ChatPayloadImagesRoute] Starting image page load "
+            "image_route_request_id=%s original_request_id=%s conversation_id=%s "
+            "page=%s page_size=%s has_payload_seed=%s",
+            image_route_request_id,
+            original_request_id,
+            conversation_id,
+            page,
+            page_size,
+            payload_seed is not None,
+        )
+
+        load_start = time.perf_counter()
+
+        result = chat_payload_coordinator.load_payload(
+            request_id=original_request_id,
+            payload_seed=payload_seed,
+            client_type=_extract_client_type(data),
+        )
+
+        load_time = time.perf_counter() - load_start
+
+        result = _normalize_payload_result(
+            result=result,
+            original_request_id=original_request_id,
+            payload_route_request_id=image_route_request_id,
+            conversation_id=conversation_id,
+        )
+
+        all_images = _extract_images_for_payload(result)
+
+        page_result = _page_images(
+            all_images,
+            page=page,
+            page_size=page_size,
+        )
+
+        response_body = {
+            "status": "success",
+            "payload_status": "complete",
+            "request_id": original_request_id,
+            "image_route_request_id": image_route_request_id,
+            "conversation_id": conversation_id,
+
+            "images": page_result["images"],
+            "images_total": page_result["total"],
+            "image_count_total": page_result["total"],
+            "total_images": page_result["total"],
+            "images_returned": page_result["returned"],
+            "images_page": page_result["page"],
+            "images_page_size": page_result["page_size"],
+            "images_has_more": page_result["has_more"],
+            "images_truncated": page_result["has_more"],
+            "images_next_page": page_result["next_page"],
+            "image_pagination_endpoint": IMAGE_PAYLOAD_ENDPOINT,
+            "images_endpoint": IMAGE_PAYLOAD_ENDPOINT,
+        }
+
+        logger.info(
+            "[ChatPayloadImagesRoute] Image page ready "
+            "image_route_request_id=%s original_request_id=%s conversation_id=%s "
+            "page=%s page_size=%s returned=%s total=%s has_more=%s "
+            "load_time=%.3fs elapsed=%.3fs",
+            image_route_request_id,
+            original_request_id,
+            conversation_id,
+            page_result["page"],
+            page_result["page_size"],
+            page_result["returned"],
+            page_result["total"],
+            page_result["has_more"],
+            load_time,
+            time.perf_counter() - route_start,
+        )
+
+        return jsonify(response_body)
+
+    except Exception as e:
+        error_id(
+            f"/ask/payload/images route failure: {e}",
+            image_route_request_id,
+            exc_info=True,
+        )
+
+        return jsonify({
+            "status": "error",
+            "payload_status": "error",
+            "message": "An unexpected error occurred while loading image page.",
+            "request_id": original_request_id,
+            "image_route_request_id": image_route_request_id,
+            "conversation_id": conversation_id,
+            "images": [],
+            "images_total": 0,
+            "images_returned": 0,
+            "images_page": None,
+            "images_page_size": None,
+            "images_has_more": False,
+            "images_next_page": None,
+        }), 500
+
 
 def _coerce_bool(value: Any, default: bool = True) -> bool:
     if value is None:
