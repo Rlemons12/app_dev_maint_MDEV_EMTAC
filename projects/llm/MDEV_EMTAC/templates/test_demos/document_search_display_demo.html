@@ -1,0 +1,50 @@
+{% extends "module_template_html/base_template_2_0_0.html" %}
+
+{% block title %}Document Search Display Demo{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/module_template/panel_layouts.css') }}?v=document_search_demo_20260615_2">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/upload_search_database/upload_search_database.css') }}?v=document_search_demo_20260615_2">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/select2/select2_v4_0_13.min.css') }}"/>
+
+    <!-- Demo-only styling -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/demo/document_search_display_demo.css') }}?v=document_search_demo_20260615_3">
+{% endblock %}
+
+{% block sidebar %}
+    {% set current_page = 'search' %}
+    {% include 'module_template_html/base_sidebar.html' %}
+{% endblock %}
+
+{% block content %}
+    {% include 'test_demos/document_search_display_demo_layout.html' %}
+{% endblock %}
+
+{% block extra_scripts %}
+    <!-- Core libraries FIRST -->
+    <script src="{{ url_for('static', filename='vendor/jquery/jquery-3.6.0.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/select2/select2_v4_0_13.min.js') }}"></script>
+
+    <!-- WebView-safe global viewer functions BEFORE search/upload scripts -->
+    <script src="{{ url_for('static', filename='js/index/partials/chatbot_global_viewers.js') }}?v=document_search_demo_20260615_2"></script>
+
+    <!-- Keep existing scripts for compatibility with existing search/upload partials -->
+    <script src="{{ url_for('static', filename='js/upload_search_database/upload_document.js') }}?v=document_search_demo_20260615_2"></script>
+    <script src="{{ url_for('static', filename='js/upload_search_database/batch_upload.js') }}?v=document_search_demo_20260615_2"></script>
+    <script src="{{ url_for('static', filename='js/upload_search_database/upload_image.js') }}?v=document_search_demo_20260615_2"></script>
+    <script src="{{ url_for('static', filename='js/upload_search_database/image_upload.js') }}?v=document_search_demo_20260615_2"></script>
+    <script src="{{ url_for('static', filename='js/upload_search_database/upload_powerpoint.js') }}?v=document_search_demo_20260615_2"></script>
+
+    <!-- Search/render scripts -->
+    <script src="{{ url_for('static', filename='js/upload_search_database/document_search.js') }}?v=document_search_demo_20260615_2"></script>
+    <script src="{{ url_for('static', filename='js/upload_search_database/image_search.js') }}?v=document_search_demo_20260615_2"></script>
+    <script src="{{ url_for('static', filename='js/upload_search_database/powerpoint_search.js') }}?v=document_search_demo_20260615_2"></script>
+    <script src="{{ url_for('static', filename='js/upload_search_database/image_compare.js') }}?v=document_search_demo_20260615_2"></script>
+    <script src="{{ url_for('static', filename='js/upload_search_database/search_drawing.js') }}?v=document_search_demo_20260615_2"></script>
+
+    <!-- Existing page initializer -->
+    <script src="{{ url_for('static', filename='js/upload_search_database/upload_search_database_page.js') }}?v=document_search_demo_20260615_2"></script>
+
+    <!-- Demo-only initializer LAST -->
+    <script src="{{ url_for('static', filename='js/demo/document_search_display_demo.js') }}?v=document_search_demo_20260615_3"></script>
+{% endblock %}
