@@ -427,3 +427,68 @@ Database/**
 
 # Local AI/MCP/editor config
 .ai/
+
+
+# ===========================================================
+# RELEASE CLEANUP - KEEP PRODUCTION MAIN CLEAN
+# ===========================================================
+
+# Local installers / downloaded tools
+*.exe
+dvc-*.exe
+
+# Vendor/unpacked third-party apps
+services/grafana-*/
+services/grafana-*/**
+
+# Local environment/config files
+*.env
+.env
+.env.*
+!.env.example
+!.env.test.example
+
+# DVC metadata inside app project - ignore for production release
+projects/llm/MDEV_EMTAC/.dvc/
+projects/llm/MDEV_EMTAC/.dvc/**
+
+# Generated output/report folders
+projects/llm/MDEV_EMTAC/reports/
+projects/llm/MDEV_EMTAC/reports/**
+projects/llm/MDEV_EMTAC/scripts_output/
+projects/llm/MDEV_EMTAC/scripts_output/**
+projects/llm/MDEV_EMTAC/document_equipment_output/
+projects/llm/MDEV_EMTAC/document_equipment_output/**
+projects/llm/MDEV_EMTAC/mi_au_maint/migration_analysis/
+projects/llm/MDEV_EMTAC/mi_au_maint/migration_analysis/**
+
+# Backup files
+*.bak
+*.bak_*
+*backup_*.py
+*_backup_*.py
+*.bak_remove_*
+
+# One-off local utility/test files
+projects/llm/MDEV_EMTAC/check_excel_headers.py
+projects/llm/MDEV_EMTAC/chk_pairs.py
+projects/llm/MDEV_EMTAC/enrichment_probe.py
+projects/llm/MDEV_EMTAC/--root
+
+# Training projects/results - not part of production app release
+projects/MODEL_TRAINING/
+projects/MODEL_TRAINING/**
+projects/llm/MDEV_EMTAC/modules/emtac_ai/chat_intent_training_template_500_examples.csv
+
+# Local signing/update payloads
+signing/
+signing/**
+tablet_updates/
+tablet_updates/**
+
+# Generated scan/report files
+services/wheel_scan_report.json
+
+# Local tools folder - keep out of production release
+tools/
+tools/**
