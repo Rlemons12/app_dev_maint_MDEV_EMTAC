@@ -1,0 +1,74 @@
+{% extends "module_template_html/base_template.html" %}
+
+{% block title %}EMTAC Help Chat Admin{% endblock %}
+
+{% block extra_head %}
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/help_chat/help_chat_admin.css') }}?v=help_chat_admin_20260602_2"
+>
+{% endblock %}
+
+{% block content %}
+<div id="helpChatAdminPopup" class="help-chat-admin-popup" style="display: flex;">
+    <div class="help-chat-admin-popup-header">
+        <div>
+            <strong>Help Chat Admin</strong>
+            <div style="font-size: 12px; color: #cbd5e1;">
+                Switch between active user chats.
+            </div>
+        </div>
+
+        <button
+            id="helpChatAdminCloseButton"
+            type="button"
+            onclick="window.location.href='{{ url_for('index') }}'"
+        >
+            Close
+        </button>
+    </div>
+
+    <div class="help-chat-admin-popup-body">
+        <aside class="help-chat-admin-popup-tabs">
+            <div class="help-chat-admin-popup-tabs-header">
+                <strong>User Chats</strong>
+                <button id="helpChatRefreshSessionsButton" type="button">
+                    Refresh
+                </button>
+            </div>
+
+            <div id="helpChatAdminSessionTabs">
+                <div class="help-chat-admin-empty">No chats loaded.</div>
+            </div>
+        </aside>
+
+        <section class="help-chat-admin-popup-chat">
+            <div id="helpChatAdminActiveHeader" class="help-chat-admin-active-header">
+                Select a user chat.
+            </div>
+
+            <div id="helpChatAdminMessages" class="help-chat-admin-messages"></div>
+
+            <div class="help-chat-admin-input-row">
+                <input
+                    id="helpChatAdminInput"
+                    type="text"
+                    placeholder="Type admin reply..."
+                    disabled
+                >
+                <button id="helpChatAdminSendButton" type="button" disabled>
+                    Send
+                </button>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ super() }}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script
+    src="{{ url_for('static', filename='js/help_chat/help_chat_admin.js') }}?v=help_chat_admin_20260602_2"
+></script>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Maintenance Troubleshooting{% endblock %}
+
+{% block body %}
+<main class="app-shell" data-user-id="{{ user.id }}">
+    <header class="topbar">
+        <div>
+            <div class="eyebrow">Maintenance Troubleshooting</div>
+            <h1>{{ user.first_name }} {{ user.last_name }}</h1>
+        </div>
+        <form method="post" action="{{ url_for('logout') }}">
+            <button class="secondary" type="submit">Logout</button>
+        </form>
+    </header>
+
+    <section class="filters card">
+        <h2>Position Filters</h2>
+        <div class="filter-grid">
+            <label>
+                <span>Area</span>
+                <select id="area">
+                    <option value="">Select area</option>
+                    {% for area in areas %}
+                    <option value="{{ area.id }}">{{ area.label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                <span>Equipment Group</span>
+                <select id="equipment-group" disabled>
+                    <option value="">Select group</option>
+                </select>
+            </label>
+            <label>
+                <span>Model</span>
+                <select id="model" disabled>
+                    <option value="">Select model</option>
+                </select>
+            </label>
+            <label>
+                <span>Location</span>
+                <select id="location" disabled>
+                    <option value="">Select location</option>
+                </select>
+            </label>
+            <label>
+                <span>Asset Number</span>
+                <select id="asset-number" disabled>
+                    <option value="">Select asset number</option>
+                </select>
+            </label>
+        </div>
+        <div class="actions">
+            <button id="search-btn" type="button">Load Problems</button>
+            <button id="reset-btn" type="button" class="secondary">Reset</button>
+        </div>
+    </section>
+
+    <section class="workspace">
+        <article class="card list-panel">
+            <h2>Problems</h2>
+            <div id="problems" class="list-content empty">Select filters to load problems.</div>
+        </article>
+        <article class="card list-panel">
+            <h2>Solutions</h2>
+            <div id="solutions" class="list-content empty">Choose a problem.</div>
+        </article>
+        <article class="card list-panel">
+            <h2>Tasks</h2>
+            <div id="tasks" class="list-content empty">Choose a solution.</div>
+        </article>
+        <article class="card detail-panel">
+            <h2>Task Details</h2>
+            <div id="task-detail" class="detail-content empty">Choose a task.</div>
+        </article>
+    </section>
+</main>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% endblock %}
