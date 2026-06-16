@@ -391,3 +391,39 @@ services/gpu/artifacts/pdf/*
 # Local DVC application install
 DVC (Data Version Control)/**
 !DVC (Data Version Control)/.gitkeep
+
+# ===========================================================
+# HARD BLOCK: LOCAL DATABASE / CAD VAULT CONTENT
+# Keep folder structure only. Do not track actual files.
+# ===========================================================
+
+Database/**
+!Database/
+!Database/**/
+!Database/**/.gitkeep
+!Database/**/.gitignore
+
+# SolidWorks / CAD files
+*.SLDPRT
+*.SLDASM
+*.SLDDRW
+*.sldprt
+*.sldasm
+*.slddrw
+
+# Other common CAD/export files
+*.STEP
+*.STP
+*.IGES
+*.IGS
+*.DXF
+*.DWG
+*.step
+*.stp
+*.iges
+*.igs
+*.dxf
+*.dwg
+
+# Local AI/MCP/editor config
+.ai/
