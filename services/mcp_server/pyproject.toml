@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcp_coordinator"
+version = "0.1.0"
+description = "EMTAC MCP coordinator with PostgreSQL capability and downstream routing scaffolding."
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["listed_server*", "mcp_server*", "tools*", "ai_layer*", "app*", "clients*"]

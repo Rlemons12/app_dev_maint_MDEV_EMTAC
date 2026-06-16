@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PostgreSQL MCP UI</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand-block">
+        <div class="brand-mark" aria-hidden="true">PG</div>
+        <div>
+          <h1>PostgreSQL MCP</h1>
+          <p id="connectionSummary">Loading configuration...</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a id="openGrafanaLink" class="secondary-link-button" href="http://localhost:3000" target="_blank" rel="noreferrer">Open Grafana</a>
+        <button id="refreshToolsButton" class="secondary-button" title="Refresh tools" type="button">Refresh Tools</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel chat-panel" aria-labelledby="chatTitle">
+        <div class="panel-header">
+          <div>
+            <h2>MCP Runtime</h2>
+            <p>Start or stop the standalone MCP server process.</p>
+          </div>
+        </div>
+        <div class="field-grid two-col">
+          <label>
+            Python
+            <input id="mcpPython" type="text" placeholder="python executable path">
+          </label>
+          <label>
+            Script
+            <input id="mcpScript" type="text" placeholder="mcp server script path">
+          </label>
+          <label>
+            Transport
+            <select id="mcpTransport">
+              <option value="streamable-http">streamable-http</option>
+            </select>
+          </label>
+          <label>
+            Host
+            <input id="mcpHost" type="text" value="127.0.0.1">
+          </label>
+          <label>
+            Port
+            <input id="mcpPort" type="number" value="8000">
+          </label>
+        </div>
+        <div class="action-row split">
+          <span id="mcpStatus" class="status-pill">Unknown</span>
+          <div class="button-row">
+            <button id="startMcpButton" type="button">Start MCP Server</button>
+            <button id="stopMcpButton" class="secondary-button" type="button">Stop MCP Server</button>
+          </div>
+        </div>
+
+        <div class="panel-header">
+          <div>
+            <h2 id="chatTitle">AI Chat</h2>
+            <p>Ask for database inspection or changes through the MCP gateway.</p>
+          </div>
+          <label class="toggle">
+            <input id="allowDestructive" type="checkbox">
+            <span>Allow destructive tools</span>
+          </label>
+        </div>
+        <div class="field-grid two-col">
+          <label>
+            AI Provider
+            <select id="aiProvider">
+              <option value="openai">openai</option>
+              <option value="huggingface-router">huggingface-router</option>
+            </select>
+          </label>
+          <label>
+            Model Override
+            <input id="aiModel" type="text" placeholder="leave empty for default">
+          </label>
+        </div>
+
+        <div id="chatLog" class="chat-log" aria-live="polite"></div>
+
+        <form id="chatForm" class="prompt-row">
+          <textarea id="questionInput" rows="3" placeholder="List my PostgreSQL databases."></textarea>
+          <button type="submit">Send</button>
+        </form>
+      </section>
+
+      <aside class="side-column">
+        <section class="panel query-panel" aria-labelledby="queryTitle">
+          <div class="panel-header">
+            <div>
+              <h2 id="queryTitle">Read Query</h2>
+              <p>Runs through the read-only MCP query tool.</p>
+            </div>
+          </div>
+
+          <div class="field-grid">
+            <label>
+              Database
+              <input id="queryDatabase" type="text" placeholder="default">
+            </label>
+          </div>
+
+          <textarea id="sqlInput" class="code-input" rows="8">select current_database(), current_user, now();</textarea>
+          <div class="action-row">
+            <button id="runQueryButton" type="button">Run Query</button>
+          </div>
+          <pre id="queryResult" class="result-box"></pre>
+        </section>
+
+        <section class="panel tools-panel" aria-labelledby="toolsTitle">
+          <div class="panel-header">
+            <div>
+              <h2 id="toolsTitle">MCP Tools</h2>
+              <p>Inspect tool schemas and run direct calls.</p>
+            </div>
+          </div>
+
+          <div class="tool-call">
+            <label>
+              Tool
+              <select id="toolSelect"></select>
+            </label>
+            <label>
+              Arguments JSON
+              <textarea id="toolArguments" rows="8">{}</textarea>
+            </label>
+            <div class="action-row">
+              <button id="runToolButton" type="button">Run Tool</button>
+            </div>
+          </div>
+
+          <div id="toolDetails" class="tool-details"></div>
+          <pre id="toolResult" class="result-box"></pre>
+        </section>
+      </aside>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

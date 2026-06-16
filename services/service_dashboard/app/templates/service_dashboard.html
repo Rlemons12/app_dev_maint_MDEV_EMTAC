@@ -1,0 +1,1653 @@
+{% extends "layouts/five_panel_dashboard.html" %}
+
+{% block title %}EMTAC Service Dashboard{% endblock %}
+{% block nav_services %}active{% endblock %}
+
+{# ══ Page-level styles ══ #}
+{% block extra_css %}
+<style>
+/* ─────────────────────────────────────────────
+   Metrics grid
+───────────────────────────────────────────── */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.metric-block {
+  background: var(--panel);
+  padding: 16px;
+}
+
+.metric-label {
+  font-size: var(--fs-xs);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--txt-dim);
+  font-family: var(--mono);
+  margin-bottom: 8px;
+}
+
+.bar-wrap {
+  height: 6px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 1px;
+  background: linear-gradient(90deg, var(--fill-a), var(--fill-b));
+  transition: width 1s ease;
+  position: relative;
+}
+
+.bar-fill::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--fill-b);
+  filter: blur(2px);
+}
+
+.metric-value-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.metric-big {
+  font-size: var(--fs-metric);
+  font-weight: 700;
+  font-family: var(--mono);
+}
+
+.metric-unit {
+  font-size: var(--fs-sm);
+  color: var(--txt-dim);
+}
+
+/* ─────────────────────────────────────────────
+   Log feed
+───────────────────────────────────────────── */
+.log-feed {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  background: var(--panel-alt);
+}
+
+.log-entry {
+  display: flex;
+  gap: 10px;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+  animation: log-in 0.3s ease;
+}
+
+@keyframes log-in {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.log-ts {
+  color: var(--txt-muted);
+  flex-shrink: 0;
+}
+
+.log-level {
+  flex-shrink: 0;
+  width: 46px;
+}
+
+.log-level.info  { color: var(--blue); }
+.log-level.warn  { color: var(--amber); }
+.log-level.error { color: var(--red); }
+.log-level.ok    { color: var(--green); }
+
+.log-msg {
+  color: var(--txt-dim);
+  word-break: break-all;
+}
+
+/* ─────────────────────────────────────────────
+   Legacy service card styles
+   Kept because service_dashboard.js may still create these.
+───────────────────────────────────────────── */
+.services-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.service-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.service-card:hover {
+  border-color: var(--border2);
+  background: rgba(255,255,255,0.02);
+}
+
+.service-card.selected {
+  border-color: var(--green);
+  background: rgba(0,255,136,0.04);
+}
+
+.svc-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.svc-dot.running {
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: svc-pulse 2s ease-in-out infinite;
+}
+
+.svc-dot.stopped {
+  background: var(--red);
+}
+
+.svc-dot.unknown {
+  background: var(--txt-muted);
+}
+
+@keyframes svc-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+.svc-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.svc-name {
+  font-weight: 700;
+  font-size: var(--fs-base);
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.svc-meta {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  color: var(--txt-dim);
+  margin-top: 2px;
+}
+
+.svc-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.svc-btn {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+
+.svc-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.svc-btn-start {
+  background: rgba(0,255,136,0.15);
+  color: var(--green);
+  border: 1px solid rgba(0,255,136,0.3);
+}
+
+.svc-btn-stop {
+  background: rgba(255,68,85,0.12);
+  color: var(--red);
+  border: 1px solid rgba(255,68,85,0.3);
+}
+
+.svc-btn-restart {
+  background: rgba(255,184,48,0.1);
+  color: var(--amber);
+  border: 1px solid rgba(255,184,48,0.3);
+}
+
+.svc-btn:hover:not(:disabled) {
+  filter: brightness(1.2);
+}
+
+/* ─────────────────────────────────────────────
+   Output box
+───────────────────────────────────────────── */
+.output-box {
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  color: var(--txt-dim);
+  line-height: 1.5;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 140px;
+  flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────────
+   Controls toolbar
+───────────────────────────────────────────── */
+.ctrl-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.25);
+}
+
+.ctrl-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ctrl-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border2);
+  flex-shrink: 0;
+}
+
+.ctrl-label {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--txt-dim);
+  white-space: nowrap;
+}
+
+.ctrl-select,
+.ctrl-input {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid var(--border2);
+  color: var(--txt);
+  padding: 6px 10px;
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  outline: none;
+  transition: border-color 0.15s;
+  appearance: none;
+  height: 30px;
+}
+
+.ctrl-select {
+  min-width: 180px;
+}
+
+.ctrl-input {
+  width: 60px;
+}
+
+.ctrl-select:focus,
+.ctrl-input:focus {
+  border-color: var(--green);
+}
+
+.ctrl-select option {
+  background: #0e1117;
+}
+
+.ctrl-btn {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  height: 30px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+}
+
+.ctrl-btn-primary {
+  background: var(--green);
+  color: #000;
+  font-weight: 700;
+}
+
+.ctrl-btn-primary:hover {
+  background: var(--green-dim);
+  box-shadow: 0 0 10px rgba(0,255,136,0.4);
+}
+
+.ctrl-btn-link {
+  background: transparent;
+  color: var(--txt-dim);
+  border: 1px solid var(--border2);
+  text-decoration: none;
+}
+
+.ctrl-btn-link:hover {
+  border-color: var(--txt-dim);
+  color: var(--txt);
+}
+
+.ctrl-btn-grafana {
+  background: transparent;
+  color: var(--orange);
+  border: 1px solid rgba(255,111,60,0.4);
+  text-decoration: none;
+}
+
+.ctrl-btn-grafana:hover {
+  background: rgba(255,111,60,0.1);
+  border-color: var(--orange);
+  box-shadow: 0 0 8px rgba(255,111,60,0.3);
+}
+
+/* ─────────────────────────────────────────────
+   Pill badges
+───────────────────────────────────────────── */
+.pill {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+}
+
+.pill-ok {
+  border: 1px solid var(--green);
+  color: var(--green);
+  background: rgba(0,255,136,0.07);
+}
+
+.pill-warn {
+  border: 1px solid var(--amber);
+  color: var(--amber);
+  background: rgba(255,184,48,0.07);
+}
+
+.pill-err {
+  border: 1px solid var(--red);
+  color: var(--red);
+  background: rgba(255,68,85,0.07);
+}
+
+/* ─────────────────────────────────────────────
+   Main dashboard grid
+───────────────────────────────────────────── */
+.svc-inner-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: minmax(180px, 0.65fr) minmax(340px, 1.35fr);
+  gap: 1px;
+  background: var(--border);
+  flex: 1;
+  overflow: hidden;
+}
+
+.svc-panel {
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.svc-panel-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.25);
+  flex-shrink: 0;
+}
+
+.svc-panel-hd span {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--txt-dim);
+}
+
+.svc-panel-body {
+  flex: 1;
+  padding: 12px 14px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.svc-panel-body.no-pad {
+  padding: 0;
+}
+
+.svc-panel--services {
+  grid-column: 1 / 3;
+  grid-row: 2;
+  min-height: 0;
+}
+
+/* ─────────────────────────────────────────────
+   Managed services tab layout
+───────────────────────────────────────────── */
+.svc-tabs-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.svc-tabs-sidebar {
+  border-right: 1px solid var(--border);
+  background: rgba(0,0,0,0.20);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.svc-tabs-sidebar-hd {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--txt-dim);
+  background: rgba(0,0,0,0.20);
+  flex-shrink: 0;
+}
+
+.svc-tabs-list {
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+
+.svc-tab-btn {
+  width: 100%;
+  text-align: left;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid var(--border);
+  color: var(--txt);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.svc-tab-btn:hover {
+  border-color: var(--border2);
+  background: rgba(255,255,255,0.03);
+}
+
+.svc-tab-btn.active {
+  border-color: var(--green);
+  background: rgba(0,255,136,0.06);
+}
+
+.svc-tab-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.svc-tab-name {
+  font-weight: 700;
+  color: #fff;
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.svc-tab-sub {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  color: var(--txt-dim);
+  margin-top: 2px;
+}
+
+.svc-tabs-detail {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.svc-detail-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(0,0,0,0.18);
+  flex-shrink: 0;
+}
+
+.svc-detail-name {
+  font-size: var(--fs-base);
+  font-weight: 700;
+  color: #fff;
+}
+
+.svc-detail-meta-top {
+  margin-top: 4px;
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  color: var(--txt-dim);
+}
+
+.svc-detail-content {
+  padding: 12px 14px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.svc-detail-info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.svc-info-box {
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.22);
+  padding: 10px;
+  min-width: 0;
+}
+
+.svc-info-label {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--txt-dim);
+  margin-bottom: 6px;
+}
+
+.svc-info-value {
+  color: var(--txt);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+
+.svc-detail-block {
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.18);
+  padding: 10px 12px;
+}
+
+.svc-detail-line {
+  color: var(--txt);
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.svc-break {
+  word-break: break-all;
+}
+
+.svc-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.svc-output-block {
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+}
+
+.svc-detail-output {
+  max-height: none;
+  min-height: 170px;
+  border: 1px solid var(--border);
+  margin-top: 6px;
+  flex: 1;
+}
+
+/* Hidden compatibility area.
+   External service_dashboard.js can still write to these IDs. */
+.legacy-services-source,
+.legacy-selected-output-sink {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────
+   Responsive
+───────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .svc-inner-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto minmax(420px, 1fr);
+  }
+
+  .svc-panel--services {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .svc-tabs-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .svc-tabs-sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .svc-tabs-list {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .svc-tab-btn {
+    min-width: 220px;
+  }
+
+  .svc-detail-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+</style>
+{% endblock %}
+
+{# ══ Status strip ══ #}
+{% block status_strip %}
+<div class="stat-card" style="--card-color:var(--green)">
+  <div class="stat-icon">⬡</div>
+  <div class="stat-info">
+    <label>GPU Backend</label>
+    <div class="val" id="strip-gpu-backend">—</div>
+    <div class="sub" id="strip-gpu-backend-sub">checking…</div>
+  </div>
+</div>
+
+<div class="stat-card" style="--card-color:var(--blue)">
+  <div class="stat-icon">⬡</div>
+  <div class="stat-info">
+    <label>GPU Service</label>
+    <div class="val" id="strip-gpu-service">—</div>
+    <div class="sub" id="strip-gpu-service-sub">:5051</div>
+  </div>
+</div>
+
+<div class="stat-card" style="--card-color:var(--amber)">
+  <div class="stat-icon">▣</div>
+  <div class="stat-info">
+    <label>Managed Services</label>
+    <div class="val" id="strip-svc-count">0</div>
+    <div class="sub" id="strip-svc-running">0 running</div>
+  </div>
+</div>
+
+<div class="stat-card" style="--card-color:var(--orange)">
+  <div class="stat-icon">◈</div>
+  <div class="stat-info">
+    <label>Grafana</label>
+    <div class="val" id="strip-grafana-status">—</div>
+    <div class="sub" id="strip-grafana-url-sub">{{ grafana_url }}</div>
+  </div>
+</div>
+
+<div class="stat-card" style="--card-color:var(--green)">
+  <div class="stat-icon">◉</div>
+  <div class="stat-info">
+    <label>Status A.I.</label>
+    <div class="val">READY</div>
+    <div class="sub">claude-sonnet · anthropic</div>
+  </div>
+</div>
+{% endblock %}
+
+{# ══ Main panel ══ #}
+{% block main_panel %}
+
+<div class="panel-header">
+  <span class="panel-title">// EMTAC Service Dashboard</span>
+  <span class="badge">LIVE</span>
+</div>
+
+<div class="ctrl-toolbar">
+
+  <button class="ctrl-btn ctrl-btn-primary" id="refreshAllBtn" type="button">↺ Refresh All</button>
+
+  <div class="ctrl-divider"></div>
+
+  <div class="ctrl-group">
+    <label class="ctrl-label" for="serviceSelector">Service</label>
+    <select id="serviceSelector" class="ctrl-select">
+      <option value="">Choose a service…</option>
+    </select>
+  </div>
+
+  <div class="ctrl-divider"></div>
+
+  <div class="ctrl-group">
+    <label class="ctrl-label" for="refreshSeconds">Auto-refresh (s)</label>
+    <input id="refreshSeconds" class="ctrl-input" type="number" min="1" max="60" value="3">
+  </div>
+
+  <div class="ctrl-divider"></div>
+
+  <span class="pill pill-ok" id="gpuBackendPill">GPU backend: -</span>
+  <span class="pill pill-warn" id="gpuServicePill">GPU service: -</span>
+
+  <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+    <a class="ctrl-btn ctrl-btn-grafana"
+       id="grafanaOpenBtn"
+       href="{{ grafana_url }}"
+       target="_blank"
+       rel="noopener noreferrer">
+      ◈ Open Grafana ↗
+    </a>
+
+    <a class="ctrl-btn ctrl-btn-link"
+       href="{{ trace_url }}"
+       target="_blank"
+       rel="noopener noreferrer">
+      Open Trace →
+    </a>
+  </div>
+
+</div>
+
+<div class="svc-inner-grid">
+
+  <div class="svc-panel">
+    <div class="svc-panel-hd">
+      <span>// gpu usage</span>
+    </div>
+    <div class="svc-panel-body">
+      <div class="metric-label">GPU Metrics</div>
+      <div id="gpuUsageBlock" style="font-family:var(--mono);font-size:var(--fs-sm);color:var(--txt);line-height:1.6;">
+        Loading…
+      </div>
+    </div>
+  </div>
+
+  <div class="svc-panel">
+    <div class="svc-panel-hd">
+      <span>// gpu service</span>
+    </div>
+    <div class="svc-panel-body">
+      <div class="metric-label">Service State</div>
+      <div id="gpuStatusBlock" style="font-family:var(--mono);font-size:var(--fs-sm);color:var(--txt);line-height:1.6;">
+        Loading…
+      </div>
+    </div>
+  </div>
+
+  <div class="svc-panel svc-panel--services">
+    <div class="svc-panel-hd">
+      <span>// managed services</span>
+      <span class="pill pill-ok" id="serviceCountPill">0 services</span>
+    </div>
+
+    <div class="svc-panel-body no-pad">
+
+      {# External service_dashboard.js writes here.
+         This remains in the DOM for compatibility, but it is not the visible UI. #}
+      <div id="servicesContainer"
+           class="services-grid service-dashboard-services legacy-services-source"
+           aria-hidden="true"></div>
+
+      <div class="svc-tabs-layout">
+
+        <div class="svc-tabs-sidebar">
+          <div class="svc-tabs-sidebar-hd">Services</div>
+          <div id="serviceTabsList" class="svc-tabs-list">
+            <div class="svc-detail-line" style="padding:8px 10px;color:var(--txt-dim);">
+              Loading services…
+            </div>
+          </div>
+        </div>
+
+        <div class="svc-tabs-detail">
+          <div class="svc-detail-header">
+            <div>
+              <div id="svcDetailName" class="svc-detail-name">No service selected</div>
+              <div id="svcDetailMetaTop" class="svc-detail-meta-top">Select a service to view details.</div>
+            </div>
+            <div id="svcDetailStatusPill" class="pill pill-warn">No selection</div>
+          </div>
+
+          <div class="svc-detail-content">
+            <div class="svc-detail-info-grid">
+              <div class="svc-info-box">
+                <div class="svc-info-label">Type</div>
+                <div id="svcDetailType" class="svc-info-value">—</div>
+              </div>
+
+              <div class="svc-info-box">
+                <div class="svc-info-label">PID</div>
+                <div id="svcDetailPid" class="svc-info-value">—</div>
+              </div>
+
+              <div class="svc-info-box">
+                <div class="svc-info-label">Uptime</div>
+                <div id="svcDetailUptime" class="svc-info-value">—</div>
+              </div>
+
+              <div class="svc-info-box">
+                <div class="svc-info-label">Log File</div>
+                <div id="svcDetailLogFile" class="svc-info-value svc-break">—</div>
+              </div>
+            </div>
+
+            <div class="svc-detail-block">
+              <div class="svc-info-label">Working Directory</div>
+              <div id="svcDetailCwd" class="svc-detail-line svc-break">—</div>
+            </div>
+
+            <div class="svc-detail-block">
+              <div class="svc-info-label">Command</div>
+              <div id="svcDetailCommand" class="svc-detail-line svc-break">—</div>
+            </div>
+
+            <div class="svc-detail-actions">
+              <button id="svcStartBtn" class="svc-btn svc-btn-start" type="button" disabled>Start</button>
+              <button id="svcStopBtn" class="svc-btn svc-btn-stop" type="button" disabled>Stop</button>
+              <button id="svcRestartBtn" class="svc-btn svc-btn-restart" type="button" disabled>Restart</button>
+              <button id="svcClearBtn" class="svc-btn svc-btn-restart" type="button" disabled>Clear Output</button>
+              <button id="svcViewOutputBtn" class="svc-btn svc-btn-restart" type="button" disabled>View Output</button>
+            </div>
+
+            <div class="svc-detail-block svc-output-block">
+              <div class="svc-info-label">Service Output</div>
+              <div id="svcDetailOutput" class="output-box svc-detail-output">
+                Select a service to view output.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{# Compatibility sink for service_dashboard.js.
+   The old selected output panel is hidden because output now appears in the tab detail pane. #}
+<div class="legacy-selected-output-sink" aria-hidden="true">
+  <div class="svc-panel-hd">
+    <span>// selected service output</span>
+    <span class="pill pill-ok" id="selectedServiceName" style="font-size:var(--fs-xs)">No service selected</span>
+  </div>
+  <div id="selectedServiceOutput" class="output-box">
+    Select a service above to view output.
+  </div>
+</div>
+
+{% endblock %}
+
+{# ══ Extra quick prompts ══ #}
+{% block ai_quick_prompts %}
+<button class="qp-btn" data-qp="services">Services</button>
+<button class="qp-btn" data-qp="gpu">GPU Details</button>
+<button class="qp-btn" data-qp="grafana">Grafana</button>
+{% endblock %}
+
+{# ══ Page JS ══ #}
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/service_dashboard.js') }}"></script>
+<script>
+(function () {
+'use strict';
+
+window.GRAFANA_URL = {{ grafana_url|tojson }};
+window.TRACE_URL = {{ trace_url|tojson }};
+
+window.AI_PAGE_CONTEXT =
+  'This page shows: GPU usage metrics, GPU service state, managed services in ' +
+  'a tabbed inspector with start/stop/restart controls, and selected service output. ' +
+  'Grafana is running at ' + window.GRAFANA_URL + ' for observability dashboards.';
+
+window.AI_EXTRA_PROMPTS = {
+  services: 'What is the current state of all managed services? Any that need attention?',
+  gpu:      'Give me detailed GPU usage information. Is VRAM headroom acceptable?',
+  grafana:  'What dashboards and alerts are available in Grafana right now?'
+};
+
+/* ─────────────────────────────────────────────
+   Grafana health strip
+───────────────────────────────────────────── */
+async function pollGrafanaStatus() {
+  const el = document.getElementById('strip-grafana-status');
+
+  try {
+    const res = await fetch('/api/grafana-health', { cache: 'no-store' });
+    if (!res.ok) {
+      throw new Error('http ' + res.status);
+    }
+
+    const data = await res.json();
+
+    if (!el) {
+      return;
+    }
+
+    if (data.success === true) {
+      el.textContent = 'UP';
+      el.style.color = 'var(--orange)';
+      return;
+    }
+
+    if (data.grafana && data.grafana.error) {
+      el.textContent = 'ERR';
+      el.style.color = 'var(--amber)';
+      return;
+    }
+
+    el.textContent = 'DOWN';
+    el.style.color = 'var(--red)';
+
+  } catch (error) {
+    if (el) {
+      el.textContent = 'ERR';
+      el.style.color = 'var(--red)';
+    }
+  }
+}
+
+pollGrafanaStatus();
+setInterval(pollGrafanaStatus, 5000);
+
+/* ─────────────────────────────────────────────
+   Managed services tab bridge
+   Uses legacy #servicesContainer generated by service_dashboard.js.
+───────────────────────────────────────────── */
+let selectedServiceNameForTabs = null;
+let lastRenderedServiceSignature = '';
+
+function textOf(element) {
+  return (element && element.textContent ? element.textContent : '').trim();
+}
+
+function normalizeText(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function firstNonEmpty(values, fallback) {
+  for (const value of values) {
+    const cleaned = normalizeText(value);
+    if (cleaned) {
+      return cleaned;
+    }
+  }
+  return fallback;
+}
+
+function extractLabeledValue(text, label) {
+  const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(escapedLabel + '\\s*:\\s*([^\\n\\r]+)', 'i');
+  const match = String(text || '').match(pattern);
+  return match ? normalizeText(match[1]) : '';
+}
+
+function inferStatusFromCard(card) {
+  const dot = card.querySelector('.svc-dot');
+  if (dot) {
+    if (dot.classList.contains('running')) {
+      return 'running';
+    }
+    if (dot.classList.contains('stopped')) {
+      return 'stopped';
+    }
+    if (dot.classList.contains('unknown')) {
+      return 'unknown';
+    }
+  }
+
+  const text = String(card.textContent || '').toLowerCase();
+
+  if (text.includes(' running')) {
+    return 'running';
+  }
+
+  if (text.includes(' stopped')) {
+    return 'stopped';
+  }
+
+  if (text.includes(' error')) {
+    return 'error';
+  }
+
+  return 'unknown';
+}
+
+function inferServiceNameFromCard(card) {
+  const className = textOf(card.querySelector('.svc-name'));
+  if (className) {
+    return className;
+  }
+
+  const lines = String(card.textContent || '')
+    .split(/\r?\n/)
+    .map(line => normalizeText(line))
+    .filter(Boolean);
+
+  if (!lines.length) {
+    return 'Unknown Service';
+  }
+
+  if (lines.length >= 2 && ['running', 'stopped', 'unknown', 'error'].includes(lines[1].toLowerCase())) {
+    return lines[0];
+  }
+
+  return lines[0];
+}
+
+function getServiceCards() {
+  const container = document.getElementById('servicesContainer');
+  if (!container) {
+    return [];
+  }
+
+  const cards = Array.from(container.querySelectorAll('.service-card'));
+
+  if (cards.length) {
+    return cards;
+  }
+
+  return Array.from(container.children).filter(child => {
+    return normalizeText(child.textContent).length > 0;
+  });
+}
+
+function parseServiceCard(card) {
+  const allText = String(card.textContent || '');
+
+  const name = inferServiceNameFromCard(card);
+  const status = inferStatusFromCard(card);
+
+  const type = firstNonEmpty([
+    extractLabeledValue(allText, 'Type'),
+    card.dataset ? card.dataset.serviceType : ''
+  ], 'N/A');
+
+  const pid = firstNonEmpty([
+    extractLabeledValue(allText, 'PID'),
+    card.dataset ? card.dataset.pid : ''
+  ], 'N/A');
+
+  const uptime = firstNonEmpty([
+    extractLabeledValue(allText, 'Uptime'),
+    card.dataset ? card.dataset.uptime : ''
+  ], 'N/A');
+
+  const cwd = firstNonEmpty([
+    extractLabeledValue(allText, 'Working Dir'),
+    extractLabeledValue(allText, 'Working Directory'),
+    card.dataset ? card.dataset.cwd : ''
+  ], 'N/A');
+
+  const command = firstNonEmpty([
+    extractLabeledValue(allText, 'Command'),
+    card.dataset ? card.dataset.command : ''
+  ], 'N/A');
+
+  const logFile = firstNonEmpty([
+    extractLabeledValue(allText, 'Log File'),
+    card.dataset ? card.dataset.logFile : ''
+  ], 'N/A');
+
+  return {
+    name,
+    status,
+    type,
+    pid,
+    uptime,
+    cwd,
+    command,
+    logFile,
+    card
+  };
+}
+
+function getParsedServices() {
+  return getServiceCards()
+    .map(parseServiceCard)
+    .filter(service => service.name && service.name !== 'Unknown Service');
+}
+
+function serviceSignature(services) {
+  return services
+    .map(service => [
+      service.name,
+      service.status,
+      service.type,
+      service.pid,
+      service.uptime,
+      service.cwd,
+      service.command,
+      service.logFile,
+      normalizeText(service.card.textContent).slice(0, 250)
+    ].join('|'))
+    .join('||');
+}
+
+function getDotClass(status) {
+  const value = String(status || '').toLowerCase();
+
+  if (value === 'running') {
+    return 'svc-dot running';
+  }
+
+  if (value === 'stopped') {
+    return 'svc-dot stopped';
+  }
+
+  return 'svc-dot unknown';
+}
+
+function getStatusPillClass(status) {
+  const value = String(status || '').toLowerCase();
+
+  if (value === 'running') {
+    return 'pill pill-ok';
+  }
+
+  if (value === 'stopped') {
+    return 'pill pill-err';
+  }
+
+  if (value === 'error') {
+    return 'pill pill-err';
+  }
+
+  return 'pill pill-warn';
+}
+
+function findServiceByName(name) {
+  return getParsedServices().find(service => service.name === name) || null;
+}
+
+function clickOriginalServiceCard(service) {
+  if (!service || !service.card) {
+    return;
+  }
+
+  try {
+    service.card.click();
+  } catch (error) {
+    console.debug('Could not click original service card.', error);
+  }
+}
+
+function syncServiceSelector(serviceName) {
+  const selector = document.getElementById('serviceSelector');
+  if (!selector || !serviceName) {
+    return;
+  }
+
+  const options = Array.from(selector.options || []);
+  const matchingOption = options.find(option => {
+    return option.value === serviceName || option.textContent.trim() === serviceName;
+  });
+
+  if (!matchingOption) {
+    return;
+  }
+
+  selector.value = matchingOption.value;
+  selector.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function selectServiceTab(serviceName) {
+  selectedServiceNameForTabs = serviceName;
+
+  const service = findServiceByName(serviceName);
+  if (service) {
+    clickOriginalServiceCard(service);
+    syncServiceSelector(service.name);
+  }
+
+  renderManagedServiceTabs(true);
+  setTimeout(syncSelectedOutputToDetail, 150);
+  setTimeout(syncSelectedOutputToDetail, 500);
+}
+
+function renderServiceTabsList(services) {
+  const tabsList = document.getElementById('serviceTabsList');
+
+  if (!tabsList) {
+    return;
+  }
+
+  if (!services.length) {
+    tabsList.innerHTML =
+      '<div class="svc-detail-line" style="padding:8px 10px;color:var(--txt-dim);">No services found.</div>';
+    return;
+  }
+
+  tabsList.innerHTML = '';
+
+  services.forEach(service => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'svc-tab-btn' + (service.name === selectedServiceNameForTabs ? ' active' : '');
+
+    btn.innerHTML = `
+      <span class="${getDotClass(service.status)}"></span>
+      <span class="svc-tab-main">
+        <div class="svc-tab-name">${escapeHtml(service.name)}</div>
+        <div class="svc-tab-sub">${escapeHtml(service.status)} · ${escapeHtml(service.type)}</div>
+      </span>
+    `;
+
+    btn.addEventListener('click', function () {
+      selectServiceTab(service.name);
+    });
+
+    tabsList.appendChild(btn);
+  });
+}
+
+function setDetailEmpty() {
+  const nameEl = document.getElementById('svcDetailName');
+  const metaTopEl = document.getElementById('svcDetailMetaTop');
+  const statusPillEl = document.getElementById('svcDetailStatusPill');
+  const typeEl = document.getElementById('svcDetailType');
+  const pidEl = document.getElementById('svcDetailPid');
+  const uptimeEl = document.getElementById('svcDetailUptime');
+  const logFileEl = document.getElementById('svcDetailLogFile');
+  const cwdEl = document.getElementById('svcDetailCwd');
+  const commandEl = document.getElementById('svcDetailCommand');
+  const outputEl = document.getElementById('svcDetailOutput');
+
+  if (nameEl) nameEl.textContent = 'No service selected';
+  if (metaTopEl) metaTopEl.textContent = 'Select a service to view details.';
+
+  if (statusPillEl) {
+    statusPillEl.className = 'pill pill-warn';
+    statusPillEl.textContent = 'No selection';
+  }
+
+  if (typeEl) typeEl.textContent = '—';
+  if (pidEl) pidEl.textContent = '—';
+  if (uptimeEl) uptimeEl.textContent = '—';
+  if (logFileEl) logFileEl.textContent = '—';
+  if (cwdEl) cwdEl.textContent = '—';
+  if (commandEl) commandEl.textContent = '—';
+  if (outputEl) outputEl.textContent = 'Select a service to view output.';
+
+  setDetailButtonsEnabled(false);
+}
+
+function setDetailButtonsEnabled(enabled) {
+  const ids = [
+    'svcStartBtn',
+    'svcStopBtn',
+    'svcRestartBtn',
+    'svcClearBtn',
+    'svcViewOutputBtn'
+  ];
+
+  ids.forEach(id => {
+    const button = document.getElementById(id);
+    if (button) {
+      button.disabled = !enabled;
+    }
+  });
+}
+
+function renderSelectedServiceDetail(service) {
+  if (!service) {
+    setDetailEmpty();
+    return;
+  }
+
+  const nameEl = document.getElementById('svcDetailName');
+  const metaTopEl = document.getElementById('svcDetailMetaTop');
+  const statusPillEl = document.getElementById('svcDetailStatusPill');
+  const typeEl = document.getElementById('svcDetailType');
+  const pidEl = document.getElementById('svcDetailPid');
+  const uptimeEl = document.getElementById('svcDetailUptime');
+  const logFileEl = document.getElementById('svcDetailLogFile');
+  const cwdEl = document.getElementById('svcDetailCwd');
+  const commandEl = document.getElementById('svcDetailCommand');
+
+  if (nameEl) nameEl.textContent = service.name;
+  if (metaTopEl) metaTopEl.textContent = `${service.status} · ${service.type}`;
+
+  if (statusPillEl) {
+    statusPillEl.className = getStatusPillClass(service.status);
+    statusPillEl.textContent = String(service.status || 'unknown').toUpperCase();
+  }
+
+  if (typeEl) typeEl.textContent = service.type || 'N/A';
+  if (pidEl) pidEl.textContent = service.pid || 'N/A';
+  if (uptimeEl) uptimeEl.textContent = service.uptime || 'N/A';
+  if (logFileEl) logFileEl.textContent = service.logFile || 'N/A';
+  if (cwdEl) cwdEl.textContent = service.cwd || 'N/A';
+  if (commandEl) commandEl.textContent = service.command || 'N/A';
+
+  setDetailButtonsEnabled(true);
+  bindDetailButtons(service);
+  syncSelectedOutputToDetail();
+}
+
+function findButtonOnOriginalCard(service, action) {
+  if (!service || !service.card) {
+    return null;
+  }
+
+  const buttons = Array.from(service.card.querySelectorAll('button'));
+
+  const actionNeedles = {
+    start: ['start'],
+    stop: ['stop'],
+    restart: ['restart'],
+    clear: ['clear output', 'clear'],
+    output: ['view output', 'output', 'view']
+  };
+
+  const needles = actionNeedles[action] || [action];
+
+  return buttons.find(button => {
+    const text = normalizeText(button.textContent).toLowerCase();
+    return needles.some(needle => text.includes(needle));
+  }) || null;
+}
+
+function runOriginalServiceAction(serviceName, action) {
+  const service = findServiceByName(serviceName);
+
+  if (!service) {
+    return;
+  }
+
+  const button = findButtonOnOriginalCard(service, action);
+
+  if (button) {
+    button.click();
+  } else if (action === 'output') {
+    clickOriginalServiceCard(service);
+  }
+
+  setTimeout(function () {
+    renderManagedServiceTabs(true);
+    syncSelectedOutputToDetail();
+  }, 300);
+
+  setTimeout(function () {
+    renderManagedServiceTabs(true);
+    syncSelectedOutputToDetail();
+  }, 1000);
+}
+
+function bindDetailButtons(service) {
+  const mapping = [
+    ['svcStartBtn', 'start'],
+    ['svcStopBtn', 'stop'],
+    ['svcRestartBtn', 'restart'],
+    ['svcClearBtn', 'clear'],
+    ['svcViewOutputBtn', 'output']
+  ];
+
+  mapping.forEach(([id, action]) => {
+    const button = document.getElementById(id);
+
+    if (!button) {
+      return;
+    }
+
+    button.onclick = function () {
+      runOriginalServiceAction(service.name, action);
+    };
+  });
+}
+
+function syncSelectedOutputToDetail() {
+  const detailOutput = document.getElementById('svcDetailOutput');
+  const legacyOutput = document.getElementById('selectedServiceOutput');
+
+  if (!detailOutput) {
+    return;
+  }
+
+  const legacyText = legacyOutput ? normalizeText(legacyOutput.textContent) : '';
+
+  if (legacyText && !legacyText.toLowerCase().includes('select a service above')) {
+    detailOutput.textContent = legacyOutput.textContent;
+    return;
+  }
+
+  const service = selectedServiceNameForTabs ? findServiceByName(selectedServiceNameForTabs) : null;
+
+  if (!service) {
+    detailOutput.textContent = 'Select a service to view output.';
+    return;
+  }
+
+  const cardOutputCandidates = [
+    service.card.querySelector('.svc-output'),
+    service.card.querySelector('.service-output'),
+    service.card.querySelector('.output-box')
+  ].filter(Boolean);
+
+  if (cardOutputCandidates.length) {
+    detailOutput.textContent = cardOutputCandidates[0].textContent || 'No output yet.';
+    return;
+  }
+
+  const allText = String(service.card.textContent || '');
+  const outputMatch = allText.match(/(?:Output|Recent Output|Service Output)\s*:?\s*([\s\S]+)$/i);
+
+  if (outputMatch && normalizeText(outputMatch[1])) {
+    detailOutput.textContent = outputMatch[1].trim();
+    return;
+  }
+
+  detailOutput.textContent = 'No output yet.';
+}
+
+function renderManagedServiceTabs(force) {
+  const services = getParsedServices();
+  const signature = serviceSignature(services);
+
+  if (!force && signature === lastRenderedServiceSignature) {
+    syncSelectedOutputToDetail();
+    return;
+  }
+
+  lastRenderedServiceSignature = signature;
+
+  if (!services.length) {
+    selectedServiceNameForTabs = null;
+    renderServiceTabsList([]);
+    setDetailEmpty();
+    updateManagedServicesStrip(services);
+    return;
+  }
+
+  if (
+    !selectedServiceNameForTabs ||
+    !services.some(service => service.name === selectedServiceNameForTabs)
+  ) {
+    selectedServiceNameForTabs = services[0].name;
+  }
+
+  renderServiceTabsList(services);
+
+  const selectedService = services.find(service => service.name === selectedServiceNameForTabs) || services[0];
+  renderSelectedServiceDetail(selectedService);
+  updateManagedServicesStrip(services);
+}
+
+function updateManagedServicesStrip(services) {
+  const countPill = document.getElementById('serviceCountPill');
+  const stripCount = document.getElementById('strip-svc-count');
+  const stripRunning = document.getElementById('strip-svc-running');
+
+  const runningCount = services.filter(service => {
+    return String(service.status || '').toLowerCase() === 'running';
+  }).length;
+
+  if (countPill) {
+    countPill.textContent = `${services.length} services`;
+  }
+
+  if (stripCount) {
+    stripCount.textContent = String(services.length);
+  }
+
+  if (stripRunning) {
+    stripRunning.textContent = `${runningCount} running`;
+  }
+}
+
+function setupManagedServiceTabBridge() {
+  const container = document.getElementById('servicesContainer');
+  const legacyOutput = document.getElementById('selectedServiceOutput');
+
+  if (container) {
+    const observer = new MutationObserver(function () {
+      renderManagedServiceTabs(false);
+    });
+
+    observer.observe(container, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+  }
+
+  if (legacyOutput) {
+    const outputObserver = new MutationObserver(function () {
+      syncSelectedOutputToDetail();
+    });
+
+    outputObserver.observe(legacyOutput, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+  }
+
+  renderManagedServiceTabs(true);
+  setInterval(function () {
+    renderManagedServiceTabs(false);
+  }, 1500);
+}
+
+/* ─────────────────────────────────────────────
+   Keep strip stat cards in sync
+───────────────────────────────────────────── */
+function syncStripCards() {
+  const backendPill = document.getElementById('gpuBackendPill');
+  const servicePill = document.getElementById('gpuServicePill');
+
+  if (backendPill) {
+    const txt = backendPill.innerText.toLowerCase();
+    const ok = !txt.includes('-') && !txt.includes('err') && !txt.includes('unavailable');
+
+    const el = document.getElementById('strip-gpu-backend');
+    const sub = document.getElementById('strip-gpu-backend-sub');
+
+    if (el) {
+      el.textContent = ok ? 'OK' : 'ERR';
+    }
+
+    if (sub) {
+      sub.textContent = backendPill.innerText;
+    }
+  }
+
+  if (servicePill) {
+    const txt = servicePill.innerText.toLowerCase();
+    const el = document.getElementById('strip-gpu-service');
+    const sub = document.getElementById('strip-gpu-service-sub');
+
+    if (el) {
+      el.textContent = txt.includes('ok') || txt.includes('run') ? 'RUN' : 'DOWN';
+    }
+
+    if (sub) {
+      sub.textContent = servicePill.innerText;
+    }
+  }
+
+  const services = getParsedServices();
+  if (services.length) {
+    updateManagedServicesStrip(services);
+  }
+}
+
+setupManagedServiceTabBridge();
+setInterval(syncStripCards, 2000);
+syncStripCards();
+
+})();
+</script>
+{% endblock %}
