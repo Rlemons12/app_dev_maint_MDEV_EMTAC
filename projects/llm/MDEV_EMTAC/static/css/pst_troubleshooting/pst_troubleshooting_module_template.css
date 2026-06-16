@@ -1,0 +1,688 @@
+/* ============================================================
+   PST Troubleshooting - Module Template Styles
+   File:
+   static/css/pst_troubleshooting/pst_troubleshooting_module_template.css
+
+   Purpose:
+   Styles the PST troubleshooting page for:
+   module_template_html/base_template_2_0_0.html
+
+   This file replaces the old legacy PST page styling for this
+   converted page.
+
+   Important:
+   Do not load the old pst_troubleshooting.css on this page.
+   That legacy file controls body overflow, main-container
+   background image, sidebar, content, container, forms, tabs,
+   accordions, and buttons with broad !important selectors.
+
+   This file is intentionally scoped to:
+   .pst-troubleshooting-page
+
+   Main template file should load:
+   - role_base_button_acc_ctrl.css
+   - pst_troubleshooting_module_template.css
+   - tour.css
+   ============================================================ */
+
+
+/* ------------------------------------------------------------
+   Safety overrides if old legacy CSS accidentally still loads
+   ------------------------------------------------------------ */
+
+body:has(.pst-troubleshooting-page) {
+    overflow: auto !important;
+}
+
+body:has(.pst-troubleshooting-page) .main-container {
+    background-image: none !important;
+    background-color: transparent !important;
+}
+
+body:has(.pst-troubleshooting-page) .content {
+    background: transparent !important;
+}
+
+body:has(.pst-troubleshooting-page) .container,
+body:has(.pst-troubleshooting-page) .container-fluid {
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+
+/* ------------------------------------------------------------
+   Page shell
+   ------------------------------------------------------------ */
+
+.pst-troubleshooting-page {
+    width: 100%;
+    max-width: none;
+    min-height: calc(100vh - var(--banner-height, 0px));
+    padding: 1.25rem 1.5rem 2rem;
+    margin: 0;
+    background: transparent;
+    color: var(--text-color, #f5f7fb);
+}
+
+.pst-troubleshooting-page,
+.pst-troubleshooting-page * {
+    box-sizing: border-box;
+}
+
+
+/* ------------------------------------------------------------
+   Header
+   ------------------------------------------------------------ */
+
+.pst-page-header,
+.module-page-header.pst-page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0 0 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    background: transparent;
+}
+
+.pst-page-header .module-page-title,
+.pst-page-header h2 {
+    margin: 0;
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--accent-color, #1eff1e);
+}
+
+.pst-page-header .module-page-subtitle {
+    margin-top: 0.35rem;
+    color: var(--text-muted, rgba(255, 255, 255, 0.82));
+    font-size: 0.95rem;
+}
+
+.pst-page-header .module-page-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+
+/* ------------------------------------------------------------
+   Main card / tab wrapper
+   ------------------------------------------------------------ */
+
+.pst-entry-card,
+.module-card.pst-entry-card {
+    width: 100%;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    border-radius: var(--panel-radius, 0.75rem);
+    background: var(--panel-bg, rgba(8, 14, 24, 0.92));
+    box-shadow: var(--panel-shadow, 0 10px 28px rgba(0, 0, 0, 0.35));
+    overflow: hidden;
+}
+
+.pst-entry-card-header,
+.module-card-header.pst-entry-card-header,
+.pst-subtab-header,
+.module-card-header.pst-subtab-header {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    background: var(--panel-header-bg, rgba(28, 45, 65, 0.95));
+}
+
+.pst-entry-card-body,
+.module-card-body.pst-entry-card-body {
+    padding: 1rem;
+    background: var(--panel-bg, rgba(8, 14, 24, 0.92));
+}
+
+
+/* ------------------------------------------------------------
+   Main tabs and edit-task subtabs
+   ------------------------------------------------------------ */
+
+.pst-troubleshooting-page .nav-tabs,
+.pst-troubleshooting-page .module-tabs {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-end;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    width: max-content;
+    min-width: 100%;
+    padding: 0.5rem 0.5rem 0;
+    margin: 0;
+    border-bottom: none;
+    background: transparent;
+    overflow: visible;
+}
+
+.pst-troubleshooting-page .nav-tabs .nav-item,
+.pst-troubleshooting-page .module-tabs .nav-item {
+    flex: 0 0 auto;
+    width: auto;
+    margin: 0;
+    padding: 0;
+}
+
+.pst-troubleshooting-page .nav-tabs .nav-link,
+.pst-troubleshooting-page .module-tabs .nav-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 7.25rem;
+    max-width: none;
+    white-space: nowrap;
+    word-break: normal;
+    overflow-wrap: normal;
+    text-align: center;
+    color: var(--text-muted, rgba(255, 255, 255, 0.82));
+    background: var(--button-bg, rgba(44, 67, 92, 0.95));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    border-bottom: none;
+    border-radius: 0.5rem 0.5rem 0 0;
+    padding: 0.55rem 1rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.pst-troubleshooting-page .nav-tabs .nav-link:hover,
+.pst-troubleshooting-page .nav-tabs .nav-link:focus,
+.pst-troubleshooting-page .module-tabs .nav-link:hover,
+.pst-troubleshooting-page .module-tabs .nav-link:focus {
+    color: var(--text-color, #ffffff);
+    background: var(--button-hover-bg, rgba(62, 91, 122, 0.98));
+    border-color: var(--accent-color, rgba(30, 255, 30, 0.75));
+}
+
+.pst-troubleshooting-page .nav-tabs .nav-link.active,
+.pst-troubleshooting-page .module-tabs .nav-link.active {
+    color: var(--active-tab-text, #001900);
+    background: var(--accent-color, #1eff1e);
+    border-color: var(--accent-color, #1eff1e);
+}
+
+
+/* ------------------------------------------------------------
+   Panels and cards
+   ------------------------------------------------------------ */
+
+.pst-panel,
+.module-panel.pst-panel {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.pst-panel-header,
+.module-panel-header.pst-panel-header {
+    padding: 0 0 0.75rem;
+    margin-bottom: 0.75rem;
+    background: transparent;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+}
+
+.pst-panel-header .module-panel-title,
+.pst-panel-header h4 {
+    margin: 0;
+    color: var(--heading-color, #ffffff);
+    font-size: 1.35rem;
+    font-weight: 700;
+}
+
+.pst-panel-header .module-panel-subtitle {
+    margin-top: 0.25rem;
+    color: var(--text-muted, rgba(255, 255, 255, 0.76));
+}
+
+.pst-panel-body,
+.module-panel-body.pst-panel-body {
+    padding: 0;
+    background: transparent;
+}
+
+.pst-section-card,
+.pst-nested-card,
+.pst-position-card,
+.module-card.pst-section-card,
+.module-card.pst-nested-card,
+.module-card.pst-position-card {
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.16));
+    border-radius: var(--panel-radius, 0.75rem);
+    background: var(--panel-bg, rgba(11, 20, 34, 0.92));
+    box-shadow: var(--panel-shadow-soft, 0 6px 18px rgba(0, 0, 0, 0.24));
+    overflow: hidden;
+}
+
+.pst-section-card > .module-card-header,
+.pst-nested-card > .module-card-header,
+.pst-position-card > .module-card-header {
+    padding: 0.85rem 1rem;
+    background: var(--panel-header-bg, rgba(38, 60, 82, 0.95));
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.16));
+}
+
+.pst-section-card > .module-card-body,
+.pst-nested-card > .module-card-body,
+.pst-position-card > .module-card-body {
+    padding: 1rem;
+    background: var(--panel-bg, rgba(11, 20, 34, 0.92));
+}
+
+
+/* ------------------------------------------------------------
+   Tab panes
+   ------------------------------------------------------------ */
+
+.pst-troubleshooting-page .tab-content {
+    background: transparent;
+}
+
+.pst-troubleshooting-page .tab-pane {
+    background: transparent;
+    color: var(--text-color, #ffffff);
+}
+
+
+/* ------------------------------------------------------------
+   Accordion
+   ------------------------------------------------------------ */
+
+.pst-accordion,
+.pst-troubleshooting-page .accordion {
+    --bs-accordion-bg: transparent;
+    --bs-accordion-border-color: transparent;
+    --bs-accordion-btn-color: var(--text-color, #ffffff);
+    --bs-accordion-active-color: var(--text-color, #ffffff);
+    --bs-accordion-btn-bg: var(--panel-header-bg, rgba(38, 60, 82, 0.95));
+    --bs-accordion-active-bg: var(--panel-header-bg, rgba(38, 60, 82, 0.95));
+    background: transparent;
+}
+
+.pst-troubleshooting-page .accordion-item {
+    margin-bottom: 0.75rem;
+    color: var(--text-color, #ffffff);
+    background: var(--panel-bg, rgba(11, 20, 34, 0.92));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.16));
+    border-radius: var(--panel-radius, 0.75rem);
+    overflow: hidden;
+}
+
+.pst-troubleshooting-page .accordion-header {
+    background: transparent;
+}
+
+.pst-troubleshooting-page .accordion-button {
+    color: var(--text-color, #ffffff);
+    background: var(--panel-header-bg, rgba(38, 60, 82, 0.95));
+    font-weight: 700;
+    box-shadow: none;
+}
+
+.pst-troubleshooting-page .accordion-button:not(.collapsed) {
+    color: var(--text-color, #ffffff);
+    background: var(--panel-header-bg, rgba(38, 60, 82, 0.95));
+    box-shadow: inset 0 -1px 0 var(--border-color, rgba(255, 255, 255, 0.16));
+}
+
+.pst-troubleshooting-page .accordion-button:focus {
+    border-color: var(--accent-color, #1eff1e);
+    box-shadow: 0 0 0 0.2rem rgba(30, 255, 30, 0.18);
+}
+
+.pst-troubleshooting-page .accordion-body {
+    color: var(--text-color, #ffffff);
+    background: var(--panel-bg, rgba(11, 20, 34, 0.92));
+}
+
+
+/* ------------------------------------------------------------
+   Forms
+   ------------------------------------------------------------ */
+
+.pst-troubleshooting-page form {
+    margin: 0;
+    background: transparent;
+}
+
+.pst-troubleshooting-page .form-label {
+    color: var(--label-color, rgba(255, 255, 255, 0.9));
+    font-weight: 600;
+}
+
+.pst-troubleshooting-page .form-text {
+    color: var(--text-muted, rgba(255, 255, 255, 0.66));
+}
+
+.pst-troubleshooting-page .form-control,
+.pst-troubleshooting-page .form-select {
+    color: var(--input-text, #ffffff);
+    background-color: var(--input-bg, rgba(2, 8, 18, 0.78));
+    border: 1px solid var(--input-border, rgba(255, 255, 255, 0.22));
+    border-radius: 0.45rem;
+}
+
+.pst-troubleshooting-page .form-control:focus,
+.pst-troubleshooting-page .form-select:focus {
+    color: var(--input-text, #ffffff);
+    background-color: var(--input-bg-focus, rgba(2, 8, 18, 0.92));
+    border-color: var(--accent-color, #1eff1e);
+    box-shadow: 0 0 0 0.2rem rgba(30, 255, 30, 0.16);
+}
+
+.pst-troubleshooting-page .form-control::placeholder {
+    color: var(--placeholder-color, rgba(255, 255, 255, 0.48));
+}
+
+.pst-troubleshooting-page .form-select:disabled,
+.pst-troubleshooting-page .form-control:disabled {
+    color: var(--input-disabled-text, rgba(255, 255, 255, 0.42));
+    background-color: var(--input-disabled-bg, rgba(255, 255, 255, 0.07));
+    border-color: var(--input-disabled-border, rgba(255, 255, 255, 0.12));
+}
+
+.pst-troubleshooting-page option {
+    color: #111111;
+    background-color: #ffffff;
+}
+
+
+/* ------------------------------------------------------------
+   Buttons
+   ------------------------------------------------------------ */
+
+.pst-troubleshooting-page .btn {
+    font-weight: 600;
+}
+
+.pst-troubleshooting-page .btn:focus {
+    box-shadow: 0 0 0 0.2rem rgba(30, 255, 30, 0.16);
+}
+
+
+/* ------------------------------------------------------------
+   Selected item display boxes
+   ------------------------------------------------------------ */
+
+.pst-troubleshooting-page .selected-items-display-box {
+    min-height: 2.5rem;
+    padding: 0.75rem;
+    color: var(--text-color, #ffffff);
+    background: var(--panel-bg-subtle, rgba(255, 255, 255, 0.06));
+    border: 1px dashed var(--border-color, rgba(255, 255, 255, 0.22));
+    border-radius: 0.5rem;
+}
+
+.pst-troubleshooting-page .selected-items-display-box:empty::before {
+    content: "No items selected.";
+    color: var(--text-muted, rgba(255, 255, 255, 0.6));
+    font-style: italic;
+}
+
+.pst-troubleshooting-page .selected-item,
+.pst-troubleshooting-page .selected-items-display-box > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0.65rem;
+    margin-bottom: 0.4rem;
+    color: var(--text-color, #ffffff);
+    background: var(--panel-bg-soft, rgba(255, 255, 255, 0.08));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.14));
+    border-radius: 0.45rem;
+}
+
+.pst-troubleshooting-page .selected-item:last-child,
+.pst-troubleshooting-page .selected-items-display-box > div:last-child {
+    margin-bottom: 0;
+}
+
+
+/* ------------------------------------------------------------
+   Search results/list groups
+   ------------------------------------------------------------ */
+
+.pst-troubleshooting-page .list-group {
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.pst-troubleshooting-page .list-group-item {
+    color: var(--text-color, #ffffff);
+    background: var(--panel-bg-subtle, rgba(255, 255, 255, 0.06));
+    border-color: var(--border-color, rgba(255, 255, 255, 0.14));
+}
+
+.pst-troubleshooting-page .list-group-item:hover {
+    background: var(--panel-bg-soft, rgba(255, 255, 255, 0.09));
+}
+
+
+/* ------------------------------------------------------------
+   Modals
+   ------------------------------------------------------------ */
+
+.pst-confirm-modal,
+.module-modal.pst-confirm-modal {
+    color: var(--text-color, #ffffff);
+    background: var(--panel-bg, rgba(11, 20, 34, 0.98));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    border-radius: var(--panel-radius, 0.75rem);
+}
+
+.pst-confirm-modal .modal-header,
+.pst-confirm-modal .modal-footer {
+    background: var(--panel-header-bg, rgba(38, 60, 82, 0.95));
+    border-color: var(--border-color, rgba(255, 255, 255, 0.16));
+}
+
+.pst-confirm-modal .modal-body {
+    background: var(--panel-bg, rgba(11, 20, 34, 0.98));
+}
+
+
+/* ------------------------------------------------------------
+   Select2 compatibility
+   ------------------------------------------------------------ */
+
+.pst-troubleshooting-page .select2-container {
+    width: 100%;
+}
+
+.pst-troubleshooting-page .select2-container--default .select2-selection--single,
+.pst-troubleshooting-page .select2-container--default .select2-selection--multiple {
+    min-height: 38px;
+    color: var(--input-text, #ffffff);
+    background-color: var(--input-bg, rgba(2, 8, 18, 0.78));
+    border: 1px solid var(--input-border, rgba(255, 255, 255, 0.22));
+    border-radius: 0.45rem;
+}
+
+.pst-troubleshooting-page .select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: var(--input-text, #ffffff);
+}
+
+.pst-troubleshooting-page .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    color: var(--text-color, #ffffff);
+    background: var(--button-bg, rgba(44, 67, 92, 0.95));
+    border-color: var(--border-color, rgba(255, 255, 255, 0.18));
+}
+
+.pst-troubleshooting-page .select2-container--default .select2-search--inline .select2-search__field {
+    color: var(--input-text, #ffffff);
+}
+
+/*
+   Select2 dropdowns are often appended to <body>, not inside
+   .pst-troubleshooting-page. These selectors keep the dropdown
+   readable while the PST page is active.
+*/
+
+body:has(.pst-troubleshooting-page) .select2-dropdown {
+    color: #111111;
+    background-color: #ffffff;
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+body:has(.pst-troubleshooting-page) .select2-results__option {
+    color: #111111;
+    background-color: #ffffff;
+}
+
+body:has(.pst-troubleshooting-page) .select2-results__option--highlighted {
+    color: #ffffff;
+    background-color: #0d6efd;
+}
+
+body:has(.pst-troubleshooting-page) .select2-results__option--selected {
+    color: #111111;
+    background-color: #e9ecef;
+}
+
+body:has(.pst-troubleshooting-page) .select2-search__field {
+    color: #111111;
+}
+
+
+/* ------------------------------------------------------------
+   Scroll behavior
+   ------------------------------------------------------------ */
+
+.pst-troubleshooting-page select[multiple],
+.pst-troubleshooting-page select[size] {
+    min-height: 8rem;
+    max-height: 16rem;
+    overflow-y: auto;
+}
+
+.pst-troubleshooting-page .selected-items-display-box,
+.pst-troubleshooting-page .list-group {
+    max-height: 18rem;
+    overflow-y: auto;
+}
+
+.pst-troubleshooting-page .selected-items-display-box::-webkit-scrollbar,
+.pst-troubleshooting-page .list-group::-webkit-scrollbar,
+.pst-troubleshooting-page select[multiple]::-webkit-scrollbar,
+.pst-troubleshooting-page select[size]::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.pst-troubleshooting-page .selected-items-display-box::-webkit-scrollbar-thumb,
+.pst-troubleshooting-page .list-group::-webkit-scrollbar-thumb,
+.pst-troubleshooting-page select[multiple]::-webkit-scrollbar-thumb,
+.pst-troubleshooting-page select[size]::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+.pst-troubleshooting-page .selected-items-display-box::-webkit-scrollbar-thumb:hover,
+.pst-troubleshooting-page .list-group::-webkit-scrollbar-thumb:hover,
+.pst-troubleshooting-page select[multiple]::-webkit-scrollbar-thumb:hover,
+.pst-troubleshooting-page select[size]::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+
+/* ------------------------------------------------------------
+   Alerts
+   ------------------------------------------------------------ */
+
+.pst-troubleshooting-page #alertContainer {
+    margin-bottom: 1rem;
+}
+
+
+/* ------------------------------------------------------------
+   Loading spinner
+   ------------------------------------------------------------ */
+
+.pst-troubleshooting-page #loadingSpinner {
+    padding: 1rem;
+}
+
+
+/* ------------------------------------------------------------
+   Responsive cleanup
+   ------------------------------------------------------------ */
+
+@media (max-width: 992px) {
+    .pst-page-header,
+    .module-page-header.pst-page-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .pst-page-header .module-page-actions {
+        justify-content: flex-start;
+    }
+
+    .pst-troubleshooting-page {
+        padding: 1rem;
+    }
+
+    .pst-entry-card-body,
+    .module-card-body.pst-entry-card-body {
+        padding: 0.75rem;
+    }
+
+    .pst-entry-card-header,
+    .module-card-header.pst-entry-card-header,
+    .pst-subtab-header,
+    .module-card-header.pst-subtab-header {
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    .pst-troubleshooting-page .nav-tabs,
+    .pst-troubleshooting-page .module-tabs {
+        flex-wrap: nowrap;
+        overflow: visible;
+        padding-bottom: 0.25rem;
+    }
+
+    .pst-troubleshooting-page .nav-tabs .nav-link,
+    .pst-troubleshooting-page .module-tabs .nav-link {
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 576px) {
+    .pst-troubleshooting-page {
+        padding: 0.75rem;
+    }
+
+    .pst-page-header .module-page-title,
+    .pst-page-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .pst-entry-card-body,
+    .module-card-body.pst-entry-card-body,
+    .pst-section-card > .module-card-body,
+    .pst-nested-card > .module-card-body,
+    .pst-position-card > .module-card-body {
+        padding: 0.75rem;
+    }
+
+    .pst-troubleshooting-page .nav-tabs .nav-link,
+    .pst-troubleshooting-page .module-tabs .nav-link {
+        min-width: 6.5rem;
+        padding: 0.5rem 0.85rem;
+    }
+}

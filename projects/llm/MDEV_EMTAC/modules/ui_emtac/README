@@ -1,5 +1,7 @@
 # KivyMD Maintenance Troubleshooting UI
 
+# 02/16/26 must start from (.venv) PS E:\emtac\projects\llm\MDEV_EMTAC\modules> python -m ui_emtac.main_app
+
 This project is a conversion of a web-based maintenance troubleshooting interface into a KivyMD application. KivyMD is a collection of Material Design widgets for use with the Kivy framework, allowing for the creation of modern, responsive cross-platform applications in Python.
 
 ## Features

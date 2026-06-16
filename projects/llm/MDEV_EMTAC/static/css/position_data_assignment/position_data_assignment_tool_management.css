@@ -1,0 +1,84 @@
+#toolManagementContainer {
+    width: 100%;
+    box-sizing: border-box;
+    background: transparent;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    color: inherit;
+}
+
+.sub-tab-container {
+    width: 100%;
+    margin-top: 12px;
+}
+
+.sub-tab-container ul.sub-tab-list {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 12px 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+}
+
+.sub-tab-container ul.sub-tab-list li {
+    margin: 0;
+    padding: 0;
+}
+
+.sub-tab-container ul.sub-tab-list .sub-tab-item,
+.sub-tab-container ul.sub-tab-list button,
+.sub-tab-container ul.sub-tab-list a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 6px 12px;
+    background: var(--app-control-bg);
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: var(--app-radius-sm);
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        background-color var(--app-transition-fast),
+        color var(--app-transition-fast),
+        border-color var(--app-transition-fast);
+}
+
+.sub-tab-container ul.sub-tab-list .sub-tab-item:hover,
+.sub-tab-container ul.sub-tab-list button:hover,
+.sub-tab-container ul.sub-tab-list a:hover {
+    background: var(--app-control-hover-bg);
+    color: var(--app-sidebar-hover);
+    border-color: var(--app-sidebar-hover);
+}
+
+.sub-tab-container ul.sub-tab-list .sub-tab-item.active,
+.sub-tab-container ul.sub-tab-list button.active,
+.sub-tab-container ul.sub-tab-list a.active {
+    background: var(--app-sidebar-hover-bg);
+    color: var(--app-sidebar-hover);
+    border-color: var(--app-sidebar-hover);
+    font-weight: 600;
+}
+
+.sub-tab-content {
+    display: none;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 8px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid var(--app-thumbnail-border);
+    border-radius: var(--app-radius-md);
+    color: var(--app-content-text);
+}
+
+.sub-tab-content.active {
+    display: block;
+}

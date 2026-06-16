@@ -1,0 +1,232 @@
+/* static/css/index/chatbot_payload_status.css
+============================================================
+EMTAC Chatbot Payload Status Visuals
+Pronounced theme-aware loading / success / error perimeter cues.
+
+JS toggles:
+- emtac-payload-loading
+- emtac-payload-success
+- emtac-payload-error
+- emtac-payload-fading
+- clear removes state classes
+
+Colors come from existing EMTAC theme variables.
+============================================================ */
+
+/* ------------------------------------------------------------
+   Theme-aware payload status variables
+------------------------------------------------------------ */
+:root {
+    --emtac-payload-loading-border: var(--neppy-warn, var(--app-sidebar-hover, #ffb020));
+    --emtac-payload-loading-glow: var(--neppy-warn-soft, rgba(255, 176, 32, 0.40));
+    --emtac-payload-loading-text: #111;
+
+    --emtac-payload-success-border: var(--neppy-ok, #39ff14);
+    --emtac-payload-success-glow: var(--neppy-ok-soft, rgba(57, 255, 20, 0.35));
+    --emtac-payload-success-text: #111;
+
+    --emtac-payload-error-border: var(--neppy-bad, #ff4d4d);
+    --emtac-payload-error-glow: var(--neppy-bad-soft, rgba(255, 77, 77, 0.42));
+    --emtac-payload-error-text: #111;
+
+    --emtac-payload-radius: var(--app-radius-lg, 14px);
+    --emtac-payload-border-width: 4px;
+    --emtac-payload-transition: var(--app-transition-fast, 0.2s ease);
+    --emtac-payload-fade-transition: 650ms ease;
+}
+
+/* Classic Grey Navy refinement */
+html.classic-grey-navy,
+body.classic-grey-navy {
+    --emtac-payload-loading-border: var(--neppy-warn, #F8C471);
+    --emtac-payload-loading-glow: rgba(248, 196, 113, 0.55);
+    --emtac-payload-loading-text: #1F2D3A;
+
+    --emtac-payload-success-border: var(--neppy-ok, #7DCEA0);
+    --emtac-payload-success-glow: rgba(125, 206, 160, 0.48);
+    --emtac-payload-success-text: #1F2D3A;
+
+    --emtac-payload-error-border: var(--neppy-bad, #F5B7B1);
+    --emtac-payload-error-glow: rgba(245, 183, 177, 0.55);
+    --emtac-payload-error-text: #1F2D3A;
+}
+
+/* ------------------------------------------------------------
+   Base visual marker
+------------------------------------------------------------ */
+.emtac-payload-visual {
+    position: relative;
+    border: var(--emtac-payload-border-width) solid transparent !important;
+    border-radius: var(--emtac-payload-radius);
+    transition:
+        border-color var(--emtac-payload-transition),
+        box-shadow var(--emtac-payload-transition),
+        background-color var(--emtac-payload-transition),
+        outline-color var(--emtac-payload-transition),
+        filter var(--emtac-payload-transition);
+}
+
+/* Keep status badge above panel content */
+.emtac-payload-visual::before {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    z-index: 50;
+
+    display: none;
+    padding: 4px 9px;
+
+    border-radius: 999px;
+    font-size: 11px;
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+
+    opacity: 1;
+    transform: translateY(0);
+
+    transition:
+        opacity var(--emtac-payload-fade-transition),
+        transform var(--emtac-payload-fade-transition),
+        background-color var(--emtac-payload-transition),
+        color var(--emtac-payload-transition);
+}
+
+/* ------------------------------------------------------------
+   Loading pulse - pronounced
+------------------------------------------------------------ */
+@keyframes emtacPayloadLoadingPulseStrong {
+    0% {
+        border-color: var(--emtac-payload-loading-border);
+        outline-color: rgba(255, 255, 255, 0.05);
+        box-shadow:
+            0 0 0 0 var(--emtac-payload-loading-glow),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+        filter: brightness(1);
+    }
+
+    45% {
+        border-color: var(--emtac-payload-loading-border);
+        outline-color: var(--emtac-payload-loading-border);
+        box-shadow:
+            0 0 26px 8px var(--emtac-payload-loading-glow),
+            0 0 0 2px var(--emtac-payload-loading-border),
+            inset 0 0 18px 3px var(--emtac-payload-loading-glow);
+        filter: brightness(1.08);
+    }
+
+    100% {
+        border-color: var(--emtac-payload-loading-border);
+        outline-color: rgba(255, 255, 255, 0.05);
+        box-shadow:
+            0 0 0 0 var(--emtac-payload-loading-glow),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+        filter: brightness(1);
+    }
+}
+
+.emtac-payload-loading {
+    border-color: var(--emtac-payload-loading-border) !important;
+    outline: 2px solid var(--emtac-payload-loading-border);
+    outline-offset: 3px;
+    animation: emtacPayloadLoadingPulseStrong 0.85s infinite;
+}
+
+.emtac-payload-loading::before {
+    content: "Loading";
+    display: inline-flex;
+    background: var(--emtac-payload-loading-border);
+    color: var(--emtac-payload-loading-text);
+}
+
+/* ------------------------------------------------------------
+   Success - pronounced green confirmation
+------------------------------------------------------------ */
+.emtac-payload-success {
+    border-color: var(--emtac-payload-success-border) !important;
+    outline: 2px solid var(--emtac-payload-success-border);
+    outline-offset: 3px;
+    box-shadow:
+        0 0 26px 7px var(--emtac-payload-success-glow),
+        0 0 0 2px var(--emtac-payload-success-border),
+        inset 0 0 16px 2px var(--emtac-payload-success-glow);
+    animation: none;
+}
+
+.emtac-payload-success::before {
+    content: "Loaded";
+    display: inline-flex;
+    background: var(--emtac-payload-success-border);
+    color: var(--emtac-payload-success-text);
+}
+
+/* ------------------------------------------------------------
+   Error - pronounced failure state
+------------------------------------------------------------ */
+.emtac-payload-error {
+    border-color: var(--emtac-payload-error-border) !important;
+    outline: 2px solid var(--emtac-payload-error-border);
+    outline-offset: 3px;
+    box-shadow:
+        0 0 28px 8px var(--emtac-payload-error-glow),
+        0 0 0 2px var(--emtac-payload-error-border),
+        inset 0 0 18px 3px var(--emtac-payload-error-glow);
+    animation: none;
+}
+
+.emtac-payload-error::before {
+    content: "Payload Error";
+    display: inline-flex;
+    background: var(--emtac-payload-error-border);
+    color: var(--emtac-payload-error-text);
+}
+
+/* ------------------------------------------------------------
+   Fade away after successful load
+------------------------------------------------------------ */
+.emtac-payload-fading {
+    border-color: transparent !important;
+    outline-color: transparent !important;
+    box-shadow: none !important;
+    animation: none !important;
+    filter: brightness(1);
+}
+
+.emtac-payload-fading::before {
+    opacity: 0;
+    transform: translateY(-6px);
+}
+
+/* ------------------------------------------------------------
+   Make it work nicely on mt-panel containers
+------------------------------------------------------------ */
+.mt-panel.emtac-payload-visual {
+    overflow: hidden;
+}
+
+.mt-panel.emtac-payload-loading,
+.mt-panel.emtac-payload-success,
+.mt-panel.emtac-payload-error {
+    z-index: 5;
+}
+
+/* ------------------------------------------------------------
+   Reduced motion accessibility
+------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+    .emtac-payload-loading {
+        animation: none;
+        box-shadow:
+            0 0 22px 6px var(--emtac-payload-loading-glow),
+            0 0 0 2px var(--emtac-payload-loading-border),
+            inset 0 0 14px 2px var(--emtac-payload-loading-glow);
+    }
+
+    .emtac-payload-fading::before {
+        transition: none;
+    }
+}

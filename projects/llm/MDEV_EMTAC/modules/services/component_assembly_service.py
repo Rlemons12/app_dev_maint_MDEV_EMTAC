@@ -1,210 +1,276 @@
-# services/component_assembly_service.py
+# modules/services/component_assembly_service.py
+
 from typing import List, Optional, Dict, Any, Union
+from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from modules.emtacdb.emtacdb_fts import ComponentAssembly, Subassembly, AssemblyView, Position
-from modules.configuration.database_config import DatabaseConfig
-from modules.configuration.log_config import info_id, error_id, with_request_id
+from modules.emtacdb.emtacdb_fts import ComponentAssembly
+from modules.configuration.config_env import DatabaseConfig
+from modules.configuration.log_config import with_request_id
 
 
 class ComponentAssemblyService:
     """
-    Service layer for managing ComponentAssembly entities.
+    Transaction-aware ComponentAssembly service.
 
-    Provides a clean API with session handling and logging:
-      - `find`          → Search ComponentAssemblies with optional filters.
-      - `get`           → Retrieve a single ComponentAssembly by ID.
-      - `save`          → Create or update a ComponentAssembly.
-      - `remove`        → Delete a ComponentAssembly by ID.
-      - `find_or_create`→ Get or create a ComponentAssembly by unique fields.
-      - `find_related`  → Traverse relationships (Subassembly ↑, AssemblyViews ↓, Positions ↓).
+    RULE:
+    - If session provided → NEVER commit
+    - If session not provided → standalone mode allowed
     """
 
     def __init__(self, db_config: DatabaseConfig = None):
         self.db_config = db_config or DatabaseConfig()
 
-    # ------------------------
-    # BASIC CRUD METHODS
-    # ------------------------
+    # -----------------------------------------------------
+    # FIND
+    # -----------------------------------------------------
 
     @with_request_id
-    def find(self, name: Optional[str] = None,
-             subassembly_id: Optional[int] = None,
-             limit: int = 100) -> List[ComponentAssembly]:
-        """
-        Search for ComponentAssemblies with optional filters.
+    def find(
+        self,
+        name: Optional[str] = None,
+        subassembly_id: Optional[int] = None,
+        limit: int = 100,
+        session: Optional[Session] = None,
+    ) -> List[ComponentAssembly]:
 
-        Args:
-            name (str, optional): Partial match on ComponentAssembly name.
-            subassembly_id (int, optional): Filter by Subassembly ID.
-            limit (int): Max results (default 100).
+        if session:
+            return self._find_internal(session, name, subassembly_id, limit)
 
-        Returns:
-            List[ComponentAssembly]: Matching records.
-        """
-        with self.db_config.main_session() as session:
-            try:
-                query = session.query(ComponentAssembly)
-                if name:
-                    query = query.filter(ComponentAssembly.name.ilike(f"%{name}%"))
-                if subassembly_id:
-                    query = query.filter_by(subassembly_id=subassembly_id)
-                results = query.limit(limit).all()
-                info_id(f"Found {len(results)} ComponentAssemblies", None)
-                return results
-            except SQLAlchemyError as e:
-                error_id(f"ComponentAssemblyService.find failed: {e}", None)
-                raise
+        with self.db_config.main_session() as s:
+            return self._find_internal(s, name, subassembly_id, limit)
 
-    @with_request_id
-    def get(self, component_assembly_id: int) -> Optional[ComponentAssembly]:
-        """
-        Retrieve a ComponentAssembly by ID.
+    def _find_internal(self, session, name, subassembly_id, limit):
 
-        Args:
-            component_assembly_id (int): Primary key.
+        query = session.query(ComponentAssembly)
 
-        Returns:
-            ComponentAssembly | None
-        """
-        with self.db_config.main_session() as session:
-            try:
-                return session.query(ComponentAssembly).filter_by(id=component_assembly_id).first()
-            except SQLAlchemyError as e:
-                error_id(f"ComponentAssemblyService.get failed: {e}", None)
-                raise
+        if name:
+            query = query.filter(ComponentAssembly.name.ilike(f"%{name}%"))
+
+        if subassembly_id:
+            query = query.filter(ComponentAssembly.subassembly_id == subassembly_id)
+
+        return query.limit(limit).all()
+
+    # -----------------------------------------------------
+    # GET
+    # -----------------------------------------------------
 
     @with_request_id
-    def save(self, name: str, subassembly_id: int,
-             description: Optional[str] = None,
-             component_assembly_id: Optional[int] = None) -> ComponentAssembly:
-        """
-        Create or update a ComponentAssembly.
+    def get(
+        self,
+        component_assembly_id: int,
+        session: Optional[Session] = None,
+    ) -> Optional[ComponentAssembly]:
 
-        Args:
-            name (str): Name of the ComponentAssembly.
-            subassembly_id (int): Parent Subassembly ID.
-            description (str, optional): Description.
-            component_assembly_id (int, optional): Existing record ID for update.
+        if session:
+            return session.get(ComponentAssembly, component_assembly_id)
 
-        Returns:
-            ComponentAssembly: Created or updated object.
-        """
-        with self.db_config.main_session() as session:
+        with self.db_config.main_session() as s:
+            return s.get(ComponentAssembly, component_assembly_id)
+
+    # -----------------------------------------------------
+    # SAVE
+    # -----------------------------------------------------
+
+    @with_request_id
+    def save(
+        self,
+        name: str,
+        subassembly_id: int,
+        description: Optional[str] = None,
+        component_assembly_id: Optional[int] = None,
+        session: Optional[Session] = None,
+    ) -> ComponentAssembly:
+
+        if session:
+            return self._save_internal(
+                session,
+                name,
+                subassembly_id,
+                description,
+                component_assembly_id,
+            )
+
+        with self.db_config.main_session() as s:
             try:
-                if component_assembly_id:
-                    ca = session.query(ComponentAssembly).filter_by(id=component_assembly_id).first()
-                    if not ca:
-                        raise ValueError(f"ComponentAssembly with id {component_assembly_id} not found")
-                    ca.name = name
-                    ca.description = description
-                    ca.subassembly_id = subassembly_id
-                    info_id(f"Updated ComponentAssembly id={component_assembly_id}", None)
-                else:
-                    ca = ComponentAssembly(name=name,
-                                           description=description,
-                                           subassembly_id=subassembly_id)
-                    session.add(ca)
-                    info_id(f"Created ComponentAssembly '{name}'", None)
+                ca = self._save_internal(
+                    s,
+                    name,
+                    subassembly_id,
+                    description,
+                    component_assembly_id,
+                )
+                s.commit()
                 return ca
-            except SQLAlchemyError as e:
-                error_id(f"ComponentAssemblyService.save failed: {e}", None)
+            except:
+                s.rollback()
                 raise
 
+    def _save_internal(
+        self,
+        session,
+        name,
+        subassembly_id,
+        description,
+        component_assembly_id,
+    ):
+
+        if component_assembly_id:
+            ca = session.get(ComponentAssembly, component_assembly_id)
+            if not ca:
+                raise ValueError(
+                    f"ComponentAssembly id={component_assembly_id} not found"
+                )
+
+            ca.name = name
+            ca.description = description
+            ca.subassembly_id = subassembly_id
+
+        else:
+            ca = ComponentAssembly(
+                name=name,
+                description=description,
+                subassembly_id=subassembly_id,
+            )
+            session.add(ca)
+
+        session.flush()
+        return ca
+
+    # -----------------------------------------------------
+    # REMOVE (SAFE DELETE)
+    # -----------------------------------------------------
+
     @with_request_id
-    def remove(self, component_assembly_id: int) -> bool:
-        """
-        Delete a ComponentAssembly by ID.
+    def remove(
+        self,
+        component_assembly_id: int,
+        session: Optional[Session] = None,
+    ) -> bool:
 
-        Args:
-            component_assembly_id (int): Record ID.
+        if session:
+            return self._remove_internal(session, component_assembly_id)
 
-        Returns:
-            bool: True if deleted, False if not found.
-        """
-        with self.db_config.main_session() as session:
+        with self.db_config.main_session() as s:
             try:
-                ca = session.query(ComponentAssembly).filter_by(id=component_assembly_id).first()
-                if ca:
-                    session.delete(ca)
-                    info_id(f"Deleted ComponentAssembly id={component_assembly_id}", None)
-                    return True
-                return False
-            except SQLAlchemyError as e:
-                error_id(f"ComponentAssemblyService.remove failed: {e}", None)
+                result = self._remove_internal(s, component_assembly_id)
+                s.commit()
+                return result
+            except:
+                s.rollback()
                 raise
 
-    # ------------------------
-    # HELPERS
-    # ------------------------
+    def _remove_internal(self, session, component_assembly_id):
+
+        ca = session.get(ComponentAssembly, component_assembly_id)
+        if not ca:
+            return False
+
+        # Safe delete guard
+        if ca.position or ca.assembly_view:
+            return False
+
+        session.delete(ca)
+        return True
+
+    # -----------------------------------------------------
+    # FIND OR CREATE
+    # -----------------------------------------------------
 
     @with_request_id
-    def find_or_create(self, name: str, subassembly_id: int,
-                       description: Optional[str] = None) -> ComponentAssembly:
-        """
-        Find a ComponentAssembly by name + subassembly, or create it if missing.
+    def find_or_create(
+        self,
+        name: str,
+        subassembly_id: int,
+        description: Optional[str] = None,
+        session: Optional[Session] = None,
+    ) -> ComponentAssembly:
 
-        Args:
-            name (str): ComponentAssembly name.
-            subassembly_id (int): Parent Subassembly ID.
-            description (str, optional): Description.
+        if session:
+            return self._find_or_create_internal(
+                session,
+                name,
+                subassembly_id,
+                description,
+            )
 
-        Returns:
-            ComponentAssembly: Existing or new record.
-        """
-        with self.db_config.main_session() as session:
+        with self.db_config.main_session() as s:
             try:
-                ca = (session.query(ComponentAssembly)
-                            .filter_by(name=name, subassembly_id=subassembly_id)
-                            .first())
-                if ca:
-                    info_id(f"Found existing ComponentAssembly '{name}'", None)
-                    return ca
-                ca = ComponentAssembly(name=name,
-                                       description=description,
-                                       subassembly_id=subassembly_id)
-                session.add(ca)
-                info_id(f"Created ComponentAssembly '{name}'", None)
+                ca = self._find_or_create_internal(
+                    s,
+                    name,
+                    subassembly_id,
+                    description,
+                )
+                s.commit()
                 return ca
-            except SQLAlchemyError as e:
-                error_id(f"ComponentAssemblyService.find_or_create failed: {e}", None)
+            except:
+                s.rollback()
                 raise
+
+    def _find_or_create_internal(
+        self,
+        session,
+        name,
+        subassembly_id,
+        description,
+    ):
+
+        ca = (
+            session.query(ComponentAssembly)
+            .filter_by(name=name, subassembly_id=subassembly_id)
+            .first()
+        )
+
+        if ca:
+            return ca
+
+        ca = ComponentAssembly(
+            name=name,
+            description=description,
+            subassembly_id=subassembly_id,
+        )
+
+        session.add(ca)
+        session.flush()
+        return ca
+
+    # -----------------------------------------------------
+    # FIND RELATED
+    # -----------------------------------------------------
 
     @with_request_id
-    def find_related(self, identifier: Union[int, str], is_id: bool = True) -> Optional[Dict[str, Any]]:
-        """
-        Traverse relationships for a ComponentAssembly.
+    def find_related(
+        self,
+        identifier: Union[int, str],
+        is_id: bool = True,
+        session: Optional[Session] = None,
+    ) -> Optional[Dict[str, Any]]:
 
-        Upward:
-          - Subassembly
-        Downward:
-          - AssemblyViews
-          - Positions
+        if session:
+            return self._find_related_internal(session, identifier, is_id)
 
-        Args:
-            identifier (int | str): ID or name of the ComponentAssembly.
-            is_id (bool): Treat identifier as ID (True) or name (False).
+        with self.db_config.main_session() as s:
+            return self._find_related_internal(s, identifier, is_id)
 
-        Returns:
-            dict | None
-        """
-        with self.db_config.main_session() as session:
-            try:
-                if is_id:
-                    ca = session.query(ComponentAssembly).filter_by(id=identifier).first()
-                else:
-                    ca = session.query(ComponentAssembly).filter_by(name=identifier).first()
+    def _find_related_internal(self, session, identifier, is_id):
 
-                if not ca:
-                    return None
+        if is_id:
+            ca = session.get(ComponentAssembly, identifier)
+        else:
+            ca = session.query(ComponentAssembly).filter_by(name=identifier).first()
 
-                upward = {"subassembly": ca.subassembly}
-                downward = {"assembly_views": ca.assembly_view, "positions": ca.position}
+        if not ca:
+            return None
 
-                return {"component_assembly": ca,
-                        "upward": upward,
-                        "downward": downward}
-            except SQLAlchemyError as e:
-                error_id(f"ComponentAssemblyService.find_related failed: {e}", None)
-                raise
-
+        return {
+            "component_assembly": ca,
+            "upward": {
+                "subassembly": ca.subassembly,
+            },
+            "downward": {
+                "assembly_views": ca.assembly_view,
+                "positions": ca.position,
+            },
+        }

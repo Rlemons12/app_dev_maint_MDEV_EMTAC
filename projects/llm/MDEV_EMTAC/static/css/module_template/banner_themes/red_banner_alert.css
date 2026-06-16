@@ -1,0 +1,52 @@
+.app-top-chrome,
+.thcp-root {
+    --banner-bg: linear-gradient(180deg, #8f1111 0%, #5f0909 100%);
+    --banner-text: #fff7f7;
+    --banner-border: rgba(255, 160, 160, 0.42);
+
+    --banner-link-bg: rgba(255, 255, 255, 0.10);
+    --banner-link-border: rgba(255, 215, 215, 0.26);
+    --banner-link-hover-bg: rgba(255, 255, 255, 0.20);
+    --banner-link-hover-border: rgba(255, 225, 225, 0.44);
+
+    --banner-toggle-bg: rgba(255, 255, 255, 0.10);
+    --banner-toggle-border: rgba(255, 215, 215, 0.26);
+    --banner-toggle-hover-bg: rgba(255, 255, 255, 0.20);
+
+    --banner-shadow: 0 8px 22px rgba(70, 0, 0, 0.35);
+
+    --comment-popup-overlay-bg: rgba(28, 0, 0, 0.72);
+    --comment-popup-bg: linear-gradient(180deg, #4f0c0c 0%, #320707 100%);
+    --comment-popup-text: #fff4f4;
+    --comment-popup-border: rgba(255, 160, 160, 0.28);
+    --comment-popup-shadow: 0 20px 42px rgba(40, 0, 0, 0.42);
+
+    --comment-popup-header-border: rgba(255, 220, 220, 0.10);
+    --comment-popup-footer-border: rgba(255, 220, 220, 0.10);
+
+    --comment-popup-help-text: rgba(255, 235, 235, 0.82);
+    --comment-popup-label-text: #fff4f4;
+
+    --comment-popup-input-bg: rgba(255, 255, 255, 0.06);
+    --comment-popup-input-border: rgba(255, 220, 220, 0.16);
+    --comment-popup-input-text: #fff4f4;
+    --comment-popup-input-placeholder: rgba(255, 235, 235, 0.55);
+    --comment-popup-input-focus-border: rgba(255, 160, 160, 0.55);
+    --comment-popup-input-focus-ring: 0 0 0 3px rgba(255, 160, 160, 0.16);
+
+    --comment-popup-button-bg: rgba(255, 255, 255, 0.08);
+    --comment-popup-button-border: rgba(255, 220, 220, 0.16);
+    --comment-popup-button-text: #fff4f4;
+    --comment-popup-button-hover-bg: rgba(255, 255, 255, 0.16);
+    --comment-popup-button-hover-border: rgba(255, 225, 225, 0.28);
+
+    --comment-popup-submit-bg: #c62828;
+    --comment-popup-submit-border: #d94a4a;
+    --comment-popup-submit-text: #ffffff;
+    --comment-popup-submit-hover-bg: #d43b3b;
+    --comment-popup-submit-hover-border: #e45d5d;
+
+    --comment-popup-feedback-bg: rgba(180, 40, 40, 0.16);
+    --comment-popup-feedback-border: rgba(255, 180, 180, 0.22);
+    --comment-popup-feedback-text: #fff1f1;
+}

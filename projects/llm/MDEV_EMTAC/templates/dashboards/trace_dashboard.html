@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Trace Viewer</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboards/trace.css') }}?v=20260611"/>
+</head>
+
+<body>
+<div class="app">
+  <aside class="panel sidebar">
+    <div class="panel-header">
+      <div class="panel-title">Trace Dashboard</div>
+      <div class="panel-subtitle">
+        Control runtime tracing, then search, filter, and inspect real trace sessions from your backend.
+      </div>
+    </div>
+
+    <div class="sidebar-body">
+      <div class="trace-controls">
+        <div class="trace-controls-header">
+          <div>
+            <div class="trace-controls-title">Trace Controls</div>
+            <div class="trace-controls-note">
+              Runtime overrides apply immediately. They reset when Flask restarts.
+            </div>
+          </div>
+        </div>
+
+        <div class="trace-controls-body">
+          <div class="toolbar-row">
+            <button id="traceSettingsRefreshBtn" class="button primary" type="button">Refresh</button>
+            <button id="traceSettingsApplyBtn" class="button info" type="button">Apply</button>
+            <button id="traceSettingsClearBtn" class="button danger" type="button">Clear</button>
+          </div>
+
+          <div class="toolbar-row">
+            <button id="traceEnvTemplateBtn" class="button warn" type="button">.env Template</button>
+          </div>
+
+          <div id="traceSettingsContainer">
+            <div class="loading">Loading trace settings...</div>
+          </div>
+
+          <div id="traceEnvTemplateBox" class="env-template"></div>
+
+          <div id="traceSettingsMessage" class="settings-message">
+            Settings not loaded yet.
+          </div>
+        </div>
+      </div>
+
+      <div class="toolbar-stack">
+        <div class="toolbar-row">
+          <input
+            id="searchInput"
+            class="input"
+            type="text"
+            placeholder="Search trace id..."
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="toolbar-row">
+          <input
+            id="limitInput"
+            class="input"
+            type="number"
+            min="1"
+            max="200"
+            value="50"
+          />
+          <button id="refreshBtn" class="button primary" type="button">Refresh Traces</button>
+        </div>
+
+        <div class="toolbar-row">
+          <select id="traceStatusFilter" class="select">
+            <option value="all">All traces</option>
+            <option value="has_errors">Only traces with errors</option>
+            <option value="no_errors">Only traces without errors</option>
+          </select>
+        </div>
+
+        <div class="toolbar-row">
+          <select id="autoRefreshSelect" class="select">
+            <option value="0">Auto-refresh off</option>
+            <option value="5000">Every 5 sec</option>
+            <option value="10000">Every 10 sec</option>
+            <option value="30000">Every 30 sec</option>
+            <option value="60000">Every 60 sec</option>
+          </select>
+
+          <label class="checkbox-wrap">
+            <input id="keepSelectionCheck" type="checkbox" checked/>
+            Keep selected trace
+          </label>
+        </div>
+      </div>
+
+      <div id="traceList" class="trace-list">
+        <div class="loading">Loading recent traces...</div>
+      </div>
+    </div>
+
+    <div class="footer-message" id="sidebarFooter">
+      Ready.
+    </div>
+  </aside>
+
+  <main class="main">
+    <section class="panel">
+      <div class="header">
+        <div class="header-left">
+          <div class="eyebrow">Trace Viewer</div>
+          <div class="main-trace-id" id="selectedTraceId">No trace selected</div>
+          <div class="trace-range" id="traceRange">Choose a trace from the left panel.</div>
+        </div>
+
+        <div class="header-right">
+          <button class="tab-btn active" id="waterfallBtn" type="button">Waterfall</button>
+          <button class="tab-btn" id="ganttBtn" type="button">Flat</button>
+          <button class="button info" id="copyTraceIdBtn" type="button">Copy Trace ID</button>
+          <button class="button" id="reloadTraceBtn" type="button">Reload Trace</button>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-val" id="statSpans">0</div>
+          <div class="stat-key">Spans</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-val" id="statVisible">0</div>
+          <div class="stat-key">Visible</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-val" id="statTotal">0ms</div>
+          <div class="stat-key">Total</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-val" id="statOk">0</div>
+          <div class="stat-key">OK</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-val" id="statError">0</div>
+          <div class="stat-key">Errors</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-val" id="statRoots">0</div>
+          <div class="stat-key">Root Spans</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Timeline</div>
+          <div class="panel-subtitle">
+            Filter visible spans by status and text while preserving the real timing bars.
+          </div>
+        </div>
+
+        <div class="viewer-body">
+          <div class="viewer-toolbar">
+            <select id="spanStatusFilter" class="select span-status-filter">
+              <option value="all">All spans</option>
+              <option value="ok">Only ok spans</option>
+              <option value="error">Only error spans</option>
+              <option value="unknown">Only unknown spans</option>
+            </select>
+
+            <input
+              id="spanSearchInput"
+              class="input span-search-input"
+              type="text"
+              placeholder="Filter spans by function name..."
+              autocomplete="off"
+            />
+
+            <label class="checkbox-wrap">
+              <input id="showOnlyRootsCheck" type="checkbox"/>
+              Roots only
+            </label>
+
+            <button class="button warn" id="expandAllBtn" type="button">Expand All</button>
+            <button class="button warn" id="collapseAllBtn" type="button">Collapse All</button>
+          </div>
+
+          <div class="viewer-scroll">
+            <div id="view">
+              <div class="empty">Load a trace to render the timeline.</div>
+            </div>
+
+            <div class="time-axis" id="axis"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Selected Span</div>
+          <div class="panel-subtitle">
+            Click any span to inspect metadata, copy IDs, and review timing.
+          </div>
+        </div>
+
+        <div class="detail-body" id="detail">
+          <div class="detail-empty">Click any span to inspect it.</div>
+        </div>
+      </section>
+    </section>
+  </main>
+</div>
+
+<script>
+  window.TRACE_DASHBOARD_CONFIG = {
+    traceRecentApiUrl: {{ trace_recent_api_url | default('/dashboards/trace/api/recent', true) | tojson }},
+    traceGraphApiBase: {{ trace_graph_api_base | default('/dashboards/trace/api/graph/__TRACE_ID__', true) | tojson }},
+    traceSettingsApiUrl: {{ trace_settings_api_url | default('/dashboards/trace/api/settings', true) | tojson }},
+    traceSettingsUpdateApiUrl: {{ trace_settings_update_api_url | default('/dashboards/trace/api/settings/update', true) | tojson }},
+    traceSettingsClearApiUrl: {{ trace_settings_clear_api_url | default('/dashboards/trace/api/settings/clear', true) | tojson }},
+    traceEnvTemplateApiUrl: {{ trace_env_template_api_url | default('/dashboards/trace/api/settings/env-template', true) | tojson }}
+  };
+</script>
+
+<script src="{{ url_for('static', filename='js/dashboards/trace.js') }}" defer></script>
+</body>
+</html>

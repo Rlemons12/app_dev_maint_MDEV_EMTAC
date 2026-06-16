@@ -4,11 +4,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Efficient Maintenance and Technical Assistance Chatbot{% endblock %}</title>
+
     <link id="base-style" rel="stylesheet" href="{{ url_for('static', filename='css/module_template/base.css') }}">
     <link id="theme-style" rel="stylesheet" href="">
+
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+
+{% set resolved_user_id = session.get('user_id') or session.get('employee_id') or session.get('_user_id') or '' %}
+{% set resolved_user_level = session.get('user_level', '') %}
+{% set resolved_first_name = session.get('first_name', '') %}
+{% set resolved_last_name = session.get('last_name', '') %}
+
+<body
+    data-user-id="{{ resolved_user_id }}"
+    data-user-level="{{ resolved_user_level }}"
+    data-first-name="{{ resolved_first_name }}"
+    data-last-name="{{ resolved_last_name }}"
+>
+    <!-- Shared logged-in user context for frontend JavaScript -->
+    <input
+        type="hidden"
+        id="user_id"
+        name="user_id"
+        value="{{ resolved_user_id }}"
+    >
+
+    <input
+        type="hidden"
+        id="current_user_id"
+        name="current_user_id"
+        value="{{ resolved_user_id }}"
+    >
+
+    <input
+        type="hidden"
+        id="current_user_level"
+        name="current_user_level"
+        value="{{ resolved_user_level }}"
+    >
+
+    <input
+        type="hidden"
+        id="current_first_name"
+        name="current_first_name"
+        value="{{ resolved_first_name }}"
+    >
+
+    <script>
+        window.EMTAC_CURRENT_USER_ID = {{ resolved_user_id|tojson }};
+        window.EMTAC_CURRENT_USER_LEVEL = {{ resolved_user_level|tojson }};
+        window.EMTAC_CURRENT_FIRST_NAME = {{ resolved_first_name|tojson }};
+        window.EMTAC_CURRENT_LAST_NAME = {{ resolved_last_name|tojson }};
+    </script>
+
     <!-- Top Banner -->
     <div class="banner">
         THIS IS FOR REFERENCE ONLY. ALL INFORMATION SHOULD BE VERIFIED WITH CURRENT SOP'S
@@ -16,7 +65,15 @@
     </div>
 
     <!-- Hamburger Icon -->
-    <button id="sidebarCollapse" class="hamburger" aria-expanded="true" aria-label="Toggle sidebar">&#9776;</button>
+    <button
+        id="sidebarCollapse"
+        class="hamburger"
+        aria-expanded="true"
+        aria-label="Toggle sidebar"
+        type="button"
+    >
+        &#9776;
+    </button>
 
     <!-- Comment Popup Modal -->
     <div id="commentPopup" style="display: none;">
@@ -24,16 +81,39 @@
             <h2>Leave a Comment</h2>
             <p>Instructions: You can write your comment, paste an image, or upload a file.</p>
 
-            <textarea name="comment" id="comment" placeholder="Write your comment here..." required></textarea><br>
+            <!--
+                Important:
+                id="page_comment" avoids conflict with the Q&A feedback textarea,
+                which may also use id="comment".
+                The name remains "comment" so backend form handling can still receive comment.
+            -->
+            <textarea
+                name="comment"
+                id="page_comment"
+                placeholder="Write your comment here..."
+                required
+            ></textarea><br>
+
             <input type="hidden" id="imageData" name="imageData">
 
             <div id="pastedImageFeedback" style="display: none; color: green;">
                 Image snippet successfully added!
             </div>
-            <img id="pastedImagePreview" src="" alt="Pasted Image Preview" style="display:none; max-width: 100px; margin-top: 10px;" />
+
+            <img
+                id="pastedImagePreview"
+                src=""
+                alt="Pasted Image Preview"
+                style="display:none; max-width: 100px; margin-top: 10px;"
+            >
 
             <label for="fileUpload">Or upload an image:</label><br>
-            <input type="file" id="fileUpload" name="screenshot" accept="image/*" /><br><br>
+            <input
+                type="file"
+                id="fileUpload"
+                name="screenshot"
+                accept="image/*"
+            ><br><br>
 
             <button type="submit">Send</button>
             <button type="button" id="closePopup">Close</button>
@@ -41,9 +121,9 @@
     </div>
 
     <div class="main-container">
-        <!-- Sidebar Component (Override or extend this block in child templates) -->
+        <!-- Sidebar Component -->
         {% block sidebar %}
-          {% include 'module_template_html/base_sidebar.html' %}
+            {% include 'module_template_html/base_sidebar.html' %}
         {% endblock %}
 
         <!-- Main Content -->
@@ -51,27 +131,30 @@
             {% block content %}{% endblock %}
         </div>
 
-        <!-- Pagination block (can be used by specific templates) -->
+        <!-- Pagination block -->
         {% block pagination %}{% endblock %}
 
-        <!-- Results Container (optional, can be used in specific pages) -->
+        <!-- Results Container -->
         <div class="results-container" id="results-container" style="display: none;">
             <ul id="searchResults" style="color:white;">
                 <!-- Search results will be populated here -->
             </ul>
-            <!-- Thumbnails and Drawing List -->
+
             <div id="thumbnails-section">
                 <!-- Thumbnails will be dynamically added here -->
             </div>
+
             <div id="drawingList">
                 <!-- Drawing search results will be dynamically added here -->
             </div>
         </div>
     </div>
 
-    <!-- Include JavaScript -->
-    <script src="{{ url_for('static', filename='js/base_sidebar.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/comment_pop_up.js') }}"></script>
+    <!-- Base JavaScript -->
+    <script src="{{ url_for('static', filename='js/module_template/base_sidebar.js') }}?v=user_context_20260527_1"></script>
+    <script src="{{ url_for('static', filename='js/comment_pop_up.js') }}?v=user_context_20260527_1"></script>
+    <script src="{{ url_for('static', filename='js/module_template/theme_selector.js') }}?v=user_context_20260527_1"></script>
+
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

@@ -3,11 +3,12 @@ import logging
 from flask import Blueprint, jsonify, request, render_template
 from PIL import Image as PILImage, ImageFile
 from modules.configuration.config import DATABASE_PATH_IMAGES_FOLDER, DATABASE_URL
-from plugins.image_modules import CLIPModelHandler, NoImageModel
+from modules.ai.image.models.clip_model_handler import CLIPModelHandler
+from modules.ai.image.models.no_image_model import NoImageModel
 
 from sqlalchemy import (create_engine)
 from sqlalchemy.orm import declarative_base, scoped_session, sessionmaker
-from plugins.ai_modules import ModelsConfig
+from modules.ai.config.models_config import ModelsConfig
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 # Create SQLAlchemy engine

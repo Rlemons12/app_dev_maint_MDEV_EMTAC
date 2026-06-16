@@ -1,0 +1,848 @@
+/* static/css/module_template/themes/futuristic_teal_black.css
+==================================
+FUTURISTIC TEAL BLACK THEME
+Designed to sit on top of:
+static/css/module_template/base.css
+
+Role:
+- Override standardized base theme variables
+- Preserve layout ownership in base.css
+- Provide a complete Futuristic Teal & Black visual identity
+- Support reusable neppy-* utility classes
+- Theme the standardized .mt-* module template layouts
+- Theme content-area form controls and dropdowns
+- Support native selects, Bootstrap dropdowns, and Select2 widgets
+
+Important:
+- Does NOT style the standalone banner system
+- Does NOT style the standalone comment popup system
+================================== */
+
+/* ==================================
+THEME VARIABLE OVERRIDES
+Apply by adding class="futuristic-teal-black" to html or body
+================================== */
+html.futuristic-teal-black,
+body.futuristic-teal-black {
+    --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    --app-page-bg: #000000;
+    --app-page-text: #DFFCF8;
+
+    --app-sidebar-bg: rgba(0, 77, 64, 0.95);
+    --app-sidebar-text: #80CBC4;
+    --app-sidebar-link: #DFFCF8;
+    --app-sidebar-hover: #00FFFF;
+    --app-sidebar-hover-bg: rgba(0, 255, 255, 0.10);
+    --app-sidebar-border: rgba(0, 255, 255, 0.16);
+
+    --app-content-bg: rgba(26, 26, 26, 0.84);
+    --app-content-text: #DFFCF8;
+
+    --app-control-bg: rgba(0, 105, 92, 0.94);
+    --app-control-text: #DFFCF8;
+    --app-control-border: rgba(0, 255, 255, 0.18);
+    --app-control-hover-bg: rgba(0, 121, 107, 0.96);
+    --app-control-focus-ring: rgba(0, 255, 255, 0.18);
+
+    --app-results-bg: rgba(0, 121, 107, 0.24);
+    --app-results-text: #DFFCF8;
+
+    --app-thumbnail-border: rgba(0, 255, 255, 0.14);
+
+    --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.28);
+    --app-shadow-md: 0 16px 30px rgba(0, 0, 0, 0.42);
+
+    background-color: #000000;
+    color: var(--app-page-text);
+    line-height: 1.45;
+}
+
+/* ==================================
+NEPPY TOKEN OVERRIDES
+Supports reusable neppy-* utility classes
+================================== */
+html.futuristic-teal-black,
+body.futuristic-teal-black {
+    --neppy-surface: rgba(0, 77, 64, 0.30);
+    --neppy-surface-2: rgba(0, 105, 92, 0.26);
+    --neppy-line: rgba(0, 255, 255, 0.18);
+    --neppy-line-strong: rgba(0, 255, 255, 0.30);
+
+    --neppy-text: #DFFCF8;
+    --neppy-muted: #8FD9D1;
+    --neppy-heading: #F2FFFD;
+
+    --neppy-accent: #00FFFF;
+    --neppy-accent-soft: rgba(0, 255, 255, 0.14);
+    --neppy-accent-hover: #66FFFF;
+
+    --neppy-ok: #6FFFD9;
+    --neppy-ok-soft: rgba(111, 255, 217, 0.14);
+
+    --neppy-warn: #FFD166;
+    --neppy-warn-soft: rgba(255, 209, 102, 0.18);
+
+    --neppy-bad: #FF8FAB;
+    --neppy-bad-soft: rgba(255, 143, 171, 0.16);
+}
+
+/* ==================================
+GLOBAL POLISH
+================================== */
+html.futuristic-teal-black .sidebar,
+body.futuristic-teal-black .sidebar {
+    backdrop-filter: blur(6px);
+    box-shadow: inset -1px 0 0 rgba(0, 255, 255, 0.08);
+}
+
+html.futuristic-teal-black .sidebar h1,
+body.futuristic-teal-black .sidebar h1 {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+}
+
+html.futuristic-teal-black .welcome-message,
+body.futuristic-teal-black .welcome-message {
+    color: var(--app-sidebar-text);
+    font-weight: 600;
+}
+
+html.futuristic-teal-black .user-level,
+html.futuristic-teal-black .model-display-section,
+body.futuristic-teal-black .user-level,
+body.futuristic-teal-black .model-display-section {
+    color: rgba(223, 252, 248, 0.66);
+}
+
+html.futuristic-teal-black .content,
+body.futuristic-teal-black .content {
+    background: linear-gradient(
+        180deg,
+        rgba(26, 26, 26, 0.84) 0%,
+        rgba(16, 21, 21, 0.92) 100%
+    );
+    color: var(--app-content-text);
+}
+
+/* ==================================
+SIDEBAR NAV / INTERACTION POLISH
+================================== */
+html.futuristic-teal-black .nav-link,
+html.futuristic-teal-black .sidebar a,
+html.futuristic-teal-black .sidebar button,
+html.futuristic-teal-black .sidebar select,
+body.futuristic-teal-black .nav-link,
+body.futuristic-teal-black .sidebar a,
+body.futuristic-teal-black .sidebar button,
+body.futuristic-teal-black .sidebar select {
+    color: var(--app-sidebar-link);
+}
+
+html.futuristic-teal-black .nav-link:hover,
+html.futuristic-teal-black .sidebar a:hover,
+html.futuristic-teal-black .sidebar button:hover,
+html.futuristic-teal-black .sidebar select:hover,
+body.futuristic-teal-black .nav-link:hover,
+body.futuristic-teal-black .sidebar a:hover,
+body.futuristic-teal-black .sidebar button:hover,
+body.futuristic-teal-black .sidebar select:hover {
+    color: var(--app-sidebar-hover);
+    background-color: var(--app-sidebar-hover-bg);
+}
+
+html.futuristic-teal-black .nav-link.highlight,
+body.futuristic-teal-black .nav-link.highlight {
+    color: var(--app-sidebar-hover);
+    background-color: rgba(0, 255, 255, 0.10);
+    border-left: 3px solid var(--app-sidebar-hover);
+}
+
+/* ==================================
+STANDARD CONTROLS
+================================== */
+html.futuristic-teal-black .toggle-button,
+body.futuristic-teal-black .toggle-button {
+    background: linear-gradient(180deg, #00695C 0%, #00554B 100%) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.24);
+    font-weight: 600;
+}
+
+html.futuristic-teal-black .toggle-button:hover,
+body.futuristic-teal-black .toggle-button:hover {
+    background: linear-gradient(180deg, #00796B 0%, #00695C 100%) !important;
+    border-color: rgba(0, 255, 255, 0.35) !important;
+}
+
+html.futuristic-teal-black #voice-selection,
+html.futuristic-teal-black .sidebar select,
+body.futuristic-teal-black #voice-selection,
+body.futuristic-teal-black .sidebar select {
+    background-color: #004D40;
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 5px;
+}
+
+html.futuristic-teal-black #voice-selection:focus,
+html.futuristic-teal-black .sidebar select:focus,
+body.futuristic-teal-black #voice-selection:focus,
+body.futuristic-teal-black .sidebar select:focus {
+    outline: 2px solid rgba(0, 255, 255, 0.35);
+    outline-offset: 2px;
+}
+
+/* ==================================
+CONTENT AREA FORM CONTROLS
+Fixes white-on-white dropdowns in main panels.
+Supports:
+- Native inputs/selects/textareas
+- Bootstrap .form-control / .form-select
+- Module template .mt-panel-body controls
+- Upload/search forms
+================================== */
+html.futuristic-teal-black .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.futuristic-teal-black .content select,
+html.futuristic-teal-black .content textarea,
+html.futuristic-teal-black .content .form-control,
+html.futuristic-teal-black .content .form-select,
+html.futuristic-teal-black .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.futuristic-teal-black .mt-panel-body select,
+html.futuristic-teal-black .mt-panel-body textarea,
+html.futuristic-teal-black .mt-panel-body .form-control,
+html.futuristic-teal-black .mt-panel-body .form-select,
+html.futuristic-teal-black .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.futuristic-teal-black .upload-search-form select,
+html.futuristic-teal-black .upload-search-form textarea,
+html.futuristic-teal-black .upload-search-form .form-control,
+html.futuristic-teal-black .upload-search-form .form-select,
+body.futuristic-teal-black .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.futuristic-teal-black .content select,
+body.futuristic-teal-black .content textarea,
+body.futuristic-teal-black .content .form-control,
+body.futuristic-teal-black .content .form-select,
+body.futuristic-teal-black .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.futuristic-teal-black .mt-panel-body select,
+body.futuristic-teal-black .mt-panel-body textarea,
+body.futuristic-teal-black .mt-panel-body .form-control,
+body.futuristic-teal-black .mt-panel-body .form-select,
+body.futuristic-teal-black .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.futuristic-teal-black .upload-search-form select,
+body.futuristic-teal-black .upload-search-form textarea,
+body.futuristic-teal-black .upload-search-form .form-control,
+body.futuristic-teal-black .upload-search-form .form-select {
+    background-color: var(--app-control-bg) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.26);
+}
+
+html.futuristic-teal-black .content input::placeholder,
+html.futuristic-teal-black .content textarea::placeholder,
+html.futuristic-teal-black .mt-panel-body input::placeholder,
+html.futuristic-teal-black .mt-panel-body textarea::placeholder,
+html.futuristic-teal-black .upload-search-form input::placeholder,
+html.futuristic-teal-black .upload-search-form textarea::placeholder,
+body.futuristic-teal-black .content input::placeholder,
+body.futuristic-teal-black .content textarea::placeholder,
+body.futuristic-teal-black .mt-panel-body input::placeholder,
+body.futuristic-teal-black .mt-panel-body textarea::placeholder,
+body.futuristic-teal-black .upload-search-form input::placeholder,
+body.futuristic-teal-black .upload-search-form textarea::placeholder {
+    color: rgba(223, 252, 248, 0.68);
+}
+
+html.futuristic-teal-black .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.futuristic-teal-black .content select:hover,
+html.futuristic-teal-black .content textarea:hover,
+html.futuristic-teal-black .content .form-control:hover,
+html.futuristic-teal-black .content .form-select:hover,
+html.futuristic-teal-black .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.futuristic-teal-black .mt-panel-body select:hover,
+html.futuristic-teal-black .mt-panel-body textarea:hover,
+html.futuristic-teal-black .mt-panel-body .form-control:hover,
+html.futuristic-teal-black .mt-panel-body .form-select:hover,
+html.futuristic-teal-black .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.futuristic-teal-black .upload-search-form select:hover,
+html.futuristic-teal-black .upload-search-form textarea:hover,
+html.futuristic-teal-black .upload-search-form .form-control:hover,
+html.futuristic-teal-black .upload-search-form .form-select:hover,
+body.futuristic-teal-black .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.futuristic-teal-black .content select:hover,
+body.futuristic-teal-black .content textarea:hover,
+body.futuristic-teal-black .content .form-control:hover,
+body.futuristic-teal-black .content .form-select:hover,
+body.futuristic-teal-black .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.futuristic-teal-black .mt-panel-body select:hover,
+body.futuristic-teal-black .mt-panel-body textarea:hover,
+body.futuristic-teal-black .mt-panel-body .form-control:hover,
+body.futuristic-teal-black .mt-panel-body .form-select:hover,
+body.futuristic-teal-black .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.futuristic-teal-black .upload-search-form select:hover,
+body.futuristic-teal-black .upload-search-form textarea:hover,
+body.futuristic-teal-black .upload-search-form .form-control:hover,
+body.futuristic-teal-black .upload-search-form .form-select:hover {
+    background-color: var(--app-control-hover-bg) !important;
+    border-color: rgba(0, 255, 255, 0.38) !important;
+}
+
+html.futuristic-teal-black .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.futuristic-teal-black .content select:focus,
+html.futuristic-teal-black .content textarea:focus,
+html.futuristic-teal-black .content .form-control:focus,
+html.futuristic-teal-black .content .form-select:focus,
+html.futuristic-teal-black .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.futuristic-teal-black .mt-panel-body select:focus,
+html.futuristic-teal-black .mt-panel-body textarea:focus,
+html.futuristic-teal-black .mt-panel-body .form-control:focus,
+html.futuristic-teal-black .mt-panel-body .form-select:focus,
+html.futuristic-teal-black .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.futuristic-teal-black .upload-search-form select:focus,
+html.futuristic-teal-black .upload-search-form textarea:focus,
+html.futuristic-teal-black .upload-search-form .form-control:focus,
+html.futuristic-teal-black .upload-search-form .form-select:focus,
+body.futuristic-teal-black .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.futuristic-teal-black .content select:focus,
+body.futuristic-teal-black .content textarea:focus,
+body.futuristic-teal-black .content .form-control:focus,
+body.futuristic-teal-black .content .form-select:focus,
+body.futuristic-teal-black .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.futuristic-teal-black .mt-panel-body select:focus,
+body.futuristic-teal-black .mt-panel-body textarea:focus,
+body.futuristic-teal-black .mt-panel-body .form-control:focus,
+body.futuristic-teal-black .mt-panel-body .form-select:focus,
+body.futuristic-teal-black .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.futuristic-teal-black .upload-search-form select:focus,
+body.futuristic-teal-black .upload-search-form textarea:focus,
+body.futuristic-teal-black .upload-search-form .form-control:focus,
+body.futuristic-teal-black .upload-search-form .form-select:focus {
+    outline: none;
+    border-color: var(--neppy-accent) !important;
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+/* Native select dropdown list */
+html.futuristic-teal-black .content select option,
+html.futuristic-teal-black .mt-panel-body select option,
+html.futuristic-teal-black .upload-search-form select option,
+body.futuristic-teal-black .content select option,
+body.futuristic-teal-black .mt-panel-body select option,
+body.futuristic-teal-black .upload-search-form select option {
+    background: #003C34;
+    color: #DFFCF8;
+}
+
+/* Native selected option state */
+html.futuristic-teal-black .content select option:checked,
+html.futuristic-teal-black .mt-panel-body select option:checked,
+html.futuristic-teal-black .upload-search-form select option:checked,
+body.futuristic-teal-black .content select option:checked,
+body.futuristic-teal-black .mt-panel-body select option:checked,
+body.futuristic-teal-black .upload-search-form select option:checked {
+    background: #00FFFF;
+    color: #001C1C;
+}
+
+/* Disabled states */
+html.futuristic-teal-black .content input:disabled,
+html.futuristic-teal-black .content select:disabled,
+html.futuristic-teal-black .content textarea:disabled,
+html.futuristic-teal-black .content .form-control:disabled,
+html.futuristic-teal-black .content .form-select:disabled,
+html.futuristic-teal-black .mt-panel-body input:disabled,
+html.futuristic-teal-black .mt-panel-body select:disabled,
+html.futuristic-teal-black .mt-panel-body textarea:disabled,
+html.futuristic-teal-black .mt-panel-body .form-control:disabled,
+html.futuristic-teal-black .mt-panel-body .form-select:disabled,
+html.futuristic-teal-black .upload-search-form input:disabled,
+html.futuristic-teal-black .upload-search-form select:disabled,
+html.futuristic-teal-black .upload-search-form textarea:disabled,
+html.futuristic-teal-black .upload-search-form .form-control:disabled,
+html.futuristic-teal-black .upload-search-form .form-select:disabled,
+body.futuristic-teal-black .content input:disabled,
+body.futuristic-teal-black .content select:disabled,
+body.futuristic-teal-black .content textarea:disabled,
+body.futuristic-teal-black .content .form-control:disabled,
+body.futuristic-teal-black .content .form-select:disabled,
+body.futuristic-teal-black .mt-panel-body input:disabled,
+body.futuristic-teal-black .mt-panel-body select:disabled,
+body.futuristic-teal-black .mt-panel-body textarea:disabled,
+body.futuristic-teal-black .mt-panel-body .form-control:disabled,
+body.futuristic-teal-black .mt-panel-body .form-select:disabled,
+body.futuristic-teal-black .upload-search-form input:disabled,
+body.futuristic-teal-black .upload-search-form select:disabled,
+body.futuristic-teal-black .upload-search-form textarea:disabled,
+body.futuristic-teal-black .upload-search-form .form-control:disabled,
+body.futuristic-teal-black .upload-search-form .form-select:disabled {
+    background: rgba(0, 77, 64, 0.58) !important;
+    color: rgba(223, 252, 248, 0.58) !important;
+    cursor: not-allowed;
+}
+
+/* ==================================
+CONTENT AREA BUTTONS
+================================== */
+html.futuristic-teal-black .content button:not(.mt-toggle-btn):not(.toggle-button),
+html.futuristic-teal-black .content input[type="submit"],
+html.futuristic-teal-black .content input[type="button"],
+html.futuristic-teal-black .content input[type="reset"],
+html.futuristic-teal-black .content .btn,
+body.futuristic-teal-black .content button:not(.mt-toggle-btn):not(.toggle-button),
+body.futuristic-teal-black .content input[type="submit"],
+body.futuristic-teal-black .content input[type="button"],
+body.futuristic-teal-black .content input[type="reset"],
+body.futuristic-teal-black .content .btn {
+    background: linear-gradient(180deg, #00695C 0%, #00554B 100%);
+    color: #DFFCF8;
+    border: 1px solid var(--app-control-border);
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.24);
+}
+
+html.futuristic-teal-black .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+html.futuristic-teal-black .content input[type="submit"]:hover,
+html.futuristic-teal-black .content input[type="button"]:hover,
+html.futuristic-teal-black .content input[type="reset"]:hover,
+html.futuristic-teal-black .content .btn:hover,
+body.futuristic-teal-black .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+body.futuristic-teal-black .content input[type="submit"]:hover,
+body.futuristic-teal-black .content input[type="button"]:hover,
+body.futuristic-teal-black .content input[type="reset"]:hover,
+body.futuristic-teal-black .content .btn:hover {
+    border-color: rgba(0, 255, 255, 0.38);
+    background: linear-gradient(180deg, #00796B 0%, #00695C 100%);
+    color: #DFFCF8;
+}
+
+/* ==================================
+BOOTSTRAP DROPDOWN MENU SUPPORT
+Needed when dropdowns are button menus instead
+of native <select> elements.
+================================== */
+html.futuristic-teal-black .content .dropdown-menu,
+html.futuristic-teal-black .mt-panel-body .dropdown-menu,
+html.futuristic-teal-black .upload-search-form .dropdown-menu,
+body.futuristic-teal-black .content .dropdown-menu,
+body.futuristic-teal-black .mt-panel-body .dropdown-menu,
+body.futuristic-teal-black .upload-search-form .dropdown-menu {
+    background: #003C34;
+    color: #DFFCF8;
+    border: 1px solid var(--app-control-border);
+    border-radius: 8px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.42);
+}
+
+html.futuristic-teal-black .content .dropdown-item,
+html.futuristic-teal-black .mt-panel-body .dropdown-item,
+html.futuristic-teal-black .upload-search-form .dropdown-item,
+body.futuristic-teal-black .content .dropdown-item,
+body.futuristic-teal-black .mt-panel-body .dropdown-item,
+body.futuristic-teal-black .upload-search-form .dropdown-item {
+    color: #DFFCF8;
+}
+
+html.futuristic-teal-black .content .dropdown-item:hover,
+html.futuristic-teal-black .content .dropdown-item:focus,
+html.futuristic-teal-black .mt-panel-body .dropdown-item:hover,
+html.futuristic-teal-black .mt-panel-body .dropdown-item:focus,
+html.futuristic-teal-black .upload-search-form .dropdown-item:hover,
+html.futuristic-teal-black .upload-search-form .dropdown-item:focus,
+body.futuristic-teal-black .content .dropdown-item:hover,
+body.futuristic-teal-black .content .dropdown-item:focus,
+body.futuristic-teal-black .mt-panel-body .dropdown-item:hover,
+body.futuristic-teal-black .mt-panel-body .dropdown-item:focus,
+body.futuristic-teal-black .upload-search-form .dropdown-item:hover,
+body.futuristic-teal-black .upload-search-form .dropdown-item:focus {
+    background: #00FFFF;
+    color: #001C1C;
+}
+
+html.futuristic-teal-black .content .dropdown-item.active,
+html.futuristic-teal-black .content .dropdown-item:active,
+html.futuristic-teal-black .mt-panel-body .dropdown-item.active,
+html.futuristic-teal-black .mt-panel-body .dropdown-item:active,
+html.futuristic-teal-black .upload-search-form .dropdown-item.active,
+html.futuristic-teal-black .upload-search-form .dropdown-item:active,
+body.futuristic-teal-black .content .dropdown-item.active,
+body.futuristic-teal-black .content .dropdown-item:active,
+body.futuristic-teal-black .mt-panel-body .dropdown-item.active,
+body.futuristic-teal-black .mt-panel-body .dropdown-item:active,
+body.futuristic-teal-black .upload-search-form .dropdown-item.active,
+body.futuristic-teal-black .upload-search-form .dropdown-item:active {
+    background: rgba(0, 255, 255, 0.22);
+    color: #DFFCF8;
+}
+
+/* ==================================
+SELECT2 SUPPORT
+Needed when dropdowns are enhanced by Select2.
+Select2 dropdowns may be appended near <body>,
+so these selectors are scoped to the theme root,
+not only to .content.
+================================== */
+html.futuristic-teal-black .select2-container,
+body.futuristic-teal-black .select2-container {
+    color: #DFFCF8;
+}
+
+html.futuristic-teal-black .select2-container .select2-selection--single,
+html.futuristic-teal-black .select2-container .select2-selection--multiple,
+body.futuristic-teal-black .select2-container .select2-selection--single,
+body.futuristic-teal-black .select2-container .select2-selection--multiple {
+    background: var(--app-control-bg) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    min-height: 38px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.26);
+}
+
+html.futuristic-teal-black .select2-container .select2-selection--single:hover,
+html.futuristic-teal-black .select2-container .select2-selection--multiple:hover,
+body.futuristic-teal-black .select2-container .select2-selection--single:hover,
+body.futuristic-teal-black .select2-container .select2-selection--multiple:hover {
+    background: var(--app-control-hover-bg) !important;
+    border-color: rgba(0, 255, 255, 0.38) !important;
+}
+
+html.futuristic-teal-black .select2-container--default.select2-container--focus .select2-selection--multiple,
+html.futuristic-teal-black .select2-container--default.select2-container--open .select2-selection--single,
+html.futuristic-teal-black .select2-container--default.select2-container--open .select2-selection--multiple,
+body.futuristic-teal-black .select2-container--default.select2-container--focus .select2-selection--multiple,
+body.futuristic-teal-black .select2-container--default.select2-container--open .select2-selection--single,
+body.futuristic-teal-black .select2-container--default.select2-container--open .select2-selection--multiple {
+    border-color: var(--neppy-accent) !important;
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+html.futuristic-teal-black .select2-container--default .select2-selection--single .select2-selection__rendered,
+html.futuristic-teal-black .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.futuristic-teal-black .select2-container--default .select2-selection--single .select2-selection__rendered,
+body.futuristic-teal-black .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    color: #DFFCF8 !important;
+    line-height: 36px;
+}
+
+html.futuristic-teal-black .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.futuristic-teal-black .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    line-height: normal;
+    padding-top: 4px;
+}
+
+html.futuristic-teal-black .select2-container--default .select2-selection--single .select2-selection__placeholder,
+html.futuristic-teal-black .select2-container--default .select2-selection--multiple .select2-selection__placeholder,
+body.futuristic-teal-black .select2-container--default .select2-selection--single .select2-selection__placeholder,
+body.futuristic-teal-black .select2-container--default .select2-selection--multiple .select2-selection__placeholder {
+    color: rgba(223, 252, 248, 0.68) !important;
+}
+
+html.futuristic-teal-black .select2-container--default .select2-selection--single .select2-selection__arrow b,
+body.futuristic-teal-black .select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: #DFFCF8 transparent transparent transparent;
+}
+
+html.futuristic-teal-black .select2-dropdown,
+body.futuristic-teal-black .select2-dropdown {
+    background: #003C34 !important;
+    color: #DFFCF8 !important;
+    border: 1px solid var(--app-control-border) !important;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.42);
+}
+
+html.futuristic-teal-black .select2-container--default .select2-search--dropdown .select2-search__field,
+body.futuristic-teal-black .select2-container--default .select2-search--dropdown .select2-search__field {
+    background: rgba(0, 60, 52, 0.98) !important;
+    color: #DFFCF8 !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 4px;
+}
+
+html.futuristic-teal-black .select2-results__option,
+body.futuristic-teal-black .select2-results__option {
+    background: #003C34;
+    color: #DFFCF8;
+}
+
+html.futuristic-teal-black .select2-container--default .select2-results__option--highlighted[aria-selected],
+body.futuristic-teal-black .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background: #00FFFF !important;
+    color: #001C1C !important;
+}
+
+html.futuristic-teal-black .select2-container--default .select2-results__option[aria-selected="true"],
+body.futuristic-teal-black .select2-container--default .select2-results__option[aria-selected="true"] {
+    background: rgba(0, 255, 255, 0.22) !important;
+    color: #DFFCF8 !important;
+}
+
+html.futuristic-teal-black .select2-container--default .select2-selection--multiple .select2-selection__choice,
+body.futuristic-teal-black .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background: rgba(0, 255, 255, 0.16) !important;
+    color: #DFFCF8 !important;
+    border: 1px solid rgba(0, 255, 255, 0.28) !important;
+}
+
+html.futuristic-teal-black .select2-container--default .select2-selection--multiple .select2-selection__choice__remove,
+body.futuristic-teal-black .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #66FFFF !important;
+}
+
+/* ==================================
+RESULTS / PANELS / THUMBNAILS
+================================== */
+html.futuristic-teal-black .results-container,
+body.futuristic-teal-black .results-container {
+    background: var(--app-results-bg);
+    border: 1px solid rgba(223, 252, 248, 0.10);
+    border-radius: 10px;
+    box-shadow: var(--app-shadow-md);
+    backdrop-filter: blur(4px);
+}
+
+html.futuristic-teal-black #drawingList,
+body.futuristic-teal-black #drawingList {
+    color: var(--app-results-text);
+}
+
+html.futuristic-teal-black .thumbnail,
+body.futuristic-teal-black .thumbnail {
+    background: rgba(0, 77, 64, 0.90);
+    border: 1px solid var(--app-thumbnail-border);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
+}
+
+/* ==================================
+LINKS / SPECIAL STATES
+Scoped so they do NOT affect the banner
+================================== */
+html.futuristic-teal-black .content a,
+html.futuristic-teal-black .sidebar a,
+body.futuristic-teal-black .content a,
+body.futuristic-teal-black .sidebar a {
+    color: #8EF7EF;
+}
+
+html.futuristic-teal-black .content a:hover,
+html.futuristic-teal-black .sidebar a:hover,
+body.futuristic-teal-black .content a:hover,
+body.futuristic-teal-black .sidebar a:hover {
+    color: var(--app-sidebar-hover);
+}
+
+html.futuristic-teal-black .logout-button,
+body.futuristic-teal-black .logout-button {
+    color: #FFCC80 !important;
+}
+
+/* ==================================
+ACCESSIBILITY / FOCUS
+No hamburger styling here.
+Hamburger focus belongs to banner.css / banner theme only.
+================================== */
+html.futuristic-teal-black .toggle-button:focus-visible,
+html.futuristic-teal-black .sidebar button:focus-visible,
+html.futuristic-teal-black .sidebar a:focus-visible,
+html.futuristic-teal-black .sidebar select:focus-visible,
+html.futuristic-teal-black .mt-toggle-btn:focus-visible,
+html.futuristic-teal-black .neppy-btn:focus-visible,
+html.futuristic-teal-black .neppy-input:focus-visible,
+html.futuristic-teal-black .neppy-select:focus-visible,
+html.futuristic-teal-black .neppy-textarea:focus-visible,
+html.futuristic-teal-black .content button:focus-visible,
+html.futuristic-teal-black .content input:focus-visible,
+html.futuristic-teal-black .content select:focus-visible,
+html.futuristic-teal-black .content textarea:focus-visible,
+html.futuristic-teal-black .content .form-control:focus-visible,
+html.futuristic-teal-black .content .form-select:focus-visible,
+body.futuristic-teal-black .toggle-button:focus-visible,
+body.futuristic-teal-black .sidebar button:focus-visible,
+body.futuristic-teal-black .sidebar a:focus-visible,
+body.futuristic-teal-black .sidebar select:focus-visible,
+body.futuristic-teal-black .mt-toggle-btn:focus-visible,
+body.futuristic-teal-black .neppy-btn:focus-visible,
+body.futuristic-teal-black .neppy-input:focus-visible,
+body.futuristic-teal-black .neppy-select:focus-visible,
+body.futuristic-teal-black .neppy-textarea:focus-visible,
+body.futuristic-teal-black .content button:focus-visible,
+body.futuristic-teal-black .content input:focus-visible,
+body.futuristic-teal-black .content select:focus-visible,
+body.futuristic-teal-black .content textarea:focus-visible,
+body.futuristic-teal-black .content .form-control:focus-visible,
+body.futuristic-teal-black .content .form-select:focus-visible {
+    outline: 2px solid rgba(0, 255, 255, 0.55);
+    outline-offset: 2px;
+}
+
+/* ==================================
+NEPPY UTILITY CLASS SUPPORT
+================================== */
+html.futuristic-teal-black .neppy-card,
+html.futuristic-teal-black .neppy-card-soft,
+body.futuristic-teal-black .neppy-card,
+body.futuristic-teal-black .neppy-card-soft {
+    background: var(--neppy-surface);
+    border-color: var(--neppy-line);
+}
+
+html.futuristic-teal-black .neppy-title,
+html.futuristic-teal-black .neppy-panel-title,
+body.futuristic-teal-black .neppy-title,
+body.futuristic-teal-black .neppy-panel-title {
+    color: var(--neppy-heading);
+}
+
+html.futuristic-teal-black .neppy-subtitle,
+html.futuristic-teal-black .neppy-label,
+html.futuristic-teal-black .neppy-text-muted,
+body.futuristic-teal-black .neppy-subtitle,
+body.futuristic-teal-black .neppy-label,
+body.futuristic-teal-black .neppy-text-muted {
+    color: var(--neppy-muted) !important;
+}
+
+html.futuristic-teal-black .neppy-btn,
+body.futuristic-teal-black .neppy-btn {
+    background: linear-gradient(180deg, #00695C 0%, #00554B 100%);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+html.futuristic-teal-black .neppy-btn:hover,
+body.futuristic-teal-black .neppy-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, #00796B 0%, #00695C 100%);
+}
+
+html.futuristic-teal-black .neppy-input,
+html.futuristic-teal-black .neppy-select,
+html.futuristic-teal-black .neppy-textarea,
+html.futuristic-teal-black .neppy-mono,
+html.futuristic-teal-black .neppy-code,
+body.futuristic-teal-black .neppy-input,
+body.futuristic-teal-black .neppy-select,
+body.futuristic-teal-black .neppy-textarea,
+body.futuristic-teal-black .neppy-mono,
+body.futuristic-teal-black .neppy-code {
+    background: #003C34;
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+html.futuristic-teal-black .neppy-input:focus,
+html.futuristic-teal-black .neppy-select:focus,
+html.futuristic-teal-black .neppy-textarea:focus,
+body.futuristic-teal-black .neppy-input:focus,
+body.futuristic-teal-black .neppy-select:focus,
+body.futuristic-teal-black .neppy-textarea:focus {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
+}
+
+/* ==================================
+MODULE TEMPLATE PANEL LAYOUT THEME
+Styles the standardized .mt-* module templates
+================================== */
+html.futuristic-teal-black .mt-layout,
+body.futuristic-teal-black .mt-layout {
+    color: var(--neppy-text);
+}
+
+html.futuristic-teal-black .mt-layout-header,
+body.futuristic-teal-black .mt-layout-header {
+    border-bottom: 2px solid rgba(0, 255, 255, 0.22);
+}
+
+html.futuristic-teal-black .mt-layout-title,
+body.futuristic-teal-black .mt-layout-title {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+}
+
+html.futuristic-teal-black .mt-layout-description,
+body.futuristic-teal-black .mt-layout-description {
+    color: var(--neppy-muted);
+}
+
+html.futuristic-teal-black .mt-panel,
+body.futuristic-teal-black .mt-panel {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg, 14px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(4px);
+}
+
+html.futuristic-teal-black .mt-panel:hover,
+body.futuristic-teal-black .mt-panel:hover {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.36);
+}
+
+html.futuristic-teal-black .mt-panel-header,
+body.futuristic-teal-black .mt-panel-header {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--neppy-line);
+}
+
+html.futuristic-teal-black .mt-panel-title,
+body.futuristic-teal-black .mt-panel-title {
+    color: var(--neppy-accent);
+}
+
+html.futuristic-teal-black .mt-toggle-btn,
+body.futuristic-teal-black .mt-toggle-btn {
+    background: linear-gradient(180deg, #00695C 0%, #00554B 100%);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
+}
+
+html.futuristic-teal-black .mt-toggle-btn:hover,
+body.futuristic-teal-black .mt-toggle-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, #00796B 0%, #00695C 100%);
+    color: var(--neppy-text);
+}
+
+html.futuristic-teal-black .mt-panel.is-collapsed .mt-toggle-btn,
+body.futuristic-teal-black .mt-panel.is-collapsed .mt-toggle-btn {
+    background: linear-gradient(180deg, #7A2F3F 0%, #5E2431 100%);
+    border-color: rgba(255, 143, 171, 0.35);
+    color: #FFFFFF;
+}
+
+html.futuristic-teal-black .mt-panel-body,
+body.futuristic-teal-black .mt-panel-body {
+    color: var(--neppy-text);
+}
+
+html.futuristic-teal-black .mt-panel-content,
+body.futuristic-teal-black .mt-panel-content {
+    gap: 12px;
+}
+
+html.futuristic-teal-black .mt-item,
+body.futuristic-teal-black .mt-item {
+    background: rgba(0, 77, 64, 0.92);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+}
+
+html.futuristic-teal-black .mt-item:hover,
+body.futuristic-teal-black .mt-item:hover {
+    background: rgba(0, 255, 255, 0.08);
+    border-color: var(--neppy-accent);
+}
+
+html.futuristic-teal-black .mt-item.is-active,
+body.futuristic-teal-black .mt-item.is-active {
+    background: rgba(0, 255, 255, 0.16);
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 1px rgba(0, 255, 255, 0.10);
+}

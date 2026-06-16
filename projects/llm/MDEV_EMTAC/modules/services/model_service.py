@@ -1,164 +1,262 @@
-# services/model_service.py
+# modules/services/model_service.py
+
 from typing import List, Optional, Dict, Any, Union
+from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from modules.emtacdb.emtacdb_fts import Model, EquipmentGroup, Area
-from modules.configuration.log_config import info_id, error_id, with_request_id
-from modules.database.config_env import DatabaseConfig
+from modules.emtacdb.emtacdb_fts import Model
+from modules.configuration.log_config import with_request_id
+from modules.configuration.config_env import DatabaseConfig
 
 
 class ModelService:
     """
-    Service layer for managing Model entities.
+    Transaction-aware Model service.
 
-    Provides CRUD operations and relationship traversal:
-      - `find`         → Broad search by name/description.
-      - `get`          → Retrieve a Model by ID.
-      - `save`         → Create or update a Model.
-      - `remove`       → Delete a Model by ID.
-      - `search`       → Autocomplete search for models.
-      - `find_related` → Get related entities (upward/downward hierarchy).
+    RULE:
+    - If session provided → NEVER commit
+    - If session not provided → standalone mode allowed
     """
 
-    def __init__(self, db_config: DatabaseConfig = None):
+    def __init__(self, db_config: Optional[DatabaseConfig] = None):
         self.db_config = db_config or DatabaseConfig()
 
-    # -----------------
-    # SEARCH OPERATIONS
-    # -----------------
+    # -----------------------------------------------------
+    # FIND
+    # -----------------------------------------------------
 
     @with_request_id
-    def find(self, name: Optional[str] = None,
-             description: Optional[str] = None,
-             equipment_group_id: Optional[int] = None,
-             limit: int = 100) -> List[Model]:
-        """
-        Broad search for models by filters.
+    def find(
+        self,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        equipment_group_id: Optional[int] = None,
+        limit: int = 100,
+        session: Optional[Session] = None,
+    ) -> List[Model]:
 
-        Args:
-            name (str, optional): Partial match on model name.
-            description (str, optional): Partial match on description.
-            equipment_group_id (int, optional): Filter by equipment group.
-            limit (int): Max results (default 100).
+        if session:
+            return self._find_internal(
+                session, name, description, equipment_group_id, limit
+            )
 
-        Returns:
-            List[Model]: Matching model objects.
-        """
-        with self.db_config.main_session() as session:
-            try:
-                query = session.query(Model)
-                if name:
-                    query = query.filter(Model.name.ilike(f"%{name}%"))
-                if description:
-                    query = query.filter(Model.description.ilike(f"%{description}%"))
-                if equipment_group_id:
-                    query = query.filter(Model.equipment_group_id == equipment_group_id)
-                results = query.limit(limit).all()
-                info_id(f"Found {len(results)} Models", None)
-                return results
-            except SQLAlchemyError as e:
-                error_id(f"ModelService.find failed: {e}", None)
-                raise
+        with self.db_config.main_session() as s:
+            return self._find_internal(
+                s, name, description, equipment_group_id, limit
+            )
 
-    @with_request_id
-    def search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """
-        Autocomplete search for models.
+    def _find_internal(
+        self, session, name, description, equipment_group_id, limit
+    ):
 
-        Args:
-            query (str): Partial name of model.
-            limit (int): Max results (default 10).
+        query = session.query(Model)
 
-        Returns:
-            List[dict]: Lightweight model details for autocomplete.
-        """
-        with self.db_config.main_session() as session:
-            try:
-                return Model.search_models(session, query, limit=limit)
-            except SQLAlchemyError as e:
-                error_id(f"ModelService.search failed: {e}", None)
-                raise
+        if name:
+            query = query.filter(Model.name.ilike(f"%{name}%"))
 
-    # -----------------
-    # CRUD OPERATIONS
-    # -----------------
+        if description:
+            query = query.filter(Model.description.ilike(f"%{description}%"))
+
+        if equipment_group_id:
+            query = query.filter(Model.equipment_group_id == equipment_group_id)
+
+        return query.limit(limit).all()
+
+    # -----------------------------------------------------
+    # SEARCH (Autocomplete)
+    # -----------------------------------------------------
 
     @with_request_id
-    def get(self, model_id: int) -> Optional[Model]:
-        """Retrieve a Model by ID."""
-        with self.db_config.main_session() as session:
-            try:
-                return session.query(Model).filter_by(id=model_id).first()
-            except SQLAlchemyError as e:
-                error_id(f"ModelService.get failed: {e}", None)
-                raise
+    def search(
+        self,
+        query: str,
+        limit: int = 10,
+        session: Optional[Session] = None,
+    ) -> List[Dict[str, Any]]:
+
+        if session:
+            return Model.search_models(session, query, limit)
+
+        with self.db_config.main_session() as s:
+            return Model.search_models(s, query, limit)
+
+    # -----------------------------------------------------
+    # GET
+    # -----------------------------------------------------
 
     @with_request_id
-    def save(self, name: str, equipment_group_id: int,
-             description: Optional[str] = None,
-             model_id: Optional[int] = None) -> Model:
-        """
-        Create or update a Model.
+    def get(
+        self,
+        model_id: int,
+        session: Optional[Session] = None,
+    ) -> Optional[Model]:
 
-        Args:
-            name (str): Model name.
-            equipment_group_id (int): FK to equipment group.
-            description (str, optional): Model description.
-            model_id (int, optional): If provided, update existing record.
+        if session:
+            return session.get(Model, model_id)
 
-        Returns:
-            Model: Created or updated object.
-        """
-        with self.db_config.main_session() as session:
-            try:
-                if model_id:
-                    m = session.query(Model).filter_by(id=model_id).first()
-                    if not m:
-                        raise ValueError(f"Model with id {model_id} not found")
-                    m.name = name
-                    m.description = description
-                    m.equipment_group_id = equipment_group_id
-                    info_id(f"Updated Model id={model_id}", None)
-                else:
-                    m = Model.add_model(session, name, equipment_group_id, description)
-                    info_id(f"Created Model '{name}'", None)
-                return m
-            except SQLAlchemyError as e:
-                error_id(f"ModelService.save failed: {e}", None)
-                raise
+        with self.db_config.main_session() as s:
+            return s.get(Model, model_id)
+
+    # -----------------------------------------------------
+    # SAVE
+    # -----------------------------------------------------
 
     @with_request_id
-    def remove(self, model_id: int) -> bool:
-        """Delete a Model by ID."""
-        with self.db_config.main_session() as session:
+    def save(
+        self,
+        name: str,
+        equipment_group_id: int,
+        description: Optional[str] = None,
+        model_id: Optional[int] = None,
+        session: Optional[Session] = None,
+    ) -> Model:
+
+        if session:
+            return self._save_internal(
+                session, name, equipment_group_id, description, model_id
+            )
+
+        with self.db_config.main_session() as s:
             try:
-                return Model.delete_model(session, model_id)
-            except SQLAlchemyError as e:
-                error_id(f"ModelService.remove failed: {e}", None)
+                model = self._save_internal(
+                    s, name, equipment_group_id, description, model_id
+                )
+                s.commit()
+                return model
+            except:
+                s.rollback()
                 raise
 
-    # -----------------
-    # RELATIONSHIP OPS
-    # -----------------
+    def _save_internal(
+        self, session, name, equipment_group_id, description, model_id
+    ):
+
+        if model_id:
+            model = session.get(Model, model_id)
+            if not model:
+                raise ValueError(f"Model id={model_id} not found")
+
+            model.name = name
+            model.description = description
+            model.equipment_group_id = equipment_group_id
+
+        else:
+            model = Model(
+                name=name,
+                equipment_group_id=equipment_group_id,
+                description=description,
+            )
+            session.add(model)
+
+        session.flush()
+        return model
+
+    # -----------------------------------------------------
+    # REMOVE
+    # -----------------------------------------------------
 
     @with_request_id
-    def find_related(self, identifier: Union[int, str], is_id: bool = True) -> Optional[Dict[str, Any]]:
-        """
-        Traverse hierarchy for a Model.
+    def remove(
+        self,
+        model_id: int,
+        session: Optional[Session] = None,
+    ) -> bool:
 
-        Upward:
-          - EquipmentGroup
-          - Area
+        if session:
+            return self._remove_internal(session, model_id)
 
-        Downward:
-          - AssetNumbers
-          - Locations
-          - Positions
-        """
-        with self.db_config.main_session() as session:
+        with self.db_config.main_session() as s:
             try:
-                return Model.find_related_entities(session, identifier, is_id=is_id)
-            except SQLAlchemyError as e:
-                error_id(f"ModelService.find_related failed: {e}", None)
+                result = self._remove_internal(s, model_id)
+                s.commit()
+                return result
+            except:
+                s.rollback()
                 raise
 
+    def _remove_internal(self, session, model_id):
+
+        model = session.get(Model, model_id)
+        if not model:
+            return False
+
+        session.delete(model)
+        return True
+
+    # -----------------------------------------------------
+    # FIND OR CREATE
+    # -----------------------------------------------------
+
+    @with_request_id
+    def find_or_create(
+        self,
+        name: str,
+        equipment_group_id: int,
+        description: Optional[str] = None,
+        session: Optional[Session] = None,
+    ) -> Model:
+
+        if session:
+            return self._find_or_create_internal(
+                session, name, equipment_group_id, description
+            )
+
+        with self.db_config.main_session() as s:
+            try:
+                model = self._find_or_create_internal(
+                    s, name, equipment_group_id, description
+                )
+                s.commit()
+                return model
+            except:
+                s.rollback()
+                raise
+
+    def _find_or_create_internal(
+        self, session, name, equipment_group_id, description
+    ):
+
+        model = (
+            session.query(Model)
+            .filter_by(name=name, equipment_group_id=equipment_group_id)
+            .first()
+        )
+
+        if model:
+            return model
+
+        model = Model(
+            name=name,
+            equipment_group_id=equipment_group_id,
+            description=description,
+        )
+
+        session.add(model)
+        session.flush()
+        return model
+
+    # -----------------------------------------------------
+    # FIND RELATED
+    # -----------------------------------------------------
+
+    @with_request_id
+    def find_related(
+        self,
+        identifier: Union[int, str],
+        is_id: bool = True,
+        session: Optional[Session] = None,
+    ):
+
+        if session:
+            return Model.find_related_entities(
+                session=session,
+                identifier=identifier,
+                is_id=is_id,
+            )
+
+        with self.db_config.main_session() as s:
+            return Model.find_related_entities(
+                session=s,
+                identifier=identifier,
+                is_id=is_id,
+            )

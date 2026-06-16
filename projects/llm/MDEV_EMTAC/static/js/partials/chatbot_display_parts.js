@@ -1,12 +1,22 @@
 // Render Parts into #parts-container
-function renderParts(parts) {
+function renderParts(partsPanel) {
     const container = document.getElementById("parts-container");
     if (!container) return;
-    console.log("renderParts received:", parts);
+
+    console.log("renderParts received:", partsPanel);
 
     container.innerHTML = ""; // Clear old
 
-    if (!Array.isArray(parts) || parts.length === 0) {
+    // ----------------------------------
+    // Normalize input (new + old support)
+    // ----------------------------------
+    const parts = Array.isArray(partsPanel?.parts)
+        ? partsPanel.parts
+        : Array.isArray(partsPanel)
+            ? partsPanel
+            : [];
+
+    if (parts.length === 0) {
         container.innerHTML = "<p>No parts found.</p>";
         return;
     }
@@ -18,10 +28,22 @@ function renderParts(parts) {
         const li = document.createElement("li");
         li.classList.add("part-item");
 
-        const title = part.title || part.name || `Part ${idx + 1}`;
-        const desc = part.description || "";
+        const title =
+            part.part_number ||
+            part.name ||
+            part.title ||
+            `Part #${idx + 1}`;
 
-        li.innerHTML = `<strong>${title}</strong>${desc ? `<br><small>${desc}</small>` : ""}`;
+        const desc =
+            part.description ||
+            part.long_description ||
+            "";
+
+        li.innerHTML = `
+            <strong>${title}</strong>
+            ${desc ? `<br><small>${desc}</small>` : ""}
+        `;
+
         ul.appendChild(li);
     });
 

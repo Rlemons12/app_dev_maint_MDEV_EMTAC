@@ -1,0 +1,59 @@
+/* static/css/module_template/banner_themes/banner_graphite_ops.css */
+
+.app-top-chrome,
+.thcp-root {
+    --banner-bg: linear-gradient(180deg, #2b3138 0%, #1d2228 100%);
+    --banner-text: #f3f6f9;
+    --banner-border: rgba(185, 198, 214, 0.20);
+
+    --banner-link-bg: rgba(255, 255, 255, 0.05);
+    --banner-link-border: rgba(255, 255, 255, 0.12);
+    --banner-link-hover-bg: rgba(255, 255, 255, 0.11);
+    --banner-link-hover-border: rgba(255, 255, 255, 0.22);
+
+    --banner-toggle-bg: rgba(255, 255, 255, 0.05);
+    --banner-toggle-border: rgba(255, 255, 255, 0.12);
+    --banner-toggle-hover-bg: rgba(255, 255, 255, 0.11);
+
+    --banner-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
+
+    --comment-popup-overlay-bg: rgba(10, 12, 15, 0.72);
+    --comment-popup-bg: linear-gradient(180deg, #3a434d 0%, #242a31 100%);
+    --comment-popup-text: #f3f6f9;
+    --comment-popup-border: rgba(185, 198, 214, 0.18);
+    --comment-popup-shadow: 0 20px 42px rgba(0, 0, 0, 0.42);
+
+    --comment-popup-header-border: rgba(230, 236, 242, 0.08);
+    --comment-popup-footer-border: rgba(230, 236, 242, 0.08);
+
+    --comment-popup-help-text: rgba(230, 236, 242, 0.78);
+    --comment-popup-label-text: #f3f6f9;
+
+    --comment-popup-input-bg: rgba(255, 255, 255, 0.05);
+    --comment-popup-input-border: rgba(255, 255, 255, 0.12);
+    --comment-popup-input-text: #f3f6f9;
+    --comment-popup-input-placeholder: rgba(230, 236, 242, 0.52);
+    --comment-popup-input-focus-border: rgba(185, 198, 214, 0.36);
+    --comment-popup-input-focus-ring: 0 0 0 3px rgba(185, 198, 214, 0.12);
+
+    --comment-popup-button-bg: rgba(255, 255, 255, 0.06);
+    --comment-popup-button-border: rgba(255, 255, 255, 0.12);
+    --comment-popup-button-text: #f3f6f9;
+    --comment-popup-button-hover-bg: rgba(255, 255, 255, 0.12);
+    --comment-popup-button-hover-border: rgba(255, 255, 255, 0.22);
+
+    --comment-popup-submit-bg: #596673;
+    --comment-popup-submit-border: #6c7a88;
+    --comment-popup-submit-text: #ffffff;
+    --comment-popup-submit-hover-bg: #667482;
+    --comment-popup-submit-hover-border: #7a8794;
+
+    --comment-popup-feedback-bg: rgba(120, 132, 146, 0.16);
+    --comment-popup-feedback-border: rgba(210, 220, 230, 0.18);
+    --comment-popup-feedback-text: #f3f6f9;
+}
+
+.app-top-chrome .banner-text,
+.thcp-root .thcp-banner-text {
+    letter-spacing: 0.04em;
+}

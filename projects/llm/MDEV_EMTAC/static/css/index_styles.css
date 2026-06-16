@@ -93,39 +93,55 @@ body {
     height: auto; /* Maintain aspect ratio */
     margin: 5px; /* Add some spacing between thumbnails */
 }
+/* =========================================================
+   FORCE CHATBOT IMAGE LINKS TO 2 COLUMNS
+   Must be loaded last.
+   ========================================================= */
 
-/* Style for the rating selection and submit button */
-.rating-section {
-    margin-top: 10px; /* Add space above the rating selection */
-    display: flex;
-    align-items: center; /* Center horizontally */
+#thumbnails-section,
+#thumbnails-section.thumbnails-section,
+#thumbnails-section.images-container,
+#thumbnails-section.image-results {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 22px 42px !important;
+    align-items: start !important;
+    justify-content: stretch !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex-wrap: unset !important;
 }
 
-.rating-section label,
-.rating-section select,
-.rating-section button {
-    margin-right: 10px; /* Add space between elements */
+/* Override old flex/card/document item widths */
+#thumbnails-section > .document-item,
+#thumbnails-section > .image-document-item,
+#thumbnails-section > div,
+#thumbnails-section > a {
+    width: auto !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: none !important;
+    display: block !important;
+    text-align: left !important;
 }
 
-/* Style for the comment box */
-.comment-box textarea {
-    width: 300px; /* Set the width */
-    height: 100px; /* Set the height */
-    padding: 10px; /* Add padding for better appearance */
-    resize: vertical; /* Allow vertical resizing */
+/* Link wrapping */
+#thumbnails-section .document-chunk-link,
+#thumbnails-section .image-document-link,
+#thumbnails-section a {
+    display: inline-block !important;
+    max-width: 100% !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+    line-height: 1.55 !important;
 }
 
-/* Additional CSS for the model display section */
-.model-display-section {
-    background-color: rgba(0, 0, 0, 0);
-    padding: 10px;
-    margin-top: 20px;
-    border-radius: 10px;
-    font-size: inherit; /* Ensure consistent font size */
-}
-
-.model-display-section p {
-    color: white;
-    font-weight: bold;
-    margin: 0; /* Remove default margin */
+/* Mobile fallback */
+@media (max-width: 700px) {
+    #thumbnails-section,
+    #thumbnails-section.thumbnails-section,
+    #thumbnails-section.images-container,
+    #thumbnails-section.image-results {
+        grid-template-columns: 1fr !important;
+    }
 }

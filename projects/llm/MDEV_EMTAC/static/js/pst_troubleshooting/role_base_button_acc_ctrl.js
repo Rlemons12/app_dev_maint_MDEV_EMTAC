@@ -1,58 +1,130 @@
+// static/js/pst_troubleshooting/role_base_button_acc_ctrl.js
 // User Role-Based Button Access Control
+// Tour-safe version
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Get the current user level from the page
-    // This assumes the user level is displayed on the page in an element with a specific class or ID
-    // Adjust this selector to match your actual DOM structure
-    const userLevelElement = document.querySelector('.user-level') || document.querySelector('#user-level');
+document.addEventListener('DOMContentLoaded', function () {
+    const userLevelElement =
+        document.querySelector('.user-level') ||
+        document.querySelector('#user-level');
+
     let userLevel = '';
-
     if (userLevelElement) {
         userLevel = userLevelElement.textContent.trim();
     }
 
-    // Check if user is Level_III or admin
-    const isAuthorized = userLevel.includes('LEVEL_III') ||
-                          userLevel.includes('LEVEL III') ||
-                          userLevel.includes('Level III') ||
-                          userLevel.includes('admin') ||
-                          userLevel.includes('ADMIN');
+    const isAuthorized =
+        userLevel.includes('LEVEL_III') ||
+        userLevel.includes('LEVEL III') ||
+        userLevel.includes('Level III') ||
+        userLevel.includes('admin') ||
+        userLevel.includes('ADMIN');
 
-    // If not authorized, disable all submit buttons
-    if (!isAuthorized) {
-        // Find all submit buttons
-        const submitButtons = document.querySelectorAll('button[type="submit"], input[type="submit"]');
+    function isTourActive() {
+        return document.body.classList.contains('tour-active');
+    }
 
-        // Add submit prevention to all forms
-        document.querySelectorAll('form').forEach(form => {
-            form.addEventListener('submit', function(event) {
-                if (!isAuthorized) {
+    function showRestrictedAlert() {
+        alert('Only Level III and Admin users can perform this action.');
+    }
+
+    function markRestricted(button) {
+        if (!button) return;
+
+        button.classList.add('btn-disabled', 'restricted-action');
+        button.setAttribute('data-role-restricted', 'true');
+        button.title = 'Only Level III and Admin users can perform this action';
+
+        if (button.tagName === 'BUTTON' || button.tagName === 'INPUT') {
+            if (!button.dataset.originalText) {
+                button.dataset.originalText = button.textContent || button.value || '';
+            }
+
+            const currentText = button.tagName === 'BUTTON'
+                ? button.textContent
+                : button.value;
+
+            if (currentText && !currentText.includes('(Level III+ Only)')) {
+                if (button.tagName === 'BUTTON') {
+                    button.textContent = `${currentText} (Level III+ Only)`;
+                } else {
+                    button.value = `${currentText} (Level III+ Only)`;
+                }
+            }
+        }
+
+        // IMPORTANT:
+        // Do NOT set disabled=true here.
+        // Disabled buttons cannot be clicked by the tour.
+        button.setAttribute('aria-disabled', 'true');
+    }
+
+    function interceptRestrictedAction(element) {
+        if (!element) return;
+
+        element.addEventListener(
+            'click',
+            function (event) {
+                if (isAuthorized) {
+                    return;
+                }
+
+                // During the tour, allow the click to happen so Intro.js can demonstrate the UI.
+                if (isTourActive()) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+                showRestrictedAlert();
+                return false;
+            },
+            true
+        );
+    }
+
+    function interceptRestrictedSubmit(form) {
+        if (!form) return;
+
+        form.addEventListener(
+            'submit',
+            function (event) {
+                if (isAuthorized) {
+                    return;
+                }
+
+                // Allow form interaction during the tour without submitting
+                if (isTourActive()) {
                     event.preventDefault();
-                    alert('Only Level III and Admin users can submit forms.');
                     return false;
                 }
-            });
+
+                event.preventDefault();
+                event.stopPropagation();
+                showRestrictedAlert();
+                return false;
+            },
+            true
+        );
+    }
+
+    if (!isAuthorized) {
+        // Intercept all forms
+        document.querySelectorAll('form').forEach(form => {
+            interceptRestrictedSubmit(form);
         });
 
-        // Disable buttons and add visual cue
+        // Restrict all submit buttons, but do not disable them
+        const submitButtons = document.querySelectorAll(
+            'button[type="submit"], input[type="submit"]'
+        );
+
         submitButtons.forEach(button => {
-            // Disable the button
-            button.setAttribute('disabled', 'disabled');
-
-            // Add styling to show it's disabled
-            button.classList.add('btn-disabled');
-
-            // Add tooltip explaining why it's disabled
-            button.title = 'Only Level III and Admin users can perform this action';
-
-            // Store original text if it's a button element
-            if (button.tagName === 'BUTTON') {
-                button.dataset.originalText = button.textContent;
-                button.textContent += ' (Level III+ Only)';
-            }
+            markRestricted(button);
+            interceptRestrictedAction(button);
         });
 
-        // Also disable action buttons that aren't submit buttons but perform similar actions
+        // Restrict specific action buttons, but do not disable them
         const actionButtons = document.querySelectorAll(
             '#addSolutionBtn, #removeSolutionsBtn, #addTaskBtn, #removeTaskBtn, ' +
             '#updateTaskDetailsBtn, #savePositionBtn, #addPositionBtn, ' +
@@ -61,36 +133,16 @@ document.addEventListener('DOMContentLoaded', function() {
         );
 
         actionButtons.forEach(button => {
-            // Disable the button
-            button.setAttribute('disabled', 'disabled');
-
-            // Add styling to show it's disabled
-            button.classList.add('btn-disabled');
-
-            // Add tooltip explaining why it's disabled
-            button.title = 'Only Level III and Admin users can perform this action';
-
-            // Store original text
-            button.dataset.originalText = button.textContent;
-            button.textContent += ' (Level III+ Only)';
-
-            // Add click prevention
-            button.addEventListener('click', function(event) {
-                if (!isAuthorized) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    alert('Only Level III and Admin users can perform this action.');
-                    return false;
-                }
-            });
+            markRestricted(button);
+            interceptRestrictedAction(button);
         });
 
-        // Add a notification at the top of the page
         const container = document.querySelector('.container');
-        if (container) {
+        if (container && !document.querySelector('.user-level-notification')) {
             const notification = document.createElement('div');
-            notification.className = 'alert alert-warning';
-            notification.innerHTML = '<strong>Note:</strong> You are viewing in read-only mode. Only Level III and Admin users can make changes.';
+            notification.className = 'alert alert-warning user-level-notification';
+            notification.innerHTML =
+                '<strong>Note:</strong> You are viewing in read-only mode. Only Level III and Admin users can make changes.';
             container.insertBefore(notification, container.firstChild);
         }
     }

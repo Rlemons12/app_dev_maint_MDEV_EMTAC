@@ -1,42 +1,65 @@
-<!-- upload_image_form_partial.html -->
 {% if session['user_level'] == 'LEVEL_III' or session['user_level'] == 'ADMIN' %}
-    <div id="upload-image" class="form-container">
+    <div id="upload-image" class="form-container upload-search-form-block">
         <h2>Upload Image</h2>
-        <form id="upload-image-form" action="/image/upload_image" method="post" enctype="multipart/form-data">
-            <input type="text" name="title" placeholder="Image Title"><br>
-            <textarea name="description" placeholder="Image Description"></textarea><br>
 
-            <!-- Site Location (independent of hierarchy) -->
-            <label for="image_siteLocationDropdown" style="color: Yellow;">Site Location:</label>
-            <select name="site_location" id="image_siteLocationDropdown"></select><br>
+        <form
+            id="upload-image-form"
+            class="upload-search-form"
+            action="/image/upload_image"
+            method="post"
+            enctype="multipart/form-data"
+        >
+            <label for="upload_image_title">Image Title:</label>
+            <input
+                type="text"
+                name="title"
+                id="upload_image_title"
+                placeholder="Image Title"
+            >
 
-            <!-- Hierarchical selections -->
-            <label for="image_areaDropdown" style="color: Yellow;">Area:</label>
-            <select name="area" id="image_areaDropdown"></select><br>
+            <label for="upload_image_description">Image Description:</label>
+            <textarea
+                name="description"
+                id="upload_image_description"
+                placeholder="Image Description"
+            ></textarea>
 
-            <label for="image_equipmentGroupDropdown" style="color: Yellow;">Equipment Group:</label>
-            <select name="equipment_group" id="image_equipmentGroupDropdown"></select><br>
+            <label for="image_siteLocationDropdown">Site Location:</label>
+            <select name="site_location" id="image_siteLocationDropdown"></select>
 
-            <label for="image_modelDropdown" style="color: Yellow;">Model:</label>
-            <select name="model" id="image_modelDropdown"></select><br>
+            <label for="image_areaDropdown">Area:</label>
+            <select name="area" id="image_areaDropdown"></select>
 
-            <label for="image_assetNumberDropdown" style="color: Yellow;">Asset Number:</label>
-            <select name="asset_number" id="image_assetNumberDropdown"></select><br>
+            <label for="image_equipmentGroupDropdown">Equipment Group:</label>
+            <select name="equipment_group" id="image_equipmentGroupDropdown"></select>
 
-            <label for="image_locationDropdown" style="color: Yellow;">Location:</label>
-            <select name="location" id="image_locationDropdown"></select><br>
+            <label for="image_modelDropdown">Model:</label>
+            <select name="model" id="image_modelDropdown"></select>
 
-            <!-- New dropdown fields for extended hierarchy -->
-            <label for="image_subassemblyDropdown" style="color: Yellow;">Subassembly:</label>
-            <select name="subassembly" id="image_subassemblyDropdown"></select><br>
+            <label for="image_assetNumberDropdown">Asset Number:</label>
+            <select name="asset_number" id="image_assetNumberDropdown"></select>
 
-            <label for="image_componentAssemblyDropdown" style="color: Yellow;">Component Assembly:</label>
-            <select name="component_assembly" id="image_componentAssemblyDropdown"></select><br>
+            <label for="image_locationDropdown">Location:</label>
+            <select name="location" id="image_locationDropdown"></select>
 
-            <label for="image_assemblyViewDropdown" style="color: Yellow;">Assembly View:</label>
-            <select name="assembly_view" id="image_assemblyViewDropdown"></select><br>
+            <label for="image_subassemblyDropdown">Subassembly:</label>
+            <select name="subassembly" id="image_subassemblyDropdown"></select>
 
-            <input type="file" name="image" accept="image/*" required><br>
+            <label for="image_componentAssemblyDropdown">Component Assembly:</label>
+            <select name="component_assembly" id="image_componentAssemblyDropdown"></select>
+
+            <label for="image_assemblyViewDropdown">Assembly View:</label>
+            <select name="assembly_view" id="image_assemblyViewDropdown"></select>
+
+            <label for="upload_image_file">Image File:</label>
+            <input
+                type="file"
+                name="image"
+                id="upload_image_file"
+                accept="image/*"
+                required
+            >
+
             <input type="submit" value="Upload Image">
         </form>
     </div>

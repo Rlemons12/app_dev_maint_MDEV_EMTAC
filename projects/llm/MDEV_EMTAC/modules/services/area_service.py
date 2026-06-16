@@ -1,152 +1,198 @@
-# services/area_service.py
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
+from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+
 from modules.emtacdb.emtacdb_fts import Area
 from modules.configuration.config_env import DatabaseConfig
-from modules.configuration.log_config import info_id, error_id, with_request_id
+from modules.configuration.log_config import with_request_id
 
 
 class AreaService:
     """
-    Service layer for managing Area entities.
+    Transaction-aware Area service.
 
-    Provides CRUD operations and search helpers:
-      - `find`          → Search areas by name/description.
-      - `get`           → Retrieve an area by ID.
-      - `save`          → Create or update an area.
-      - `remove`        → Delete an area by ID.
-      - `find_or_create`→ Get an existing area by name or create a new one.
+    RULE:
+    - If session provided → NEVER commit
+    - If session not provided → fallback standalone mode
     """
 
     def __init__(self, db_config: DatabaseConfig = None):
         self.db_config = db_config or DatabaseConfig()
 
-    @with_request_id
-    def find(self, name: Optional[str] = None,
-             description: Optional[str] = None,
-             limit: int = 100) -> List[Area]:
-        """
-        Search for Areas by name and/or description.
+    # ----------------------------------------------------
+    # INTERNAL SESSION HANDLER
+    # ----------------------------------------------------
 
-        Args:
-            name (str, optional): Case-insensitive match on area name.
-            description (str, optional): Case-insensitive match on description.
-            limit (int): Max number of results (default 100).
+    def _standalone_session(self):
+        return self.db_config.main_session()
 
-        Returns:
-            List[Area]: Matching Area objects.
-        """
-        with self.db_config.main_session() as session:
-            try:
-                query = session.query(Area)
-                if name:
-                    query = query.filter(Area.name.ilike(f"%{name}%"))
-                if description:
-                    query = query.filter(Area.description.ilike(f"%{description}%"))
-                results = query.limit(limit).all()
-                info_id(f"Found {len(results)} Areas", None)
-                return results
-            except SQLAlchemyError as e:
-                error_id(f"AreaService.find failed: {e}", None)
-                raise
+    # ----------------------------------------------------
+    # FIND
+    # ----------------------------------------------------
 
     @with_request_id
-    def get(self, area_id: int) -> Optional[Area]:
-        """
-        Retrieve an Area by its ID.
+    def find(
+        self,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        limit: int = 100,
+        session: Session = None,
+    ) -> List[Area]:
 
-        Args:
-            area_id (int): Primary key.
+        if session:
+            query = session.query(Area)
+            if name:
+                query = query.filter(Area.name.ilike(f"%{name}%"))
+            if description:
+                query = query.filter(Area.description.ilike(f"%{description}%"))
+            return query.limit(limit).all()
 
-        Returns:
-            Area | None
-        """
-        with self.db_config.main_session() as session:
-            try:
-                return session.query(Area).filter_by(id=area_id).first()
-            except SQLAlchemyError as e:
-                error_id(f"AreaService.get failed: {e}", None)
-                raise
+        with self._standalone_session() as s:
+            return self.find(name=name, description=description, limit=limit, session=s)
+
+    # ----------------------------------------------------
+    # GET
+    # ----------------------------------------------------
 
     @with_request_id
-    def save(self, name: str, description: Optional[str] = None,
-             area_id: Optional[int] = None) -> Area:
-        """
-        Create or update an Area.
+    def get(self, area_id: int, session: Session = None) -> Optional[Area]:
 
-        Args:
-            name (str): Area name.
-            description (str, optional): Area description.
-            area_id (int, optional): Update existing record if provided.
+        if session:
+            return session.get(Area, area_id)
 
-        Returns:
-            Area: Created or updated Area object.
-        """
-        with self.db_config.main_session() as session:
+        with self._standalone_session() as s:
+            return s.get(Area, area_id)
+
+    # ----------------------------------------------------
+    # SAVE
+    # ----------------------------------------------------
+
+    @with_request_id
+    def save(
+        self,
+        name: str,
+        description: Optional[str] = None,
+        area_id: Optional[int] = None,
+        session: Session = None,
+    ) -> Area:
+
+        if session:
+            return self._save_internal(session, name, description, area_id)
+
+        with self._standalone_session() as s:
             try:
-                if area_id:
-                    area = session.query(Area).filter_by(id=area_id).first()
-                    if not area:
-                        raise ValueError(f"Area with id {area_id} not found")
-                    area.name = name
-                    area.description = description
-                    info_id(f"Updated Area id={area_id}", None)
-                else:
-                    area = Area(name=name, description=description)
-                    session.add(area)
-                    info_id(f"Created Area '{name}'", None)
+                area = self._save_internal(s, name, description, area_id)
+                s.commit()
                 return area
-            except SQLAlchemyError as e:
-                error_id(f"AreaService.save failed: {e}", None)
+            except:
+                s.rollback()
                 raise
 
+    def _save_internal(self, session, name, description, area_id):
+
+        if area_id:
+            area = session.get(Area, area_id)
+            if not area:
+                raise ValueError(f"Area with id {area_id} not found")
+
+            area.name = name
+            area.description = description
+        else:
+            area = Area(name=name, description=description)
+            session.add(area)
+
+        session.flush()
+        return area
+
+    # ----------------------------------------------------
+    # REMOVE (SAFE DELETE)
+    # ----------------------------------------------------
+
     @with_request_id
-    def remove(self, area_id: int) -> bool:
-        """
-        Delete an Area by ID.
+    def remove(self, area_id: int, session: Session = None) -> bool:
 
-        Args:
-            area_id (int): Area ID to delete.
+        if session:
+            return self._remove_internal(session, area_id)
 
-        Returns:
-            bool: True if deleted, False if not found.
-        """
-        with self.db_config.main_session() as session:
+        with self._standalone_session() as s:
             try:
-                area = session.query(Area).filter_by(id=area_id).first()
-                if area:
-                    session.delete(area)
-                    info_id(f"Deleted Area id={area_id}", None)
-                    return True
-                return False
-            except SQLAlchemyError as e:
-                error_id(f"AreaService.remove failed: {e}", None)
+                result = self._remove_internal(s, area_id)
+                s.commit()
+                return result
+            except:
+                s.rollback()
                 raise
 
+    def _remove_internal(self, session, area_id):
+
+        area = session.get(Area, area_id)
+        if not area:
+            return False
+
+        if area.equipment_group:
+            return False
+
+        if area.position:
+            return False
+
+        session.delete(area)
+        return True
+
+    # ----------------------------------------------------
+    # FIND OR CREATE
+    # ----------------------------------------------------
+
     @with_request_id
-    def find_or_create(self, name: str, description: Optional[str] = None) -> Area:
-        """
-        Find an Area by name, or create it if it doesn't exist.
+    def find_or_create(
+        self,
+        name: str,
+        description: Optional[str] = None,
+        session: Session = None,
+    ) -> Area:
 
-        Args:
-            name (str): Name of the area.
-            description (str, optional): Description if creating new.
+        if session:
+            return self._find_or_create_internal(session, name, description)
 
-        Returns:
-            Area: The found or newly created Area object.
-        """
-        with self.db_config.main_session() as session:
+        with self._standalone_session() as s:
             try:
-                area = session.query(Area).filter_by(name=name).first()
-                if area:
-                    info_id(f"Found existing Area '{name}'", None)
-                else:
-                    area = Area(name=name, description=description)
-                    session.add(area)
-                    session.commit()
-                    info_id(f"Created new Area '{name}'", None)
+                area = self._find_or_create_internal(s, name, description)
+                s.commit()
                 return area
-            except SQLAlchemyError as e:
-                error_id(f"AreaService.find_or_create failed: {e}", None)
+            except:
+                s.rollback()
                 raise
 
+    def _find_or_create_internal(self, session, name, description):
+
+        area = session.query(Area).filter_by(name=name).first()
+        if area:
+            return area
+
+        area = Area(name=name, description=description)
+        session.add(area)
+        session.flush()
+        return area
+
+    # ----------------------------------------------------
+    # FIND RELATED
+    # ----------------------------------------------------
+
+    @with_request_id
+    def find_related(self, area_id: int, session: Session = None):
+
+        if session:
+            area = session.get(Area, area_id)
+        else:
+            with self._standalone_session() as s:
+                area = s.get(Area, area_id)
+
+        if not area:
+            return None
+
+        return {
+            "area": area,
+            "downward": {
+                "equipment_groups": area.equipment_group,
+                "positions": area.position,
+            },
+        }

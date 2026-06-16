@@ -1,0 +1,87 @@
+{# templates/tool_templates/tool_partials/tool_search_entry_main_content.html #}
+
+<div class="tool-management-module">
+
+    <!-- Hidden user level element for role-based access -->
+    <div
+        id="tool-user-level"
+        data-user-level="{{ session.get('user_level', 'general') }}"
+        style="display: none;"
+    ></div>
+
+    <!-- Role-based access notification gets injected here by JS -->
+    <div id="tool-role-notification-slot"></div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="tool-management-flash-messages">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="alert"
+                            aria-label="Close"
+                        ></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="tool-management-tabs-shell">
+
+        <!-- Tab Navigation -->
+        <div class="tab-container">
+            <ul class="tab-list">
+                <li class="tab-item" data-tab="add-tool-tab">Add Tool</li>
+                <li class="tab-item active" data-tab="search-tool-tab">Search Tool</li>
+                <li class="tab-item" data-tab="tool-manufacturer-tab">Tool Manufacturer</li>
+                <li class="tab-item" data-tab="tool-category-tab">Tool Category</li>
+            </ul>
+        </div>
+
+        <!-- Tab Content Sections -->
+        <div class="tab-content-container">
+
+            <!-- Add Tool Tab Content -->
+            <div id="add-tool-tab" class="tab-content">
+                {% if tool_form and position_form %}
+                    {% include 'tool_templates/tool_partials/add_tool_tab.html' %}
+                {% else %}
+                    <p>Add Tool form is not available at the moment.</p>
+                {% endif %}
+            </div>
+
+            <!-- Search Tool Tab Content -->
+            <div id="search-tool-tab" class="tab-content active">
+                {% if search_tool_form %}
+                    {% include 'tool_templates/tool_partials/search_tool_tab.html' %}
+                {% else %}
+                    <p>Search Tool form is not available at the moment.</p>
+                {% endif %}
+            </div>
+
+            <!-- Tool Manufacturer Tab Content -->
+            <div id="tool-manufacturer-tab" class="tab-content">
+                {% if manufacturer_form %}
+                    {% include 'tool_templates/tool_partials/tool_manufacturer_tab.html' %}
+                {% else %}
+                    <p>Tool Manufacturer form is not available at the moment.</p>
+                {% endif %}
+            </div>
+
+            <!-- Tool Category Tab Content -->
+            <div id="tool-category-tab" class="tab-content">
+                {% if category_form %}
+                    {% include 'tool_templates/tool_partials/tool_category_tab.html' %}
+                {% else %}
+                    <p>Tool Category form is not available at the moment.</p>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>

@@ -32,7 +32,7 @@ from PIL import Image as PILImage
 from sqlalchemy import (DateTime, Column, ForeignKey, Integer, JSON, LargeBinary,
                        Enum, Boolean, String, create_engine, text, Float,
                        Text, UniqueConstraint, and_, Table)
-
+from modules.configuration.config_env import get_db_config
 import openai
 import spacy
 from fuzzywuzzy import process
@@ -54,10 +54,13 @@ from modules.configuration.config_env import DatabaseConfig
 from flask import g  # Required for access to g.request_id in the methods
 from functools import wraps  # Required if you need to recreate with_request_id
 from modules.emtacdb.utlity.system_manager import SystemResourceManager
-from plugins import generate_embedding, CLIPModelHandler
-from plugins.ai_modules import ModelsConfig
+from modules.ai.utils.embedding_storage import generate_embedding
+from modules.ai.image.models.clip_model_handler import CLIPModelHandler
+from modules.ai.config.models_config import ModelsConfig
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
+import zipfile
+
 
 # Configure mappers (must be called after all ORM classes are defined)
 configure_mappers()
@@ -73,7 +76,7 @@ CHUNK_SIZE = 8000
 MODEL_NAME = "text-embedding-ada-002"
 
 
-# Update your engine configuration
+
 engine = create_engine(
     DATABASE_URL,
     pool_size=10,
@@ -107,102 +110,254 @@ class VersionInfo(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     description = Column(String, nullable=True)
 
-"""
-ACADEMIC CONTENT MAPPING SYSTEM
-===============================
+class Campus(Base):
+    """A campus/site that contains buildings."""
+    __tablename__ = 'campus'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False, unique=False)
+    description = Column(String)
+    city = Column(String)
+    state = Column(String)
+    country = Column(String)
 
-This module repurposes our equipment management database schema to create an academic content 
-organization system. The hierarchical nature of our equipment schema maps perfectly to the 
-hierarchical organization of academic knowledge.
+    building = relationship(
+        "Building",
+        back_populates="campus",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    position = relationship(
+        "Position",
+        back_populates="campus",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
-MAPPING OVERVIEW:
-----------------
-Our equipment hierarchy tables are mapped to academic concepts as follows:
+    @classmethod
+    @with_request_id
+    def add_campus(cls, session, name, description=None, city=None,
+                   state=None, country=None, request_id=None):
+        """Add a new Campus to the database."""
+        campus = cls(
+            name=name,
+            description=description,
+            city=city,
+            state=state,
+            country=country
+        )
+        session.add(campus)
+        session.commit()
+        logger.info(f"Created new campus: '{name}'")
+        return campus
 
-1. Area → Academic Field
-   Represents broad academic disciplines like Physics, Mathematics, Chemistry, etc.
-   Example: "Physics" as an Area
+    @classmethod
+    @with_request_id
+    def delete_campus(cls, session, campus_id, request_id=None):
+        """Delete a campus from the database."""
+        campus = session.query(cls).filter(cls.id == campus_id).first()
+        if campus:
+            session.delete(campus)
+            session.commit()
+            logger.info(f"Deleted campus ID {campus_id}")
+            return True
+        logger.warning(f"Failed to delete campus ID {campus_id} - not found")
+        return False
 
-2. EquipmentGroup → Subject
-   Represents major subjects within an academic field.
-   Example: "Mechanics" as an EquipmentGroup within "Physics" Area
+    @classmethod
+    @with_request_id
+    def search(cls, session, name=None, city=None, state=None, country=None):
+        """Search for campuses by various criteria."""
+        query = session.query(cls)
+        if name:
+            query = query.filter(cls.name.ilike(f"%{name}%"))
+        if city:
+            query = query.filter(cls.city.ilike(f"%{city}%"))
+        if state:
+            query = query.filter(cls.state.ilike(f"%{state}%"))
+        if country:
+            query = query.filter(cls.country.ilike(f"%{country}%"))
+        return query.all()
 
-3. Model → Branch/Subdiscipline
-   Represents specialized branches or subdisciplines within a subject.
-   Example: "Classical Mechanics" as a Model within "Mechanics" EquipmentGroup
+    @classmethod
+    @with_request_id
+    def find_or_create(cls, session, name, description=None, city=None,
+                       state=None, country=None, request_id=None):
+        """Find a Campus by name, or create it if it doesn't exist."""
+        campus = session.query(cls).filter_by(name=name).first()
+        if campus:
+            logger.info(f"Found existing campus '{name}'", extra={'request_id': request_id})
+        else:
+            campus = cls(
+                name=name,
+                description=description,
+                city=city,
+                state=state,
+                country=country
+            )
+            session.add(campus)
+            session.commit()
+            logger.info(f"Created new campus '{name}'", extra={'request_id': request_id})
+        return campus
 
-4. AssetNumber → Specific Book/Resource
-   Represents individual academic resources like textbooks or reference materials.
-   Example: "Feynman Lectures Vol. 1" as an AssetNumber within "Classical Mechanics" Model
+    @classmethod
+    @with_request_id
+    def find_related_entities(cls, session, identifier, is_id=True, request_id=None):
+        """Find all related entities for a campus."""
+        if is_id:
+            campus = session.query(cls).filter(cls.id == identifier).first()
+        else:
+            campus = session.query(cls).filter(cls.name == identifier).first()
 
-5. Location → Chapter
-   Represents main divisions within a book or resource.
-   Example: "Chapter 1: Atoms in Motion" as a Location within a book
+        if not campus:
+            logger.warning(f"Campus not found for identifier: {identifier}")
+            return None
 
-6. Subassembly → Section
-   Represents major sections within a chapter.
-   Example: "1.1 Introduction to Atomic Theory" as a Subassembly within Chapter 1
+        downward = {
+            'building': campus.building,
+            'position': campus.position
+        }
 
-7. ComponentAssembly → Subsection/Topic
-   Represents specific topics or subsections within a section.
-   Example: "1.1.1 Dalton's Atomic Theory" as a ComponentAssembly within Section 1.1
+        logger.info(f"Found related entities for campus ID {campus.id}")
+        return {
+            'campus': campus,
+            'downward': downward
+        }
 
-8. AssemblyView → Specific Concept/Figure/Example
-   Represents individual concepts, illustrations, or examples within a topic.
-   Example: "Figure 1: Dalton's Atomic Symbols" as an AssemblyView within Topic 1.1.1
+    def __repr__(self):
+        return f"<Campus id={self.id} name={self.name!r}>"
 
-INTEGRATION WITH POSITION TABLE:
-------------------------------
-The Position table serves as the central connection point, linking entities across all levels
-of the academic hierarchy. This enables navigation through the knowledge structure and allows
-for querying relationships between academic concepts at different levels.
+class Building(Base):
+    """A building that belongs to a campus."""
+    __tablename__ = 'building'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    description = Column(String)
+    address = Column(String)
+    campus_id = Column(Integer, ForeignKey('campus.id', ondelete="CASCADE"),
+                       nullable=False, index=True)
 
-USAGE EXAMPLES:
---------------
-1. Creating a physics textbook with chapters and sections:
-   - Create an Area for "Physics"
-   - Create an EquipmentGroup for "Mechanics" within Physics
-   - Create a Model for "Classical Mechanics" within Mechanics
-   - Create an AssetNumber for "Principles of Physics" textbook
-   - Create Locations for each chapter
-   - Create Subassemblies for sections within chapters
-   - Create ComponentAssemblies for subsections
-   - Create AssemblyViews for specific examples or figures
-   - Use Position to connect all these entities together
+    campus = relationship("Campus", back_populates="building")
+    site_location = relationship(
+        "SiteLocation",
+        back_populates="building",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    position = relationship(
+        "Position",
+        back_populates="building",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
-2. Finding all chapters in a specific book:
-   - Use Position.get_dependent_items(session, 'model', model_id, child_type='location')
+    @classmethod
+    @with_request_id
+    def add_building(cls, session, name, campus_id, description=None,
+                     address=None, request_id=None):
+        """Add a new Building to the database."""
+        building = cls(
+            name=name,
+            campus_id=campus_id,
+            description=description,
+            address=address
+        )
+        session.add(building)
+        session.commit()
+        logger.info(f"Created new building: '{name}' in campus {campus_id}")
+        return building
 
-3. Finding all topics within a specific chapter section:
-   - Use Subassembly.find_related_entities(session, section_id).get('downward', {}).get('component_assemblies', [])
+    @classmethod
+    @with_request_id
+    def delete_building(cls, session, building_id, request_id=None):
+        """Delete a building from the database."""
+        building = session.query(cls).filter(cls.id == building_id).first()
+        if building:
+            session.delete(building)
+            session.commit()
+            logger.info(f"Deleted building ID {building_id}")
+            return True
+        logger.warning(f"Failed to delete building ID {building_id} - not found")
+        return False
 
-BENEFITS:
---------
-- Reuses existing database schema and navigation logic
-- Maintains consistent hierarchical organization
-- Allows for flexible academic content modeling
-- Supports complex queries across the knowledge hierarchy
-- Integrates with existing application infrastructure
+    @classmethod
+    @with_request_id
+    def search(cls, session, name=None, campus_id=None):
+        """Search for buildings by name or campus."""
+        query = session.query(cls)
+        if name:
+            query = query.filter(cls.name.ilike(f"%{name}%"))
+        if campus_id:
+            query = query.filter(cls.campus_id == campus_id)
+        return query.all()
 
-NOTE:
-----
-While we're repurposing equipment tables for academic content, the underlying logic
-of hierarchical navigation remains the same. This approach allows us to leverage our
-existing codebase while expanding its functionality to new domains.
-"""
-# Main Tables
+    @classmethod
+    @with_request_id
+    def find_or_create(cls, session, name, campus_id, description=None,
+                       address=None, request_id=None):
+        """Find a Building by name and campus, or create it if it doesn't exist."""
+        building = session.query(cls).filter_by(name=name, campus_id=campus_id).first()
+        if building:
+            logger.info(f"Found existing building '{name}'", extra={'request_id': request_id})
+        else:
+            building = cls(
+                name=name,
+                campus_id=campus_id,
+                description=description,
+                address=address
+            )
+            session.add(building)
+            session.commit()
+            logger.info(f"Created new building '{name}' in campus {campus_id}",
+                        extra={'request_id': request_id})
+        return building
+
+    @classmethod
+    @with_request_id
+    def find_related_entities(cls, session, identifier, is_id=True, request_id=None):
+        """Find all related entities for a building."""
+        if is_id:
+            building = session.query(cls).filter(cls.id == identifier).first()
+        else:
+            building = session.query(cls).filter(cls.name == identifier).first()
+
+        if not building:
+            logger.warning(f"Building not found for identifier: {identifier}")
+            return None
+
+        upward = {
+            'campus': building.campus
+        }
+
+        downward = {
+            'site_location': building.site_location,
+            'position': building.position
+        }
+
+        logger.info(f"Found related entities for building ID {building.id}")
+        return {
+            'building': building,
+            'upward': upward,
+            'downward': downward
+        }
+
+    def __repr__(self):
+        return f"<Building id={self.id} name={self.name!r} campus_id={self.campus_id}>"
+
 class SiteLocation(Base):
     __tablename__ = 'site_location'
     id = Column(Integer, primary_key=True)
     title = Column(String, nullable=False)
     room_number = Column(String, nullable=False)
-    site_area = Column(String, nullable=False)
-    
+    site_area = Column(String, nullable=True) # site locations/rooms can be loosely grouped togther
+    building_id = Column(Integer, ForeignKey('building.id', ondelete="CASCADE"),
+                         nullable=True, index=True)
+
     position = relationship('Position', back_populates="site_location")
+    building = relationship("Building", back_populates="site_location")
 
     @classmethod
     @with_request_id
-    def add_site_location(cls, session, title, room_number, site_area, request_id=None):
+    def add_site_location(cls, session, title, room_number, site_area, building_id=None, request_id=None):
         """
         Add a new site location to the database.
 
@@ -211,6 +366,7 @@ class SiteLocation(Base):
             title (str): Title of the site location
             room_number (str): Room number of the site location
             site_area (str): Site area of the site location
+            building_id (int, optional): ID of the building this site location belongs to
             request_id (str, optional): Unique identifier for the request
 
         Returns:
@@ -219,7 +375,8 @@ class SiteLocation(Base):
         new_site_location = cls(
             title=title,
             room_number=room_number,
-            site_area=site_area
+            site_area=site_area,
+            building_id=building_id
         )
 
         session.add(new_site_location)
@@ -268,6 +425,7 @@ class SiteLocation(Base):
         Returns:
             dict: Dictionary containing:
                 - 'site_location': The found site location object
+                - 'upward': Dictionary containing 'building' and 'campus'
                 - 'downward': Dictionary containing:
                     - 'positions': List of all positions at this site location
         """
@@ -281,20 +439,28 @@ class SiteLocation(Base):
             logger.warning(f"Site location not found for identifier: {identifier}")
             return None
 
+        # Going upward in the hierarchy
+        upward = {
+            'building': site_location.building,
+            'campus': site_location.building.campus if site_location.building else None
+        }
+
         # Going downward in the hierarchy
         downward = {
-            'positions': site_location.position
+            'position': site_location.position
         }
 
         logger.info(f"Found related entities for site location ID {site_location.id}")
         return {
             'site_location': site_location,
+            'upward': upward,
             'downward': downward
         }
 
     @classmethod
     @with_request_id
-    def find_or_create(cls, session, title, room_number="Unknown", site_area="General", request_id=None):
+    def find_or_create(cls, session, title, room_number="Unknown", site_area="General",
+                       building_id=None, request_id=None):
         """
         Find a SiteLocation by title, or create it if it doesn't exist.
 
@@ -303,6 +469,7 @@ class SiteLocation(Base):
             title (str): Title of the site location
             room_number (str): Room number (default "Unknown")
             site_area (str): Site area (default "General")
+            building_id (int, optional): ID of the building
             request_id (str, optional): Unique identifier for the request
 
         Returns:
@@ -316,7 +483,8 @@ class SiteLocation(Base):
             site_location = cls(
                 title=title,
                 room_number=room_number,
-                site_area=site_area
+                site_area=site_area,
+                building_id=building_id
             )
             session.add(site_location)
             session.commit()
@@ -337,6 +505,10 @@ class Position(Base):
     component_assembly_id = Column(Integer, ForeignKey('component_assembly.id'), nullable=True)
     assembly_view_id = Column(Integer, ForeignKey('assembly_view.id'), nullable=True)
     site_location_id = Column(Integer, ForeignKey('site_location.id'), nullable=True)
+    campus_id = Column(Integer, ForeignKey('campus.id', ondelete="CASCADE"),
+                       nullable=True, index=True)
+    building_id = Column(Integer, ForeignKey('building.id', ondelete="CASCADE"),
+                         nullable=True, index=True)
 
     area = relationship("Area", back_populates="position")
     equipment_group = relationship("EquipmentGroup", back_populates="position")
@@ -348,31 +520,74 @@ class Position(Base):
     image_position_association = relationship("ImagePositionAssociation", back_populates="position")
     drawing_position = relationship("DrawingPositionAssociation", back_populates="position")
     problem_position = relationship("ProblemPositionAssociation", back_populates="position")
-    completed_document_position_association = relationship("CompletedDocumentPositionAssociation", back_populates="position")
+    completed_document_position_association = relationship("CompletedDocumentPositionAssociation",
+                                                           back_populates="position")
     site_location = relationship("SiteLocation", back_populates="position")
     position_tasks = relationship("TaskPositionAssociation", back_populates="position", cascade="all, delete-orphan")
     tool_position_association = relationship("ToolPositionAssociation", back_populates="position")
     subassembly = relationship("Subassembly", back_populates="position")
     component_assembly = relationship("ComponentAssembly", back_populates="position")
     assembly_view = relationship("AssemblyView", back_populates="position")
+    campus = relationship("Campus", back_populates="position")
+    building = relationship("Building", back_populates="position")
 
     # Hierarchy definition
     # Define HIERARCHY using string names instead of direct class references
     HIERARCHY = {
+        # -------------------------
+        # CAMPUS → BUILDING
+        # -------------------------
+        'campus': {
+            'model': 'Building',
+            'filter_field': 'campus_id',
+            'order_field': 'name',
+            'next_level': 'building'
+        },
+
+        # -------------------------
+        # BUILDING → SITE LOCATION
+        # -------------------------
+        'building': {
+            'model': 'SiteLocation',
+            'filter_field': 'building_id',
+            'order_field': 'title',
+            'next_level': 'site_location'
+        },
+
+        # -------------------------
+        # SITE LOCATION → AREA
+        # -------------------------
+        'site_location': {
+            'model': 'Area',
+            'filter_field': 'site_location_id',
+            'order_field': 'name',
+            'next_level': 'area'
+        },
+
+        # -------------------------
+        # AREA → EQUIPMENT GROUP
+        # -------------------------
         'area': {
             'model': 'EquipmentGroup',
             'filter_field': 'area_id',
             'order_field': 'name',
             'next_level': 'equipment_group'
         },
+
+        # -------------------------
+        # EQUIPMENT GROUP → MODEL
+        # -------------------------
         'equipment_group': {
             'model': 'Model',
             'filter_field': 'equipment_group_id',
             'order_field': 'name',
             'next_level': 'model'
         },
+
+        # -------------------------
+        # MODEL → (AssetNumber OR Location)
+        # -------------------------
         'model': {
-            # Models have two potential child types - asset_number and location
             'child_types': [
                 {
                     'model': 'AssetNumber',
@@ -388,23 +603,56 @@ class Position(Base):
                 }
             ]
         },
+
+        # -------------------------
+        # ASSET NUMBER → LOCATION
+        # (Asset-specific variation)
+        # -------------------------
+        'asset_number': {
+            'model': 'Location',
+            'filter_field': 'asset_number_id',
+            'order_field': 'name',
+            'next_level': 'location'
+        },
+
+        # -------------------------
+        # LOCATION → SUBASSEMBLY
+        # -------------------------
         'location': {
             'model': 'Subassembly',
             'filter_field': 'location_id',
             'order_field': 'name',
             'next_level': 'subassembly'
         },
+
+        # -------------------------
+        # SUBASSEMBLY → COMPONENT
+        # -------------------------
         'subassembly': {
             'model': 'ComponentAssembly',
             'filter_field': 'subassembly_id',
             'order_field': 'name',
             'next_level': 'component_assembly'
         },
+
+        # -------------------------
+        # COMPONENT → ASSEMBLY VIEW
+        # -------------------------
         'component_assembly': {
             'model': 'AssemblyView',
             'filter_field': 'component_assembly_id',
             'order_field': 'name',
             'next_level': 'assembly_view'
+        },
+
+        # -------------------------
+        # ASSEMBLY VIEW = bottom
+        # -------------------------
+        'assembly_view': {
+            'model': None,
+            'filter_field': None,
+            'order_field': None,
+            'next_level': None
         }
     }
 
@@ -412,14 +660,13 @@ class Position(Base):
     MODELS_MAP = None
 
     @classmethod
-    @with_request_id
     def get_dependent_items(cls, session, parent_type, parent_id, child_type=None):
         """
         Generic method to get dependent items based on parent type and ID.
 
         Args:
             session: SQLAlchemy session
-            parent_type: The type of the parent (e.g., 'area', 'equipment_group')
+            parent_type: The type of the parent (e.g., 'area', 'equipment_group', 'campus', 'building')
             parent_id: The ID of the parent
             child_type: Optional, to specify which child type to return when parent has multiple child types
 
@@ -483,7 +730,9 @@ class Position(Base):
                     'Subassembly': Subassembly,
                     'ComponentAssembly': ComponentAssembly,
                     'AssemblyView': AssemblyView,
-                    'SiteLocation': SiteLocation
+                    'SiteLocation': SiteLocation,
+                    'Campus': Campus,
+                    'Building': Building
                 }
                 model = models_map.get(model_name)
                 if not model:
@@ -517,7 +766,7 @@ class Position(Base):
     @with_request_id
     def add_to_db(cls, session=None, area_id=None, equipment_group_id=None, model_id=None, asset_number_id=None,
                   location_id=None, subassembly_id=None, component_assembly_id=None, assembly_view_id=None,
-                  site_location_id=None):
+                  site_location_id=None, campus_id=None, building_id=None):
         """
         Get-or-create a Position with exactly these FK values.
         If `session` is None, uses DatabaseConfig().get_main_session().
@@ -527,12 +776,13 @@ class Position(Base):
         if session is None:
             session = DatabaseConfig().get_main_session()
 
-        # 2) log input parameters - FIXED
+        # 2) log input parameters
         debug_id(
             f"add_to_db called with area_id={area_id}, equipment_group_id={equipment_group_id}, "
             f"model_id={model_id}, asset_number_id={asset_number_id}, location_id={location_id}, "
             f"subassembly_id={subassembly_id}, component_assembly_id={component_assembly_id}, "
-            f"assembly_view_id={assembly_view_id}, site_location_id={site_location_id}"
+            f"assembly_view_id={assembly_view_id}, site_location_id={site_location_id}, "
+            f"campus_id={campus_id}, building_id={building_id}"
         )
 
         # 3) build filter dict
@@ -546,6 +796,8 @@ class Position(Base):
             "component_assembly_id": component_assembly_id,
             "assembly_view_id": assembly_view_id,
             "site_location_id": site_location_id,
+            "campus_id": campus_id,
+            "building_id": building_id,
         }
 
         try:
@@ -571,6 +823,7 @@ class Position(Base):
     @with_request_id
     def get_corresponding_position_ids(cls, session=None, area_id=None, equipment_group_id=None,
                                        model_id=None, asset_number_id=None, location_id=None,
+                                       campus_id=None, building_id=None, site_location_id=None,
                                        request_id='no_request_id'):
         """
         Search for corresponding Position IDs based on the provided filters with request ID logging.
@@ -582,6 +835,9 @@ class Position(Base):
             model_id: ID of the model (optional)
             asset_number_id: ID of the asset number (optional)
             location_id: ID of the location (optional)
+            campus_id: ID of the campus (optional)
+            building_id: ID of the building (optional)
+            site_location_id: ID of the site location (optional)
             request_id: Unique identifier for the request
 
         Returns:
@@ -596,7 +852,8 @@ class Position(Base):
             f"[{request_id}] get_corresponding_position_ids called with "
             f"area_id={area_id}, equipment_group_id={equipment_group_id}, "
             f"model_id={model_id}, asset_number_id={asset_number_id}, "
-            f"location_id={location_id}"
+            f"location_id={location_id}, campus_id={campus_id}, "
+            f"building_id={building_id}, site_location_id={site_location_id}"
         )
 
         try:
@@ -608,6 +865,9 @@ class Position(Base):
                 model_id=model_id,
                 asset_number_id=asset_number_id,
                 location_id=location_id,
+                campus_id=campus_id,
+                building_id=building_id,
+                site_location_id=site_location_id,
                 request_id=request_id
             )
 
@@ -629,13 +889,15 @@ class Position(Base):
     @classmethod
     @with_request_id
     def _get_positions_by_hierarchy(cls, session, area_id=None, equipment_group_id=None, model_id=None,
-                                    asset_number_id=None, location_id=None):
+                                    asset_number_id=None, location_id=None, campus_id=None,
+                                    building_id=None, site_location_id=None):
         """
         Helper method to fetch positions based on hierarchical filters.
 
         Args:
             session: SQLAlchemy session
             area_id, equipment_group_id, model_id, asset_number_id, location_id: IDs for filtering
+            campus_id, building_id, site_location_id: Additional location IDs for filtering
 
         Returns:
             List of Position objects that match the criteria
@@ -652,6 +914,12 @@ class Position(Base):
             filters['asset_number_id'] = asset_number_id
         if location_id:
             filters['location_id'] = location_id
+        if campus_id:
+            filters['campus_id'] = campus_id
+        if building_id:
+            filters['building_id'] = building_id
+        if site_location_id:
+            filters['site_location_id'] = site_location_id
 
         # Log the filter parameters
         debug_id(f"Filtering Positions with filters: {filters}", request_id=g.request_id)
@@ -1540,116 +1808,120 @@ class Location(Base):
     __tablename__ = 'location'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)    
+    name = Column(String, nullable=False)
+
+    # Foreign Keys
     model_id = Column(Integer, ForeignKey('model.id'))
+    asset_number_id = Column(Integer, ForeignKey('asset_number.id'), nullable=True)
+
     description = Column(String, nullable=True)
-    
+
+    # Relationships
     model = relationship("Model", back_populates="location")
+    asset_number = relationship("AssetNumber")     # NEW
+
+    # Downstream relationships
     position = relationship("Position", back_populates="location")
     subassembly = relationship("Subassembly", back_populates="location")
 
     @classmethod
     @with_request_id
-    def add_location(cls, session, name, model_id, description=None, request_id=None):
+    def add_location(cls, session, name, model_id,
+                     asset_number_id=None, description=None, request_id=None):
         """
-        Add a new location to the database.
-
-        Args:
-            session: SQLAlchemy database session
-            name (str): Name of the location
-            model_id (int): ID of the model this location belongs to
-            description (str, optional): Description of the location
-            request_id (str, optional): Unique identifier for the request
-
-        Returns:
-            Location: The newly created location object
+        Add a new Location to the database.
         """
         new_location = cls(
             name=name,
             model_id=model_id,
+            asset_number_id=asset_number_id,
             description=description
         )
 
         session.add(new_location)
         session.commit()
 
-        logger.info(f"Created new location: {name} for model ID {model_id}")
+        logger.info(
+            f"Created new location: {name} for model {model_id}"
+            + (f" (asset {asset_number_id})" if asset_number_id else "")
+        )
+
         return new_location
 
     @classmethod
     @with_request_id
-    def delete_location(cls, session, location_id, request_id=None):
+    def search(cls, session, name=None, model_id=None, asset_number_id=None):
         """
-        Delete a location from the database.
-
-        Args:
-            session: SQLAlchemy database session
-            location_id (int): ID of the location to delete
-            request_id (str, optional): Unique identifier for the request
-
-        Returns:
-            bool: True if deletion was successful, False if location not found
+        Search locations by name, model, or asset_number.
         """
-        location = session.query(cls).filter(cls.id == location_id).first()
+        query = session.query(cls)
 
-        if location:
-            session.delete(location)
-            session.commit()
-            logger.info(f"Deleted location ID {location_id}")
-            return True
-        else:
-            logger.warning(f"Failed to delete location ID {location_id} - not found")
-            return False
+        if name:
+            query = query.filter(cls.name.ilike(f"%{name}%"))
+
+        if model_id:
+            query = query.filter(cls.model_id == model_id)
+
+        if asset_number_id:
+            query = query.filter(cls.asset_number_id == asset_number_id)
+
+        return query.all()
 
     @classmethod
     @with_request_id
-    def find_related_entities(cls, session, identifier, is_id=True, request_id=None):
+    def find_or_create(cls, session, name, model_id,
+                       asset_number_id=None, description=None, request_id=None):
         """
-        Find all related entities for a location, traversing both up and down
-        the hierarchy: Area → EquipmentGroup → Model → Location → (Position, Subassembly).
-
-        Args:
-            session: SQLAlchemy database session
-            identifier: Either location ID (int) or name (str)
-            is_id (bool): If True, identifier is an ID, otherwise it's a name
-            request_id (str, optional): Unique identifier for the request
-
-        Returns:
-            dict: Dictionary containing:
-                - 'location': The found location object
-                - 'upward': Dictionary containing 'model', 'equipment_group', and 'area'
-                - 'downward': Dictionary containing:
-                    - 'positions': List of all positions related to this location
-                    - 'subassemblies': List of all subassemblies related to this location
+        Find an existing Location or create a new one.
         """
-        # Find the location
-        if is_id:
-            location = session.query(cls).filter(cls.id == identifier).first()
-        else:
-            location = session.query(cls).filter(cls.name == identifier).first()
+        filters = {"name": name, "model_id": model_id}
 
+        if asset_number_id is not None:
+            filters["asset_number_id"] = asset_number_id
+
+        loc = session.query(cls).filter_by(**filters).first()
+
+        if loc:
+            return loc
+
+        loc = cls(
+            name=name,
+            model_id=model_id,
+            asset_number_id=asset_number_id,
+            description=description
+        )
+
+        session.add(loc)
+        session.commit()
+        return loc
+
+    @classmethod
+    @with_request_id
+    def find_related_entities(cls, session, location_id, request_id=None):
+        """
+        Traverse up (model/equipment_group/area)
+        and down (positions/subassemblies).
+        """
+        location = session.query(cls).filter_by(id=location_id).first()
         if not location:
-            logger.warning(f"Location not found for identifier: {identifier}")
             return None
 
-        # Going upward in the hierarchy
         upward = {
-            'model': location.model,
-            'equipment_group': location.model.equipment_group if location.model else None,
-            'area': location.model.equipment_group.area if location.model and location.model.equipment_group else None
+            "model": location.model,
+            "equipment_group": location.model.equipment_group if location.model else None,
+            "area": location.model.equipment_group.area
+                    if location.model and location.model.equipment_group else None
         }
 
-        # Going downward in the hierarchy
         downward = {
-            'positions': location.position,
-            'subassemblies': location.subassembly
+            "positions": location.position,
+            "subassemblies": location.subassembly
         }
 
-        logger.info(f"Found related entities for location ID {location.id}")
         return {
-            'location': location,
-            'upward': upward,
-            'downward': downward
+            "location": location,
+            "upward": upward,
+            "downward": downward
         }
 
 #class's dealing with machine subassemblies.
@@ -1659,21 +1931,32 @@ class Subassembly(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=True)
     location_id = Column(Integer, ForeignKey('location.id'))
+    asset_number_id = Column(Integer, ForeignKey('asset_number.id'), nullable=True)
     description = Column(String, nullable=True)
 
     # Relationships
     location = relationship("Location", back_populates="subassembly")
+    asset_number = relationship("AssetNumber")
     component_assembly = relationship("ComponentAssembly", back_populates="subassembly")
     position = relationship("Position", back_populates="subassembly")
 
     @classmethod
     @with_request_id
-    def add_subassembly(cls, session, name, location_id, description=None, request_id=None):
+    def add_subassembly(cls, session, name, location_id, asset_number_id=None,description=None, request_id=None):
         """Add a new Subassembly to the database."""
-        new_sub = cls(name=name, location_id=location_id, description=description)
+        new_sub = cls(
+            name=name,
+            location_id=location_id,
+            asset_number_id=asset_number_id,
+            description=description
+        )
         session.add(new_sub)
         session.commit()
-        logger.info(f"Created Subassembly '{name}' under Location {location_id}")
+
+        logger.info(
+            f"Created Subassembly '{name}' under Location {location_id}"
+            + (f" for Asset {asset_number_id}" if asset_number_id else "")
+        )
         return new_sub
 
     @classmethod
@@ -1690,23 +1973,37 @@ class Subassembly(Base):
 
     @classmethod
     @with_request_id
-    def search(cls, session, name=None, location_id=None):
-        """Search Subassemblies by name or location_id."""
+    def search(cls, session, name=None, location_id=None, asset_number_id=None):
+        """Search Subassemblies by name, location, or asset_number."""
         query = session.query(cls)
         if name:
             query = query.filter(cls.name.ilike(f"%{name}%"))
         if location_id:
             query = query.filter(cls.location_id == location_id)
+        if asset_number_id:
+            query = query.filter(cls.asset_number_id == asset_number_id)
         return query.all()
 
     @classmethod
     @with_request_id
-    def find_or_create(cls, session, name, location_id, description=None, request_id=None):
-        """Find Subassembly by name + location, or create it."""
-        sub = session.query(cls).filter_by(name=name, location_id=location_id).first()
+    def find_or_create(cls, session, name, location_id, asset_number_id=None,description=None, request_id=None):
+        """Find Subassembly by name + location + asset, or create it."""
+        filters = {'name': name, 'location_id': location_id}
+
+        # Include the asset number in uniqueness logic
+        if asset_number_id is not None:
+            filters['asset_number_id'] = asset_number_id
+
+        sub = session.query(cls).filter_by(**filters).first()
         if sub:
             return sub
-        sub = cls(name=name, location_id=location_id, description=description)
+
+        sub = cls(
+            name=name,
+            location_id=location_id,
+            asset_number_id=asset_number_id,
+            description=description
+        )
         session.add(sub)
         session.commit()
         return sub
@@ -1714,14 +2011,20 @@ class Subassembly(Base):
     @classmethod
     @with_request_id
     def find_related_entities(cls, session, subassembly_id, request_id=None):
-        """Traverse relationships: upward (location), downward (component assemblies, positions)."""
         sub = session.query(cls).filter_by(id=subassembly_id).first()
         if not sub:
             return None
+
         return {
             "subassembly": sub,
-            "upward": {"location": sub.location},
-            "downward": {"component_assemblies": sub.component_assembly, "positions": sub.position}
+            "upward": {
+                "location": sub.location,
+                "asset_number": sub.asset_number
+            },
+            "downward": {
+                "component_assemblies": sub.component_assembly,
+                "positions": sub.position
+            }
         }
 
 class ComponentAssembly(Base):
@@ -1730,22 +2033,31 @@ class ComponentAssembly(Base):
     name = Column(String, nullable=True)
     description = Column(String, nullable=True)
     subassembly_id = Column(Integer, ForeignKey('subassembly.id'), nullable=False)
+    asset_number_id = Column(Integer, ForeignKey('asset_number.id'), nullable=True)
 
     # Relationships
     subassembly = relationship("Subassembly", back_populates="component_assembly")
+    asset_number = relationship("AssetNumber")
     assembly_view = relationship("AssemblyView", back_populates="component_assembly")
     position = relationship("Position", back_populates="component_assembly")
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
-    def add_component(cls, session, name, subassembly_id, description=None, request_id=None):
+    def add_component(cls, session, name, subassembly_id, asset_number_id=None, description=None, request_id=None):
         """Add a new ComponentAssembly."""
-        comp = cls(name=name, subassembly_id=subassembly_id, description=description)
+        comp = cls(name=name,
+            subassembly_id=subassembly_id, asset_number_id=asset_number_id,description=description )
         session.add(comp)
         session.commit()
-        logger.info(f"Created ComponentAssembly '{name}' under Subassembly {subassembly_id}")
+
+        logger.info(
+            f"Created ComponentAssembly '{name}' under Subassembly {subassembly_id}"
+            + (f" for Asset {asset_number_id}" if asset_number_id is not None else "")
+        )
         return comp
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
     def delete_component(cls, session, component_id, request_id=None):
@@ -1758,40 +2070,68 @@ class ComponentAssembly(Base):
             return True
         return False
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
-    def search(cls, session, name=None, subassembly_id=None):
-        """Search ComponentAssemblies by name or subassembly_id."""
+    def search(cls, session, name=None, subassembly_id=None, asset_number_id=None):
+        """Search ComponentAssemblies by name, subassembly, or asset_number."""
         query = session.query(cls)
+
         if name:
             query = query.filter(cls.name.ilike(f"%{name}%"))
         if subassembly_id:
             query = query.filter(cls.subassembly_id == subassembly_id)
+        if asset_number_id:
+            query = query.filter(cls.asset_number_id == asset_number_id)
+
         return query.all()
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
-    def find_or_create(cls, session, name, subassembly_id, description=None, request_id=None):
-        """Find a ComponentAssembly or create it if missing."""
-        comp = session.query(cls).filter_by(name=name, subassembly_id=subassembly_id).first()
+    def find_or_create(cls, session, name, subassembly_id, asset_number_id=None, description=None, request_id=None):
+        """
+        Find a ComponentAssembly (uniquely identified by name + subassembly + asset)
+        OR create it.
+        """
+        filters = {
+            'name': name,
+            'subassembly_id': subassembly_id
+        }
+
+        if asset_number_id is not None:
+            filters['asset_number_id'] = asset_number_id
+
+        comp = session.query(cls).filter_by(**filters).first()
         if comp:
             return comp
-        comp = cls(name=name, subassembly_id=subassembly_id, description=description)
+
+        comp = cls(
+            name=name,
+            subassembly_id=subassembly_id,asset_number_id=asset_number_id,description=description)
         session.add(comp)
         session.commit()
         return comp
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
     def find_related_entities(cls, session, component_id, request_id=None):
-        """Traverse relationships: upward (subassembly), downward (assembly views, positions)."""
+        """Upward (subassembly, asset), downward (views, positions)."""
         comp = session.query(cls).filter_by(id=component_id).first()
         if not comp:
             return None
+
         return {
             "component_assembly": comp,
-            "upward": {"subassembly": comp.subassembly},
-            "downward": {"assembly_views": comp.assembly_view, "positions": comp.position}
+            "upward": {
+                "subassembly": comp.subassembly,
+                "asset_number": comp.asset_number
+            },
+            "downward": {
+                "assembly_views": comp.assembly_view,
+                "positions": comp.position
+            }
         }
 
 class AssemblyView(Base):  # TODO rename to ComponentView
@@ -1800,21 +2140,35 @@ class AssemblyView(Base):  # TODO rename to ComponentView
     name = Column(String, nullable=True)
     description = Column(String, nullable=True)
     component_assembly_id = Column(Integer, ForeignKey('component_assembly.id'), nullable=False)
+    asset_number_id = Column(Integer, ForeignKey('asset_number.id'), nullable=True)
 
     # Relationships
     component_assembly = relationship("ComponentAssembly", back_populates="assembly_view")
+    asset_number = relationship("AssetNumber")
     position = relationship("Position", back_populates="assembly_view")
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
-    def add_view(cls, session, name, component_assembly_id, description=None, request_id=None):
+    def add_view(cls, session, name, component_assembly_id,
+                 asset_number_id=None, description=None, request_id=None):
         """Add a new AssemblyView (ComponentView)."""
-        view = cls(name=name, component_assembly_id=component_assembly_id, description=description)
+        view = cls(
+            name=name,
+            component_assembly_id=component_assembly_id,
+            asset_number_id=asset_number_id,
+            description=description
+        )
         session.add(view)
         session.commit()
-        logger.info(f"Created AssemblyView '{name}' under ComponentAssembly {component_assembly_id}")
+
+        logger.info(
+            f"Created AssemblyView '{name}' under ComponentAssembly {component_assembly_id}"
+            + (f" for Asset {asset_number_id}" if asset_number_id else "")
+        )
         return view
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
     def delete_view(cls, session, view_id, request_id=None):
@@ -1827,40 +2181,73 @@ class AssemblyView(Base):  # TODO rename to ComponentView
             return True
         return False
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
-    def search(cls, session, name=None, component_assembly_id=None):
-        """Search AssemblyViews by name or component_assembly_id."""
+    def search(cls, session, name=None, component_assembly_id=None, asset_number_id=None):
+        """Search AssemblyViews by name, component assembly, or asset number."""
         query = session.query(cls)
+
         if name:
             query = query.filter(cls.name.ilike(f"%{name}%"))
         if component_assembly_id:
             query = query.filter(cls.component_assembly_id == component_assembly_id)
+        if asset_number_id:
+            query = query.filter(cls.asset_number_id == asset_number_id)
+
         return query.all()
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
-    def find_or_create(cls, session, name, component_assembly_id, description=None, request_id=None):
-        """Find an AssemblyView by name + component_assembly, or create it."""
-        view = session.query(cls).filter_by(name=name, component_assembly_id=component_assembly_id).first()
+    def find_or_create(cls, session, name, component_assembly_id,
+                       asset_number_id=None, description=None, request_id=None):
+        """
+        Find an AssemblyView uniquely by:
+            name + component_assembly + asset_number
+        OR create it.
+        """
+
+        filters = {
+            'name': name,
+            'component_assembly_id': component_assembly_id
+        }
+
+        if asset_number_id is not None:
+            filters['asset_number_id'] = asset_number_id
+
+        view = session.query(cls).filter_by(**filters).first()
         if view:
             return view
-        view = cls(name=name, component_assembly_id=component_assembly_id, description=description)
+
+        view = cls(
+            name=name,
+            component_assembly_id=component_assembly_id,
+            asset_number_id=asset_number_id,
+            description=description
+        )
         session.add(view)
         session.commit()
         return view
 
+    # ----------------------------------------------------------------------
     @classmethod
     @with_request_id
     def find_related_entities(cls, session, view_id, request_id=None):
-        """Traverse relationships: upward (component assembly), downward (positions)."""
+        """Upward (component assembly, asset), downward (positions)."""
         view = session.query(cls).filter_by(id=view_id).first()
         if not view:
             return None
+
         return {
             "assembly_view": view,
-            "upward": {"component_assembly": view.component_assembly},
-            "downward": {"positions": view.position}
+            "upward": {
+                "component_assembly": view.component_assembly,
+                "asset_number": view.asset_number
+            },
+            "downward": {
+                "positions": view.position
+            }
         }
 
 class Part(Base):
@@ -1991,7 +2378,7 @@ class Part(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -2198,7 +2585,7 @@ class Part(Base):
         """
         rid = request_id or get_request_id()
 
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -2244,7 +2631,7 @@ class Part(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -2286,97 +2673,139 @@ class Image(Base):
 
     @classmethod
     @with_request_id
-    def add_to_db(cls, session, title, file_path, description, position_id=None, complete_document_id=None,
-                  metadata=None,
-                  request_id=None):
-        import shutil
+    def add_to_db(
+            cls,
+            session,
+            title,
+            file_path,
+            description,
+            position_id=None,
+            complete_document_id=None,
+            metadata=None,
+            request_id=None,
+    ):
         import os
-        from modules.database_manager.db_manager import PostgreSQLDatabaseManager
-        from modules.configuration.config import DATABASE_PATH_IMAGES_FOLDER, DATABASE_DIR
+        import re
+        import shutil
+        from modules.configuration.config import DATABASE_PATH_IMAGES_FOLDER
+
+        rid = request_id
+
         try:
             if session is None:
-                db_config = DatabaseConfig()
-                session = db_config.get_main_session().__enter__()
+                raise RuntimeError("Session required for Image.add_to_db")
 
-            # Create a database manager instance for committing
-            db_manager = PostgreSQLDatabaseManager(session=session, request_id=request_id)
+            if not title:
+                raise ValueError("title is required")
 
-            # Create a unique destination path by combining the directory and a unique filename
+            if not file_path:
+                raise ValueError("file_path is required")
+
+            if not description:
+                raise ValueError("description is required")
+
+            # Keep filenames safe and stable
             original_filename = os.path.basename(file_path)
             base_name, ext = os.path.splitext(original_filename)
-            destination_filename = f"{title.replace(' ', '_')}_{base_name}{ext}"  # Use title to make filename meaningful
 
-            # FIXED: Create both absolute path (for file operations) and relative path (for database)
-            destination_absolute_path = os.path.join(DATABASE_PATH_IMAGES_FOLDER, destination_filename)
-            destination_relative_path = os.path.join("DB_IMAGES",
-                                                     destination_filename)  # Store relative path like before
+            safe_title = re.sub(r"[^\w\-\.]+", "_", title).strip("_")
+            safe_base = re.sub(r"[^\w\-\.]+", "_", base_name).strip("_")
 
-            # Ensure the destination directory exists
+            destination_filename = (
+                f"{safe_title}_{safe_base}{ext}"
+                if safe_base else f"{safe_title}{ext}"
+            )
+
+            destination_absolute_path = os.path.join(
+                DATABASE_PATH_IMAGES_FOLDER,
+                destination_filename,
+            )
+            destination_relative_path = os.path.join(
+                "DB_IMAGES",
+                destination_filename,
+            )
+
             os.makedirs(DATABASE_PATH_IMAGES_FOLDER, exist_ok=True)
-
             shutil.copy(file_path, destination_absolute_path)
-            debug_id(f"Copied '{file_path}' -> '{destination_absolute_path}'", request_id)
 
-            # FIXED: Store relative path in database (like the old system)
+            debug_id(
+                f"Copied '{file_path}' -> '{destination_absolute_path}'",
+                rid,
+            )
+
             image = cls(
                 title=title,
                 description=description,
-                file_path=destination_relative_path,  #  Store relative path like: DB_IMAGES\filename.png
-                img_metadata=metadata if metadata else {}
+                file_path=destination_relative_path,
+                img_metadata=metadata or {},
             )
             session.add(image)
             session.flush()
 
-            debug_id(f"Added image to session: {title}, id={image.id}, stored path: {destination_relative_path}",
-                     request_id)
+            debug_id(
+                f"Added image to session: {title}, id={image.id}, stored path: {destination_relative_path}",
+                rid,
+            )
 
-            # Conditionally handle embedding generation and associations if associated with a document OR position
-            if complete_document_id is not None or position_id is not None:
-                debug_id(f"Generating embedding for image {image.id}", request_id)
-
-                # Add this code in Image.add_to_db() method after session.flush() and before the commit
-
-                # Create position association if position_id is provided
-                if position_id is not None:
-                    # Check if association already exists
-                    existing_association = session.query(ImagePositionAssociation).filter(
-                        and_(ImagePositionAssociation.image_id == image.id,
-                             ImagePositionAssociation.position_id == position_id)
-                    ).first()
-
-                    if existing_association is None:
-                        # Create the association
-                        image_position_association = ImagePositionAssociation(
-                            image_id=image.id,
-                            position_id=position_id
+            # Create position association if requested
+            if position_id is not None:
+                existing_position_assoc = (
+                    session.query(ImagePositionAssociation)
+                    .filter(
+                        and_(
+                            ImagePositionAssociation.image_id == image.id,
+                            ImagePositionAssociation.position_id == position_id,
                         )
-                        session.add(image_position_association)
-                        debug_id(f"Added position association for image {image.id} with position_id {position_id}",
-                                 request_id)
-                    else:
-                        debug_id(
-                            f"Position association already exists for image {image.id} with position_id {position_id}",
-                            request_id)
+                    )
+                    .first()
+                )
 
-                # Only create document association if complete_document_id is provided
-                if complete_document_id is not None:
+                if existing_position_assoc is None:
+                    image_position_association = ImagePositionAssociation(
+                        image_id=image.id,
+                        position_id=position_id,
+                    )
+                    session.add(image_position_association)
                     debug_id(
-                        f"Added enhanced document association for image {image.id} with complete_document_id {complete_document_id}",
-                        request_id)
-            else:
-                debug_id(f"Skipping embedding and associations for standalone image {image.id}", request_id)
+                        f"Added position association for image {image.id} with position_id {position_id}",
+                        rid,
+                    )
+                else:
+                    debug_id(
+                        f"Position association already exists for image {image.id} with position_id {position_id}",
+                        rid,
+                    )
 
-            # Use the database manager's commit_with_retry
-            if not db_manager.commit_with_retry():
-                raise Exception("Failed to commit image to database")
+            # IMPORTANT:
+            # complete_document_id is intentionally NOT used here anymore.
+            # Main workflow ownership rule (Option B):
+            # - Image.add_to_db() creates only the Image row (+ optional position association)
+            # - The calling workflow must explicitly create ImageCompletedDocumentAssociation
+            if complete_document_id is not None:
+                debug_id(
+                    f"Skipping automatic complete-document association for image {image.id} "
+                    f"(complete_document_id={complete_document_id}); "
+                    f"association must be created explicitly by the calling workflow",
+                    rid,
+                )
 
-            debug_id(f"Committed image to database: {title}, id={image.id}", request_id)
+            # IMPORTANT:
+            # - no session creation here
+            # - no commit here
+            # - no rollback here
+            # - caller/orchestrator owns transaction
+
+            session.flush()
+
+            debug_id(
+                f"Image staged successfully: {title}, id={image.id}",
+                rid,
+            )
             return image.id
+
         except Exception as e:
-            error_id(f"Failed to add image to database: {e}", request_id)
-            if session is None:
-                session.__exit__(None, None, None)
-            return None
+            error_id(f"Failed to add image to database: {e}", rid)
+            raise
 
     # =============================================================================
     # Also fix the serve_file method to handle relative paths correctly
@@ -2390,7 +2819,7 @@ class Image(Base):
         Updated internal method with pgvector embedding support.
         """
         try:
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             if hasattr(db_config, 'is_postgresql') and db_config.is_postgresql:
                 debug_id("Using PostgreSQL database with pgvector support", request_id)
             else:
@@ -2512,58 +2941,102 @@ class Image(Base):
             raise
 
     @classmethod
-    def _create_enhanced_document_association(cls, session, image_id, complete_document_id, metadata, request_id):
+    def _create_enhanced_document_association(
+            cls,
+            session,
+            image_id,
+            complete_document_id,
+            metadata,
+            request_id,
+    ):
         """
-        Create enhanced ImageCompletedDocumentAssociation with structure-guided data.
+        Stage an ImageCompletedDocumentAssociation with structure-guided metadata.
+
+        HARD RULES:
+        - NEVER open a session here
+        - NEVER commit here
+        - NEVER rollback here
+        - Store JSON columns as Python dicts, not json.dumps strings
         """
         try:
-            # Check for existing association
-            existing_association = session.query(ImageCompletedDocumentAssociation).filter(
-                and_(ImageCompletedDocumentAssociation.image_id == image_id,
-                     ImageCompletedDocumentAssociation.complete_document_id == complete_document_id)
-            ).first()
+            if session is None:
+                raise RuntimeError("Session required for _create_enhanced_document_association")
 
-            if existing_association is None:
-                # Extract structure-guided metadata
-                structure_metadata = metadata or {}
-
-                # Create enhanced association with structure-guided fields
-                association = ImageCompletedDocumentAssociation(
-                    image_id=image_id,
-                    complete_document_id=complete_document_id,
-                    # NEW: Structure-guided fields
-                    page_number=structure_metadata.get('page_number'),
-                    chunk_index=structure_metadata.get('image_index', 0),
-                    association_method=structure_metadata.get('association_method', 'structure_guided'),
-                    confidence_score=structure_metadata.get('confidence_score', 0.8),
-                    context_metadata=json.dumps({
-                        'structure_guided': structure_metadata.get('structure_guided', True),
-                        'content_type': structure_metadata.get('content_type', 'image'),
-                        'bbox': structure_metadata.get('bbox'),
-                        'estimated_size': structure_metadata.get('estimated_size'),
-                        'created_at': datetime.now().isoformat(),
-                        'processing_method': structure_metadata.get('processing_method', 'enhanced_add_to_db')
-                    })
+            existing_association = (
+                session.query(ImageCompletedDocumentAssociation)
+                .filter(
+                    and_(
+                        ImageCompletedDocumentAssociation.image_id == image_id,
+                        ImageCompletedDocumentAssociation.complete_document_id == complete_document_id,
+                    )
                 )
+                .first()
+            )
 
-                session.add(association)
-                debug_id(f"Added enhanced document association for image {image_id}", request_id)
-            else:
-                debug_id(f"Document association already exists for image {image_id}", request_id)
+            if existing_association is not None:
+                debug_id(
+                    f"Document association already exists for image {image_id}",
+                    request_id,
+                )
+                return existing_association
+
+            structure_metadata = metadata or {}
+
+            association = ImageCompletedDocumentAssociation(
+                image_id=image_id,
+                complete_document_id=complete_document_id,
+                page_number=structure_metadata.get("page_number"),
+                chunk_index=structure_metadata.get("image_index", 0),
+                association_method=structure_metadata.get("association_method", "structure_guided"),
+                confidence_score=structure_metadata.get("confidence_score", 0.8),
+                context_metadata={
+                    "structure_guided": structure_metadata.get("structure_guided", True),
+                    "content_type": structure_metadata.get("content_type", "image"),
+                    "bbox": structure_metadata.get("bbox"),
+                    "estimated_size": structure_metadata.get("estimated_size"),
+                    "created_at": datetime.now().isoformat(),
+                    "processing_method": structure_metadata.get(
+                        "processing_method",
+                        "enhanced_add_to_db",
+                    ),
+                },
+            )
+
+            session.add(association)
+            session.flush()
+
+            debug_id(
+                f"Added enhanced document association for image {image_id}",
+                request_id,
+            )
+            return association
 
         except Exception as e:
-            warning_id(f"Failed to create enhanced document association: {e}", request_id)
-            # Fallback to basic association
+            warning_id(
+                f"Failed to create enhanced document association: {e}",
+                request_id,
+            )
+
             try:
                 basic_association = ImageCompletedDocumentAssociation(
                     image_id=image_id,
-                    complete_document_id=complete_document_id
+                    complete_document_id=complete_document_id,
                 )
                 session.add(basic_association)
-                debug_id(f"Added basic document association for image {image_id}", request_id)
-            except Exception as fallback_error:
-                error_id(f"Failed to create even basic association: {fallback_error}", request_id)
+                session.flush()
 
+                debug_id(
+                    f"Added basic document association for image {image_id}",
+                    request_id,
+                )
+                return basic_association
+
+            except Exception as fallback_error:
+                error_id(
+                    f"Failed to create even basic association: {fallback_error}",
+                    request_id,
+                )
+                raise
     @classmethod
     @with_request_id
     def create_with_tool_association(cls, session, title, file_path, tool, description="", request_id=None):
@@ -2691,84 +3164,6 @@ class Image(Base):
 
     @classmethod
     @with_request_id
-    def get_images_with_chunk_context(cls, session, complete_document_id, request_id=None):
-        """
-        Get all images for a document with their associated chunk context.
-        This method supports the new structure-guided associations.
-        """
-        try:
-            from modules.emtacdb.emtacdb_fts import Document
-
-            # Query images with their associations and chunk context
-            result = session.query(
-                cls.id.label('image_id'),
-                cls.title.label('image_title'),
-                cls.file_path.label('image_path'),
-                cls.description.label('image_description'),
-                cls.img_metadata.label('image_metadata'),
-                Document.id.label('chunk_id'),
-                Document.name.label('chunk_name'),
-                Document.content.label('chunk_content'),
-                ImageCompletedDocumentAssociation.page_number,
-                ImageCompletedDocumentAssociation.chunk_index,
-                ImageCompletedDocumentAssociation.confidence_score,
-                ImageCompletedDocumentAssociation.association_method,
-                ImageCompletedDocumentAssociation.context_metadata
-            ).select_from(cls).join(
-                ImageCompletedDocumentAssociation,
-                cls.id == ImageCompletedDocumentAssociation.image_id
-            ).outerjoin(
-                Document,
-                ImageCompletedDocumentAssociation.document_id == Document.id
-            ).filter(
-                ImageCompletedDocumentAssociation.complete_document_id == complete_document_id
-            ).order_by(
-                ImageCompletedDocumentAssociation.page_number,
-                ImageCompletedDocumentAssociation.chunk_index
-            ).all()
-
-            images_with_context = []
-            for row in result:
-                # Parse context metadata
-                context_metadata = {}
-                if row.context_metadata:
-                    try:
-                        context_metadata = json.loads(row.context_metadata)
-                    except:
-                        pass
-
-                image_context = {
-                    'image_id': row.image_id,
-                    'image_title': row.image_title,
-                    'image_path': row.image_path,
-                    'image_description': row.image_description,
-                    'image_metadata': row.image_metadata,
-                    'chunk_id': row.chunk_id,
-                    'chunk_name': row.chunk_name,
-                    'chunk_content': row.chunk_content,
-                    'page_number': row.page_number,
-                    'chunk_index': row.chunk_index,
-                    'confidence_score': row.confidence_score,
-                    'association_method': row.association_method,
-                    'context_metadata': context_metadata,
-                    'view_url': f'/add_document/image/{row.image_id}',
-                    'has_chunk_association': row.chunk_id is not None,
-                    'structure_guided': context_metadata.get('structure_guided', False),
-                    'content_type': context_metadata.get('content_type', 'image'),
-                    'chunk_preview': row.chunk_content[:200] + "..." if row.chunk_content and len(
-                        row.chunk_content) > 200 else row.chunk_content
-                }
-                images_with_context.append(image_context)
-
-            info_id(f"Retrieved {len(images_with_context)} images with chunk context", request_id)
-            return images_with_context
-
-        except Exception as e:
-            error_id(f"Failed to get images with chunk context: {e}", request_id)
-            return []
-
-    @classmethod
-    @with_request_id
     def search_by_chunk_text(cls, session, search_text, complete_document_id=None,
                              confidence_threshold=0.5, request_id=None):
         """
@@ -2844,100 +3239,6 @@ class Image(Base):
             error_id(f"Failed to search images by chunk text: {e}", request_id)
             return []
 
-    @classmethod
-    @with_request_id
-    def get_association_statistics(cls, session, complete_document_id=None, request_id=None):
-        """
-        Get statistics about image-chunk associations, especially structure-guided ones.
-        Useful for monitoring and debugging the new association system.
-        """
-        try:
-            from sqlalchemy import func
-
-            # Base query for associations
-            base_query = session.query(ImageCompletedDocumentAssociation)
-
-            if complete_document_id:
-                base_query = base_query.filter(
-                    ImageCompletedDocumentAssociation.complete_document_id == complete_document_id
-                )
-
-            # Total associations
-            total_associations = base_query.count()
-
-            # Structure-guided associations
-            structure_guided = base_query.filter(
-                ImageCompletedDocumentAssociation.association_method == 'structure_guided'
-            ).count()
-
-            # High confidence associations
-            high_confidence = base_query.filter(
-                ImageCompletedDocumentAssociation.confidence_score >= 0.8
-            ).count()
-
-            # Average confidence score
-            avg_confidence = session.query(
-                func.avg(ImageCompletedDocumentAssociation.confidence_score)
-            ).filter(
-                ImageCompletedDocumentAssociation.complete_document_id == complete_document_id
-                if complete_document_id else True
-            ).scalar() or 0
-
-            # Associations by method
-            method_stats = session.query(
-                ImageCompletedDocumentAssociation.association_method,
-                func.count(ImageCompletedDocumentAssociation.id)
-            ).filter(
-                ImageCompletedDocumentAssociation.complete_document_id == complete_document_id
-                if complete_document_id else True
-            ).group_by(
-                ImageCompletedDocumentAssociation.association_method
-            ).all()
-
-            # Associations by page
-            page_stats = session.query(
-                ImageCompletedDocumentAssociation.page_number,
-                func.count(ImageCompletedDocumentAssociation.id)
-            ).filter(
-                ImageCompletedDocumentAssociation.complete_document_id == complete_document_id
-                if complete_document_id else True
-            ).group_by(
-                ImageCompletedDocumentAssociation.page_number
-            ).order_by(
-                ImageCompletedDocumentAssociation.page_number
-            ).all()
-
-            stats = {
-                'total_associations': total_associations,
-                'structure_guided_count': structure_guided,
-                'high_confidence_count': high_confidence,
-                'average_confidence': float(avg_confidence),
-                'structure_guided_percentage': (
-                            structure_guided / total_associations * 100) if total_associations > 0 else 0,
-                'high_confidence_percentage': (
-                            high_confidence / total_associations * 100) if total_associations > 0 else 0,
-                'associations_by_method': dict(method_stats),
-                'associations_by_page': dict(page_stats)
-            }
-
-            info_id(f"Association statistics: {stats['total_associations']} total, "
-                    f"{stats['structure_guided_percentage']:.1f}% structure-guided, "
-                    f"{stats['high_confidence_percentage']:.1f}% high-confidence", request_id)
-
-            return stats
-
-        except Exception as e:
-            error_id(f"Failed to get association statistics: {e}", request_id)
-            return {
-                'total_associations': 0,
-                'structure_guided_count': 0,
-                'high_confidence_count': 0,
-                'average_confidence': 0,
-                'structure_guided_percentage': 0,
-                'high_confidence_percentage': 0,
-                'associations_by_method': {},
-                'associations_by_page': {}
-            }
 
     @classmethod
     def _highlight_search_term(cls, content, search_term):
@@ -2961,7 +3262,7 @@ class Image(Base):
         """
         Database-agnostic commit with retry logic.
         """
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
 
         for attempt in range(retries):
             try:
@@ -3033,7 +3334,7 @@ class Image(Base):
                 info_id(f"Starting monitored operation: {self.operation_name}", self.request_id)
 
                 try:
-                    db_config = DatabaseConfig()
+                    db_config = get_db_config()
                     if hasattr(db_config, 'is_postgresql') and db_config.is_postgresql:
                         # PostgreSQL - no PRAGMA commands needed
                         debug_id("Using PostgreSQL for monitored session", self.request_id)
@@ -3076,7 +3377,7 @@ class Image(Base):
         rid = request_id or get_request_id()
         info_id(f"Attempting to retrieve image with ID: {image_id}", rid)
 
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         try:
             with cls.monitor_processing_session(
                     db_config.get_main_session(),
@@ -3668,7 +3969,7 @@ class Image(Base):
             # Create session if not provided
             local_session = None
             if session is None:
-                db_config = DatabaseConfig()
+                db_config = get_db_config()
                 local_session = db_config.get_main_session()
                 session = local_session
 
@@ -3791,6 +4092,11 @@ class Image(Base):
     def _get_enhanced_image_associations(cls, session, image_id, request_id=None):
         """
         Enhanced helper method to get all associations for an image, including structure-guided ones.
+
+        Handles context_metadata safely whether it is:
+        - a dict (correct JSON-column usage)
+        - a JSON string (legacy data)
+        - None / invalid
         """
         from modules.configuration.log_config import debug_id, error_id
 
@@ -3799,66 +4105,119 @@ class Image(Base):
 
         try:
             # Get position associations
-            position_assocs = session.query(ImagePositionAssociation).filter(
-                ImagePositionAssociation.image_id == image_id).all()
-            associations['positions'] = [{'position_id': assoc.position_id} for assoc in position_assocs]
+            position_assocs = (
+                session.query(ImagePositionAssociation)
+                .filter(ImagePositionAssociation.image_id == image_id)
+                .all()
+            )
+            associations["positions"] = [
+                {"position_id": assoc.position_id}
+                for assoc in position_assocs
+            ]
 
             # Get tool associations
-            tool_assocs = session.query(ToolImageAssociation).filter(
-                ToolImageAssociation.image_id == image_id).all()
-            associations['tools'] = [{'tool_id': assoc.tool_id, 'description': assoc.description}
-                                     for assoc in tool_assocs]
+            tool_assocs = (
+                session.query(ToolImageAssociation)
+                .filter(ToolImageAssociation.image_id == image_id)
+                .all()
+            )
+            associations["tools"] = [
+                {
+                    "tool_id": assoc.tool_id,
+                    "description": assoc.description,
+                }
+                for assoc in tool_assocs
+            ]
 
             # Get task associations
-            task_assocs = session.query(ImageTaskAssociation).filter(
-                ImageTaskAssociation.image_id == image_id).all()
-            associations['tasks'] = [{'task_id': assoc.task_id} for assoc in task_assocs]
+            task_assocs = (
+                session.query(ImageTaskAssociation)
+                .filter(ImageTaskAssociation.image_id == image_id)
+                .all()
+            )
+            associations["tasks"] = [
+                {"task_id": assoc.task_id}
+                for assoc in task_assocs
+            ]
 
             # Get problem associations
-            problem_assocs = session.query(ImageProblemAssociation).filter(
-                ImageProblemAssociation.image_id == image_id).all()
-            associations['problems'] = [{'problem_id': assoc.problem_id} for assoc in problem_assocs]
+            problem_assocs = (
+                session.query(ImageProblemAssociation)
+                .filter(ImageProblemAssociation.image_id == image_id)
+                .all()
+            )
+            associations["problems"] = [
+                {"problem_id": assoc.problem_id}
+                for assoc in problem_assocs
+            ]
 
-            # ENHANCED: Get completed document associations with structure-guided data
-            doc_assocs = session.query(ImageCompletedDocumentAssociation).filter(
-                ImageCompletedDocumentAssociation.image_id == image_id).all()
+            # Get completed document associations with structure-guided data
+            doc_assocs = (
+                session.query(ImageCompletedDocumentAssociation)
+                .filter(ImageCompletedDocumentAssociation.image_id == image_id)
+                .all()
+            )
 
             enhanced_doc_assocs = []
             for assoc in doc_assocs:
                 context_metadata = {}
+
                 if assoc.context_metadata:
-                    try:
-                        context_metadata = json.loads(assoc.context_metadata)
-                    except:
-                        pass
+                    if isinstance(assoc.context_metadata, dict):
+                        context_metadata = assoc.context_metadata
+                    elif isinstance(assoc.context_metadata, str):
+                        try:
+                            context_metadata = json.loads(assoc.context_metadata)
+                        except Exception:
+                            context_metadata = {}
+                    else:
+                        context_metadata = {}
 
                 enhanced_doc_assocs.append({
-                    'document_id': assoc.complete_document_id,
-                    'page_number': assoc.page_number,
-                    'chunk_index': assoc.chunk_index,
-                    'association_method': assoc.association_method,
-                    'confidence_score': assoc.confidence_score,
-                    'structure_guided': context_metadata.get('structure_guided', False),
-                    'content_type': context_metadata.get('content_type', 'image')
+                    "document_id": assoc.complete_document_id,
+                    "page_number": assoc.page_number,
+                    "chunk_index": assoc.chunk_index,
+                    "association_method": assoc.association_method,
+                    "confidence_score": assoc.confidence_score,
+                    "structure_guided": context_metadata.get("structure_guided", False),
+                    "content_type": context_metadata.get("content_type", "image"),
+                    "bbox": context_metadata.get("bbox"),
+                    "estimated_size": context_metadata.get("estimated_size"),
+                    "processing_method": context_metadata.get("processing_method"),
                 })
 
-            associations['completed_documents'] = enhanced_doc_assocs
+            associations["completed_documents"] = enhanced_doc_assocs
 
             # Get parts position associations
-            parts_assocs = session.query(PartsPositionImageAssociation).filter(
-                PartsPositionImageAssociation.image_id == image_id).all()
-            associations['parts_positions'] = [{'part_id': assoc.part_id, 'position_id': assoc.position_id}
-                                               for assoc in parts_assocs]
+            parts_assocs = (
+                session.query(PartsPositionImageAssociation)
+                .filter(PartsPositionImageAssociation.image_id == image_id)
+                .all()
+            )
+            associations["parts_positions"] = [
+                {
+                    "part_id": assoc.part_id,
+                    "position_id": assoc.position_id,
+                }
+                for assoc in parts_assocs
+            ]
 
-            debug_id(f"Retrieved enhanced associations for image {image_id}: "
-                     f"{len(associations.get('positions', []))} positions, "
-                     f"{len(associations.get('tools', []))} tools, "
-                     f"{len(associations.get('tasks', []))} tasks, "
-                     f"{len(associations.get('problems', []))} problems, "
-                     f"{len(associations.get('completed_documents', []))} documents", rid)
+            debug_id(
+                f"Retrieved enhanced associations for image {image_id}: "
+                f"{len(associations.get('positions', []))} positions, "
+                f"{len(associations.get('tools', []))} tools, "
+                f"{len(associations.get('tasks', []))} tasks, "
+                f"{len(associations.get('problems', []))} problems, "
+                f"{len(associations.get('completed_documents', []))} documents",
+                rid,
+            )
 
         except Exception as e:
-            error_id(f"Error getting enhanced associations for image {image_id}: {e}", rid, exc_info=True)
+            error_id(
+                f"Error getting enhanced associations for image {image_id}: {e}",
+                rid,
+                exc_info=True,
+            )
 
         return associations
 
@@ -4590,7 +4949,7 @@ class Drawing(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -4743,7 +5102,7 @@ class Drawing(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -4785,7 +5144,7 @@ class Drawing(Base):
         # Get or create session
         session_provided = session is not None
         if not session_provided:
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             session = db_config.get_main_session()
 
         try:
@@ -4889,7 +5248,7 @@ class Drawing(Base):
         # Get or create session
         session_provided = session is not None
         if not session_provided:
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             session = db_config.get_main_session()
 
         try:
@@ -4982,7 +5341,7 @@ class Document(Base):
     def get_images_for_chunk(cls, chunk_id, request_id=None):
         """Get all images associated with this text chunk."""
         try:
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 # Query images through the association table
                 result = session.query(Image, ImageCompletedDocumentAssociation).join(
@@ -5010,7 +5369,7 @@ class Document(Base):
     def find_chunks_with_images(cls, complete_document_id, request_id=None):
         """Find all chunks in a document that have associated images."""
         try:
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 result = session.query(cls).join(
                     ImageCompletedDocumentAssociation,
@@ -5030,7 +5389,7 @@ class Document(Base):
     @with_request_id
     def create_fts_table(cls):
         """Enhanced FTS table creation with file_path + image-chunk search support."""
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
 
         with db_config.main_session() as session:
             try:
@@ -5150,6 +5509,58 @@ class Document(Base):
                 print(f"❌ Failed to create enhanced FTS table: {e}")
                 return False
 
+    @classmethod
+    @with_request_id
+    def search_fts(
+            cls,
+            query_text: str,
+            limit: int = 25,
+            request_id: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Run PostgreSQL Full-Text Search (FTS) against documents_fts and return
+        ranked chunks suitable for RAG retrieval.
+
+        Returns:
+            List[Dict] where each dict contains:
+                - id (fts row id)
+                - title
+                - content
+                - file_path
+                - chunk_id
+                - complete_document_id
+                - has_images (bool)
+                - rank (float)
+        """
+        from sqlalchemy import text
+        db_config = get_db_config()
+
+        sql = text("""
+                   SELECT id,
+                          title,
+                          content,
+                          file_path,
+                          chunk_id,
+                          complete_document_id,
+                          has_images,
+                          ts_rank(search_vector, plainto_tsquery(:q)) AS rank
+                   FROM documents_fts
+                   WHERE search_vector @@ plainto_tsquery(:q)
+                   ORDER BY rank DESC
+                       LIMIT :limit
+                   """)
+
+        with db_config.main_session() as session:
+            try:
+                rows = session.execute(
+                    sql, {"q": query_text, "limit": limit}
+                ).fetchall()
+
+                return [dict(row._mapping) for row in rows]
+
+            except Exception as e:
+                error_id(f"Document.search_fts failed: {e}", request_id)
+                return []
 
 class DocumentEmbedding(Base):
     """
@@ -5295,7 +5706,7 @@ class DocumentEmbedding(Base):
             else:
                 # Fall back to creating new session
                 from modules.configuration.config_env import DatabaseConfig
-                db_config = DatabaseConfig()
+                db_config = get_db_config()
                 with db_config.main_session() as new_session:
                     result = new_session.execute(
                         text("SELECT embedding_vector FROM document_embedding WHERE id = :embedding_id"),
@@ -5320,43 +5731,6 @@ class DocumentEmbedding(Base):
 
         except Exception as e:
             logger.debug(f"Error retrieving full embedding from database: {e}")
-
-        return []
-
-    def _get_full_embedding_from_db(self):
-        """
-        Get the full embedding data directly from the database when the cached version is truncated.
-        """
-        try:
-            from modules.configuration.config_env import DatabaseConfig
-
-            db_config = DatabaseConfig()
-            with db_config.main_session() as session:
-                # Query the full embedding vector directly
-                result = session.execute(
-                    text("SELECT embedding_vector FROM document_embedding WHERE id = :embedding_id"),
-                    {"embedding_id": self.id}
-                ).fetchone()
-
-                if result and result[0] is not None:
-                    full_vector_str = str(result[0]).strip()
-
-                    # Parse the full vector string
-                    if full_vector_str.startswith('[') and full_vector_str.endswith(']'):
-                        vector_str = full_vector_str[1:-1]  # Remove brackets
-                        embedding_list = [float(x.strip()) for x in vector_str.split(',') if x.strip()]
-                    else:
-                        # Handle space-separated format
-                        import re
-                        values = re.split(r'\s+', full_vector_str.replace('\\n', '\n').replace('\\t', ' '))
-                        embedding_list = [float(x) for x in values if
-                                          x.strip() and x.strip() != '...' and x.strip() != '']
-
-                    logger.debug(f"Retrieved full embedding from DB: {len(embedding_list)} dimensions")
-                    return embedding_list
-
-        except Exception as e:
-            logger.error(f"Error retrieving full embedding from database: {e}")
 
         return []
 
@@ -5714,7 +6088,7 @@ class DocumentEmbedding(Base):
         logger.info(f"Successfully created {successful_indexes} indexes for document_embedding table")
         return successful_indexes > 0
 
-
+    @classmethod
     @with_request_id
     def _find_most_relevant_document_chunk(cls, question, model_name=None, session=None, request_id=None):
         """
@@ -5750,7 +6124,7 @@ class DocumentEmbedding(Base):
         # Session management
         session_created = False
         if session is None:
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             session = db_config.get_main_session()
             session_created = True
 
@@ -5906,11 +6280,9 @@ def get_dimension_statistics(session):
 class CompleteDocument(Base):
     """
     Modern document model with robust PostgreSQL database handling.
-    Streamlined for PostgreSQL-only operations with enhanced performance.
-    Now includes image extraction capabilities aligned with Image class and DocumentStructureManager.
     """
 
-    __tablename__ = 'complete_document'
+    __tablename__ = "complete_document"
 
     # Core fields
     id = Column(Integer, primary_key=True)
@@ -5919,24 +6291,50 @@ class CompleteDocument(Base):
     content = Column(Text)
     rev = Column(String, nullable=False, default="R0")
 
+    # RAG / AI document-level metadata
+    summary = Column(Text, nullable=True)
+    summary_embedding_vector = Column(Vector(384), nullable=True)
+    rag_metadata = Column(JSONB, nullable=True)
+    topics = Column(JSONB, nullable=True)
+    keywords = Column(JSONB, nullable=True)
+    questions_answered = Column(JSONB, nullable=True)
+    equipment = Column(JSONB, nullable=True)
+
+    # Idempotency / duplicate detection fields
+    file_sha256 = Column(String(64), nullable=True, index=True)
+    file_size = Column(Integer, nullable=True)
+    file_basename = Column(String, nullable=True)
+
+    # Optional useful metadata
+    source_type = Column(String, nullable=True)
+    extraction_method = Column(String, nullable=True)
+
     # Relationships
     document = relationship("Document", back_populates="complete_document")
+
     completed_document_position_association = relationship(
         "CompletedDocumentPositionAssociation",
-        back_populates="complete_document"
+        back_populates="complete_document",
     )
-    powerpoint = relationship("PowerPoint", back_populates="complete_document")
+
+    powerpoint = relationship(
+        "PowerPoint",
+        back_populates="complete_document",
+    )
+
     image_completed_document_association = relationship(
         "ImageCompletedDocumentAssociation",
-        back_populates="complete_document"
+        back_populates="complete_document",
     )
+
     complete_document_problem = relationship(
         "CompleteDocumentProblemAssociation",
-        back_populates="complete_document"
+        back_populates="complete_document",
     )
+
     complete_document_task = relationship(
         "CompleteDocumentTaskAssociation",
-        back_populates="complete_document"
+        back_populates="complete_document",
     )
 
     def __repr__(self):
@@ -5979,13 +6377,20 @@ class CompleteDocument(Base):
     # =====================================================
     # PUBLIC API - 3 MAIN METHODS (Enhanced for PostgreSQL)
     # =====================================================
-
+    # REVIEW/REMOVE: Has been moved to complete document service
+    # Temporary bridge for backward compatibility.
     @classmethod
     @with_request_id
     def process_upload(cls, files, metadata, request_id=None):
         """
         Main upload processing method - now optimized for PostgreSQL with concurrent processing.
         """
+        warning_id(
+            f"[TRACE-DOC-UPLOAD] CompleteDocument.process_upload entered | "
+            f"files={[getattr(f, 'filename', str(f)) for f in files]}",
+            request_id,
+        )
+
         valid_files = [f for f in files if f.filename.strip()]
         if not valid_files:
             warning_id("No valid files provided", request_id)
@@ -6010,7 +6415,7 @@ class CompleteDocument(Base):
         if not query or not query.strip():
             return []
 
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
 
         with db_config.main_session() as session:
             return cls._search_postgresql(session, query, limit, request_id)
@@ -6019,7 +6424,7 @@ class CompleteDocument(Base):
     @with_request_id
     def find_similar(cls, document_id, threshold=0.3, limit=10, request_id=None):
         """Find documents similar to the given document using PostgreSQL similarity functions."""
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
 
         with db_config.main_session() as session:
             source = session.query(cls).filter_by(id=document_id).first()
@@ -6167,19 +6572,17 @@ class CompleteDocument(Base):
     def _process_file(cls, file, metadata, position_id, request_id):
         """Enhanced file processing with correct DATABASE_DOC storage location."""
         try:
-            # Import the proper database configuration
             from modules.configuration.config import DATABASE_DIR
 
             filename = secure_filename(file.filename)
 
-            # FIXED: Use DATABASE_DOC instead of generic Uploads folder
-            DATABASE_DOC = os.path.join(DATABASE_DIR, 'DB_DOC')
+            DATABASE_DOC = os.path.join(DATABASE_DIR, "DB_DOC")
             os.makedirs(DATABASE_DOC, exist_ok=True)
+
             file_path = os.path.join(DATABASE_DOC, filename)
 
             # Handle filename conflicts
             counter = 1
-            original_file_path = file_path
             while os.path.exists(file_path):
                 name, ext = os.path.splitext(filename)
                 file_path = os.path.join(DATABASE_DOC, f"{name}_{counter}{ext}")
@@ -6188,33 +6591,70 @@ class CompleteDocument(Base):
             file.save(file_path)
             info_id(f"Saved file to: {file_path}", request_id)
 
-            title = metadata.get('title') or cls._clean_filename(filename)
-            content = cls._extract_content(file_path, request_id)
+            title = metadata.get("title") or cls._clean_filename(filename)
 
-            if not content:
+            # -----------------------------------------
+            # Structured content extraction
+            # -----------------------------------------
+            content_info = cls._extract_content(file_path, request_id)
+
+            if not content_info or not content_info.get("text"):
                 warning_id(f"No content extracted from {filename}", request_id)
                 return False, {"error": f"No text content in {filename}"}, 400
 
-            # Save document and get ID
-            document_id = cls._save_document_and_get_id(title, file_path, content, position_id, request_id)
+            text = content_info["text"]
+            pdf_path = content_info.get("pdf_path")
+
+            # Use PDF path if available (DOC/DOCX conversion)
+            effective_path = pdf_path if pdf_path else file_path
+
+            # -----------------------------------------
+            # Save document (this handles chunk creation)
+            # -----------------------------------------
+            document_id = cls._save_document_and_get_id(
+                title,
+                effective_path,  # ✅ pass real PDF path if available
+                text,
+                position_id,
+                request_id,
+            )
+
             if not document_id:
                 error_id(f"Failed to save document {filename}", request_id)
                 return False, {"error": f"Failed to save document {filename}"}, 500
 
-            # Extract images with guided association
+            # -----------------------------------------
+            # Image extraction (runs AFTER chunks exist)
+            # -----------------------------------------
             try:
                 extracted_count = cls._extract_images_with_guided_association(
-                    file_path=file_path,
+                    file_path=effective_path,
                     document_id=document_id,
                     position_id=position_id,
-                    request_id=request_id
+                    request_id=request_id,
                 )
 
                 if extracted_count > 0:
-                    info_id(f"Created {extracted_count} intelligent image-chunk associations for {filename}",
-                            request_id)
+                    info_id(
+                        f"Created {extracted_count} intelligent image-chunk associations for {filename}",
+                        request_id,
+                    )
+
             except Exception as img_error:
                 warning_id(f"Image extraction failed for {filename}: {img_error}", request_id)
+
+            # -----------------------------------------
+            # Cleanup temporary conversion artifacts
+            # -----------------------------------------
+            try:
+                if pdf_path and "temp" in pdf_path.lower():
+                    cls._cleanup_temp_file(pdf_path, request_id)
+
+                if content_info.get("docx_path"):
+                    cls._cleanup_temp_file(content_info["docx_path"], request_id)
+
+            except Exception as cleanup_error:
+                warning_id(f"Cleanup failed for {filename}: {cleanup_error}", request_id)
 
             return True, None, 200
 
@@ -6298,7 +6738,7 @@ class CompleteDocument(Base):
             doc = fitz.open(file_path)
             file_name = os.path.splitext(os.path.basename(file_path))[0]
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 db_manager = PostgreSQLDatabaseManager(session=session, request_id=request_id)
                 chunks = session.query(Document).filter_by(complete_document_id=document_id).order_by(Document.id).all()
@@ -6465,34 +6905,80 @@ class CompleteDocument(Base):
     @classmethod
     @with_request_id
     def _save_document_and_get_id(cls, title, file_path, content, position_id, request_id):
-        """Save document and return the document ID for image associations."""
-        db_config = DatabaseConfig()
+        """
+        Save document and return the document ID for image associations.
+        Handles:
+            - Document upsert
+            - Position associations
+            - PostgreSQL FTS indexing
+            - Page-aware chunk creation with embeddings
+        """
+        db_config = get_db_config()
 
         with db_config.main_session() as session:
             try:
-                # Set PostgreSQL-specific optimizations
+                # -----------------------------------------
+                # PostgreSQL performance tuning
+                # -----------------------------------------
                 session.execute(text("SET work_mem = '256MB'"))
                 session.execute(text("SET maintenance_work_mem = '512MB'"))
 
+                # -----------------------------------------
                 # Upsert document
+                # -----------------------------------------
                 document_id = cls._upsert_document(session, title, file_path, content)
 
-                # Create associations
+                if not document_id:
+                    error_id(f"Document upsert failed for {title}", request_id)
+                    return None
+
+                # -----------------------------------------
+                # Create position associations
+                # -----------------------------------------
                 cls._create_associations(session, document_id, position_id)
 
-                # Add to PostgreSQL search index
+                # -----------------------------------------
+                # Add to PostgreSQL full-text search
+                # -----------------------------------------
                 cls._add_to_search_safe(session, title, content, request_id)
 
-                # Create chunks
-                cls._create_chunks(session, document_id, title, content, file_path)
+                # -----------------------------------------
+                # Create chunks (PDF-aware if possible)
+                # -----------------------------------------
+                try:
+                    cls._create_chunks(
+                        session,
+                        document_id,
+                        title,
+                        content,
+                        file_path,
+                        request_id,  # ✅ ensure request_id is passed
+                    )
+                except Exception as chunk_error:
+                    # Do NOT kill document save if chunking fails
+                    warning_id(
+                        f"Chunk creation failed for document {title}: {chunk_error}",
+                        request_id,
+                    )
 
+                # -----------------------------------------
+                # Commit transaction
+                # -----------------------------------------
                 session.commit()
-                debug_id(f"Saved document to PostgreSQL with ID {document_id}: {title}", request_id)
+
+                debug_id(
+                    f"Saved document to PostgreSQL with ID {document_id}: {title}",
+                    request_id,
+                )
+
                 return document_id
 
             except Exception as e:
                 session.rollback()
-                error_id(f"PostgreSQL database save failed for {title}: {e}", request_id)
+                error_id(
+                    f"PostgreSQL database save failed for {title}: {e}",
+                    request_id,
+                )
                 return None
 
     @classmethod
@@ -6603,71 +7089,6 @@ class CompleteDocument(Base):
     # ADDITIONAL ALIGNED METHODS
     # =====================================================
 
-    @classmethod
-    @with_request_id
-    def get_images_with_chunk_context(cls, document_id, request_id=None):
-        """
-        ALIGNED: Get all images for a document with their associated chunk context.
-        Uses the Image class's enhanced query methods.
-        """
-        try:
-            ImageClass = cls._get_image_class()
-            if not ImageClass:
-                error_id("Image class not available", request_id)
-                return []
-
-            db_config = DatabaseConfig()
-            with db_config.main_session() as session:
-                return ImageClass.get_images_with_chunk_context(session, document_id, request_id)
-
-        except Exception as e:
-            error_id(f"Failed to get images with chunk context: {e}", request_id)
-            return []
-
-    @classmethod
-    @with_request_id
-    def search_images_by_chunk_text(cls, search_text, document_id=None, confidence_threshold=0.5, request_id=None):
-        """
-        ALIGNED: Search for images by their associated chunk text content.
-        Uses the Image class's enhanced search methods.
-        """
-        try:
-            ImageClass = cls._get_image_class()
-            if not ImageClass:
-                error_id("Image class not available", request_id)
-                return []
-
-            db_config = DatabaseConfig()
-            with db_config.main_session() as session:
-                return ImageClass.search_by_chunk_text(
-                    session, search_text, document_id, confidence_threshold, request_id
-                )
-
-        except Exception as e:
-            error_id(f"Failed to search images by chunk text: {e}", request_id)
-            return []
-
-    @classmethod
-    @with_request_id
-    def get_association_statistics(cls, document_id, request_id=None):
-        """
-        ALIGNED: Get statistics about image-chunk associations.
-        Uses the Image class's enhanced statistics methods.
-        """
-        try:
-            ImageClass = cls._get_image_class()
-            if not ImageClass:
-                error_id("Image class not available", request_id)
-                return {}
-
-            db_config = DatabaseConfig()
-            with db_config.main_session() as session:
-                return ImageClass.get_association_statistics(session, document_id, request_id)
-
-        except Exception as e:
-            error_id(f"Failed to get association statistics: {e}", request_id)
-            return {}
-
     # =====================================================
     # EXISTING METHODS (FIXED)
     # =====================================================
@@ -6759,19 +7180,34 @@ class CompleteDocument(Base):
     @classmethod
     @with_request_id
     def _create_chunks(cls, session, document_id, title, content, file_path=None, request_id=None):
+        """
+        Create document chunks using the PDF source for page-aware chunking.
+        """
         debug_id("Starting _create_chunks", request_id)
-        DocumentClass = cls._get_document_class()
 
+        DocumentClass = cls._get_document_class()
         if DocumentClass is None:
             debug_id("Document class not available, skipping chunk creation", request_id)
             return
 
         try:
-            if not file_path:
-                parent_doc = session.query(cls).filter_by(id=document_id).first()
-                file_path = parent_doc.file_path if parent_doc else "unknown"
+            # Resolve PDF source path
+            pdf_path = None
 
-            doc = fitz.open(file_path)
+            if file_path and file_path.lower().endswith(".pdf"):
+                pdf_path = file_path
+            else:
+                # Try to locate a PDF sibling (DOC/DOCX converted earlier)
+                base, _ = os.path.splitext(file_path or "")
+                candidate = f"{base}.pdf"
+                if os.path.exists(candidate):
+                    pdf_path = candidate
+
+            if not pdf_path or not os.path.exists(pdf_path):
+                debug_id("No PDF source available for chunk creation; skipping", request_id)
+                return
+
+            doc = fitz.open(pdf_path)
             chunk_objects = []
             chunk_counter = 0
 
@@ -6779,7 +7215,6 @@ class CompleteDocument(Base):
                 page = doc[page_num]
                 page_text = page.get_text()
 
-                # Split the page text into smaller chunks of 150 words
                 page_chunks = cls._split_text(page_text, 150)
 
                 for page_chunk in page_chunks:
@@ -6787,15 +7222,16 @@ class CompleteDocument(Base):
                         continue
 
                     chunk_counter += 1
-                    doc_chunk = DocumentClass(
-                        name=f"{title} - Chunk {chunk_counter}",
-                        file_path=file_path,
-                        content=page_chunk.strip(),
-                        complete_document_id=document_id,
-                        rev="R0",
-                        doc_metadata={"page_number": page_num}
+                    chunk_objects.append(
+                        DocumentClass(
+                            name=f"{title} - Chunk {chunk_counter}",
+                            file_path=pdf_path,
+                            content=page_chunk.strip(),
+                            complete_document_id=document_id,
+                            rev="R0",
+                            doc_metadata={"page_number": page_num}
+                        )
                     )
-                    chunk_objects.append(doc_chunk)
 
             doc.close()
 
@@ -6814,55 +7250,83 @@ class CompleteDocument(Base):
     @with_request_id
     def _generate_embeddings_for_chunks(cls, session, chunk_objects, request_id=None):
         """
-        Updated method to generate embeddings for document chunks using pgvector storage.
-        Now uses the enhanced DocumentEmbedding class with pgvector support.
+        Generate embeddings for document chunks using AIModelsEmbeddingService.
+        Strict backend routing (local vs gpu_service).
         """
-        debug_id("Starting _generate_embeddings_for_chunks with pgvector support", request_id)
+
+        debug_id(
+            "Starting _generate_embeddings_for_chunks via AIModelsEmbeddingService",
+            request_id,
+        )
 
         try:
-            # Import the necessary modules
-            from plugins.ai_modules import generate_embedding, ModelsConfig
+            from modules.services.ai_models_embedding_service import (
+                AIModelsEmbeddingService,
+            )
 
-            # Get current embedding model name
-            current_embedding_model = ModelsConfig.get_config_value('embedding', 'CURRENT_MODEL')
-
-            if current_embedding_model == "NoEmbeddingModel":
-                debug_id("Embedding generation disabled, skipping", request_id)
+            if not chunk_objects:
+                debug_id("No chunks provided for embedding generation", request_id)
                 return
 
-            debug_id(f"Generating embeddings for {len(chunk_objects)} chunks using {current_embedding_model}",
-                     request_id)
+            debug_id(
+                f"Generating embeddings for {len(chunk_objects)} chunks",
+                request_id,
+            )
 
-            # Process each chunk
             for chunk in chunk_objects:
                 try:
-                    # Generate embedding for this chunk
-                    embeddings = generate_embedding(chunk.content, current_embedding_model)
+                    if not chunk.content or not chunk.content.strip():
+                        debug_id(
+                            f"Skipping empty chunk: {chunk.name}",
+                            request_id,
+                        )
+                        continue
 
-                    if embeddings:
-                        # Store using the enhanced DocumentEmbedding with pgvector
-                        # FIXED: Use _store_embedding instead of _store_embedding_pgvector
-                        success = cls._store_embedding(
-                            session, chunk.id, embeddings, current_embedding_model, request_id
+                    vector = AIModelsEmbeddingService.get_embeddings(
+                        chunk.content,
+                        request_id=request_id,
+                    )
+
+                    if not vector:
+                        debug_id(
+                            f"No embedding returned for chunk: {chunk.name}",
+                            request_id,
+                        )
+                        continue
+
+                    success = cls._store_embedding(
+                        session,
+                        chunk.id,
+                        vector,
+                        AIModelsEmbeddingService.get_current_model_name(
+                            request_id=request_id
+                        ),
+                        request_id,
+                    )
+
+                    if success:
+                        debug_id(
+                            f"Stored embedding for chunk: {chunk.name}",
+                            request_id,
+                        )
+                    else:
+                        debug_id(
+                            f"Failed storing embedding for chunk: {chunk.name}",
+                            request_id,
                         )
 
-                        if success:
-                            debug_id(f"Generated and stored pgvector embedding for chunk: {chunk.name}", request_id)
-                        else:
-                            debug_id(f"Failed to store embedding for chunk: {chunk.name}", request_id)
-                    else:
-                        debug_id(f"No embedding generated for chunk: {chunk.name}", request_id)
-
-                except Exception as e:
-                    debug_id(f"Error generating embedding for chunk {chunk.name}: {e}", request_id)
-                    import traceback
-                    debug_id(f"Traceback: {traceback.format_exc()}", request_id)
+                except Exception as chunk_error:
+                    debug_id(
+                        f"Embedding error for chunk {chunk.name}: {chunk_error}",
+                        request_id,
+                    )
                     continue
 
         except Exception as e:
-            debug_id(f"Embedding generation for chunks failed: {e}", request_id)
-            import traceback
-            debug_id(f"Traceback: {traceback.format_exc()}", request_id)
+            debug_id(
+                f"Embedding generation failed entirely: {e}",
+                request_id,
+            )
 
     @classmethod
     @with_request_id
@@ -6967,7 +7431,7 @@ class CompleteDocument(Base):
                 warning_id("Failed to generate embeddings for query text", request_id)
                 return []
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 return cls._search_by_pgvector_similarity(
                     session, query_embeddings, current_embedding_model, limit, threshold, request_id
@@ -6995,7 +7459,7 @@ class CompleteDocument(Base):
                 error_id("DocumentEmbedding class not available", request_id)
                 return {}
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
 
                 total_embeddings = session.query(DocumentEmbeddingClass).count()
@@ -7050,7 +7514,7 @@ class CompleteDocument(Base):
                 error_id("DocumentEmbedding class not available", request_id)
                 return False
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 success = DocumentEmbeddingClass.create_pgvector_indexes(session)
 
@@ -7078,7 +7542,7 @@ class CompleteDocument(Base):
                 error_id("Image class not available", request_id)
                 return []
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 return ImageClass.get_images_with_chunk_context(session, document_id, request_id)
 
@@ -7099,7 +7563,7 @@ class CompleteDocument(Base):
                 error_id("Image class not available", request_id)
                 return []
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 return ImageClass.search_by_chunk_text(
                     session, search_text, document_id, confidence_threshold, request_id
@@ -7122,7 +7586,7 @@ class CompleteDocument(Base):
                 error_id("Image class not available", request_id)
                 return {}
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 return ImageClass.get_association_statistics(session, document_id, request_id)
 
@@ -7242,7 +7706,7 @@ class CompleteDocument(Base):
             error_id("Position class not available", request_id)
             return cls._create_position_fallback(metadata, request_id)
 
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
 
         with db_config.main_session() as session:
             # Create site location if provided
@@ -7276,7 +7740,7 @@ class CompleteDocument(Base):
     @with_request_id
     def _create_position_fallback(cls, metadata, request_id):
         """Fallback position creation using PostgreSQL raw SQL."""
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
 
         with db_config.main_session() as session:
             try:
@@ -7308,33 +7772,158 @@ class CompleteDocument(Base):
     @classmethod
     @with_request_id
     def _extract_content(cls, file_path, request_id):
-        """Extract text content from file - convert DOCX to PDF first if needed."""
+        """
+        Extract text content and preserve source context.
+
+        Legacy ORM upload path compatibility method.
+
+        Returns:
+            {
+                "text": str,
+                "pdf_path": str | None,
+                "source_type": str,
+                "method": str | None,
+                "pages": list | None
+            }
+        """
+        warning_id(
+            f"[TRACE-DOC-UPLOAD] CompleteDocument._extract_content entered | "
+            f"file_path={file_path}",
+            request_id,
+        )
+
         ext = os.path.splitext(file_path)[1].lower()
 
         try:
-            if ext == '.pdf':
-                return cls._extract_pdf_text(file_path, request_id)
-            elif ext == '.txt':
-                return cls._extract_txt_text(file_path, request_id)
-            elif ext == '.docx':
-                # Convert DOCX to PDF first, then use existing PDF processing
-                info_id("Converting DOCX to PDF for processing", request_id)
-                pdf_path = cls._convert_docx_to_pdf(file_path, request_id)
-                if pdf_path:
-                    # Use existing PDF text extraction
-                    text = cls._extract_pdf_text(pdf_path, request_id)
-                    # Clean up temporary PDF
-                    cls._cleanup_temp_file(pdf_path, request_id)
-                    return text
-                else:
-                    error_id("DOCX to PDF conversion failed", request_id)
+            # -------------------------------------------------
+            # Prefer the newer ContentExtractionService for
+            # formats it already handles better.
+            #
+            # This fixes .xlsx/.xls/.csv extraction without
+            # duplicating Excel logic inside the ORM model.
+            # -------------------------------------------------
+            if ext in {".xlsx", ".xls", ".csv"}:
+                from modules.services.content_extraction_service import (
+                    ContentExtractionService,
+                )
+
+                info_id(
+                    f"[CompleteDocument._extract_content] Routing {ext} to "
+                    f"ContentExtractionService",
+                    request_id,
+                )
+
+                content_info = ContentExtractionService().extract(
+                    file_path,
+                    request_id=request_id,
+                )
+
+                if not content_info or not content_info.get("text"):
+                    warning_id(
+                        f"[CompleteDocument._extract_content] "
+                        f"ContentExtractionService returned no text | "
+                        f"file={file_path} | ext={ext}",
+                        request_id,
+                    )
                     return None
+
+                return {
+                    "text": content_info.get("text") or "",
+                    "pdf_path": content_info.get("pdf_path"),
+                    "source_type": content_info.get("source_type") or ext.lstrip("."),
+                    "method": content_info.get("method"),
+                    "pages": content_info.get("pages"),
+                }
+
+            # -------------------------
+            # PDF
+            # -------------------------
+            if ext == ".pdf":
+                text = cls._extract_pdf_text(file_path, request_id)
+                return {
+                    "text": text,
+                    "pdf_path": file_path,
+                    "source_type": "pdf",
+                    "method": "legacy_pdf",
+                    "pages": None,
+                }
+
+            # -------------------------
+            # TXT
+            # -------------------------
+            elif ext == ".txt":
+                text = cls._extract_txt_text(file_path, request_id)
+                return {
+                    "text": text,
+                    "pdf_path": None,
+                    "source_type": "txt",
+                    "method": "legacy_txt",
+                    "pages": None,
+                }
+
+            # -------------------------
+            # DOCX
+            # -------------------------
+            elif ext == ".docx":
+                info_id("Converting DOCX to PDF for processing", request_id)
+
+                pdf_path = cls._convert_docx_to_pdf(file_path, request_id)
+                if not pdf_path:
+                    error_id("DOCX → PDF conversion failed", request_id)
+                    return None
+
+                text = cls._extract_pdf_text(pdf_path, request_id)
+
+                return {
+                    "text": text,
+                    "pdf_path": pdf_path,
+                    "source_type": "docx->pdf",
+                    "method": "legacy_docx_to_pdf",
+                    "pages": None,
+                }
+
+            # -------------------------
+            # DOC (LEGACY WORD)
+            # -------------------------
+            elif ext == ".doc":
+                info_id("Converting DOC to DOCX for processing", request_id)
+
+                docx_path = cls._convert_doc_to_docx(file_path, request_id)
+                if not docx_path:
+                    error_id("DOC → DOCX conversion failed", request_id)
+                    return None
+
+                info_id("Converting DOCX (from DOC) to PDF for processing", request_id)
+                pdf_path = cls._convert_docx_to_pdf(docx_path, request_id)
+                if not pdf_path:
+                    error_id("DOCX → PDF conversion failed", request_id)
+                    cls._cleanup_temp_file(docx_path, request_id)
+                    return None
+
+                text = cls._extract_pdf_text(pdf_path, request_id)
+
+                return {
+                    "text": text,
+                    "pdf_path": pdf_path,
+                    "docx_path": docx_path,
+                    "source_type": "doc->docx->pdf",
+                    "method": "legacy_doc_to_docx_to_pdf",
+                    "pages": None,
+                }
+
+            # -------------------------
+            # UNSUPPORTED
+            # -------------------------
             else:
                 warning_id(f"Unsupported file type: {ext}", request_id)
                 return None
 
         except Exception as e:
-            error_id(f"Content extraction failed for {file_path}: {e}", request_id)
+            error_id(
+                f"Content extraction failed for {file_path}: {e}",
+                request_id,
+                exc_info=True,
+            )
             return None
 
     @classmethod
@@ -7503,7 +8092,7 @@ class CompleteDocument(Base):
         info_id(f"Attempting to retrieve document with ID: {document_id}", rid)
 
         # Create session using DatabaseConfig
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         try:
             with db_config.main_session() as session:
 
@@ -7734,7 +8323,7 @@ class CompleteDocument(Base):
             # Create session if not provided
             local_session = None
             if session is None:
-                db_config = DatabaseConfig()
+                db_config = get_db_config()
                 local_session = db_config.get_main_session()
                 session = local_session
 
@@ -7809,6 +8398,51 @@ class CompleteDocument(Base):
         except Exception as e:
             error_id(f"Error in fallback text search: {e}", request_id, exc_info=True)
             return [] if not with_links else "No documents found"
+
+    @classmethod
+    @with_request_id
+    def _convert_doc_to_docx(cls, doc_path, request_id):
+        """
+        Convert legacy .doc → .docx using LibreOffice (headless).
+        Required before DOCX → PDF conversion.
+        """
+        try:
+            import subprocess
+
+            temp_dir = tempfile.mkdtemp()
+            output_path = os.path.join(
+                temp_dir,
+                os.path.splitext(os.path.basename(doc_path))[0] + ".docx"
+            )
+
+            debug_id(f"Converting DOC to DOCX: {doc_path}", request_id)
+
+            subprocess.run(
+                [
+                    "soffice",
+                    "--headless",
+                    "--convert-to", "docx",
+                    doc_path,
+                    "--outdir", temp_dir
+                ],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+
+            if os.path.exists(output_path):
+                info_id(f"DOC → DOCX conversion successful: {output_path}", request_id)
+                return output_path
+
+            error_id("DOC → DOCX conversion failed (no output file)", request_id)
+            return None
+
+        except FileNotFoundError:
+            error_id("LibreOffice (soffice) not found in PATH", request_id)
+            return None
+        except Exception as e:
+            error_id(f"DOC → DOCX conversion failed: {e}", request_id)
+            return None
 
 class Problem(Base):
     __tablename__ = 'problem'
@@ -8076,7 +8710,7 @@ class DrawingPartAssociation(Base):
             int: ID of the created association, or None if it already existed or failed
         """
         rid = request_id or get_request_id()
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -8149,7 +8783,7 @@ class DrawingPartAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -8182,7 +8816,19 @@ class DrawingPartAssociation(Base):
 
 
                 # Start with a query that joins Part and DrawingPartAssociation
-                query = session.query(Part).join(DrawingPartAssociation).join(cls)
+                query = (
+                    session.query(Part)
+                    .select_from(Part)
+                    .join(
+                        DrawingPartAssociation,
+                        DrawingPartAssociation.part_id == Part.id
+                    )
+                    .join(
+                        Drawing,
+                        Drawing.id == DrawingPartAssociation.drawing_id
+                    )
+
+                )
 
                 # Apply drawing filters
                 if drawing_id is not None:
@@ -8313,7 +8959,7 @@ class DrawingPartAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -8463,7 +9109,7 @@ class DrawingPartAssociation(Base):
             int: Number of new associations created
         """
         rid = request_id or get_request_id()
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -8714,7 +9360,7 @@ class TaskPositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -8802,7 +9448,7 @@ class TaskPositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -8871,7 +9517,7 @@ class TaskPositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -8957,7 +9603,7 @@ class TaskPositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -9066,7 +9712,7 @@ class PartTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -9198,7 +9844,7 @@ class PartTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -9319,7 +9965,7 @@ class PartTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -9421,7 +10067,7 @@ class DrawingTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -9568,7 +10214,7 @@ class DrawingTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -9787,7 +10433,7 @@ class ImageTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -9912,7 +10558,7 @@ class ImageTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -10023,7 +10669,7 @@ class ImageTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -10120,7 +10766,7 @@ class TaskToolAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -10204,7 +10850,7 @@ class TaskToolAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -10289,7 +10935,7 @@ class TaskToolAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -10423,7 +11069,7 @@ class TaskToolAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -10806,7 +11452,7 @@ class CompleteDocumentTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -10905,7 +11551,7 @@ class CompleteDocumentTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -10998,7 +11644,7 @@ class CompleteDocumentTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -11131,7 +11777,7 @@ class CompleteDocumentTaskAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -11294,99 +11940,134 @@ class PartsPositionImageAssociation(Base):
 
     @classmethod
     @with_request_id
-    def get_corresponding_position_ids(cls, session, area_id=None, equipment_group_id=None, model_id=None,
-                                       asset_number_id=None, location_id=None):
+    def get_corresponding_position_ids(
+        cls,
+        session,
+        area_id=None,
+        equipment_group_id=None,
+        model_id=None,
+        asset_number_id=None,
+        location_id=None,
+    ):
         """
-        Search for corresponding Position IDs based on the provided filters.
-        Traverses the hierarchy and retrieves matching Position IDs.
+        Return Position IDs based on the provided hierarchy filters.
 
-        Args:
-            session: SQLAlchemy session
-            area_id: ID of the area (optional)
-            equipment_group_id: ID of the equipment group (optional)
-            model_id: ID of the model (optional)
-            asset_number_id: ID of the asset number (optional)
-            location_id: ID of the location (optional)
-
-        Returns:
-            List of Position IDs that match the criteria
+        Performance improvement:
+        - Queries Position.id only.
+        - Does not load full Position ORM objects.
+        - Prevents broad unfiltered position scans.
         """
-        # Get the request ID for logging
+
         request_id = get_request_id()
 
-        # Log the start of the operation
-        info_id(f"Starting get_corresponding_position_ids with filters: "
-                f"area_id={area_id}, equipment_group_id={equipment_group_id}, "
-                f"model_id={model_id}, asset_number_id={asset_number_id}, "
-                f"location_id={location_id}", request_id=request_id)
+        info_id(
+            "Starting get_corresponding_position_ids with filters: "
+            f"area_id={area_id}, equipment_group_id={equipment_group_id}, "
+            f"model_id={model_id}, asset_number_id={asset_number_id}, "
+            f"location_id={location_id}",
+            request_id=request_id,
+        )
 
-        # Start by fetching the root-level positions based on area_id (or first level in hierarchy)
         try:
-            positions = cls._get_positions_by_hierarchy(session, area_id=area_id,
-                                                        equipment_group_id=equipment_group_id,
-                                                        model_id=model_id,
-                                                        asset_number_id=asset_number_id,
-                                                        location_id=location_id)
-            position_ids = [position.id for position in positions]
+            position_ids = cls._get_position_ids_by_hierarchy(
+                session,
+                area_id=area_id,
+                equipment_group_id=equipment_group_id,
+                model_id=model_id,
+                asset_number_id=asset_number_id,
+                location_id=location_id,
+            )
 
-            # Log the number of Position IDs found
-            info_id(f"Found {len(position_ids)} Position IDs for the given filters", request_id=request_id)
+            info_id(
+                f"Found {len(position_ids)} Position IDs for the given filters",
+                request_id=request_id,
+            )
 
             return position_ids
+
         except SQLAlchemyError as e:
-            error_id(f"Error during get_corresponding_position_ids with filters "
-                     f"area_id={area_id}, equipment_group_id={equipment_group_id}, "
-                     f"model_id={model_id}, asset_number_id={asset_number_id}, "
-                     f"location_id={location_id}: {e}", request_id=request_id, exc_info=True)
+            error_id(
+                "Error during get_corresponding_position_ids with filters "
+                f"area_id={area_id}, equipment_group_id={equipment_group_id}, "
+                f"model_id={model_id}, asset_number_id={asset_number_id}, "
+                f"location_id={location_id}: {e}",
+                request_id=request_id,
+                exc_info=True,
+            )
             raise
 
     @classmethod
     @with_request_id
-    def _get_positions_by_hierarchy(cls, session, area_id=None, equipment_group_id=None, model_id=None,
-                                    asset_number_id=None, location_id=None):
+    def _get_position_ids_by_hierarchy(
+        cls,
+        session,
+        area_id=None,
+        equipment_group_id=None,
+        model_id=None,
+        asset_number_id=None,
+        location_id=None,
+    ):
         """
-        Helper method to fetch positions based on hierarchical filters.
+        Helper method to fetch Position IDs based on hierarchy filters.
 
-        Args:
-            session: SQLAlchemy session
-            area_id, equipment_group_id, model_id, asset_number_id, location_id: IDs for filtering
-
-        Returns:
-            List of Position objects that match the criteria
+        This replaces the older pattern that loaded full Position objects.
         """
-        # Get the request ID for logging
+
         request_id = get_request_id()
 
-        # Building the filter dynamically based on input parameters
         filters = {}
-        if area_id:
-            filters['area_id'] = area_id
-        if equipment_group_id:
-            filters['equipment_group_id'] = equipment_group_id
-        if model_id:
-            filters['model_id'] = model_id
-        if asset_number_id:
-            filters['asset_number_id'] = asset_number_id
-        if location_id:
-            filters['location_id'] = location_id
+
+        if area_id is not None:
+            filters["area_id"] = area_id
+
+        if equipment_group_id is not None:
+            filters["equipment_group_id"] = equipment_group_id
+
+        if model_id is not None:
+            filters["model_id"] = model_id
+
+        if asset_number_id is not None:
+            filters["asset_number_id"] = asset_number_id
+
+        if location_id is not None:
+            filters["location_id"] = location_id
+
+        if not filters:
+            warning_id(
+                "No hierarchy filters provided to _get_position_ids_by_hierarchy. "
+                "Returning no positions to avoid a broad Position table scan.",
+                request_id=request_id,
+            )
+            return []
 
         try:
-            # Log the filter being applied
-            info_id(f"Applying filters to query: {filters}", request_id=request_id)
+            info_id(
+                f"Applying filters to Position.id query: {filters}",
+                request_id=request_id,
+            )
 
-            # Query the Position table based on the filters
-            query = session.query(Position).filter_by(**filters)
+            rows = (
+                session.query(Position.id)
+                .filter_by(**filters)
+                .order_by(Position.id.asc())
+                .all()
+            )
 
-            # Execute and return the results
-            positions = query.all()
+            position_ids = [row[0] for row in rows if row and row[0] is not None]
 
-            # Log the number of results
-            info_id(f"Found {len(positions)} positions for the given filters", request_id=request_id)
+            info_id(
+                f"Found {len(position_ids)} position IDs for the given filters",
+                request_id=request_id,
+            )
 
-            return positions
+            return position_ids
+
         except SQLAlchemyError as e:
-            error_id(f"Error during _get_positions_by_hierarchy with filters {filters}: {e}", request_id=request_id,
-                     exc_info=True)
+            error_id(
+                f"Error during _get_position_ids_by_hierarchy with filters {filters}: {e}",
+                request_id=request_id,
+                exc_info=True,
+            )
             raise
 
 class ImagePositionAssociation(Base):
@@ -11421,7 +12102,7 @@ class ImagePositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -11509,7 +12190,7 @@ class ImagePositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -11606,7 +12287,7 @@ class ImagePositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -11769,7 +12450,7 @@ class ImagePositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -11912,7 +12593,7 @@ class DrawingPositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -12000,7 +12681,7 @@ class DrawingPositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -12103,7 +12784,7 @@ class DrawingPositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -12294,7 +12975,7 @@ class DrawingPositionAssociation(Base):
         rid = request_id or get_request_id()
 
         # Get a database session if one wasn't provided
-        db_config = DatabaseConfig()
+        db_config = get_db_config()
         session_provided = session is not None
         if not session_provided:
             session = db_config.get_main_session()
@@ -12509,13 +13190,38 @@ class ImageCompletedDocumentAssociation(Base):
 
     @classmethod
     @with_request_id
-    def guided_extraction_with_mapping(cls, file_path, metadata, request_id=None):
+    def guided_extraction_with_mapping(
+            cls,
+            *,
+            session,
+            file_path,
+            metadata,
+            request_id=None,
+    ):
         """
-        FIXED: Enhanced guided extraction with proper chunk distribution and intelligent association.
+        Guided extraction using the caller-owned session.
+
+        HARD RULES:
+        - NEVER open a session here
+        - NEVER commit here
+        - NEVER rollback here
+        - Caller/orchestrator owns the transaction
+
+        Alignment updates:
+        - Uses caller-owned session so newly-created, uncommitted chunks are visible
+        - Uses 1-based page numbering everywhere stored in metadata/associations
+        - Passes 1-based page_number into _get_page_chunks_enhanced()
+        - Stores JSON columns as Python dicts, not json.dumps strings
         """
+        doc = None
+        rid = request_id
+
         try:
-            complete_document_id = metadata.get('complete_document_id')
-            position_id = metadata.get('position_id')
+            if session is None:
+                raise RuntimeError("Session required for guided_extraction_with_mapping")
+
+            complete_document_id = metadata.get("complete_document_id")
+            position_id = metadata.get("position_id")
 
             if not complete_document_id:
                 return False, {"error": "complete_document_id required"}, 400
@@ -12524,145 +13230,178 @@ class ImageCompletedDocumentAssociation(Base):
             file_name = os.path.splitext(os.path.basename(file_path))[0]
             associations_created = 0
 
-            db_config = DatabaseConfig()
-            with db_config.main_session() as session:
-                # FIXED: Get all chunks and create a comprehensive mapping
-                all_chunks = session.query(Document).filter_by(
-                    complete_document_id=complete_document_id
-                ).order_by(Document.id).all()
+            # Use the passed-in session so uncommitted chunks are visible
+            all_chunks = (
+                session.query(Document)
+                .filter(Document.complete_document_id == complete_document_id)
+                .order_by(Document.id.asc())
+                .all()
+            )
 
-                if not all_chunks:
-                    warning_id(f"No chunks found for complete_document_id {complete_document_id}", request_id)
-                    return False, {"error": "No chunks found"}, 400
+            if not all_chunks:
+                warning_id(
+                    f"No chunks found for complete_document_id {complete_document_id}",
+                    rid,
+                )
+                return False, {"error": "No chunks found"}, 400
 
-                info_id(f"Found {len(all_chunks)} total chunks for document {complete_document_id}", request_id)
+            info_id(
+                f"Found {len(all_chunks)} total chunks for document {complete_document_id}",
+                rid,
+            )
 
-                # FIXED: Create a better chunk mapping system
-                chunk_page_map = cls._create_enhanced_chunk_page_mapping(all_chunks, request_id)
+            chunk_page_map = cls._create_enhanced_chunk_page_mapping(all_chunks, rid)
 
-                for page_num in range(len(doc)):
-                    page = doc[page_num]
-                    img_list = page.get_images(full=True)
+            for page_idx in range(len(doc)):
+                page = doc[page_idx]
+                page_number = page_idx + 1
+                img_list = page.get_images(full=True)
 
-                    if not img_list:
-                        debug_id(f"No images found on page {page_num + 1}", request_id)
-                        continue
+                if not img_list:
+                    debug_id(f"No images found on page {page_number}", rid)
+                    continue
 
-                    # FIXED: Get chunks for this specific page with better logic
-                    page_chunks = cls._get_page_chunks_enhanced(
-                        chunk_page_map, page_num, all_chunks, request_id
+                page_chunks = cls._get_page_chunks_enhanced(
+                    chunk_page_map,
+                    page_number,
+                    all_chunks,
+                    rid,
+                )
+
+                if not page_chunks:
+                    warning_id(
+                        f"No chunks found for page {page_number}, skipping image association",
+                        rid,
                     )
+                    continue
 
-                    if not page_chunks:
-                        warning_id(f"No chunks found for page {page_num + 1}, skipping image association", request_id)
-                        continue
+                info_id(
+                    f"Page {page_number}: Processing {len(img_list)} images with {len(page_chunks)} available chunks",
+                    rid,
+                )
 
-                    info_id(
-                        f"Page {page_num + 1}: Processing {len(img_list)} images with {len(page_chunks)} available chunks",
-                        request_id)
+                for img_index, img in enumerate(img_list):
+                    temp_path = None
 
-                    for img_index, img in enumerate(img_list):
-                        try:
-                            xref = img[0]
-                            base_image = doc.extract_image(xref)
-                            image_bytes = base_image["image"]
-                            ext = base_image.get("ext", "jpg")
+                    try:
+                        xref = img[0]
+                        base_image = doc.extract_image(xref)
+                        image_bytes = base_image["image"]
+                        ext = base_image.get("ext", "jpg")
 
-                            with tempfile.NamedTemporaryFile(suffix=f'.{ext}', delete=False) as tmp:
-                                tmp.write(image_bytes)
-                                temp_path = tmp.name
+                        with tempfile.NamedTemporaryFile(suffix=f".{ext}", delete=False) as tmp:
+                            tmp.write(image_bytes)
+                            temp_path = tmp.name
 
-                            title = f"{file_name} - Page {page_num + 1} Image {img_index + 1}"
+                        title = f"{file_name} - Page {page_number} Image {img_index + 1}"
 
-                            # FIXED: Intelligent chunk selection with multiple strategies
-                            selected_chunk_info = cls._select_best_chunk_for_image(
-                                page_chunks, img_index, page_num, img, request_id
+                        selected_chunk_info = cls._select_best_chunk_for_image(
+                            page_chunks,
+                            img_index,
+                            page_number,
+                            img,
+                            rid,
+                        )
+
+                        if not selected_chunk_info:
+                            warning_id(
+                                f"Could not select appropriate chunk for image {img_index + 1} on page {page_number}",
+                                rid,
                             )
-
-                            if not selected_chunk_info:
-                                warning_id(
-                                    f"Could not select appropriate chunk for image {img_index + 1} on page {page_num + 1}",
-                                    request_id)
-                                continue
-
-                            chunk_index = selected_chunk_info['chunk_index']
-                            nearest_chunk = selected_chunk_info['chunk']
-                            association_method = selected_chunk_info['method']
-                            confidence = selected_chunk_info['confidence']
-
-                            debug_id(
-                                f"Page {page_num + 1}, Image {img_index + 1}: Selected chunk_index={chunk_index}, chunk_id={nearest_chunk.id}, method={association_method}",
-                                request_id)
-
-                            # Create image metadata
-                            image_metadata = {
-                                'page_number': page_num,
-                                'image_index': img_index,
-                                'extraction_method': 'structure_guided_enhanced',
-                                'structure_guided': True,
-                                'association_method': association_method,
-                                'confidence_score': confidence
-                            }
-
-                            # Save the image
-                            image_id = Image.add_to_db(
-                                session=session,
-                                title=title,
-                                file_path=temp_path,
-                                description=f"Enhanced guided extraction from {os.path.basename(file_path)}",
-                                position_id=position_id,
-                                complete_document_id=complete_document_id,
-                                metadata=image_metadata,
-                                request_id=request_id
-                            )
-
-                            if image_id is not None:
-                                # FIXED: Create association with proper page and chunk indexing
-                                association = cls(
-                                    complete_document_id=complete_document_id,
-                                    image_id=image_id,
-                                    document_id=nearest_chunk.id,
-                                    page_number=page_num,  # Correct page number (0-indexed)
-                                    chunk_index=chunk_index,  # Proper chunk index within page
-                                    association_method=association_method,
-                                    confidence_score=confidence,
-                                    context_metadata=json.dumps({
-                                        'extraction_method': 'enhanced_guided',
-                                        'selection_strategy': association_method,
-                                        'page_total_images': len(img_list),
-                                        'page_total_chunks': len(page_chunks),
-                                        'created_at': datetime.now().isoformat()
-                                    })
-                                )
-                                session.add(association)
-                                associations_created += 1
-
-                                info_id(
-                                    f"Associated image {image_id} with chunk {nearest_chunk.id} (page {page_num + 1}, chunk_index {chunk_index})",
-                                    request_id)
-                            else:
-                                warning_id(f"Failed to save image {title}", request_id)
-
-                            # Cleanup temp file
-                            try:
-                                os.unlink(temp_path)
-                            except:
-                                pass
-
-                        except Exception as e:
-                            error_id(f"Error processing image {img_index + 1} on page {page_num + 1}: {e}", request_id)
                             continue
 
-                session.commit()
-                doc.close()
+                        chunk_index = selected_chunk_info["chunk_index"]
+                        nearest_chunk = selected_chunk_info["chunk"]
+                        association_method = selected_chunk_info["method"]
+                        confidence = selected_chunk_info["confidence"]
 
-                info_id(f"Enhanced guided extraction completed: {associations_created} associations created",
-                        request_id)
-                return True, {"associations_created": associations_created}, 200
+                        debug_id(
+                            f"Page {page_number}, Image {img_index + 1}: "
+                            f"Selected chunk_index={chunk_index}, chunk_id={nearest_chunk.id}, method={association_method}",
+                            rid,
+                        )
+
+                        image_metadata = {
+                            "page_number": page_number,
+                            "image_index": img_index,
+                            "extraction_method": "structure_guided_enhanced",
+                            "structure_guided": True,
+                            "association_method": association_method,
+                            "confidence_score": confidence,
+                        }
+
+                        image_id = Image.add_to_db(
+                            session=session,
+                            title=title,
+                            file_path=temp_path,
+                            description=f"Enhanced guided extraction from {os.path.basename(file_path)}",
+                            position_id=position_id,
+                            complete_document_id=complete_document_id,
+                            metadata=image_metadata,
+                            request_id=rid,
+                        )
+
+                        if image_id is None:
+                            warning_id(f"Failed to save image {title}", rid)
+                            continue
+
+                        association = cls(
+                            complete_document_id=complete_document_id,
+                            image_id=image_id,
+                            document_id=nearest_chunk.id,
+                            page_number=page_number,
+                            chunk_index=chunk_index,
+                            association_method=association_method,
+                            confidence_score=confidence,
+                            context_metadata={
+                                "extraction_method": "enhanced_guided",
+                                "selection_strategy": association_method,
+                                "page_total_images": len(img_list),
+                                "page_total_chunks": len(page_chunks),
+                                "created_at": datetime.now().isoformat(),
+                            },
+                        )
+                        session.add(association)
+                        session.flush()
+
+                        associations_created += 1
+
+                        info_id(
+                            f"Associated image {image_id} with chunk {nearest_chunk.id} "
+                            f"(page {page_number}, chunk_index {chunk_index})",
+                            rid,
+                        )
+
+                    except Exception as e:
+                        error_id(
+                            f"Error processing image {img_index + 1} on page {page_number}: {e}",
+                            rid,
+                        )
+                        continue
+
+                    finally:
+                        if temp_path:
+                            try:
+                                os.unlink(temp_path)
+                            except Exception:
+                                pass
+
+            info_id(
+                f"Enhanced guided extraction completed: {associations_created} associations created",
+                rid,
+            )
+            return True, {"associations_created": associations_created}, 200
 
         except Exception as e:
-            error_id(f"Enhanced guided extraction failed: {e}", request_id)
+            error_id(f"Enhanced guided extraction failed: {e}", rid, exc_info=True)
             return False, {"error": str(e)}, 500
+
+        finally:
+            if doc is not None:
+                try:
+                    doc.close()
+                except Exception:
+                    pass
 
     @classmethod
     @with_request_id
@@ -12949,7 +13688,7 @@ class ImageCompletedDocumentAssociation(Base):
             if not ImageClass:
                 return 0
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             associations_created = 0
 
             with db_config.main_session() as session:
@@ -13028,7 +13767,7 @@ class ImageCompletedDocumentAssociation(Base):
 
             info_id(f"Using DocumentStructureManager for analysis: {file_path}", request_id)
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 structure_manager = DocumentStructureManager(session=session, request_id=request_id)
                 return structure_manager.analyze_document_structure(file_path, request_id, ocr_content)
@@ -13055,7 +13794,7 @@ class ImageCompletedDocumentAssociation(Base):
                 return []
 
             from modules.configuration.config_env import DatabaseConfig
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
 
             with db_config.main_session() as session:
                 return ImageClass.get_images_with_chunk_context(session, complete_document_id, request_id)
@@ -13078,7 +13817,7 @@ class ImageCompletedDocumentAssociation(Base):
                 return []
 
             from modules.configuration.config_env import DatabaseConfig
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
 
             with db_config.main_session() as session:
                 return ImageClass.search_by_chunk_text(
@@ -13103,7 +13842,7 @@ class ImageCompletedDocumentAssociation(Base):
                 return {}
 
             from modules.configuration.config_env import DatabaseConfig
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
 
             with db_config.main_session() as session:
                 return ImageClass.get_association_statistics(session, complete_document_id, request_id)
@@ -13118,7 +13857,7 @@ class ImageCompletedDocumentAssociation(Base):
         """Update the confidence score of an association."""
         try:
             from modules.configuration.config_env import DatabaseConfig
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
 
             with db_config.main_session() as session:
                 association = session.query(cls).filter(cls.id == association_id).first()
@@ -13144,7 +13883,7 @@ class ImageCompletedDocumentAssociation(Base):
             from modules.configuration.config_env import DatabaseConfig
             from sqlalchemy import text
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
 
             with db_config.main_session() as session:
                 # Use raw SQL for bulk update efficiency
@@ -13181,7 +13920,7 @@ class ImageCompletedDocumentAssociation(Base):
             from modules.database_manager.db_manager import DocumentStructureManager
             from modules.configuration.config_env import DatabaseConfig
 
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 structure_manager = DocumentStructureManager(session=session, request_id=request_id)
                 # Use the manager's storage method if available
@@ -13386,7 +14125,7 @@ class ImageCompletedDocumentAssociation(Base):
         DEBUGGING: Analyze chunk distribution for a document.
         """
         try:
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             with db_config.main_session() as session:
                 chunks = session.query(Document).filter_by(
                     complete_document_id=complete_document_id
@@ -13435,13 +14174,119 @@ class ImageCompletedDocumentAssociation(Base):
             error_id(f"Error in chunk distribution analysis: {e}", request_id)
             return {}
 
+    @classmethod
+    def resolve_related_orm(
+            cls,
+            session,
+            *,
+            image_id: int | None = None,
+            document_id: int | None = None,
+            complete_document_id: int | None = None,
+    ):
+        """
+        ORM-only resolver.
+
+        Resolves related ORM objects starting from EXACTLY ONE anchor:
+          - image_id
+          - document_id
+          - complete_document_id
+
+        Returns:
+            images: List[Image]
+            documents: List[Document]
+            complete_document: CompleteDocument | None
+            associations: List[ImageCompletedDocumentAssociation]
+        """
+
+        # --------------------------------------------------
+        # Validate anchor
+        # --------------------------------------------------
+        provided = [
+            image_id is not None,
+            document_id is not None,
+            complete_document_id is not None,
+        ]
+
+        if sum(provided) != 1:
+            raise ValueError(
+                "Provide exactly ONE of: image_id, document_id, complete_document_id"
+            )
+
+        # --------------------------------------------------
+        # Anchor selection
+        # --------------------------------------------------
+        query = session.query(cls)
+
+        if image_id is not None:
+            query = query.filter(cls.image_id == image_id)
+
+        elif document_id is not None:
+            query = query.filter(cls.document_id == document_id)
+
+        else:  # complete_document_id
+            query = query.filter(cls.complete_document_id == complete_document_id)
+
+        associations = query.all()
+
+        if not associations:
+            return [], [], None, []
+
+        # --------------------------------------------------
+        # Collect foreign keys
+        # --------------------------------------------------
+        image_ids: set[int] = set()
+        document_ids: set[int] = set()
+
+        complete_document_id = None
+
+        for assoc in associations:
+            if assoc.image_id:
+                image_ids.add(assoc.image_id)
+            if assoc.document_id:
+                document_ids.add(assoc.document_id)
+            if assoc.complete_document_id:
+                complete_document_id = assoc.complete_document_id
+
+        # --------------------------------------------------
+        # Resolve ORM models
+        # --------------------------------------------------
+        ImageClass = cls._get_image_class()
+        DocumentClass = cls._get_document_class()
+        CompleteDocumentClass = cls._get_complete_document_class()
+
+        images = (
+            session.query(ImageClass)
+            .filter(ImageClass.id.in_(image_ids))
+            .all()
+            if ImageClass and image_ids
+            else []
+        )
+
+        documents = (
+            session.query(DocumentClass)
+            .filter(DocumentClass.id.in_(document_ids))
+            .all()
+            if DocumentClass and document_ids
+            else []
+        )
+
+        complete_document = (
+            session.get(CompleteDocumentClass, complete_document_id)
+            if CompleteDocumentClass and complete_document_id
+            else None
+        )
+
+        return images, documents, complete_document, associations
+
+
 # Process Classes
 class FileLog(Base):
     __tablename__ = 'file_logs'
+
     log_id = Column(Integer, primary_key=True, autoincrement=True)
-    session = Column(Integer, nullable=False)
+    session = Column(String(32), nullable=False)
     session_datetime = Column(DateTime, nullable=False)
-    file_processed = Column(String)  # Added column for file processed
+    file_processed = Column(String)
     total_time = Column(String)
 
 class KeywordAction(Base):
@@ -13521,7 +14366,7 @@ class KeywordAction(Base):
             session_provided = session is not None
             if not session_provided:
                 from modules.configuration.config_env import DatabaseConfig
-                db_config = DatabaseConfig()
+                db_config = get_db_config()
                 session = db_config.get_main_session()
                 debug_id("Created new database session for keyword extraction", request_id)
 
@@ -13597,7 +14442,7 @@ class ChatSession(Base):
     conversation_summary = Column(MutableList.as_mutable(JSON), default=[])
 
     # Vector embeddings for semantic search
-    summary_embedding = Column(Vector(1536))  # OpenAI embedding dimension
+    summary_embedding = Column(Vector(384))
     topic_tags = Column(JSON, default=[])
 
     # PostgreSQL specific optimizations
@@ -13730,9 +14575,10 @@ class ChatSession(Base):
             return False
 
 class QandA(Base):
-    __tablename__ = 'qanda'
+    __tablename__ = "qanda"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
     user_id = Column(String, index=True)
     question = Column(String)
     answer = Column(String)
@@ -13743,140 +14589,215 @@ class QandA(Base):
     raw_response = Column(JSON)
 
     # Vector embeddings for semantic search
-    question_embedding = Column(Vector(1536))
-    answer_embedding = Column(Vector(1536))
+    question_embedding = Column(Vector(384))
+    answer_embedding = Column(Vector(384))
 
     # Additional metadata
     question_length = Column(Integer)
     answer_length = Column(Integer)
     processing_time_ms = Column(Integer)
 
-    # PostgreSQL specific optimizations
+    # Intent classification metadata
+    intent_type = Column(String(80), index=True)
+    intent_confidence = Column(Float)
+    intent_reason = Column(Text)
+    intent_rewritten_question = Column(Text)
+    intent_needs_current_session_memory = Column(Boolean, default=False)
+    intent_needs_semantic_chat_recall = Column(Boolean, default=False)
+    intent_needs_document_scope = Column(Boolean, default=False)
+
     __table_args__ = (
-        Index('idx_user_timestamp', 'user_id', 'timestamp'),
-        Index('idx_question_embedding_cosine', 'question_embedding', postgresql_using='ivfflat',
-              postgresql_with={'lists': 100}, postgresql_ops={'question_embedding': 'vector_cosine_ops'}),
-        Index('idx_answer_embedding_cosine', 'answer_embedding', postgresql_using='ivfflat',
-              postgresql_with={'lists': 100}, postgresql_ops={'answer_embedding': 'vector_cosine_ops'}),
+        Index("idx_user_timestamp", "user_id", "timestamp"),
+        Index("idx_qanda_intent_type", "intent_type"),
+        Index(
+            "idx_question_embedding_cosine",
+            "question_embedding",
+            postgresql_using="ivfflat",
+            postgresql_with={"lists": 100},
+            postgresql_ops={"question_embedding": "vector_cosine_ops"},
+        ),
+        Index(
+            "idx_answer_embedding_cosine",
+            "answer_embedding",
+            postgresql_using="ivfflat",
+            postgresql_with={"lists": 100},
+            postgresql_ops={"answer_embedding": "vector_cosine_ops"},
+        ),
     )
 
-    def __init__(self, user_id, question, answer, timestamp, rating=None, comment=None):
+    def __init__(
+        self,
+        user_id,
+        question,
+        answer,
+        timestamp,
+        rating=None,
+        comment=None,
+        request_id=None,
+        raw_response=None,
+        processing_time_ms=None,
+        intent_type=None,
+        intent_confidence=None,
+        intent_reason=None,
+        intent_rewritten_question=None,
+        intent_needs_current_session_memory=False,
+        intent_needs_semantic_chat_recall=False,
+        intent_needs_document_scope=False,
+    ):
         self.user_id = user_id
         self.question = question
         self.answer = answer
         self.timestamp = timestamp
         self.rating = rating
         self.comment = comment
+        self.request_id = request_id
+        self.raw_response = raw_response
+        self.processing_time_ms = processing_time_ms
+
         self.question_length = len(question) if question else 0
         self.answer_length = len(answer) if answer else 0
 
+        self.intent_type = intent_type
+        self.intent_confidence = intent_confidence
+        self.intent_reason = intent_reason
+        self.intent_rewritten_question = intent_rewritten_question
+        self.intent_needs_current_session_memory = bool(
+            intent_needs_current_session_memory
+        )
+        self.intent_needs_semantic_chat_recall = bool(
+            intent_needs_semantic_chat_recall
+        )
+        self.intent_needs_document_scope = bool(intent_needs_document_scope)
+
     @classmethod
-    def find_similar_questions(cls, query_embedding, user_id=None, limit=5, similarity_threshold=0.8, db_session=None):
-        """
-        Find similar questions using vector similarity.
+    def find_similar_questions(
+        cls,
+        query_embedding,
+        user_id=None,
+        limit=5,
+        similarity_threshold=0.8,
+        db_session=None,
+    ):
+        if db_session is None:
+            raise ValueError("db_session is required")
 
-        Args:
-            query_embedding: Vector embedding of the query
-            user_id: Optional user ID to filter by
-            limit: Maximum number of results
-            similarity_threshold: Minimum similarity score (0-1)
-            db_session: SQLAlchemy session
-
-        Returns:
-            List of tuples (QandA, similarity_score)
-        """
         query = db_session.query(
             cls,
-            cls.question_embedding.cosine_distance(query_embedding).label('distance')
+            cls.question_embedding.cosine_distance(query_embedding).label("distance"),
         ).filter(
             cls.question_embedding.is_not(None),
-            cls.question_embedding.cosine_distance(query_embedding) < (1 - similarity_threshold)
+            cls.question_embedding.cosine_distance(query_embedding)
+            < (1 - similarity_threshold),
         )
 
         if user_id:
             query = query.filter(cls.user_id == user_id)
 
-        results = query.order_by(text('distance')).limit(limit).all()
+        results = query.order_by(text("distance")).limit(limit).all()
 
         return [(qa, 1 - distance) for qa, distance in results]
 
     @classmethod
     def get_user_analytics(cls, user_id, db_session):
-        """
-        Get analytics for a specific user using PostgreSQL aggregations.
-
-        Args:
-            user_id: The user ID
-            db_session: SQLAlchemy session
-
-        Returns:
-            Dictionary with user analytics
-        """
-        result = db_session.execute(text("""
-            SELECT 
-                COUNT(*) as total_questions,
-                AVG(question_length) as avg_question_length,
-                AVG(answer_length) as avg_answer_length,
-                AVG(processing_time_ms) as avg_processing_time,
-                COUNT(CASE WHEN rating IS NOT NULL THEN 1 END) as rated_answers,
-                AVG(CASE WHEN rating ~ '^[0-9]+$' THEN rating::int END) as avg_rating
-            FROM qanda 
-            WHERE user_id = :user_id
-        """), {"user_id": user_id}).first()
+        result = db_session.execute(
+            text(
+                """
+                SELECT
+                    COUNT(*) AS total_questions,
+                    AVG(question_length) AS avg_question_length,
+                    AVG(answer_length) AS avg_answer_length,
+                    AVG(processing_time_ms) AS avg_processing_time,
+                    COUNT(CASE WHEN rating IS NOT NULL THEN 1 END) AS rated_answers,
+                    AVG(CASE WHEN rating ~ '^[0-9]+$' THEN rating::int END) AS avg_rating,
+                    COUNT(CASE WHEN intent_type = 'NEW_TOPIC' THEN 1 END) AS new_topic_count,
+                    COUNT(CASE WHEN intent_type = 'FOLLOW_UP_CURRENT_SESSION' THEN 1 END) AS follow_up_current_session_count,
+                    COUNT(CASE WHEN intent_type = 'RECALL_PRIOR_CONVERSATION' THEN 1 END) AS recall_prior_conversation_count,
+                    COUNT(CASE WHEN intent_type = 'DOCUMENT_SCOPED_FOLLOW_UP' THEN 1 END) AS document_scoped_follow_up_count,
+                    COUNT(CASE WHEN intent_type = 'CLARIFICATION' THEN 1 END) AS clarification_count
+                FROM qanda
+                WHERE user_id = :user_id
+                """
+            ),
+            {"user_id": user_id},
+        ).first()
 
         if result:
             return {
-                'total_questions': result.total_questions,
-                'avg_question_length': float(result.avg_question_length or 0),
-                'avg_answer_length': float(result.avg_answer_length or 0),
-                'avg_processing_time_ms': float(result.avg_processing_time or 0),
-                'rated_answers': result.rated_answers,
-                'avg_rating': float(result.avg_rating or 0)
+                "total_questions": result.total_questions,
+                "avg_question_length": float(result.avg_question_length or 0),
+                "avg_answer_length": float(result.avg_answer_length or 0),
+                "avg_processing_time_ms": float(result.avg_processing_time or 0),
+                "rated_answers": result.rated_answers,
+                "avg_rating": float(result.avg_rating or 0),
+                "intent_counts": {
+                    "NEW_TOPIC": result.new_topic_count,
+                    "FOLLOW_UP_CURRENT_SESSION": result.follow_up_current_session_count,
+                    "RECALL_PRIOR_CONVERSATION": result.recall_prior_conversation_count,
+                    "DOCUMENT_SCOPED_FOLLOW_UP": result.document_scoped_follow_up_count,
+                    "CLARIFICATION": result.clarification_count,
+                },
             }
+
         return {}
 
     @classmethod
     def record_interaction(
-            cls,
-            user_id,
-            question,
-            answer,
-            session,
-            question_embedding=None,
-            answer_embedding=None,
-            processing_time_ms=None,
-            request_id=None,  # NEW
-            raw_response=None  # NEW
+        cls,
+        user_id,
+        question,
+        answer,
+        session,
+        question_embedding=None,
+        answer_embedding=None,
+        processing_time_ms=None,
+        request_id=None,
+        raw_response=None,
+        intent_type=None,
+        intent_confidence=None,
+        intent_reason=None,
+        intent_rewritten_question=None,
+        intent_needs_current_session_memory=False,
+        intent_needs_semantic_chat_recall=False,
+        intent_needs_document_scope=False,
     ):
-        """
-        Enhanced interaction recording with embeddings, metadata, and request tracking.
-        """
         try:
             timestamp = datetime.utcnow().isoformat()
+
             qa_record = cls(
                 user_id=user_id,
                 question=question,
                 answer=answer,
-                timestamp=timestamp
+                timestamp=timestamp,
+                request_id=request_id,
+                raw_response=raw_response,
+                processing_time_ms=processing_time_ms,
+                intent_type=intent_type,
+                intent_confidence=intent_confidence,
+                intent_reason=intent_reason,
+                intent_rewritten_question=intent_rewritten_question,
+                intent_needs_current_session_memory=(
+                    intent_needs_current_session_memory
+                ),
+                intent_needs_semantic_chat_recall=(
+                    intent_needs_semantic_chat_recall
+                ),
+                intent_needs_document_scope=intent_needs_document_scope,
             )
 
-            # Add embeddings if provided
             if question_embedding is not None:
                 qa_record.question_embedding = question_embedding
+
             if answer_embedding is not None:
                 qa_record.answer_embedding = answer_embedding
-            if processing_time_ms is not None:
-                qa_record.processing_time_ms = processing_time_ms
-
-            # NEW: add request_id + raw_response
-            if request_id:
-                qa_record.request_id = request_id
-            if raw_response:
-                qa_record.raw_response = raw_response
 
             session.add(qa_record)
             session.commit()
-            logger.debug(f"Recorded interaction {qa_record.id} for user {user_id} (req={request_id})")
+
+            logger.debug(
+                f"Recorded interaction {qa_record.id} for user {user_id} "
+                f"(req={request_id}, intent={intent_type})"
+            )
+
             return qa_record
 
         except Exception as e:
@@ -13885,63 +14806,60 @@ class QandA(Base):
             return None
 
     @classmethod
-    def update_embeddings(cls, qa_id, question_embedding=None, answer_embedding=None, db_session=None):
-        """
-        Update embeddings for an existing Q&A record.
-
-        Args:
-            qa_id: The Q&A record ID
-            question_embedding: Optional question embedding
-            answer_embedding: Optional answer embedding
-            db_session: SQLAlchemy session
-
-        Returns:
-            Boolean indicating success
-        """
+    def update_embeddings(
+        cls,
+        qa_id,
+        question_embedding=None,
+        answer_embedding=None,
+        db_session=None,
+    ):
         try:
+            if db_session is None:
+                raise ValueError("db_session is required")
+
             qa_record = db_session.query(cls).filter_by(id=qa_id).first()
+
             if qa_record:
                 if question_embedding is not None:
                     qa_record.question_embedding = question_embedding
+
                 if answer_embedding is not None:
                     qa_record.answer_embedding = answer_embedding
+
                 db_session.commit()
                 logger.debug(f"Embeddings updated for Q&A ID {qa_id}")
                 return True
-            else:
-                logger.error(f"No Q&A record found for ID {qa_id}")
-                return False
+
+            logger.error(f"No Q&A record found for ID {qa_id}")
+            return False
+
         except Exception as e:
             db_session.rollback()
             logger.error(f"Error updating embeddings for Q&A ID {qa_id}: {e}")
             return False
 
     def _record_basic_interaction(self, session, user_id, question, answer):
-        """
-        Fallback method for basic interaction recording when enhanced columns are missing.
-        """
         try:
-            from sqlalchemy import text
-            import uuid
-            from datetime import datetime
-
-            # Use raw SQL for basic recording
             interaction_id = str(uuid.uuid4())
-            current_time = datetime.now()
+            current_time = datetime.utcnow().isoformat()
 
-            # Try with basic columns only
-            basic_insert = text("""
+            basic_insert = text(
+                """
                 INSERT INTO qanda (id, user_id, question, answer, timestamp)
                 VALUES (:id, :user_id, :question, :answer, :timestamp)
-            """)
+                """
+            )
 
-            session.execute(basic_insert, {
-                'id': interaction_id,
-                'user_id': user_id,
-                'question': question,
-                'answer': answer,
-                'timestamp': current_time
-            })
+            session.execute(
+                basic_insert,
+                {
+                    "id": interaction_id,
+                    "user_id": user_id,
+                    "question": question,
+                    "answer": answer,
+                    "timestamp": current_time,
+                },
+            )
 
             session.commit()
             logger.info("Successfully recorded basic interaction")
@@ -13972,6 +14890,7 @@ class ImageModelConfig(Base):
 
 
 # Define the User model
+# Define the User model
 class User(Base):
     __tablename__ = 'users'
 
@@ -13985,27 +14904,45 @@ class User(Base):
     age = Column(Integer, nullable=True)
     education_level = Column(String, nullable=True)
     start_date = Column(DateTime, nullable=True)
+
     hashed_password = Column(String, nullable=False)
 
-    # Store enum as string in the database
-    user_level = Column(SqlEnum(UserLevel, values_callable=lambda obj: [e.value for e in obj]),
-                        default=UserLevel.STANDARD, nullable=False)
+    must_change_password = Column(Boolean, default=False, nullable=False)
+    password_last_changed = Column(DateTime, nullable=True)
 
-    # Relationship to comments
+    user_level = Column(
+        SqlEnum(UserLevel, values_callable=lambda obj: [e.value for e in obj]),
+        default=UserLevel.STANDARD,
+        nullable=False
+    )
+
     comments = relationship("UserComments", back_populates="user")
-    logins = relationship('UserLogin', back_populates='user')
+    logins = relationship("UserLogin", back_populates="user")
 
-    # Add mapper arguments for inheritance
     __mapper_args__ = {
         'polymorphic_identity': 'user',
         'polymorphic_on': type
     }
 
-    def set_password(self, password):
+    def set_password(self, password, must_change_password=False):
         self.hashed_password = generate_password_hash(password)
+        self.must_change_password = must_change_password
+        self.password_last_changed = datetime.now()
 
     def check_password_hash(self, password):
         return check_password_hash(self.hashed_password, password)
+
+    def force_password_change(self, temporary_password):
+        self.set_password(
+            temporary_password,
+            must_change_password=True
+        )
+
+    def clear_force_password_change(self, new_password):
+        self.set_password(
+            new_password,
+            must_change_password=False
+        )
 
     @classmethod
     @with_request_id
@@ -14022,20 +14959,20 @@ class User(Base):
         from sqlalchemy.exc import IntegrityError, SQLAlchemyError
         import traceback
 
-        # Get database session
         try:
             logger.info("Getting database session...")
-            db_config = DatabaseConfig()
+            db_config = get_db_config()
             session = db_config.get_main_session()
             logger.debug(f"Got database session: {session}")
+
         except Exception as e:
             logger.error(f"ERROR GETTING DATABASE SESSION: {e}")
             logger.error(traceback.format_exc())
             return False, f"Database connection error: {str(e)}"
 
         try:
-            # Create new user object
             logger.info(f"Creating User object with: {employee_id}, {first_name}, {last_name}")
+
             new_user = User(
                 employee_id=employee_id,
                 first_name=first_name,
@@ -14045,21 +14982,21 @@ class User(Base):
                 age=age,
                 education_level=education_level,
                 start_date=start_date,
-                user_level=UserLevel.STANDARD
+                user_level=UserLevel.STANDARD,
+                must_change_password=False,
+                password_last_changed=datetime.now()
             )
+
             logger.debug("Created User object successfully")
 
-            # Set password
             logger.debug("Setting password...")
-            new_user.set_password(password)
+            new_user.set_password(password, must_change_password=False)
             logger.debug("Password set successfully")
 
-            # Add to session
             logger.debug("Adding user to database session...")
             session.add(new_user)
             logger.debug("User added to session")
 
-            # Commit changes
             logger.info("Committing session...")
             session.commit()
             logger.info("Session committed successfully")
@@ -14075,8 +15012,8 @@ class User(Base):
 
             if "UNIQUE constraint failed" in error_msg:
                 return False, f"A user with employee ID {employee_id} already exists."
-            else:
-                return False, f"Database integrity error: {error_msg}"
+
+            return False, f"Database integrity error: {error_msg}"
 
         except SQLAlchemyError as e:
             logger.error(f"SQL ALCHEMY ERROR: {str(e)}")
@@ -14094,11 +15031,11 @@ class User(Base):
             return False, f"An unexpected error occurred: {error_msg}"
 
         finally:
-            # Always close the session
             try:
                 logger.debug("Closing database session")
                 session.close()
                 logger.debug("Database session closed")
+
             except Exception as e:
                 logger.error(f"ERROR CLOSING SESSION: {e}")
 
@@ -14313,17 +15250,32 @@ class UserLayout(Base):
 
 # Define the UserComments model
 class UserComments(Base):
-    __tablename__ = 'user_comments'
+    __tablename__ = "user_comments"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     comment = Column(Text, nullable=False)
     page_url = Column(String, nullable=False)
     screenshot_path = Column(String, nullable=True)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    # Relationship to User
     user = relationship("User", back_populates="comments")
+
+    __table_args__ = (
+        Index("idx_user_comments_user_timestamp", "user_id", "timestamp"),
+        Index("idx_user_comments_page_timestamp", "page_url", "timestamp"),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "comment": self.comment,
+            "page_url": self.page_url,
+            "screenshot_path": self.screenshot_path,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
+        }
+
 
 class BOMResult(Base):
     __tablename__ = 'bom_result'
@@ -15407,7 +16359,7 @@ class KeywordSearch:
             session: SQLAlchemy session (optional)
         """
         self._session = session
-        self._db_config = DatabaseConfig()
+        self._db_config = get_db_config()
 
     @property
     def session(self):
@@ -16437,8 +17389,6 @@ class KeywordSearch:
                 "status": "error",
                 "message": f"Error loading keywords from Excel: {str(e)}"
             }
-
-
 
 
 # Base.metadata.create_all(engine, checkfirst=True)  # <-- COMMENTED OUT

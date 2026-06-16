@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "emtac_model_training"
+version = "0.1.0"
+description = "EMTAC model training and fine-tuning system"
+requires-python = ">=3.10"
+
+[tool.setuptools]
+package-dir = {"" = "."}
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["wheels", "logs", "mlruns", ".venv*", "__pycache__"]

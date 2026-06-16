@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{% block title %}EMTAC Dashboard{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+{% block extra_css %}{% endblock %}
+<style>
+/* ═══════════════════════════════════════════════════════════
+   EMTAC base shell  —  five_panel_dashboard.html
+   ═══════════════════════════════════════════════════════════ */
+:root {
+  --bg:        #0a0c0f;
+  --panel:     #0e1117;
+  --panel-alt: #080b0f;
+  --border:    #1e2530;
+  --border2:   #2a3545;
+  --green:     #00ff88;
+  --green-dim: #00cc6a;
+  --amber:     #ffb830;
+  --red:       #ff4455;
+  --blue:      #38b2ff;
+  --purple:    #a78bfa;
+  --orange:    #ff6f3c;
+  --txt:       #c8d6e5;
+  --txt-dim:   #5a7090;
+  --txt-muted: #3a4a5c;
+  --mono:      'Share Tech Mono', monospace;
+  --sans:      'Rajdhani', sans-serif;
+
+  /* ── Type scale ── */
+  --fs-xs:     10px;
+  --fs-sm:     11px;
+  --fs-base:   13px;
+  --fs-ui:     14px;
+  --fs-stat:   20px;
+  --fs-metric: 24px;
+  --fs-logo:   18px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow-x: hidden; }
+body {
+  background: var(--bg); color: var(--txt);
+  font-family: var(--sans); font-size: var(--fs-base);
+}
+
+/* CRT scanline overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,255,136,0.013) 2px, rgba(0,255,136,0.013) 4px
+  );
+  pointer-events: none; z-index: 9999;
+}
+
+/* ── Header ── */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; height: 56px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(14,17,23,0.97);
+  position: sticky; top: 0; z-index: 200;
+  backdrop-filter: blur(10px);
+}
+.logo { display: flex; align-items: center; gap: 14px; text-decoration: none; }
+.logo-mark {
+  width: 36px; height: 36px; border: 2px solid var(--green);
+  display: grid; place-items: center;
+  font-family: var(--mono); font-size: var(--fs-sm); color: var(--green); letter-spacing: 1px;
+  position: relative; animation: pulse-border 3s ease-in-out infinite;
+}
+.logo-mark::before { content:''; position:absolute; inset:3px; background:rgba(0,255,136,0.08); }
+@keyframes pulse-border {
+  0%,100%{box-shadow:0 0 6px rgba(0,255,136,0.4)} 50%{box-shadow:0 0 18px rgba(0,255,136,0.7)}
+}
+.logo-text h1 {
+  font-size: var(--fs-logo); font-weight: 700; letter-spacing: 4px;
+  color: #fff; text-transform: uppercase; line-height: 1;
+}
+.logo-text span { font-family:var(--mono); font-size:var(--fs-xs); color:var(--txt-dim); letter-spacing:2px; }
+
+.top-nav { display:flex; gap:2px; margin-left:16px; }
+.top-nav a {
+  font-family:var(--mono); font-size:var(--fs-xs); letter-spacing:2px; text-transform:uppercase;
+  text-decoration:none; color:var(--txt-dim); padding:6px 12px;
+  border:1px solid transparent; transition:all 0.15s;
+}
+.top-nav a:hover, .top-nav a.active {
+  color:var(--green); border-color:rgba(0,255,136,0.3); background:rgba(0,255,136,0.06);
+}
+/* Grafana nav item uses orange accent */
+.top-nav a.grafana-nav:hover, .top-nav a.grafana-nav.active {
+  color:var(--orange); border-color:rgba(255,111,60,0.3); background:rgba(255,111,60,0.06);
+}
+.header-right { display:flex; align-items:center; gap:18px; }
+.sys-time { font-family:var(--mono); font-size:var(--fs-sm); color:var(--txt-dim); letter-spacing:1px; }
+.status-pill {
+  font-family:var(--mono); font-size:var(--fs-xs); letter-spacing:2px; text-transform:uppercase;
+  padding:4px 10px; border:1px solid var(--green); color:var(--green);
+  background:rgba(0,255,136,0.08); animation:pill-flash 4s ease-in-out infinite;
+}
+@keyframes pill-flash { 0%,80%,100%{opacity:1} 85%{opacity:0.5} }
+
+/* ── Root layout ── */
+.em-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  grid-template-rows: auto 1fr;
+  height: calc(100vh - 56px);
+}
+
+/* ── Status strip ── */
+.status-strip {
+  grid-column: 1 / -1;
+  display: flex; gap: 1px;
+  background: var(--border); border-bottom: 1px solid var(--border);
+}
+.stat-card {
+  flex: 1; background: var(--panel); padding: 14px 20px;
+  display: flex; align-items: center; gap: 14px;
+  position: relative; overflow: hidden; transition: background 0.2s;
+}
+.stat-card:hover { background: #111820; }
+.stat-card::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:2px;
+  background:var(--card-color,var(--green)); opacity:0.6;
+}
+.stat-icon {
+  font-size:var(--fs-stat); width:36px; text-align:center;
+  color:var(--card-color,var(--green));
+  filter:drop-shadow(0 0 6px var(--card-color,var(--green)));
+}
+.stat-info label {
+  display:block; font-size:var(--fs-xs); letter-spacing:2px; text-transform:uppercase;
+  color:var(--txt-dim); font-family:var(--mono);
+}
+.stat-info .val {
+  font-size:var(--fs-stat); font-weight:700; line-height:1.1;
+  color:var(--card-color,var(--green)); font-family:var(--mono);
+}
+.stat-info .sub { font-size:var(--fs-xs); color:var(--txt-dim); font-family:var(--mono); }
+
+/* ── Main panel (left col, row 2) ── */
+.main-panel {
+  display:flex; flex-direction:column;
+  border-right:1px solid var(--border); overflow:hidden;
+}
+.panel-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 16px; border-bottom:1px solid var(--border);
+  background:rgba(0,0,0,0.3); flex-shrink:0;
+}
+.panel-title { font-size:var(--fs-sm); letter-spacing:3px; text-transform:uppercase; color:var(--txt-dim); font-family:var(--mono); }
+.badge {
+  font-size:var(--fs-xs); letter-spacing:1px; padding:2px 8px;
+  background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3);
+  color:var(--green); font-family:var(--mono);
+}
+
+/* ── AI panel (right col, row 2) ── */
+.ai-panel { display:flex; flex-direction:column; background:var(--panel); overflow:hidden; }
+.ai-header {
+  padding:14px 16px; flex-shrink:0;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,rgba(0,255,136,0.05) 0%,transparent 60%);
+}
+.ai-title { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+.ai-indicator {
+  width:8px; height:8px; border-radius:50%;
+  background:var(--green); box-shadow:0 0 8px var(--green);
+  animation:blink 1.5s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.ai-title h2 { font-size:var(--fs-ui); font-weight:700; letter-spacing:3px; text-transform:uppercase; color:#fff; }
+.ai-subtitle { font-family:var(--mono); font-size:var(--fs-xs); color:var(--txt-dim); letter-spacing:1px; margin-left:18px; }
+
+.model-selector {
+  display:flex; gap:6px; padding:10px 16px;
+  border-bottom:1px solid var(--border); flex-shrink:0;
+}
+.model-indicator {
+  display:flex; align-items:center; gap:8px;
+}
+.model-dot {
+  width:7px; height:7px; border-radius:50%;
+  background:var(--green); box-shadow:0 0 6px var(--green);
+  animation:blink 2s ease-in-out infinite; flex-shrink:0;
+}
+.model-label {
+  font-family:var(--mono); font-size:var(--fs-xs);
+  color:var(--txt-dim); letter-spacing:1px;
+}
+
+.quick-prompts {
+  padding:8px 14px; display:flex; gap:6px; flex-wrap:wrap;
+  border-bottom:1px solid var(--border); flex-shrink:0;
+}
+.qp-btn {
+  font-family:var(--mono); font-size:var(--fs-xs); letter-spacing:1px; text-transform:uppercase;
+  padding:4px 10px; cursor:pointer; background:rgba(0,255,136,0.05);
+  border:1px solid var(--border2); color:var(--txt-dim); transition:all 0.15s;
+}
+.qp-btn:hover { border-color:var(--green); color:var(--green); background:rgba(0,255,136,0.1); }
+
+.chat-area {
+  flex:1; overflow-y:auto; padding:14px;
+  display:flex; flex-direction:column; gap:12px;
+}
+.msg { display:flex; gap:10px; animation:msg-in 0.25s ease; }
+@keyframes msg-in { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+.msg-avatar {
+  flex-shrink:0; width:26px; height:26px; border:1px solid var(--border2);
+  display:grid; place-items:center;
+  font-family:var(--mono); font-size:var(--fs-xs); color:var(--txt-dim); margin-top:2px;
+}
+.msg.ai .msg-avatar { border-color:var(--green); color:var(--green); }
+.msg-body { flex:1; }
+.msg-role {
+  font-size:var(--fs-xs); letter-spacing:2px; color:var(--txt-muted);
+  font-family:var(--mono); text-transform:uppercase; margin-bottom:4px;
+}
+.msg.ai .msg-role { color:var(--green-dim); }
+.msg-text { font-size:var(--fs-base); line-height:1.6; color:var(--txt); font-family:var(--sans); font-weight:500; word-break:break-word; }
+.msg.ai .msg-text { color:#d4e8d4; }
+
+.typing-dots { display:flex; gap:4px; align-items:center; padding:4px 0; }
+.typing-dots span {
+  width:5px; height:5px; border-radius:50%;
+  background:var(--green); opacity:0.3; animation:dot-bounce 1.2s ease-in-out infinite;
+}
+.typing-dots span:nth-child(2){animation-delay:0.2s}
+.typing-dots span:nth-child(3){animation-delay:0.4s}
+@keyframes dot-bounce { 0%,60%,100%{opacity:0.3;transform:none} 30%{opacity:1;transform:translateY(-4px)} }
+
+.chat-input-wrap {
+  padding:12px; border-top:1px solid var(--border);
+  display:flex; gap:8px; background:rgba(0,0,0,0.3); flex-shrink:0;
+}
+.chat-input {
+  flex:1; background:rgba(0,0,0,0.5); border:1px solid var(--border2); color:var(--txt);
+  padding:8px 12px; font-family:var(--mono); font-size:var(--fs-sm);
+  outline:none; resize:none; transition:border-color 0.2s;
+}
+.chat-input:focus { border-color:var(--green); }
+.chat-input::placeholder { color:var(--txt-muted); }
+.send-btn {
+  background:var(--green); color:#000; border:none; padding:8px 16px; cursor:pointer;
+  font-family:var(--mono); font-size:var(--fs-sm); font-weight:700; letter-spacing:1px;
+  text-transform:uppercase; transition:all 0.15s; align-self:flex-end;
+}
+.send-btn:hover { background:var(--green-dim); box-shadow:0 0 12px rgba(0,255,136,0.4); }
+.send-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+* { scrollbar-width:thin; scrollbar-color:var(--border2) transparent; }
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border2); }
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center">
+    <a class="logo" href="/">
+      <div class="logo-mark">EM</div>
+      <div class="logo-text">
+        <h1>EMTAC</h1>
+        <span>AI Gateway · Ops Console</span>
+      </div>
+    </a>
+    <nav class="top-nav">
+      <a href="/dashboards/services" class="{% block nav_services %}{% endblock %}">Services</a>
+      <a href="/dashboards/trace"    class="{% block nav_trace %}{% endblock %}">Trace</a>
+      <a href="/dashboards/gpu"      class="{% block nav_gpu %}{% endblock %}">GPU</a>
+      <a href="/dashboards/ai"       class="{% block nav_ai %}{% endblock %}">Status A.I.</a>
+      <a href="http://localhost:3000" class="grafana-nav {% block nav_grafana %}{% endblock %}"
+         target="_blank" rel="noopener noreferrer">Grafana ↗</a>
+    </nav>
+  </div>
+  <div class="header-right">
+    <span class="sys-time" id="clock">--:--:--</span>
+    <div class="status-pill">● OPERATIONAL</div>
+  </div>
+</header>
+
+<div class="em-layout">
+
+  <!-- Status strip -->
+  <div class="status-strip">
+    {% block status_strip %}
+    <div class="stat-card" style="--card-color:var(--green)">
+      <div class="stat-icon">⬡</div>
+      <div class="stat-info"><label>GPU Service</label><div class="val">:5051</div><div class="sub">qwen2.5-coder-7b-instruct</div></div>
+    </div>
+    <div class="stat-card" style="--card-color:var(--blue)">
+      <div class="stat-icon">⬡</div>
+      <div class="stat-info"><label>MCP Gateway</label><div class="val">:9000</div><div class="sub">emtac-gpu-qwen · SSE active</div></div>
+    </div>
+    <div class="stat-card" style="--card-color:var(--amber)">
+      <div class="stat-icon">▣</div>
+      <div class="stat-info"><label>Requests / min</label><div class="val" id="req-rate">0</div><div class="sub">avg latency: <span id="avg-lat">—</span>ms</div></div>
+    </div>
+    <div class="stat-card" style="--card-color:var(--purple)">
+      <div class="stat-icon" style="color:var(--purple)">◈</div>
+      <div class="stat-info"><label>Tokens Generated</label><div class="val" style="color:var(--purple)" id="tok-count">0</div><div class="sub">session total</div></div>
+    </div>
+    <div class="stat-card" style="--card-color:var(--green)">
+      <div class="stat-icon">◉</div>
+      <div class="stat-info"><label>Status A.I.</label><div class="val">READY</div><div class="sub">claude-sonnet · anthropic</div></div>
+    </div>
+    {% endblock %}
+  </div>
+
+  <!-- Main panel -->
+  <main class="main-panel">
+    {% block main_panel %}
+    <div class="panel-header">
+      <span class="panel-title">// select a dashboard</span>
+    </div>
+    {% endblock %}
+  </main>
+
+  <!-- Status A.I. panel -->
+  <aside class="ai-panel">
+    <div class="ai-header">
+      <div class="ai-title">
+        <div class="ai-indicator"></div>
+        <h2>Status A.I.</h2>
+      </div>
+      <div class="ai-subtitle">claude-sonnet · qwen2.5 · routed via /api/ai/chat</div>
+    </div>
+
+    <div class="model-selector">
+      <div class="model-indicator">
+        <span class="model-dot"></span>
+        <span class="model-label">Qwen · via MCP Gateway :9000</span>
+      </div>
+    </div>
+
+    <div class="quick-prompts">
+      <button class="qp-btn" data-qp="summarize">Summarize</button>
+      <button class="qp-btn" data-qp="health">Health</button>
+      <button class="qp-btn" data-qp="errors">Diagnose</button>
+      <button class="qp-btn" data-qp="recommend">Recommend</button>
+      {% block ai_quick_prompts %}{% endblock %}
+    </div>
+
+    <div class="chat-area" id="chat-area"></div>
+
+    <div class="chat-input-wrap">
+      <textarea class="chat-input" id="chat-input" rows="2"
+        placeholder="Ask Status A.I. about your EMTAC system…"></textarea>
+      <button class="send-btn" id="send-btn">▶ SEND</button>
+    </div>
+  </aside>
+
+</div>{# /em-layout #}
+
+<!-- ══ Base JS ══ -->
+<script>
+(function () {
+'use strict';
+
+/* ── Clock ── */
+(function tick() {
+  const el = document.getElementById('clock');
+  if (el) {
+    const n = new Date(), p = v => String(v).padStart(2,'0');
+    el.textContent = `${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`;
+  }
+  setTimeout(tick, 1000);
+})();
+
+/* ── Active nav ── */
+const path = location.pathname;
+document.querySelectorAll('.top-nav a').forEach(a => {
+  const href = a.getAttribute('href');
+  if (href && path.startsWith(href)) a.classList.add('active');
+});
+
+window.AI_PAGE_CONTEXT  = window.AI_PAGE_CONTEXT  || '';
+window.AI_EXTRA_PROMPTS = window.AI_EXTRA_PROMPTS || {};
+
+const BASE_PROMPTS = {
+  summarize: 'Give me a full status summary of the EMTAC system right now.',
+  health:    'Run a health check. Is everything operating normally? Flag any concerns.',
+  errors:    'Are there errors or anomalies I should investigate?',
+  recommend: 'Based on current metrics, what actions or optimizations do you recommend?',
+};
+
+let chatHistory = [];
+let reqCount = 0, errCount = 0, tokTotal = 0;
+let latencies = [];
+
+/* ── Quick prompts ── */
+document.querySelectorAll('.qp-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const key = btn.dataset.qp;
+    sendMessage(BASE_PROMPTS[key] || window.AI_EXTRA_PROMPTS[key] || key);
+  });
+});
+
+/* ── DOM helpers ── */
+function esc(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function appendMsg(role, text, typing = false) {
+  const isAi = role === 'assistant';
+  const div  = document.createElement('div');
+  div.className = `msg${isAi ? ' ai' : ''}`;
+  if (typing) div.id = 'typing-msg';
+  div.innerHTML = `
+    <div class="msg-avatar">${isAi ? 'AI' : 'YOU'}</div>
+    <div class="msg-body">
+      <div class="msg-role">${isAi ? 'STATUS A.I.' : 'OPERATOR'}</div>
+      <div class="msg-text">${
+        typing
+          ? '<div class="typing-dots"><span></span><span></span><span></span></div>'
+          : esc(text).replace(/\n/g,'<br>')
+      }</div>
+    </div>`;
+  const area = document.getElementById('chat-area');
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function removeTyping() { document.getElementById('typing-msg')?.remove(); }
+
+function refreshStatCards() {
+  const rr = document.getElementById('req-rate');
+  const al = document.getElementById('avg-lat');
+  const tc = document.getElementById('tok-count');
+  const avgLat = latencies.length
+    ? Math.round(latencies.slice(-10).reduce((a,b)=>a+b,0)/Math.min(latencies.length,10))
+    : '—';
+  if (rr) rr.textContent = reqCount;
+  if (al) al.textContent = avgLat;
+  if (tc) tc.textContent = tokTotal.toLocaleString();
+}
+
+async function callBackend(messages) {
+  const t0  = Date.now();
+  const res = await fetch('/api/ai/chat', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messages:     messages,
+      page_context: window.AI_PAGE_CONTEXT || '',
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || `HTTP ${res.status}`);
+  }
+
+  const data = await res.json();
+  latencies.push(Date.now() - t0);
+  reqCount++;
+
+  const text = data.choices?.[0]?.message?.content ?? '⚠ No response received.';
+  tokTotal += Math.round(text.split(/\s+/).length * 1.3);
+  refreshStatCards();
+  return text;
+}
+
+async function sendMessage(overrideText) {
+  const input = document.getElementById('chat-input');
+  const text  = (overrideText || input.value).trim();
+  if (!text) return;
+  input.value = '';
+  document.getElementById('send-btn').disabled = true;
+
+  appendMsg('user', text);
+  chatHistory.push({ role: 'user', content: text });
+  appendMsg('assistant', '', true);
+
+  try {
+    const reply = await callBackend(chatHistory);
+    chatHistory.push({ role: 'assistant', content: reply });
+    removeTyping();
+    appendMsg('assistant', reply);
+  } catch (err) {
+    errCount++;
+    removeTyping();
+    appendMsg('assistant', `✗ AI request failed: ${err.message}`);
+  }
+  document.getElementById('send-btn').disabled = false;
+}
+
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+document.getElementById('send-btn').addEventListener('click', () => sendMessage());
+
+setTimeout(() => {
+  appendMsg('assistant',
+    'Status A.I. online. EMTAC MCP Gateway is operational.\n\n' +
+    'I can see your GPU service at :5051 running qwen2.5-coder-7b-instruct, and your gateway at :9000.\n\n' +
+    'Use the quick prompts or ask me anything about your system.'
+  );
+}, 600);
+
+})();
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

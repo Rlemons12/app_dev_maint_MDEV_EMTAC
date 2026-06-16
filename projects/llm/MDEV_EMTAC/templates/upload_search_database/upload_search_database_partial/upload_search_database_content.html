@@ -1,0 +1,198 @@
+{% if session['user_level'] == 'LEVEL_III' or session['user_level'] == 'ADMIN' %}
+    {% include 'upload_search_database/upload_search_database_partial/upload_image_form_partial.html' %}
+
+    <div id="upload-document" class="form-container">
+        <h2>Upload Document</h2>
+        <form action="/documents/add_document" method="post" enctype="multipart/form-data">
+            <label for="document_title" style="color: Yellow;">Document Title:</label>
+            <input type="text" name="title" id="document_title" placeholder="Document Title"><br>
+
+            <label for="document_areaDropdown" style="color: Yellow;">Area:</label>
+            <select name="area" id="document_areaDropdown"></select><br>
+
+            <label for="document_equipmentGroupDropdown" style="color: Yellow;">Equipment Group:</label>
+            <select name="equipment_group" id="document_equipmentGroupDropdown"></select><br>
+
+            <label for="document_modelDropdown" style="color: Yellow;">Model:</label>
+            <select name="model" id="document_modelDropdown"></select><br>
+
+            <label for="document_assetNumberDropdown" style="color: Yellow;">Asset Number:</label>
+            <select name="asset_number" id="document_assetNumberDropdown"></select><br>
+
+            <label for="document_locationDropdown" style="color: Yellow;">Location:</label>
+            <select name="location" id="document_locationDropdown"></select><br>
+
+            <input type="file" name="files" id="document_files" multiple><br>
+            <input type="submit" value="Upload Document">
+        </form>
+    </div>
+
+    <div id="upload-powerpoint" class="form-container">
+        <h2>Upload PowerPoint</h2>
+        <form action="/powerpoints/upload_powerpoint" method="post" enctype="multipart/form-data">
+            <input type="text" name="title" placeholder="PowerPoint Title"><br>
+
+            <label for="uploadpowerpoint_areaDropdown" style="color: Yellow;">Area:</label><br>
+            <select name="area" id="uploadpowerpoint_areaDropdown"></select><br>
+
+            <label for="uploadpowerpoint_equipmentGroupDropdown" style="color: Yellow;">Equipment Group:</label><br>
+            <select name="equipment_group" id="uploadpowerpoint_equipmentGroupDropdown"></select><br>
+
+            <label for="uploadpowerpoint_modelDropdown" style="color: Yellow;">Model:</label><br>
+            <select name="model" id="uploadpowerpoint_modelDropdown"></select><br>
+
+            <label for="uploadpowerpoint_assetNumberDropdown" style="color: Yellow;">Asset Number:</label><br>
+            <select name="asset_number" id="uploadpowerpoint_assetNumberDropdown"></select><br>
+
+            <label for="uploadpowerpoint_locationDropdown" style="color: Yellow;">Location:</label><br>
+            <select name="location" id="uploadpowerpoint_locationDropdown"></select><br>
+
+            <input type="text" name="description" placeholder="PowerPoint Description"><br>
+            <input type="file" name="powerpoint" accept=".pptx" required><br>
+            <input type="submit" value="Upload PowerPoint">
+        </form>
+    </div>
+
+    <div id="batch-upload" class="form-container">
+        <h2>Batch Upload Documents</h2>
+        <form action="/batch_processing" method="post" enctype="multipart/form-data">
+            <label for="batchTitle" style="color: Yellow;">Document Title:</label>
+            <input type="text" name="batchTitle" id="batchTitle" placeholder="Document Title"><br>
+
+            <label for="batchAreaDropdown" style="color: Yellow;">Area:</label>
+            <select name="batchArea" id="batchAreaDropdown"></select><br>
+
+            <label for="batchEquipmentGroupDropdown" style="color: Yellow;">Equipment Group:</label>
+            <select name="batchEquipmentGroup" id="batchEquipmentGroupDropdown"></select><br>
+
+            <label for="batchModelDropdown" style="color: Yellow;">Model:</label>
+            <select name="batchModel" id="batchModelDropdown"></select><br>
+
+            <label for="batchAssetNumberDropdown" style="color: Yellow;">Asset Number:</label>
+            <select name="batchAssetNumber" id="batchAssetNumberDropdown"></select><br>
+
+            <label for="batchLocationDropdown" style="color: Yellow;">Location:</label>
+            <select name="batchLocation" id="batchLocationDropdown"></select><br>
+
+            <label for="batchFolderPath" style="color: Yellow;">Folder Path:</label>
+            <input type="text" name="batchFolderPath" id="batchFolderPath" placeholder="Absolute Folder Path"><br>
+
+            <input type="file" name="files" id="files" multiple><br>
+            <input type="submit" value="Process Folder">
+        </form>
+    </div>
+{% endif %}
+
+{% if session['user_level'] in ['LEVEL_I', 'LEVEL_II', 'LEVEL_III', 'ADMIN'] %}
+    <div id="search-drawings" class="form-container">
+        <h2>Search Drawings</h2>
+        {% include 'upload_search_database/upload_search_database_partial/search_drawing_form_partial.html' %}
+    </div>
+
+    <div id="search-powerpoints" class="form-container">
+        <h2>Search PowerPoints</h2>
+        <form id="search-powerpoints-form">
+            <label for="search_powerpoints_description" style="color: Yellow;">Description:</label><br>
+            <input type="text" name="description" id="search_powerpoints_description" placeholder="Search by Description"><br>
+
+            <label for="search_powerpoints_title" style="color: Yellow;">Title:</label><br>
+            <input type="text" name="title" id="search_powerpoints_title" placeholder="Search by Title"><br>
+
+            <label for="searchpowerpoint_areaDropdown" style="color: Yellow;">Area:</label><br>
+            <select name="searchpowerpoint_area" id="searchpowerpoint_areaDropdown"></select><br>
+
+            <label for="searchpowerpoint_equipmentGroupDropdown" style="color: Yellow;">Equipment Group:</label><br>
+            <select name="searchpowerpoint_equipment_group" id="searchpowerpoint_equipmentGroupDropdown"></select><br>
+
+            <label for="searchpowerpoint_modelDropdown" style="color: Yellow;">Model:</label><br>
+            <select name="searchpowerpoint_model" id="searchpowerpoint_modelDropdown"></select><br>
+
+            <label for="searchpower_assetNumberDropdown" style="color: Yellow;">Asset Number:</label><br>
+            <select name="searchpowerpoint_asset_number" id="searchpower_assetNumberDropdown"></select><br>
+
+            <label for="searchpowerpoint_locationDropdown" style="color: Yellow;">Location:</label><br>
+            <select name="searchpowerpoint_location" id="searchpowerpoint_locationDropdown"></select><br>
+
+            <input type="submit" value="Search">
+        </form>
+    </div>
+
+    <div id="search-images" class="form-container">
+        <h2>Search Images</h2>
+        <form id="search-images-form">
+            <label for="search_images_description" style="color: Yellow;">Description:</label><br>
+            <input type="text" name="description" id="search_images_description" placeholder="Search by Description"><br>
+
+            <label for="search_images_title" style="color: Yellow;">Title:</label><br>
+            <input type="text" name="title" id="search_images_title" placeholder="Search by Title"><br>
+
+            <label for="searchimage_areaDropdown" style="color: Yellow;">Area:</label><br>
+            <select name="searchimage_area" id="searchimage_areaDropdown"></select><br>
+
+            <label for="searchimage_equipmentGroupDropdown" style="color: Yellow;">Equipment Group:</label><br>
+            <select name="searchimage_equipment_group" id="searchimage_equipmentGroupDropdown"></select><br>
+
+            <label for="searchimage_modelDropdown" style="color: Yellow;">Model:</label><br>
+            <select name="searchimage_model" id="searchimage_modelDropdown"></select><br>
+
+            <label for="searchimage_assetNumberDropdown" style="color: Yellow;">Asset Number:</label><br>
+            <select name="searchimage_asset_number" id="searchimage_assetNumberDropdown"></select><br>
+
+            <label for="searchimage_locationDropdown" style="color: Yellow;">Location:</label><br>
+            <select name="searchimage_location" id="searchimage_locationDropdown"></select><br>
+
+            <input type="submit" value="Search">
+        </form>
+    </div>
+
+    <div id="compare-images" class="form-container">
+        <h2>Upload and Compare Image</h2>
+        <form id="upload-compare-form" action="/upload_and_compare" method="post" enctype="multipart/form-data">
+            <div id="drop-zone" class="drop-zone">
+                Drag &amp; Drop your image here or click to upload
+            </div>
+
+            <div id="uploaded-image-preview" style="display: none; margin-top: 20px; text-align: center;">
+                <h3 style="color: yellow;">Your Uploaded Image</h3>
+                <img id="uploaded-image" style="max-width: 650px; max-height: 650px; border: 2px solid #ccc; border-radius: 5px; padding: 5px;" />
+            </div>
+
+            <input type="file" id="file-input" name="query_image" accept="image/*" style="display: none;">
+            <input type="hidden" name="model_name" value="clip">
+            <button type="submit" style="display: none;">Upload and Compare</button>
+        </form>
+    </div>
+
+    <div id="search-documents" class="form-container">
+        <h2>Search Documents</h2>
+        <form id="search-documents-form">
+            <label for="search_documents_title" style="color: Yellow;">Title:</label><br>
+            <input type="text" name="title" id="search_documents_title" placeholder="Title"><br>
+
+            <label for="searchdocument_areaDropdown" style="color: Yellow;">Area:</label><br>
+            <select name="searchdocument_area" id="searchdocument_areaDropdown"></select><br>
+
+            <label for="searchdocument_equipmentGroupDropdown" style="color: Yellow;">Equipment Group:</label><br>
+            <select name="searchdocument_equipmentgroup" id="searchdocument_equipmentGroupDropdown"></select><br>
+
+            <label for="searchdocument_modelDropdown" style="color: Yellow;">Model:</label><br>
+            <select name="searchdocument_model" id="searchdocument_modelDropdown"></select><br>
+
+            <label for="searchdocument_assetNumberDropdown" style="color: Yellow;">Asset Number:</label><br>
+            <select name="searchdocument_asset_number" id="searchdocument_assetNumberDropdown"></select><br>
+
+            <label for="searchdocument_locationDropdown" style="color: Yellow;">Location:</label><br>
+            <select name="searchdocument_location" id="searchdocument_locationDropdown"></select><br>
+
+            <input type="submit" value="Search">
+        </form>
+    </div>
+{% endif %}
+
+<div id="results" class="results-container">
+    <h2>Search Results</h2>
+    <ul id="documents-list"></ul>
+    <ul id="image-results" class="image-results-container"></ul>
+    <ul id="image-compare-results" class="image-compare-results-container"></ul>
+    <div id="drawing-results" class="drawing-results-container"></div>
+</div>

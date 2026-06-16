@@ -3,94 +3,118 @@
 <head>
   <meta charset="UTF-8">
   <title>Login Page</title>
-  <!-- Ensure viewport units map correctly -->
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Your existing banner CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/redbanner.css') }}">
 
   <style>
-    /* 1. Base font-size (100% of browser default, usually 16px) */
     html {
-      font-size: 100%; /* 1rem = 16px at 100% zoom */
+      font-size: 100%;
     }
 
-    /* 2. Full‑viewport reset */
-    html, body {
+    html,
+    body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
     }
 
-    /* 3. Background covers entire viewport */
     body {
-  font-family: Arial, sans-serif;
-  display: flex;
-  flex-direction: column;      /* banner + content stack */
-  justify-content: center;
-  align-items: center;
-  background: url('{{ url_for("static", filename="background_images/squartooth.png") }}') center/cover no-repeat;
-}
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: url('{{ url_for("static", filename="background_images/abstractfractal.jpg") }}') center/cover no-repeat;
+    }
 
-    /* 4. Fixed banner (text in rem for scalability) */
     .banner {
       position: fixed;
-      top: 0; left: 0;
+      top: 0;
+      left: 0;
       width: 100%;
-      background: rgba(200,0,0,0.8);
+      background: rgba(200, 0, 0, 0.8);
       color: white;
-      padding: 0.75rem;           /* ~12px */
-      font-size: 1rem;            /* scales with zoom */
+      padding: 0.75rem;
+      font-size: 1rem;
       text-align: center;
       z-index: 2;
+      box-sizing: border-box;
     }
+
     .banner a {
       color: yellow;
       font-size: 1rem;
       margin-left: 1rem;
     }
 
-    /* 5. Flash messages */
     .flashes {
       list-style: none;
       padding: 0;
       margin: 1rem 0;
+      width: 50vw;
+      max-width: 32.5rem;
+      box-sizing: border-box;
+      z-index: 1;
     }
+
     .flashes li {
       margin: 0.5rem 0;
       padding: 0.75rem;
       border-radius: 0.25rem;
       font-size: 1rem;
     }
-    .success { background: #d4edda; color: #155724; border: 0.0625rem solid #c3e6cb; }
-    .error   { background: #f8d7da; color: #721c24; border: 0.0625rem solid #f5c6cb; }
-    .warning { background: #fff3cd; color: #856404; border: 0.0625rem solid #ffeeba; }
-    .info    { background: #d1ecf1; color: #0c5460; border: 0.0625rem solid #bee5eb; }
 
-    /* 6. Login box: fluid width + max, padding in rem */
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 0.0625rem solid #c3e6cb;
+    }
+
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 0.0625rem solid #f5c6cb;
+    }
+
+    .warning {
+      background: #fff3cd;
+      color: #856404;
+      border: 0.0625rem solid #ffeeba;
+    }
+
+    .info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 0.0625rem solid #bee5eb;
+    }
+
     .login-container {
-      width: 50vw;               /* 80% of viewport width */
-      max-width: 32.5rem;        /* 600px if 1rem=16px */
-      padding: 1.5rem;           /* ~24px */
-      background: rgba(255,255,255,0.8);
-      border-radius: 0.5rem;     /* ~8px */
-      box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.2);
+      width: 50vw;
+      max-width: 32.5rem;
+      padding: 1.5rem;
+      background: rgba(255, 255, 255, 0.86);
+      border-radius: 0.5rem;
+      box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.2);
       box-sizing: border-box;
       z-index: 1;
     }
 
-    /* 7. Headings & form elements scale with rem */
     .login-container h2 {
-      font-size: clamp(1.25rem, 4vw, 2rem); /* between 20px–32px */
+      font-size: clamp(1.25rem, 4vw, 2rem);
+      margin-top: 0;
       margin-bottom: 1rem;
     }
+
     .login-container label,
     .login-container input,
     .login-container button,
     .login-container a {
       font-size: 1rem;
     }
+
     .login-container input {
       width: 100%;
       padding: 0.5rem;
@@ -99,6 +123,7 @@
       border-radius: 0.25rem;
       box-sizing: border-box;
     }
+
     .login-container button {
       padding: 0.75rem 1.5rem;
       border: none;
@@ -108,13 +133,56 @@
       cursor: pointer;
     }
 
-    /* 8. Fullscreen button (optional) */
+    .login-container button:hover {
+      background: #0056b3;
+    }
+
+    .tablet-context {
+      margin: 0 0 1rem 0;
+      padding: 0.75rem;
+      border-radius: 0.25rem;
+      background: rgba(0, 0, 0, 0.08);
+      color: #222;
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+
+    .tablet-context strong {
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .tablet-context span {
+      display: block;
+      overflow-wrap: anywhere;
+    }
+
+    .password-reset-note {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      border-radius: 0.25rem;
+      background: rgba(0, 123, 255, 0.12);
+      color: #222;
+      border: 0.0625rem solid rgba(0, 123, 255, 0.25);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    .login-links {
+      margin-top: 1rem;
+    }
+
+    .login-links a {
+      display: inline-block;
+      margin-right: 1rem;
+    }
+
     #fs-btn {
       position: fixed;
       bottom: 1rem;
       right: 1rem;
       padding: 0.5rem 1rem;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0, 0, 0, 0.6);
       color: white;
       border: none;
       border-radius: 0.25rem;
@@ -122,15 +190,50 @@
       cursor: pointer;
       z-index: 3;
     }
+
+    #commentPopup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 1rem;
+      z-index: 4;
+      box-shadow: 0 0 0.625rem rgba(0, 0, 0, 0.5);
+    }
+
+    @media (max-width: 768px) {
+      body {
+        justify-content: flex-start;
+        padding-top: 5.5rem;
+        box-sizing: border-box;
+      }
+
+      .login-container,
+      .flashes {
+        width: 90vw;
+      }
+
+      .banner {
+        font-size: 0.9rem;
+        line-height: 1.35;
+      }
+
+      .banner a {
+        display: inline-block;
+        margin-top: 0.25rem;
+      }
+    }
   </style>
 </head>
+
 <body>
   <div class="banner">
     THIS IS FOR REFERENCE ONLY. ALL INFORMATION SHOULD BE VERIFIED WITH CURRENT SOP'S
     <a href="#" id="commentPopupLink">Leave a Comment</a>
   </div>
 
-  <!-- Flash messages -->
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       <ul class="flashes">
@@ -143,43 +246,93 @@
 
   <div class="login-container">
     <h2>Login</h2>
-    <form action="/login" method="post">
+
+    {% if tablet_uid or tablet_name %}
+      <div class="tablet-context">
+        <strong>Tablet session detected</strong>
+
+        {% if tablet_name %}
+          <span>Tablet Name: {{ tablet_name }}</span>
+        {% endif %}
+
+        {% if tablet_uid %}
+          <span>Tablet UID: {{ tablet_uid }}</span>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <form action="{{ url_for('login_bp.login') }}" method="post">
+      <input type="hidden" name="tablet_uid" value="{{ tablet_uid or '' }}">
+      <input type="hidden" name="tablet_name" value="{{ tablet_name or '' }}">
+
       <label for="employee_id">Employee ID:</label>
-      <input type="text" id="employee_id" name="employee_id" required>
+      <input
+        type="text"
+        id="employee_id"
+        name="employee_id"
+        autocomplete="username"
+        required
+      >
 
       <label for="password">Password:</label>
-      <input type="password" id="password" name="password" required>
+      <input
+        type="password"
+        id="password"
+        name="password"
+        autocomplete="current-password"
+        required
+      >
 
       <button type="submit">Log In</button>
     </form>
-    <p style="margin-top:1rem;">
-      <a href="/create_user">Create User</a>
-    </p>
+
+    <div class="password-reset-note">
+      If an admin reset your password, log in with the temporary password.
+      You will be required to create a new password before continuing.
+    </div>
+
+    <p class="login-links">
+    <a href="{{ url_for('create_user_bp.create_user') }}">Create User</a>
+    <a href="{{ url_for('login_bp.request_password_reset') }}">Request Password Reset</a>
+</p>
   </div>
 
-  <!-- (Optional) Fullscreen toggle -->
-  <button id="fs-btn">⛶ Fullscreen</button>
+  <button id="fs-btn" type="button">⛶ Fullscreen</button>
 
-  <!-- Comment popup (unchanged) -->
-  <div id="commentPopup" style="display:none; position:fixed; top:50%; left:50%;
-       transform:translate(-50%,-50%); background:white; padding:1rem; z-index:4;
-       box-shadow:0 0 0.625rem rgba(0,0,0,0.5);">
-    <!-- …form markup… -->
+  <div id="commentPopup">
+    <!-- Existing comment popup form markup can stay here if needed -->
   </div>
 
-  <!-- Audio & scripts (unchanged) -->
-  <audio id="background-audio" src="/static/audio/login_sound"></audio>
+  <audio id="background-audio" src="{{ url_for('static', filename='audio/login_sound') }}"></audio>
+
   <script>
-    document.getElementById('background-audio').play().catch(()=>{});
-    document.getElementById('fs-btn').addEventListener('click', () => {
-      const el = document.documentElement;
-      if (!document.fullscreenElement) {
-        el.requestFullscreen();
-      } else {
-        document.exitFullscreen();
+    (function () {
+      const audio = document.getElementById("background-audio");
+
+      if (audio) {
+        audio.play().catch(function () {
+          // Browser may block autoplay until user interaction.
+        });
       }
-    });
+
+      const fullscreenButton = document.getElementById("fs-btn");
+
+      if (fullscreenButton) {
+        fullscreenButton.addEventListener("click", function () {
+          const el = document.documentElement;
+
+          if (!document.fullscreenElement) {
+            if (el.requestFullscreen) {
+              el.requestFullscreen();
+            }
+          } else if (document.exitFullscreen) {
+            document.exitFullscreen();
+          }
+        });
+      }
+    })();
   </script>
+
   <script src="{{ url_for('static', filename='js/comment_pop_up.js') }}"></script>
 </body>
 </html>

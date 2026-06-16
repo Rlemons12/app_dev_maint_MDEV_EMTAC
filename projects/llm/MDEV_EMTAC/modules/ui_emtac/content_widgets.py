@@ -31,7 +31,7 @@ from kivymd.uix.card import MDCard
 # App-specific imports
 from modules.configuration.config import DATABASE_PATH_IMAGES_FOLDER
 from modules.configuration.log_config import logger
-from pop_widgets import Popup, ImageDetailsPopup, PartDetailsPopup
+from .pop_widgets import Popup, ImageDetailsPopup, PartDetailsPopup
 class NonDraggableMDRaisedButton(MDRaisedButton):
     """Button that prevents dragging behavior from parent containers"""
 

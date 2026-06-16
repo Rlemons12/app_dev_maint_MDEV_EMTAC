@@ -48,6 +48,11 @@ from kivymd.uix.dialog import MDDialog
 # --- SQLAlchemy ---
 from sqlalchemy.orm.exc import NoResultFound
 
+# Set project root as Python import path
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
 # --- Project Configuration ---
 from modules.configuration.config_env import DatabaseConfig
 from modules.configuration.log_config import logger, with_request_id
