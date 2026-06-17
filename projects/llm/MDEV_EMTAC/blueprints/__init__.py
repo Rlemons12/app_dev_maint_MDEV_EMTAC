@@ -63,7 +63,7 @@ from blueprints.get_powerpoint_list_data_bp import get_powerpoint_list_data_bp
 from blueprints.get_image_list_data_bp import get_image_list_data_bp
 from blueprints.get_list_data_bp import get_list_data_bp
 from blueprints.get_batch_list_data_bp import get_batch_list_data_bp
-from blueprints.chatbot_bp import chatbot_bp
+from blueprints.chatbot.chatbot_bp import chatbot_bp
 from blueprints.image_bp import image_bp
 from blueprints.add_document_bp import add_document_bp
 from blueprints.upload_powerpoint_bp import upload_powerpoint_bp
@@ -72,12 +72,12 @@ from blueprints.search_powerpoint_bp import search_powerpoint_bp
 from blueprints.display_pdf_bp import display_pdf_bp
 from blueprints.search_documents_bp import search_documents_bp
 from blueprints.search_powerpoint_fts_bp import search_powerpoint_fts_bp
-from blueprints.login_bp import login_bp
-from blueprints.create_user_bp import create_user_bp
+from blueprints.logon_logout.login_bp import login_bp
+from blueprints.user_creation.create_user_bp import create_user_bp
 from blueprints.search_documents_fts_bp import search_documents_fts_bp
-from blueprints.logout_bp import logout_bp
+from blueprints.logon_logout.logout_bp import logout_bp
 from blueprints.batch_processing_bp import batch_processing_bp
-from blueprints.admin_bp import admin_bp
+from blueprints.admin.admin_bp import admin_bp
 from blueprints.image_compare_bp import image_compare_bp
 from blueprints.folder_image_embedding_bp import folder_image_embedding_bp
 from blueprints.bill_of_materials.create_bill_of_material import create_bill_of_material_bp
