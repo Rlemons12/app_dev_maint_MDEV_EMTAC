@@ -56,7 +56,7 @@ def split_command(value: str) -> list[str]:
 # Dashboard host/port
 # ---------------------------------------------------------
 SERVICE_DASHBOARD_HOST: str = get_env("SERVICE_DASHBOARD_HOST", "127.0.0.1")
-SERVICE_DASHBOARD_PORT: int = int(get_env("SERVICE_DASHBOARD_PORT", "5000"))
+SERVICE_DASHBOARD_PORT: int = int(get_env("SERVICE_DASHBOARD_PORT", "5100"))
 
 
 # ---------------------------------------------------------
