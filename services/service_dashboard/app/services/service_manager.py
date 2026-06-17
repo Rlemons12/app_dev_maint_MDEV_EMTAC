@@ -7,6 +7,7 @@ import signal
 import socket
 import subprocess
 import threading
+import re
 import time
 from collections import deque
 from pathlib import Path
@@ -58,11 +59,16 @@ class ManagedService:
         self.started_at: Optional[float] = None
         self.last_known_status: str = "stopped"
 
+        # For command-managed services like PostgreSQL where pg_ctl.exe exits
+        # but postgres.exe keeps running independently.
+        self.external_pid: Optional[int] = None
+
         self.start_in_progress: bool = False
         self.stop_in_progress: bool = False
 
         self.log_tail_thread: Optional[threading.Thread] = None
         self.log_tail_stop_event = threading.Event()
+
 
     def append_output(self, line: str) -> None:
         clean_line = (line or "").rstrip()
@@ -80,48 +86,84 @@ class ManagedService:
         with self.lock:
             self.output_buffer.clear()
 
+    def _refresh_command_status(self) -> bool:
+        """
+        Refresh status for command-managed services.
+
+        PostgreSQL is started through pg_ctl.exe. pg_ctl.exe exits after starting
+        postgres.exe, so ServiceManager cannot rely on a Popen handle.
+
+        Source of truth:
+            pg_ctl -D <data_dir> status
+
+        Expected running output:
+            pg_ctl: server is running (PID: 14800)
+        """
+
+        if self.service_type != "command":
+            return False
+
+        if not self.status_command:
+            return self.last_known_status == "running"
+
+        try:
+            result = subprocess.run(
+                self.status_command,
+                cwd=self.cwd,
+                capture_output=True,
+                text=True,
+                shell=False,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+            )
+
+            stdout = result.stdout or ""
+            stderr = result.stderr or ""
+            output = f"{stdout}\n{stderr}"
+            output_lower = output.lower()
+
+            running = result.returncode == 0 or "server is running" in output_lower
+            stopped = (
+                "no server running" in output_lower
+                or "server is not running" in output_lower
+            )
+
+            if running:
+                self.last_known_status = "running"
+
+                pid_match = re.search(r"PID:\s*(\d+)", output, flags=re.IGNORECASE)
+                if pid_match:
+                    try:
+                        self.external_pid = int(pid_match.group(1))
+                    except Exception:
+                        self.external_pid = None
+
+                if self.started_at is None:
+                    self.started_at = time.time()
+
+                return True
+
+            if stopped:
+                self.last_known_status = "stopped"
+                self.external_pid = None
+                self.started_at = None
+                return False
+
+            # Unknown output. Preserve the last known state.
+            return self.last_known_status == "running"
+
+        except Exception as exc:
+            self.append_output(f"[SYSTEM] Status check failed: {exc}")
+            dash_warning(
+                f"Status check failed for service='{self.name}' error={exc}"
+            )
+            return self.last_known_status == "running"
+
     def is_running(self) -> bool:
         if self.service_type == "process":
             return self.process is not None and self.process.poll() is None
 
         if self.service_type == "command":
-            if not self.status_command:
-                return self.last_known_status == "running"
-
-            try:
-                result = subprocess.run(
-                    self.status_command,
-                    cwd=self.cwd,
-                    capture_output=True,
-                    text=True,
-                    shell=False,
-                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
-                )
-
-                stdout = result.stdout or ""
-                stderr = result.stderr or ""
-                output = f"{stdout}\n{stderr}".lower()
-
-                if result.returncode == 0:
-                    self.last_known_status = "running"
-                    return True
-
-                if "server is running" in output:
-                    self.last_known_status = "running"
-                    return True
-
-                if "no server running" in output:
-                    self.last_known_status = "stopped"
-                    return False
-
-                return self.last_known_status == "running"
-
-            except Exception as exc:
-                self.append_output(f"[SYSTEM] Status check failed: {exc}")
-                dash_warning(
-                    f"Status check failed for service='{self.name}' error={exc}"
-                )
-                return self.last_known_status == "running"
+            return self._refresh_command_status()
 
         return False
 
@@ -129,9 +171,28 @@ class ManagedService:
         if self.service_type == "process" and self.process and self.is_running():
             return self.process.pid
 
+        if self.service_type == "command":
+            self._refresh_command_status()
+            return self.external_pid
+
         return None
 
     def get_status(self) -> str:
+        if self.service_type == "command":
+            if self.start_in_progress:
+                if self._refresh_command_status():
+                    self.start_in_progress = False
+                    return "running"
+                return "starting"
+
+            if self.stop_in_progress:
+                if not self._refresh_command_status():
+                    self.stop_in_progress = False
+                    return "stopped"
+                return "stopping"
+
+            return "running" if self._refresh_command_status() else "stopped"
+
         if self.start_in_progress:
             return "starting"
 
@@ -208,7 +269,25 @@ class ServiceManager:
     def __init__(self):
         self.services: Dict[str, ManagedService] = {}
         self.manager_lock = threading.RLock()
-        dash_info("ServiceManager initialized")
+
+        # When false, the dashboard will not treat an externally reachable
+        # process as a dashboard-owned running service.
+        #
+        # This keeps service ownership clear:
+        # - Dashboard-started services show PID/uptime/output.
+        # - External/manual services do not get silently treated as owned.
+        self.treat_external_reachable_as_running = (
+            os.getenv("DASHBOARD_TREAT_EXTERNAL_REACHABLE_AS_RUNNING", "false")
+            .strip()
+            .lower()
+            in {"1", "true", "yes", "y", "on"}
+        )
+
+        dash_info(
+            "ServiceManager initialized | "
+            f"treat_external_reachable_as_running="
+            f"{self.treat_external_reachable_as_running}"
+        )
 
     def register_service(self, config: dict[str, Any]) -> None:
         name = config["name"]
@@ -384,13 +463,46 @@ class ServiceManager:
 
             return reachable
 
+
         except HTTPError as exc:
+
             # HTTP error still proves a service is answering on that route.
-            # MCP streamable HTTP commonly returns 406 if Accept headers are not exact.
+
+            # MCP streamable HTTP commonly returns 400/406/405 for plain GET
+
+            # requests because it expects MCP/SSE-style headers and flow.
+
+            service_name = service.name.strip().lower()
+
+            if service_name in {
+
+                "emtac mcp coordinator",
+
+                "mcp coordinator",
+
+                "mcp_coordinator",
+
+            } and exc.code in {400, 405, 406}:
+                dash_debug(
+
+                    f"MCP Coordinator reachability check got expected HTTP "
+
+                    f"status service='{service.name}' url='{health_url}' "
+
+                    f"status={exc.code}; treating as reachable"
+
+                )
+
+                return True
+
             dash_warning(
+
                 f"Service reachability check got HTTP error "
+
                 f"service='{service.name}' url='{health_url}' status={exc.code}"
+
             )
+
             return True
 
         except URLError as exc:
@@ -540,16 +652,22 @@ class ServiceManager:
         if service.stop_in_progress:
             return "stopping"
 
+        # Dashboard-owned process or command-managed service.
         if service.is_running():
             return "running"
 
-        if self._is_gpu_service_name(service) and self._is_gpu_service_reachable():
-            service.last_known_status = "running"
-            return "running"
+        # Optional legacy behavior:
+        # Treat a reachable external process as running even if the dashboard
+        # did not start it. Default is false so services must be started from
+        # the dashboard to be considered dashboard-owned/running.
+        if self.treat_external_reachable_as_running:
+            if self._is_gpu_service_name(service) and self._is_gpu_service_reachable():
+                service.last_known_status = "running"
+                return "running"
 
-        if service.service_type == "process" and self._is_service_reachable(service):
-            service.last_known_status = "running"
-            return "running"
+            if service.service_type == "process" and self._is_service_reachable(service):
+                service.last_known_status = "running"
+                return "running"
 
         return service.get_status()
 
