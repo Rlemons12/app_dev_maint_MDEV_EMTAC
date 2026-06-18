@@ -22,7 +22,7 @@ Write-Warning "This script should be run as Administrator because netsh portprox
 }
 
 Write-Host "Setting active port mapping:"
-Write-Host " $ListenAddress:$ActivePort -> $TargetAddress:$TargetPort"
+Write-Host " ${ListenAddress}:$ActivePort -> ${TargetAddress}:$TargetPort"
 
 Delete previous mapping if present.
 
@@ -68,3 +68,5 @@ netsh interface portproxy show v4tov4
 Write-Host ""
 Write-Host "Test locally:"
 Write-Host " Invoke-WebRequest http://127.0.0.1:$ActivePort/health -UseBasicParsing"
+
+
