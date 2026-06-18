@@ -1,54 +1,100 @@
 ﻿# EMTAC production slot deployment exclusions
+
 # ------------------------------------------------------------
+
 # Purpose:
+
 # These items should NOT be copied from dev into prod slots.
+
 #
+
 # Production slots should contain app runtime code only.
+
 # Shared/mutable stores live outside the slot.
+
 #
+
 # KEEP in slot:
+
 # - .venv
+
 # - .env
+
 # - ai_emtac.py
+
 # - wsgi.py
-# - __init__.py
+
+# - **init**.py
+
 # - blueprints
+
 # - modules
+
 # - static
+
 # - templates
+
 # - utilities
+
 # - Database junction to E:\emtac\Database
+
 #
+
 # NOTE:
+
 # .venv and .env are listed below so deploy-copy does not overwrite them.
+
 # They should already exist in the slot and be preserved.
+
+#
+
+# NOTE:
+
+# "Database" is excluded from copy because the production slot should use
+
+# a junction:
+
+#
+
+# E:\emtac\prod\slots<slot>\Database -> E:\emtac\Database
+
+#
+
+# Do not copy a physical Database folder into a production slot.
 
 [exclude_dirs]
 .git
 .venv
+.venv_old
 .idea
 .vs
-__pycache__
+.dvc
+**pycache**
 .pytest_cache
 .mypy_cache
 .ruff_cache
 
+Database
 Database(can be removed)
 data
 databases
+document_equipment_output
 load_process
 logs
 log_backup
 mi_au_maint
+output
 pgvector
 plugins
 project_documentation
 project_tests
+reports
 scripts
 scripts_output
 sql
 tests
 test_config
+uploads
 utility_tools
 _internal
 
@@ -58,8 +104,12 @@ _internal
 *.pyc
 *.pyo
 *.log
+*.tmp
+*.bak
+*.old
+*.orig
+*.backup_*
 
---root
 .cadenceignore
 .dvcignore
 .gitignore
@@ -96,3 +146,32 @@ requirements*.txt
 
 [exclude_specific]
 data\demo_testpoints.json
+
+# ------------------------------------------------------------
+
+# Post-copy cleanup
+
+# ------------------------------------------------------------
+
+# These are items that should not remain in the slot, but should not be
+
+# passed directly to robocopy because some names can be interpreted as
+
+# command arguments.
+
+#
+
+# Example:
+
+# --root breaks robocopy if passed directly to /XF.
+
+[post_copy_remove_files]
+--root
+
+[post_copy_remove_dirs]
+.venv_old
+.dvc
+document_equipment_output
+output
+reports
+uploads
