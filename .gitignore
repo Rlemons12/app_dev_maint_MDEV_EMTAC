@@ -492,3 +492,59 @@ services/wheel_scan_report.json
 # Local tools folder - keep out of production release
 tools/
 tools/**
+# ------------------------------------------------------------
+# EMTAC production runtime - do not track slot state
+# ------------------------------------------------------------
+prod/run/
+prod/shared/
+prod/slots/
+
+prod/**/.env
+prod/**/.env.*
+prod/**/.venv/
+prod/**/*.log
+prod/**/__pycache__/
+prod/**/*.backup_*
+prod/scripts/*.backup_*
+
+# Keep prod README/scripts/slot exclusions trackable:
+# prod/README.md
+# prod/slot_exclusions.txt
+# prod/scripts/*.ps1
+
+# ------------------------------------------------------------
+# Accidental copied/vendor dependency folders
+# ------------------------------------------------------------
+services/mcp_server/psycopg/
+
+# ------------------------------------------------------------
+# EMTAC production runtime - do not track slot state
+# ------------------------------------------------------------
+prod/run/
+prod/shared/
+prod/slots/
+
+prod/**/.env
+prod/**/.env.*
+prod/**/.venv/
+prod/**/*.log
+prod/**/__pycache__/
+prod/**/*.backup_*
+prod/scripts/*.backup_*
+
+# Keep prod README/scripts/slot exclusions trackable:
+# prod/README.md
+# prod/slot_exclusions.txt
+# prod/scripts/*.ps1
+
+# ------------------------------------------------------------
+# Accidental copied/vendor dependency folders
+# ------------------------------------------------------------
+services/mcp_server/psycopg/
+
+# ------------------------------------------------------------
+# Generated production dependency audit reports
+# ------------------------------------------------------------
+prod/dependency_manifest.*
+prod/missing_wheels.*
+prod/wheel_inventory.csv

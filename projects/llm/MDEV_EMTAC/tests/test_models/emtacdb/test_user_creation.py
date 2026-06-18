@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 import sys
 import os
-from flask import Flask, session
+from flask import Flask
 from datetime import datetime
 
 # Add the project root to Python path
@@ -24,7 +24,7 @@ class TestUserCreation(unittest.TestCase):
             return "Login page"
 
         # Import and register the blueprint
-        from blueprints.create_user_bp import create_user_bp
+        from blueprints.user_creation.create_user_bp import create_user_bp
         self.app.register_blueprint(create_user_bp)
 
         # Test client

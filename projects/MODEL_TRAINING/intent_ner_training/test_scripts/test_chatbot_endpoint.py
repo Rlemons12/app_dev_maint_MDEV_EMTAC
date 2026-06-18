@@ -5,7 +5,7 @@ from unittest.mock import patch, MagicMock
 from flask import Flask
 import importlib
 chatbot_module = importlib.import_module("blueprints.chatbot_bp")
-from blueprints.chatbot_bp import chatbot_bp  # still need the Blueprint itself
+from blueprints.chatbot.chatbot_bp import chatbot_bp  # still need the Blueprint itself
 
 @pytest.fixture(scope="module")
 def client():

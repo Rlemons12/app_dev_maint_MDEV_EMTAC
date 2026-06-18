@@ -4,13 +4,23 @@ import asyncio
 import os
 from typing import Any
 
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
-
 from listed_server.mcp_coordinator.settings import DownstreamServerConfig, get_settings
 
 
 class DownstreamMCPClient:
+    """
+    Executes routed coordinator requests against downstream capability providers.
+
+    Current behavior:
+    - postgres: direct local Python call into listed_server.mcp_postgres.tools.postgres_tools
+    - grafana: stdio MCP client call using configured downstream MCP command
+    - other capabilities: not implemented yet
+
+    Important Windows note:
+    MCP stdio imports can require pywin32/win32api. Those imports are intentionally
+    lazy now, so Postgres execution does not require win32api.
+    """
+
     def __init__(self) -> None:
         self.settings = get_settings()
 
@@ -20,17 +30,33 @@ class DownstreamMCPClient:
         target_tool: str | None,
         arguments: dict[str, Any],
     ) -> dict[str, Any]:
+        target_server = (target_server or "").strip().lower()
+
         if target_server == "postgres":
             return self._execute_postgres(target_tool, arguments)
 
         if target_server == "grafana":
-            return asyncio.run(
-                self.execute_async(
-                    target_server=target_server,
-                    target_tool=target_tool,
-                    arguments=arguments,
+            try:
+                asyncio.get_running_loop()
+            except RuntimeError:
+                return asyncio.run(
+                    self.execute_async(
+                        target_server=target_server,
+                        target_tool=target_tool,
+                        arguments=arguments,
+                    )
                 )
-            )
+
+            return {
+                "status": "error",
+                "message": (
+                    "Synchronous execute() cannot run Grafana while an event loop is already active. "
+                    "Use execute_async() instead."
+                ),
+                "target_server": target_server,
+                "target_tool": target_tool,
+                "arguments": arguments,
+            }
 
         return {
             "status": "not_implemented",
@@ -46,6 +72,8 @@ class DownstreamMCPClient:
         target_tool: str | None,
         arguments: dict[str, Any],
     ) -> dict[str, Any]:
+        target_server = (target_server or "").strip().lower()
+
         if target_server == "postgres":
             return self._execute_postgres(target_tool, arguments)
 
@@ -78,9 +106,19 @@ class DownstreamMCPClient:
                 "arguments": arguments,
             }
 
-        from listed_server.mcp_postgres.tools import postgres_tools
+        try:
+            from listed_server.mcp_postgres.tools import postgres_tools
+        except Exception as exc:
+            return {
+                "status": "error",
+                "message": f"Could not import postgres_tools: {exc}",
+                "target_server": "postgres",
+                "target_tool": target_tool,
+                "arguments": arguments,
+            }
 
         tool_fn = getattr(postgres_tools, target_tool, None)
+
         if tool_fn is None:
             return {
                 "status": "not_implemented",
@@ -90,11 +128,22 @@ class DownstreamMCPClient:
                 "arguments": arguments,
             }
 
+        try:
+            result = tool_fn(**arguments)
+        except Exception as exc:
+            return {
+                "status": "error",
+                "message": f"Postgres tool execution failed: {exc}",
+                "target_server": "postgres",
+                "target_tool": target_tool,
+                "arguments": arguments,
+            }
+
         return {
             "status": "ok",
             "target_server": "postgres",
             "target_tool": target_tool,
-            "result": tool_fn(**arguments),
+            "result": result,
         }
 
     async def _execute_configured_downstream(
@@ -109,6 +158,8 @@ class DownstreamMCPClient:
                 "status": "disabled",
                 "message": f"{target_server} MCP is not enabled.",
                 "target_server": target_server,
+                "target_tool": target_tool,
+                "arguments": arguments,
             }
 
         if not config.command:
@@ -116,12 +167,17 @@ class DownstreamMCPClient:
                 "status": "error",
                 "message": f"{target_server} MCP command is not configured.",
                 "target_server": target_server,
+                "target_tool": target_tool,
+                "arguments": arguments,
             }
 
         if not target_tool:
             return {
                 "status": "tool_required",
-                "message": "No target tool was selected. Call the Grafana MCP server directly or route a more specific request.",
+                "message": (
+                    "No target tool was selected. "
+                    "Call the downstream MCP server directly or route a more specific request."
+                ),
                 "target_server": target_server,
                 "arguments": arguments,
             }
@@ -140,8 +196,39 @@ class DownstreamMCPClient:
         target_tool: str,
         arguments: dict[str, Any],
     ) -> dict[str, Any]:
+        """
+        Calls a downstream MCP server over stdio.
+
+        MCP stdio imports are intentionally inside this function so Postgres
+        execution does not require win32api/pywin32.
+        """
+        try:
+            from mcp import ClientSession, StdioServerParameters
+            from mcp.client.stdio import stdio_client
+        except ModuleNotFoundError as exc:
+            return {
+                "status": "error",
+                "message": (
+                    "Could not import MCP stdio dependencies. "
+                    "On Windows this usually means pywin32/win32api is unavailable "
+                    "or PATH/PYTHONPATH is not configured for pywin32."
+                ),
+                "missing_module": exc.name,
+                "target_server": target_server,
+                "target_tool": target_tool,
+                "arguments": arguments,
+            }
+        except Exception as exc:
+            return {
+                "status": "error",
+                "message": f"Could not import MCP stdio client: {exc}",
+                "target_server": target_server,
+                "target_tool": target_tool,
+                "arguments": arguments,
+            }
+
         env = os.environ.copy()
-        env.update(config.env)
+        env.update(getattr(config, "env", {}) or {})
 
         server_params = StdioServerParameters(
             command=config.command,
@@ -149,25 +236,38 @@ class DownstreamMCPClient:
             env=env,
         )
 
-        async with stdio_client(server_params) as (read, write):
-            async with ClientSession(read, write) as session:
-                await session.initialize()
-                result = await session.call_tool(target_tool, arguments=arguments)
+        try:
+            async with stdio_client(server_params) as (read, write):
+                async with ClientSession(read, write) as session:
+                    await session.initialize()
+                    result = await session.call_tool(
+                        target_tool,
+                        arguments=arguments,
+                    )
 
-                if getattr(result, "isError", False):
+                    if getattr(result, "isError", False):
+                        return {
+                            "status": "error",
+                            "target_server": target_server,
+                            "target_tool": target_tool,
+                            "result": _content_to_jsonable(result.content),
+                        }
+
                     return {
-                        "status": "error",
+                        "status": "ok",
                         "target_server": target_server,
                         "target_tool": target_tool,
                         "result": _content_to_jsonable(result.content),
                     }
 
-                return {
-                    "status": "ok",
-                    "target_server": target_server,
-                    "target_tool": target_tool,
-                    "result": _content_to_jsonable(result.content),
-                }
+        except Exception as exc:
+            return {
+                "status": "error",
+                "message": f"Downstream stdio MCP call failed: {exc}",
+                "target_server": target_server,
+                "target_tool": target_tool,
+                "arguments": arguments,
+            }
 
 
 def _json_safe(value: Any) -> Any:

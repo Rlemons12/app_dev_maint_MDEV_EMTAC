@@ -320,12 +320,31 @@ def get_local_ip():
     return local_ip
 
 
+def _env_bool(name: str, default: bool = False) -> bool:
+    value = os.environ.get(name)
+
+    if value is None:
+        return default
+
+    return value.strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
 def open_browser():
     """Open browser with request ID tracking."""
+    if not _env_bool("EMTAC_AUTO_OPEN_BROWSER", True):
+        return
+
     request_id = set_request_id("browser-open")
-    port = int(os.environ.get("PORT", 5000))
-    ip = get_local_ip()
-    url = f"http://{ip}:{port}/"
+
+    configured_url = os.environ.get("EMTAC_BROWSER_URL", "").strip()
+
+    if configured_url:
+        url = configured_url
+    else:
+        port = int(os.environ.get("PORT", os.environ.get("EMTAC_PORT", 5000)))
+        ip = get_local_ip()
+        url = f"http://{ip}:{port}/"
+
     info_id(f"Opening browser at {url}", request_id)
     webbrowser.open_new(url)
 
@@ -844,8 +863,9 @@ def create_app(request_id=None):
             warning_id(f"403 Forbidden error: {e}", current_request_id)
             return render_template("403.html"), 403
 
-        if app.debug:
-            for rule in app.url_map.iter_rules():
+        if _env_bool("EMTAC_PRINT_ROUTES", False):
+            print("\nRegistered Flask routes:")
+            for rule in sorted(app.url_map.iter_rules(), key=lambda r: r.rule):
                 print(rule)
 
         host = os.environ.get("HOST", "0.0.0.0")
@@ -880,19 +900,20 @@ if __name__ == "__main__":
     print("Database service already verified during import phase")
     print("Unicode environment configured for proper character handling")
 
-    host = os.environ.get("HOST", "0.0.0.0")
-    port = int(os.environ.get("PORT", 5000))
+    host = os.environ.get("HOST", os.environ.get("EMTAC_HOST", "0.0.0.0"))
+    port = int(os.environ.get("PORT", os.environ.get("EMTAC_PORT", 5000)))
     debug_mode = os.environ.get("FLASK_DEBUG", "1") == "1"
 
     ip = get_local_ip()
-    url = f"http://{ip}:{port}/"
+    url = os.environ.get("EMTAC_BROWSER_URL", "").strip()
+
+    if not url:
+        url = f"http://{ip}:{port}/"
 
     info_id(f"Starting application on host: {host}, port: {port}", startup_request_id)
     info_id(f"Accessible at: {url}", startup_request_id)
     print(f"Starting application on host: {host}, port: {port}")
     print(f"Accessible at: {url}")
-
-    Timer(3, open_browser).start()
 
     with log_timed_operation("create_flask_app", startup_request_id):
         app = create_app(startup_request_id)
@@ -912,10 +933,14 @@ if __name__ == "__main__":
     info_id("Flask application ready to serve requests", startup_request_id)
     info_id("Request ID tracking enabled for all operations", startup_request_id)
 
+    if _env_bool("EMTAC_AUTO_OPEN_BROWSER", True):
+        Timer(3, open_browser).start()
+
     socketio.run(
-    app,
-    host=host,
-    port=port,
-    debug=debug_mode,
-    allow_unsafe_werkzeug=True,
-)
+        app,
+        host=host,
+        port=port,
+        debug=debug_mode,
+        use_reloader=False,
+        allow_unsafe_werkzeug=True,
+    )

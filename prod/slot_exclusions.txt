@@ -1,0 +1,98 @@
+﻿# EMTAC production slot deployment exclusions
+# ------------------------------------------------------------
+# Purpose:
+# These items should NOT be copied from dev into prod slots.
+#
+# Production slots should contain app runtime code only.
+# Shared/mutable stores live outside the slot.
+#
+# KEEP in slot:
+# - .venv
+# - .env
+# - ai_emtac.py
+# - wsgi.py
+# - __init__.py
+# - blueprints
+# - modules
+# - static
+# - templates
+# - utilities
+# - Database junction to E:\emtac\Database
+#
+# NOTE:
+# .venv and .env are listed below so deploy-copy does not overwrite them.
+# They should already exist in the slot and be preserved.
+
+[exclude_dirs]
+.git
+.venv
+.idea
+.vs
+__pycache__
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+Database(can be removed)
+data
+databases
+load_process
+logs
+log_backup
+mi_au_maint
+pgvector
+plugins
+project_documentation
+project_tests
+scripts
+scripts_output
+sql
+tests
+test_config
+utility_tools
+_internal
+
+[exclude_files]
+.env
+.env.*
+*.pyc
+*.pyo
+*.log
+
+--root
+.cadenceignore
+.dvcignore
+.gitignore
+.gitkeep
+app.log
+
+check_excel_headers.py
+chk_pairs.py
+create_help_chat_files.py
+create_location_services.py
+create_maintenance_structure.py
+demo_module_templates.py
+drawing_position_loader.py
+enrichment_probe.py
+load_equipment_relationships_table_data.py
+position_relationships_loader.py
+postgres_connection_report.py
+postgres_control.py
+postgres_live_report.py
+project_env
+pytest.ini
+rdrive_grb.py
+replacements.txt
+verify_ingestion_pathway.py
+
+dvc.exe
+mi_au_maint.zip
+unins000.dat
+unins000.exe
+
+deployment_manifest*.json
+pip_check_*.txt
+requirements*.txt
+
+[exclude_specific]
+data\demo_testpoints.json
