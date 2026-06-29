@@ -548,3 +548,9 @@ services/mcp_server/psycopg/
 prod/dependency_manifest.*
 prod/missing_wheels.*
 prod/wheel_inventory.csv
+
+# Local secret files
+.env
+*.env
+**/.env
+**/*.env
