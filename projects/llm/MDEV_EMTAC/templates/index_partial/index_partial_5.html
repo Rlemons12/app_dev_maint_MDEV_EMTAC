@@ -1,141 +1,256 @@
+
+
 <script>
-// index_partial_5 functionality - EMTAC Assistant with five container layout
-document.addEventListener('DOMContentLoaded', function() {
-    // Question submission functionality
-    if (typeof submitQuestion !== 'function') {
-        window.submitQuestion = function() {
-            const userInput = document.getElementById('user_input').value;
-            const userId = document.getElementById('user_id').value;
+/**
+ * E:\emtac\projects\llm\MDEV_EMTAC\templates\index_partial\index_partial_5.html
+ * EMTAC Assistant — Canonical Frontend Controller
+ * DROP-IN replacement for index_partial_5 script
+ * Backend-driven UI (NO frontend inference)
+ */
 
-            if (!userInput.trim()) {
-                alert('Please enter a question');
-                return;
+document.addEventListener("DOMContentLoaded", function () {
+
+    // ============================================================
+    // Submit Question (AUTHORITATIVE)
+    // ============================================================
+    window.submitQuestion = function () {
+        const inputEl = document.getElementById("user_input");
+        const userIdEl = document.getElementById("user_id");
+        const areaEl   = document.getElementById("area");
+        const answerEl = document.getElementById("answer");
+
+        const question = inputEl?.value.trim();
+        const userId   = userIdEl?.value || "anonymous";
+        const area     = areaEl?.value || "";
+
+        if (!question) {
+            alert("Please enter a question");
+            return;
+        }
+
+        if (answerEl) {
+            answerEl.innerHTML = "Processing your question...";
+        }
+
+        clearAllContainers();
+
+        fetch("/chatbot/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                question,
+                userId,
+                area,
+                clientType: "web"
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log("[EMTAC] Full response:", data);
+            console.log("[EMTAC] Blocks:", data.blocks);
+
+            // ---------------- ANSWER ----------------
+            if (answerEl) {
+                answerEl.innerHTML =
+                    data.answer || "No answer returned.";
             }
 
-            const answerElement = document.getElementById('answer');
-            if (answerElement) {
-                answerElement.innerHTML = 'Processing your question...';
+            // ---------------- BLOCKS ----------------
+            const blocks = data.blocks || {};
+
+            renderImages(blocks["images-container"]);
+            renderDocuments(blocks["documents-container"]);
+            renderParts(blocks["parts-container"]);
+            renderDrawings(blocks["drawings-container"]);
+        })
+        .catch(err => {
+            console.error("[EMTAC] Ask failed:", err);
+            if (answerEl) {
+                answerEl.innerHTML =
+                    "Error processing your question. Please try again.";
             }
-
-            fetch('/ask_question', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ user_input: userInput, user_id: userId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (answerElement) {
-                    answerElement.innerHTML = data.answer || 'No answer found';
-                }
-
-                const thumbnailsSection = document.getElementById('thumbnails-section');
-                if (thumbnailsSection && data.thumbnails) {
-                    thumbnailsSection.innerHTML = '';
-                    data.thumbnails.forEach(thumb => {
-                        const img = document.createElement('img');
-                        img.src = thumb.url;
-                        img.alt = thumb.alt || 'Thumbnail';
-                        img.className = 'thumbnail';
-                        thumbnailsSection.appendChild(img);
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                if (answerElement) {
-                    answerElement.innerHTML = 'Error processing your question. Please try again.';
-                }
-            });
-
-            // Clear the input
-            document.getElementById('user_input').value = '';
-        };
-    }
-
-    // Quick action functions
-    window.clearChat = function() {
-        document.getElementById('answer').innerHTML = 'Welcome to EMTAC Assistant! Ask me anything about maintenance and technical assistance.';
-        document.getElementById('thumbnails-section').innerHTML = '';
-        document.getElementById('doc-links-section').innerHTML = '';
+        })
+        .finally(() => {
+            if (inputEl) inputEl.value = "";
+        });
     };
 
-    window.exportChat = function() {
-        const chatContent = document.getElementById('answer').innerText;
-        const blob = new Blob([chatContent], { type: 'text/plain' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
+    // ============================================================
+    // RENDERERS (PASSIVE BUCKETS)
+    // ============================================================
+    function renderImages(images = []) {
+        const section = document.getElementById("thumbnails-section");
+        if (!section) return;
+
+        section.replaceChildren();
+
+        images.forEach(img => {
+            const el = document.createElement("img");
+            el.src   = "/" + img.file_path.replace(/\\/g, "/");
+            el.alt   = img.title || "Image";
+            el.title = img.description || "";
+            el.className = "thumbnail";
+            section.appendChild(el);
+        });
+    }
+
+    function renderDocuments(docs = []) {
+    const section = document.getElementById("doc-links-section");
+    if (!section) {
+        console.warn("[renderDocuments] #doc-links-section not found");
+        return;
+    }
+
+    section.replaceChildren();
+
+    if (!Array.isArray(docs) || docs.length === 0) {
+        const empty = document.createElement("div");
+        empty.textContent = "No documents found.";
+        empty.style.color = "#aaa";
+        section.appendChild(empty);
+        return;
+    }
+
+    docs.forEach(doc => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "document-item";
+
+        const title = document.createElement("div");
+        title.className = "document-title";
+        title.textContent =
+            doc.title ||
+            `Document #${doc.complete_document_id || doc.document_id || ""}`;
+
+        wrapper.appendChild(title);
+
+        if (Array.isArray(doc.chunks) && doc.chunks.length > 0) {
+            const chunksDiv = document.createElement("div");
+            chunksDiv.className = "document-chunks";
+
+            doc.chunks.forEach(ch => {
+                if (!ch?.text) return;
+
+                const chunkDiv = document.createElement("div");
+                chunkDiv.className = "document-chunk";
+                chunkDiv.textContent = ch.text.trim();
+                chunksDiv.appendChild(chunkDiv);
+            });
+
+            wrapper.appendChild(chunksDiv);
+        }
+
+        section.appendChild(wrapper);
+    });
+}
+
+
+    function renderParts(parts = []) {
+        const section = document.getElementById("parts-container");
+        if (!section || !parts.length) return;
+
+        section.replaceChildren();
+        parts.forEach(p => {
+            const div = document.createElement("div");
+            div.textContent = p.name || p.part_number || "Part";
+            section.appendChild(div);
+        });
+    }
+
+    function renderDrawings(drawings = []) {
+        const section = document.getElementById("drawing-section");
+        if (!section || !drawings.length) return;
+
+        section.replaceChildren();
+        drawings.forEach(d => {
+            const div = document.createElement("div");
+            div.textContent = d.title || "Drawing";
+            section.appendChild(div);
+        });
+    }
+
+    // ============================================================
+    // UTILITIES
+    // ============================================================
+    function clearAllContainers() {
+        [
+            "thumbnails-section",
+            "doc-links-section",
+            "parts-container",
+            "drawing-section"
+        ].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = "";
+        });
+    }
+
+    window.clearChat = function () {
+        const answerEl = document.getElementById("answer");
+        if (answerEl) {
+            answerEl.innerHTML =
+                "Welcome to EMTAC Assistant! Ask me anything about maintenance and technical assistance.";
+        }
+        clearAllContainers();
+    };
+
+    window.exportChat = function () {
+        const text = document.getElementById("answer")?.innerText || "";
+        const blob = new Blob([text], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
         a.href = url;
-        a.download = 'emtac-chat-export.txt';
+        a.download = "emtac-chat-export.txt";
         document.body.appendChild(a);
         a.click();
-        window.URL.revokeObjectURL(url);
+        URL.revokeObjectURL(url);
         document.body.removeChild(a);
     };
 
-    window.showHelp = function() {
-        document.getElementById('answer').innerHTML = `
-            <strong>EMTAC Assistant Help:</strong><br><br>
-            • Type your maintenance or technical questions in the input box<br>
-            • View related images in the Images panel<br>
-            • Access relevant documents in the Documents panel<br>
-            • Use Quick Actions to manage your chat<br>
-            • Provide feedback using the Feedback panel<br><br>
-            <em>Remember: All information should be verified with current SOPs</em>
+    window.showHelp = function () {
+        const answerEl = document.getElementById("answer");
+        if (!answerEl) return;
+        answerEl.innerHTML = `
+            <strong>EMTAC Assistant Help</strong><br><br>
+            • Ask maintenance or technical questions<br>
+            • Images appear in the Images panel<br>
+            • Documents appear in the Documents panel<br>
+            • Use Quick Actions to manage your chat<br><br>
+            <em>Always verify with official SOPs</em>
         `;
     };
 
-    // Allow Enter key to submit (with Shift+Enter for new line)
-    const userInput = document.getElementById('user_input');
-    if (userInput) {
-        userInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
+    // ============================================================
+    // ENTER KEY HANDLING
+    // ============================================================
+    const input = document.getElementById("user_input");
+    if (input) {
+        input.addEventListener("keydown", e => {
+            if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 submitQuestion();
             }
         });
     }
 
-    // Comment submission functionality
-    const submitCommentBtn = document.getElementById('submit_comment_rating');
-    if (submitCommentBtn) {
-        submitCommentBtn.addEventListener('click', function() {
-            const comment = document.getElementById('user_comment').value;
-            const rating = document.getElementById('rating').value;
+    // ============================================================
+    // PANEL TOGGLES
+    // ============================================================
+    document.querySelectorAll(".toggle-btn").forEach(btn => {
+        btn.addEventListener("click", function () {
+            const container = this.closest(".content-container");
+            const body = container?.querySelector(".container-body");
+            if (!body) return;
 
-            if (!comment.trim()) {
-                alert('Please enter a comment');
-                return;
-            }
-
-            // Here you would typically send the comment to your backend
-            alert(`Thank you for your feedback!\nRating: ${rating}/10\nComment: ${comment}`);
-
-            // Clear the form
-            document.getElementById('user_comment').value = '';
-            document.getElementById('rating').value = '1';
-        });
-    }
-
-    // Toggle panel functionality
-    const toggleButtons = document.querySelectorAll('.toggle-btn');
-    toggleButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const container = this.closest('.content-container');
-            const body = container.querySelector('.container-body');
-
-            if (body.style.display === 'none') {
-                body.style.display = 'flex';
-                this.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-            } else {
-                body.style.display = 'none';
-                this.style.backgroundColor = '#ff4444';
-            }
+            const hidden = body.style.display === "none";
+            body.style.display = hidden ? "flex" : "none";
+            this.style.backgroundColor = hidden
+                ? "rgba(255,255,255,0.1)"
+                : "#ff4444";
         });
     });
+
 });
-</script><div class="partial-template">
+</script>
+
     <div class="partial-header">
         <h1>EMTAC Assistant</h1>
         <p class="partial-description">Efficient Maintenance and Technical Assistance Chatbot</p>
@@ -183,17 +298,26 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
 
         <!-- Document Links Panel -->
-        <div class="content-container">
-            <div class="container-header">
-                <h3>Documents</h3>
-                <button class="toggle-btn">📄</button>
-            </div>
-            <div class="container-body">
-                <div class="doc-links-section" id="doc-links-section">
-                    <!-- Hoverable links for relevant documents will be displayed here -->
-                </div>
-            </div>
+    <div class="content-container">
+        <div class="container-header">
+            <h3>Documents</h3>
+            <button class="toggle-btn">📄</button>
         </div>
+
+        <div class="container-body"
+             id="documents-container"
+             data-role="documents-container">
+
+            <!-- ✅ ALIAS FOR EXISTING JS RENDERERS -->
+            <div class="doc-links-section"
+                 id="doc-links-section"
+                 data-role="documents-render-target">
+                <!-- Document titles + chunks will be injected here -->
+            </div>
+
+        </div>
+    </div>
+
 
         <!-- Quick Actions Panel -->
         <div class="content-container">
@@ -204,7 +328,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="container-body">
                 <div class="quick-actions">
                     <button class="action-btn" onclick="clearChat()">Clear Chat</button>
-                    <button class="action-btn" onclick="exportChat()">Export Chat</button>
                     <button class="action-btn" onclick="showHelp()">Help</button>
                 </div>
             </div>
@@ -552,141 +675,3 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 </style>
 
-<script>
-// index_partial_5 functionality - EMTAC Assistant with five container layout
-document.addEventListener('DOMContentLoaded', function() {
-    // Question submission functionality
-    if (typeof submitQuestion !== 'function') {
-        window.submitQuestion = function() {
-            const userInput = document.getElementById('user_input').value;
-            const userId = document.getElementById('user_id').value;
-
-            if (!userInput.trim()) {
-                alert('Please enter a question');
-                return;
-            }
-
-            const answerElement = document.getElementById('answer');
-            if (answerElement) {
-                answerElement.innerHTML = 'Processing your question...';
-            }
-
-            fetch('/ask_question', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ user_input: userInput, user_id: userId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (answerElement) {
-                    answerElement.innerHTML = data.answer || 'No answer found';
-                }
-
-                const thumbnailsSection = document.getElementById('thumbnails-section');
-                if (thumbnailsSection && data.thumbnails) {
-                    thumbnailsSection.innerHTML = '';
-                    data.thumbnails.forEach(thumb => {
-                        const img = document.createElement('img');
-                        img.src = thumb.url;
-                        img.alt = thumb.alt || 'Thumbnail';
-                        img.className = 'thumbnail';
-                        thumbnailsSection.appendChild(img);
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                if (answerElement) {
-                    answerElement.innerHTML = 'Error processing your question. Please try again.';
-                }
-            });
-
-            // Clear the input
-            document.getElementById('user_input').value = '';
-        };
-    }
-
-    // Quick action functions
-    window.clearChat = function() {
-        document.getElementById('answer').innerHTML = 'Welcome to EMTAC Assistant! Ask me anything about maintenance and technical assistance.';
-        document.getElementById('thumbnails-section').innerHTML = '';
-        document.getElementById('doc-links-section').innerHTML = '';
-    };
-
-    window.exportChat = function() {
-        const chatContent = document.getElementById('answer').innerText;
-        const blob = new Blob([chatContent], { type: 'text/plain' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'emtac-chat-export.txt';
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-    };
-
-    window.showHelp = function() {
-        document.getElementById('answer').innerHTML = `
-            <strong>EMTAC Assistant Help:</strong><br><br>
-            • Type your maintenance or technical questions in the input box<br>
-            • View related images in the Images panel<br>
-            • Access relevant documents in the Documents panel<br>
-            • Use Quick Actions to manage your chat<br>
-            • Provide feedback using the Feedback panel<br><br>
-            <em>Remember: All information should be verified with current SOPs</em>
-        `;
-    };
-
-    // Allow Enter key to submit (with Shift+Enter for new line)
-    const userInput = document.getElementById('user_input');
-    if (userInput) {
-        userInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                submitQuestion();
-            }
-        });
-    }
-
-    // Comment submission functionality
-    const submitCommentBtn = document.getElementById('submit_comment_rating');
-    if (submitCommentBtn) {
-        submitCommentBtn.addEventListener('click', function() {
-            const comment = document.getElementById('user_comment').value;
-            const rating = document.getElementById('rating').value;
-
-            if (!comment.trim()) {
-                alert('Please enter a comment');
-                return;
-            }
-
-            // Here you would typically send the comment to your backend
-            alert(`Thank you for your feedback!\nRating: ${rating}/10\nComment: ${comment}`);
-
-            // Clear the form
-            document.getElementById('user_comment').value = '';
-            document.getElementById('rating').value = '1';
-        });
-    }
-
-    // Toggle panel functionality
-    const toggleButtons = document.querySelectorAll('.toggle-btn');
-    toggleButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const container = this.closest('.content-container');
-            const body = container.querySelector('.container-body');
-
-            if (body.style.display === 'none') {
-                body.style.display = 'flex';
-                this.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-            } else {
-                body.style.display = 'none';
-                this.style.backgroundColor = '#ff4444';
-            }
-        });
-    });
-});
-</script>

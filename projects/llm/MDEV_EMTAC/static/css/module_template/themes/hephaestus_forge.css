@@ -1,0 +1,1208 @@
+/* static/css/themes/hephaestus_forge.css
+==================================
+HEPHAESTUS FORGE THEME
+Designed to sit on top of:
+static/css/module_template/base.css
+
+Role:
+- Override standardized base theme variables
+- Preserve layout ownership in base.css
+- Provide a dark forge / bronze / ember visual identity
+- Support reusable heph-* utility classes
+- Theme standardized .mt-* module template layouts
+- Theme content-area form controls and dropdowns
+- Support both native selects and Select2 widgets
+
+Important:
+- This file should be loaded AFTER base.css
+- Apply with class="hephaestus-forge" on html or body
+================================== */
+
+/* ==================================
+THEME VARIABLE OVERRIDES
+Apply by adding class="hephaestus-forge" to html or body
+================================== */
+html.hephaestus-forge,
+body.hephaestus-forge {
+    --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    --app-page-bg:
+        radial-gradient(circle at 18% 18%, rgba(255, 106, 33, 0.22) 0%, transparent 28%),
+        radial-gradient(circle at 80% 8%, rgba(242, 179, 90, 0.13) 0%, transparent 26%),
+        radial-gradient(circle at 50% 100%, rgba(255, 80, 20, 0.20) 0%, transparent 40%),
+        linear-gradient(135deg, #070707 0%, #150d0a 45%, #2a1008 100%);
+    --app-page-text: #f4eadc;
+
+    --app-banner-bg:
+        radial-gradient(circle at 18% 40%, rgba(255, 106, 33, 0.28), transparent 34%),
+        linear-gradient(135deg, #111111 0%, #24120c 58%, #3a160b 100%);
+    --app-banner-text: #fff3df;
+    --app-banner-link: #ffb35a;
+    --app-banner-link-bg: rgba(0, 0, 0, 0.28);
+    --app-banner-link-border: rgba(242, 179, 90, 0.34);
+    --app-banner-link-hover-bg: rgba(255, 106, 33, 0.18);
+    --app-banner-link-hover-border: rgba(255, 179, 90, 0.60);
+    --app-banner-border: rgba(255, 106, 33, 0.50);
+
+    --app-sidebar-bg: rgba(13, 12, 12, 0.96);
+    --app-sidebar-text: #cdbb9e;
+    --app-sidebar-link: #f5e8d3;
+    --app-sidebar-hover: #ffb35a;
+    --app-sidebar-hover-bg: rgba(255, 106, 33, 0.14);
+    --app-sidebar-border: rgba(242, 179, 90, 0.22);
+
+    --app-content-bg: rgba(16, 13, 12, 0.98);
+    --app-content-text: #f4eadc;
+
+    --app-control-bg: #211713;
+    --app-control-text: #f4eadc;
+    --app-control-border: rgba(242, 179, 90, 0.28);
+    --app-control-hover-bg: #2d1d16;
+    --app-control-focus-ring: rgba(255, 106, 33, 0.22);
+
+    --app-popup-bg: #1b1512;
+    --app-popup-text: #f4eadc;
+    --app-popup-accent: #ffb35a;
+    --app-popup-submit-text: #1a0d07;
+    --app-popup-border: rgba(242, 179, 90, 0.28);
+    --app-popup-overlay: rgba(0, 0, 0, 0.68);
+
+    --app-results-bg: rgba(12, 10, 9, 0.88);
+    --app-results-text: #f1e1c8;
+
+    --app-thumbnail-border: rgba(242, 179, 90, 0.30);
+
+    --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.30);
+    --app-shadow-md: 0 18px 38px rgba(0, 0, 0, 0.48);
+
+    --app-panel-accent: #ffb35a;
+    --app-panel-accent-soft: rgba(255, 106, 33, 0.14);
+    --app-panel-bg: rgba(18, 14, 12, 0.92);
+    --app-panel-border: rgba(242, 179, 90, 0.28);
+    --app-panel-header-bg: rgba(255, 106, 33, 0.08);
+    --app-panel-item-bg: rgba(0, 0, 0, 0.20);
+
+    color: var(--app-page-text);
+    background: var(--app-page-bg);
+    line-height: 1.45;
+}
+
+/* ==================================
+HEPHAESTUS TOKEN OVERRIDES
+Supports reusable heph-* utility classes
+================================== */
+html.hephaestus-forge,
+body.hephaestus-forge {
+    --heph-iron: #111111;
+    --heph-iron-2: #191919;
+    --heph-iron-3: #252525;
+
+    --heph-surface: rgba(21, 17, 15, 0.92);
+    --heph-surface-2: rgba(32, 23, 18, 0.94);
+    --heph-surface-3: rgba(45, 29, 22, 0.92);
+
+    --heph-line: rgba(242, 179, 90, 0.28);
+    --heph-line-strong: rgba(255, 179, 90, 0.55);
+
+    --heph-text: #f4eadc;
+    --heph-muted: #c7b59b;
+    --heph-muted-2: #9d8b75;
+    --heph-heading: #fff3df;
+
+    --heph-bronze: #c57a2a;
+    --heph-bronze-dark: #8f4e1f;
+    --heph-gold: #f2b35a;
+    --heph-gold-soft: rgba(242, 179, 90, 0.16);
+    --heph-ember: #ff6a21;
+    --heph-ember-hover: #ff8747;
+    --heph-ember-soft: rgba(255, 106, 33, 0.18);
+
+    --heph-ok: #44d17a;
+    --heph-ok-soft: rgba(68, 209, 122, 0.15);
+
+    --heph-warn: #ffbf47;
+    --heph-warn-soft: rgba(255, 191, 71, 0.18);
+
+    --heph-bad: #ff624d;
+    --heph-bad-soft: rgba(255, 98, 77, 0.16);
+
+    --heph-shadow-sm: 0 8px 16px rgba(0, 0, 0, 0.28);
+    --heph-shadow-md: 0 16px 32px rgba(0, 0, 0, 0.40);
+    --heph-shadow-lg: 0 24px 48px rgba(0, 0, 0, 0.55);
+
+    --heph-glow-sm: 0 0 14px rgba(255, 106, 33, 0.14);
+    --heph-glow-md: 0 0 26px rgba(255, 106, 33, 0.22);
+    --heph-glow-lg: 0 0 42px rgba(255, 106, 33, 0.30);
+
+    --heph-radius-sm: 8px;
+    --heph-radius-md: 10px;
+    --heph-radius-lg: 14px;
+    --heph-radius-xl: 18px;
+
+    --heph-space-1: 4px;
+    --heph-space-2: 8px;
+    --heph-space-3: 12px;
+    --heph-space-4: 16px;
+    --heph-space-5: 20px;
+    --heph-space-6: 24px;
+
+    --heph-font-ui: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --heph-font-mono: Consolas, "Courier New", monospace;
+}
+
+/* ==================================
+GLOBAL THEME POLISH
+These enhance the base layout visually
+without taking over structure.
+================================== */
+html.hephaestus-forge body,
+body.hephaestus-forge {
+    background:
+        radial-gradient(circle at 16% 12%, rgba(255, 106, 33, 0.20), transparent 28%),
+        radial-gradient(circle at 88% 18%, rgba(242, 179, 90, 0.11), transparent 26%),
+        radial-gradient(circle at 50% 100%, rgba(255, 106, 33, 0.16), transparent 38%),
+        linear-gradient(135deg, #070707 0%, #150d0a 45%, #2a1008 100%);
+}
+
+html.hephaestus-forge .banner,
+body.hephaestus-forge .banner {
+    box-shadow:
+        0 8px 18px rgba(0, 0, 0, 0.34),
+        0 0 22px rgba(255, 106, 33, 0.14);
+}
+
+html.hephaestus-forge .banner::after,
+body.hephaestus-forge .banner::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 3px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 106, 33, 0.95),
+        rgba(242, 179, 90, 0.95),
+        transparent
+    );
+    box-shadow: 0 0 18px rgba(255, 106, 33, 0.65);
+    pointer-events: none;
+}
+
+html.hephaestus-forge .banner-text,
+body.hephaestus-forge .banner-text {
+    color: var(--heph-heading);
+    letter-spacing: 0.04em;
+    text-shadow: 0 0 18px rgba(255, 106, 33, 0.22);
+}
+
+html.hephaestus-forge #sidebarCollapse,
+html.hephaestus-forge button#sidebarCollapse,
+html.hephaestus-forge .hamburger,
+body.hephaestus-forge #sidebarCollapse,
+body.hephaestus-forge button#sidebarCollapse,
+body.hephaestus-forge .hamburger {
+    background:
+        linear-gradient(180deg, #2d1d16 0%, #171110 100%);
+    border-color: rgba(242, 179, 90, 0.40);
+    color: var(--heph-gold);
+}
+
+html.hephaestus-forge #sidebarCollapse:hover,
+html.hephaestus-forge #sidebarCollapse:focus,
+html.hephaestus-forge .hamburger:hover,
+html.hephaestus-forge .hamburger:focus,
+body.hephaestus-forge #sidebarCollapse:hover,
+body.hephaestus-forge #sidebarCollapse:focus,
+body.hephaestus-forge .hamburger:hover,
+body.hephaestus-forge .hamburger:focus {
+    color: #ffd19a;
+    border-color: rgba(255, 179, 90, 0.70);
+    box-shadow:
+        var(--heph-shadow-sm),
+        var(--heph-glow-sm);
+}
+
+html.hephaestus-forge .sidebar,
+body.hephaestus-forge .sidebar,
+html.hephaestus-forge #mainSidebar,
+body.hephaestus-forge #mainSidebar {
+    backdrop-filter: blur(7px);
+    box-shadow:
+        inset -1px 0 0 rgba(242, 179, 90, 0.12),
+        12px 0 28px rgba(0, 0, 0, 0.22);
+}
+
+html.hephaestus-forge .sidebar-header,
+body.hephaestus-forge .sidebar-header {
+    background:
+        linear-gradient(180deg, rgba(255, 106, 33, 0.08), transparent);
+}
+
+html.hephaestus-forge .sidebar h1,
+body.hephaestus-forge .sidebar h1 {
+    color: var(--heph-heading);
+    letter-spacing: 0.03em;
+    text-shadow: 0 0 16px rgba(255, 106, 33, 0.16);
+}
+
+html.hephaestus-forge .welcome-message,
+body.hephaestus-forge .welcome-message {
+    color: var(--app-sidebar-text);
+    font-weight: 600;
+}
+
+html.hephaestus-forge .user-level,
+html.hephaestus-forge .model-display-section,
+body.hephaestus-forge .user-level,
+body.hephaestus-forge .model-display-section {
+    color: var(--heph-muted-2);
+}
+
+html.hephaestus-forge .nav-link.highlight,
+body.hephaestus-forge .nav-link.highlight {
+    color: var(--heph-gold);
+    background-color: rgba(255, 106, 33, 0.12);
+    border-left: 3px solid var(--heph-ember);
+}
+
+html.hephaestus-forge .content,
+body.hephaestus-forge .content {
+    background:
+        radial-gradient(circle at 82% 4%, rgba(255, 106, 33, 0.08), transparent 28%),
+        linear-gradient(180deg, rgba(18, 14, 12, 0.98) 0%, rgba(9, 8, 8, 0.99) 100%);
+    color: var(--app-content-text);
+}
+
+/* Sidebar scrollbars */
+html.hephaestus-forge .sidebar-nav::-webkit-scrollbar-thumb,
+html.hephaestus-forge .sidebar-utils::-webkit-scrollbar-thumb,
+body.hephaestus-forge .sidebar-nav::-webkit-scrollbar-thumb,
+body.hephaestus-forge .sidebar-utils::-webkit-scrollbar-thumb {
+    background: rgba(197, 122, 42, 0.72);
+    border-radius: 8px;
+}
+
+html.hephaestus-forge .sidebar-nav::-webkit-scrollbar-track,
+html.hephaestus-forge .sidebar-utils::-webkit-scrollbar-track,
+body.hephaestus-forge .sidebar-nav::-webkit-scrollbar-track,
+body.hephaestus-forge .sidebar-utils::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.20);
+}
+
+/* ==================================
+REUSABLE HEPHAESTUS WRAPPERS
+================================== */
+html.hephaestus-forge .heph-wrap,
+body.hephaestus-forge .heph-wrap {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--heph-space-4);
+}
+
+html.hephaestus-forge .heph-section,
+body.hephaestus-forge .heph-section {
+    margin-bottom: var(--heph-space-5);
+}
+
+/* ==================================
+TYPOGRAPHY HELPERS
+================================== */
+html.hephaestus-forge .heph-title,
+body.hephaestus-forge .heph-title {
+    margin: 0 0 var(--heph-space-3) 0;
+    color: var(--heph-heading);
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-shadow: 0 0 18px rgba(255, 106, 33, 0.14);
+}
+
+html.hephaestus-forge .heph-subtitle,
+body.hephaestus-forge .heph-subtitle {
+    margin: 0 0 var(--heph-space-4) 0;
+    color: var(--heph-muted);
+    font-size: 0.98rem;
+}
+
+html.hephaestus-forge .heph-panel-title,
+body.hephaestus-forge .heph-panel-title {
+    margin: 0 0 var(--heph-space-3) 0;
+    color: var(--heph-heading);
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+html.hephaestus-forge .heph-label,
+body.hephaestus-forge .heph-label {
+    display: inline-block;
+    margin-bottom: 6px;
+    color: var(--heph-gold);
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+/* ==================================
+CARDS / PANELS
+================================== */
+html.hephaestus-forge .heph-card,
+body.hephaestus-forge .heph-card {
+    background:
+        linear-gradient(145deg, rgba(255, 106, 33, 0.08), transparent 42%),
+        var(--heph-surface);
+    border: 1px solid var(--heph-line);
+    border-radius: var(--heph-radius-lg);
+    padding: var(--heph-space-4);
+    box-shadow:
+        var(--heph-shadow-md),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+    backdrop-filter: blur(4px);
+}
+
+html.hephaestus-forge .heph-card-soft,
+body.hephaestus-forge .heph-card-soft {
+    background: var(--heph-surface-2);
+    border: 1px solid var(--heph-line);
+    border-radius: var(--heph-radius-lg);
+    padding: var(--heph-space-4);
+}
+
+html.hephaestus-forge .heph-card-ember,
+body.hephaestus-forge .heph-card-ember {
+    background:
+        radial-gradient(circle at 12% 0%, rgba(255, 106, 33, 0.18), transparent 38%),
+        var(--heph-surface-2);
+    border: 1px solid var(--heph-line-strong);
+    box-shadow:
+        var(--heph-shadow-md),
+        var(--heph-glow-sm);
+}
+
+/* ==================================
+LAYOUT UTILITIES
+================================== */
+html.hephaestus-forge .heph-row,
+body.hephaestus-forge .heph-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--heph-space-2);
+    align-items: center;
+}
+
+html.hephaestus-forge .heph-col,
+body.hephaestus-forge .heph-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--heph-space-3);
+}
+
+html.hephaestus-forge .heph-grid,
+body.hephaestus-forge .heph-grid {
+    display: grid;
+    gap: var(--heph-space-3);
+}
+
+html.hephaestus-forge .heph-grid-2,
+body.hephaestus-forge .heph-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+html.hephaestus-forge .heph-grid-3,
+body.hephaestus-forge .heph-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+html.hephaestus-forge .heph-grid-auto,
+body.hephaestus-forge .heph-grid-auto {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+@media (max-width: 900px) {
+    html.hephaestus-forge .heph-grid-2,
+    html.hephaestus-forge .heph-grid-3,
+    body.hephaestus-forge .heph-grid-2,
+    body.hephaestus-forge .heph-grid-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==================================
+BUTTONS
+================================== */
+html.hephaestus-forge .heph-btn,
+body.hephaestus-forge .heph-btn {
+    appearance: none;
+    border: 1px solid var(--heph-line);
+    background:
+        linear-gradient(180deg, #342017 0%, #1b120f 100%);
+    color: var(--heph-text);
+    border-radius: var(--heph-radius-md);
+    padding: 9px 14px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        transform 0.08s ease,
+        box-shadow 0.15s ease,
+        color 0.15s ease;
+    box-shadow: var(--heph-shadow-sm);
+}
+
+html.hephaestus-forge .heph-btn:hover,
+body.hephaestus-forge .heph-btn:hover {
+    border-color: var(--heph-gold);
+    background:
+        linear-gradient(180deg, #442719 0%, #21140f 100%);
+    color: #fff3df;
+    box-shadow:
+        var(--heph-shadow-sm),
+        var(--heph-glow-sm);
+}
+
+html.hephaestus-forge .heph-btn:active,
+body.hephaestus-forge .heph-btn:active {
+    transform: translateY(1px);
+}
+
+html.hephaestus-forge .heph-btn:disabled,
+body.hephaestus-forge .heph-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+html.hephaestus-forge .heph-btn-primary,
+body.hephaestus-forge .heph-btn-primary {
+    background:
+        linear-gradient(180deg, #f2b35a 0%, #c57a2a 48%, #8f4e1f 100%);
+    border-color: rgba(255, 217, 158, 0.70);
+    color: #1a0d07;
+    box-shadow:
+        0 0 0 1px rgba(255, 106, 33, 0.08),
+        var(--heph-shadow-sm),
+        var(--heph-glow-sm);
+}
+
+html.hephaestus-forge .heph-btn-primary:hover,
+body.hephaestus-forge .heph-btn-primary:hover {
+    background:
+        linear-gradient(180deg, #ffd19a 0%, #d68b35 52%, #9e5924 100%);
+    color: #160b06;
+}
+
+html.hephaestus-forge .heph-btn-success,
+body.hephaestus-forge .heph-btn-success {
+    border-color: rgba(68, 209, 122, 0.38);
+}
+
+html.hephaestus-forge .heph-btn-danger,
+body.hephaestus-forge .heph-btn-danger {
+    border-color: rgba(255, 98, 77, 0.42);
+}
+
+/* ==================================
+FORM CONTROLS
+================================== */
+html.hephaestus-forge .heph-input,
+html.hephaestus-forge .heph-select,
+html.hephaestus-forge .heph-textarea,
+body.hephaestus-forge .heph-input,
+body.hephaestus-forge .heph-select,
+body.hephaestus-forge .heph-textarea {
+    width: 100%;
+    background: #18110f;
+    color: var(--heph-text);
+    border: 1px solid var(--heph-line);
+    border-radius: var(--heph-radius-sm);
+    padding: 10px 12px;
+    font: inherit;
+    font-family: var(--heph-font-mono);
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background 0.15s ease;
+}
+
+html.hephaestus-forge .heph-input::placeholder,
+html.hephaestus-forge .heph-textarea::placeholder,
+body.hephaestus-forge .heph-input::placeholder,
+body.hephaestus-forge .heph-textarea::placeholder {
+    color: #9d8b75;
+}
+
+html.hephaestus-forge .heph-select,
+body.hephaestus-forge .heph-select {
+    cursor: pointer;
+}
+
+html.hephaestus-forge .heph-textarea,
+body.hephaestus-forge .heph-textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+html.hephaestus-forge .heph-input:hover,
+html.hephaestus-forge .heph-select:hover,
+html.hephaestus-forge .heph-textarea:hover,
+body.hephaestus-forge .heph-input:hover,
+body.hephaestus-forge .heph-select:hover,
+body.hephaestus-forge .heph-textarea:hover {
+    border-color: var(--heph-line-strong);
+}
+
+html.hephaestus-forge .heph-input:focus,
+html.hephaestus-forge .heph-select:focus,
+html.hephaestus-forge .heph-textarea:focus,
+body.hephaestus-forge .heph-input:focus,
+body.hephaestus-forge .heph-select:focus,
+body.hephaestus-forge .heph-textarea:focus {
+    outline: none;
+    border-color: var(--heph-ember);
+    box-shadow: 0 0 0 3px var(--heph-ember-soft);
+    background: #201510;
+}
+
+/* ==================================
+CONTENT AREA FORM CONTROLS
+Fixes low-contrast dropdowns in the main panel
+================================== */
+html.hephaestus-forge .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.hephaestus-forge .content select,
+html.hephaestus-forge .content textarea,
+html.hephaestus-forge .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.hephaestus-forge .mt-panel-body select,
+html.hephaestus-forge .mt-panel-body textarea,
+html.hephaestus-forge .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.hephaestus-forge .upload-search-form select,
+html.hephaestus-forge .upload-search-form textarea,
+body.hephaestus-forge .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.hephaestus-forge .content select,
+body.hephaestus-forge .content textarea,
+body.hephaestus-forge .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.hephaestus-forge .mt-panel-body select,
+body.hephaestus-forge .mt-panel-body textarea,
+body.hephaestus-forge .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.hephaestus-forge .upload-search-form select,
+body.hephaestus-forge .upload-search-form textarea {
+    background: var(--app-control-bg);
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 8px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.26);
+}
+
+html.hephaestus-forge .content input::placeholder,
+html.hephaestus-forge .content textarea::placeholder,
+html.hephaestus-forge .mt-panel-body input::placeholder,
+html.hephaestus-forge .mt-panel-body textarea::placeholder,
+html.hephaestus-forge .upload-search-form input::placeholder,
+html.hephaestus-forge .upload-search-form textarea::placeholder,
+body.hephaestus-forge .content input::placeholder,
+body.hephaestus-forge .content textarea::placeholder,
+body.hephaestus-forge .mt-panel-body input::placeholder,
+body.hephaestus-forge .mt-panel-body textarea::placeholder,
+body.hephaestus-forge .upload-search-form input::placeholder,
+body.hephaestus-forge .upload-search-form textarea::placeholder {
+    color: var(--heph-muted-2);
+}
+
+html.hephaestus-forge .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.hephaestus-forge .content select:hover,
+html.hephaestus-forge .content textarea:hover,
+html.hephaestus-forge .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.hephaestus-forge .mt-panel-body select:hover,
+html.hephaestus-forge .mt-panel-body textarea:hover,
+html.hephaestus-forge .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.hephaestus-forge .upload-search-form select:hover,
+html.hephaestus-forge .upload-search-form textarea:hover,
+body.hephaestus-forge .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.hephaestus-forge .content select:hover,
+body.hephaestus-forge .content textarea:hover,
+body.hephaestus-forge .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.hephaestus-forge .mt-panel-body select:hover,
+body.hephaestus-forge .mt-panel-body textarea:hover,
+body.hephaestus-forge .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.hephaestus-forge .upload-search-form select:hover,
+body.hephaestus-forge .upload-search-form textarea:hover {
+    border-color: rgba(255, 179, 90, 0.50);
+    background: var(--app-control-hover-bg);
+}
+
+html.hephaestus-forge .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.hephaestus-forge .content select:focus,
+html.hephaestus-forge .content textarea:focus,
+html.hephaestus-forge .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.hephaestus-forge .mt-panel-body select:focus,
+html.hephaestus-forge .mt-panel-body textarea:focus,
+html.hephaestus-forge .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.hephaestus-forge .upload-search-form select:focus,
+html.hephaestus-forge .upload-search-form textarea:focus,
+body.hephaestus-forge .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.hephaestus-forge .content select:focus,
+body.hephaestus-forge .content textarea:focus,
+body.hephaestus-forge .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.hephaestus-forge .mt-panel-body select:focus,
+body.hephaestus-forge .mt-panel-body textarea:focus,
+body.hephaestus-forge .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.hephaestus-forge .upload-search-form select:focus,
+body.hephaestus-forge .upload-search-form textarea:focus {
+    outline: none;
+    border-color: var(--heph-ember);
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+/* Native select dropdown list */
+html.hephaestus-forge .content select option,
+html.hephaestus-forge .mt-panel-body select option,
+html.hephaestus-forge .upload-search-form select option,
+body.hephaestus-forge .content select option,
+body.hephaestus-forge .mt-panel-body select option,
+body.hephaestus-forge .upload-search-form select option {
+    background: #211713;
+    color: #f4eadc;
+}
+
+/* Disabled states */
+html.hephaestus-forge .content input:disabled,
+html.hephaestus-forge .content select:disabled,
+html.hephaestus-forge .content textarea:disabled,
+html.hephaestus-forge .mt-panel-body input:disabled,
+html.hephaestus-forge .mt-panel-body select:disabled,
+html.hephaestus-forge .mt-panel-body textarea:disabled,
+html.hephaestus-forge .upload-search-form input:disabled,
+html.hephaestus-forge .upload-search-form select:disabled,
+html.hephaestus-forge .upload-search-form textarea:disabled,
+body.hephaestus-forge .content input:disabled,
+body.hephaestus-forge .content select:disabled,
+body.hephaestus-forge .content textarea:disabled,
+body.hephaestus-forge .mt-panel-body input:disabled,
+body.hephaestus-forge .mt-panel-body select:disabled,
+body.hephaestus-forge .mt-panel-body textarea:disabled,
+body.hephaestus-forge .upload-search-form input:disabled,
+body.hephaestus-forge .upload-search-form select:disabled,
+body.hephaestus-forge .upload-search-form textarea:disabled {
+    background: rgba(45, 29, 22, 0.75);
+    color: rgba(244, 234, 220, 0.54);
+    cursor: not-allowed;
+}
+
+/* ==================================
+CONTENT AREA BUTTONS
+================================== */
+html.hephaestus-forge .content button:not(.mt-toggle-btn):not(.toggle-button),
+html.hephaestus-forge .content input[type="submit"],
+html.hephaestus-forge .content input[type="button"],
+html.hephaestus-forge .content input[type="reset"],
+body.hephaestus-forge .content button:not(.mt-toggle-btn):not(.toggle-button),
+body.hephaestus-forge .content input[type="submit"],
+body.hephaestus-forge .content input[type="button"],
+body.hephaestus-forge .content input[type="reset"] {
+    background:
+        linear-gradient(180deg, #342017 0%, #1b120f 100%);
+    color: #f4eadc;
+    border: 1px solid var(--app-control-border);
+    border-radius: 8px;
+    box-shadow: var(--app-shadow-sm);
+}
+
+html.hephaestus-forge .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+html.hephaestus-forge .content input[type="submit"]:hover,
+html.hephaestus-forge .content input[type="button"]:hover,
+html.hephaestus-forge .content input[type="reset"]:hover,
+body.hephaestus-forge .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+body.hephaestus-forge .content input[type="submit"]:hover,
+body.hephaestus-forge .content input[type="button"]:hover,
+body.hephaestus-forge .content input[type="reset"]:hover {
+    border-color: rgba(255, 179, 90, 0.58);
+    background:
+        linear-gradient(180deg, #442719 0%, #21140f 100%);
+    box-shadow:
+        var(--app-shadow-sm),
+        var(--heph-glow-sm);
+}
+
+/* ==================================
+SELECT2 SUPPORT
+Needed if the dropdown is enhanced by Select2
+================================== */
+html.hephaestus-forge .select2-container,
+body.hephaestus-forge .select2-container {
+    color: #f4eadc;
+}
+
+html.hephaestus-forge .select2-container .select2-selection--single,
+html.hephaestus-forge .select2-container .select2-selection--multiple,
+body.hephaestus-forge .select2-container .select2-selection--single,
+body.hephaestus-forge .select2-container .select2-selection--multiple {
+    background: var(--app-control-bg);
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 8px;
+    min-height: 38px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.26);
+}
+
+html.hephaestus-forge .select2-container .select2-selection--single:hover,
+html.hephaestus-forge .select2-container .select2-selection--multiple:hover,
+body.hephaestus-forge .select2-container .select2-selection--single:hover,
+body.hephaestus-forge .select2-container .select2-selection--multiple:hover {
+    border-color: rgba(255, 179, 90, 0.50);
+    background: var(--app-control-hover-bg);
+}
+
+html.hephaestus-forge .select2-container--default.select2-container--focus .select2-selection--multiple,
+html.hephaestus-forge .select2-container--default.select2-container--open .select2-selection--single,
+html.hephaestus-forge .select2-container--default.select2-container--open .select2-selection--multiple,
+body.hephaestus-forge .select2-container--default.select2-container--focus .select2-selection--multiple,
+body.hephaestus-forge .select2-container--default.select2-container--open .select2-selection--single,
+body.hephaestus-forge .select2-container--default.select2-container--open .select2-selection--multiple {
+    border-color: var(--heph-ember);
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+html.hephaestus-forge .select2-container--default .select2-selection--single .select2-selection__rendered,
+html.hephaestus-forge .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.hephaestus-forge .select2-container--default .select2-selection--single .select2-selection__rendered,
+body.hephaestus-forge .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    color: #f4eadc;
+    line-height: 36px;
+}
+
+html.hephaestus-forge .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.hephaestus-forge .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    line-height: normal;
+    padding-top: 4px;
+}
+
+html.hephaestus-forge .select2-container--default .select2-selection--single .select2-selection__placeholder,
+html.hephaestus-forge .select2-container--default .select2-selection--multiple .select2-selection__placeholder,
+body.hephaestus-forge .select2-container--default .select2-selection--single .select2-selection__placeholder,
+body.hephaestus-forge .select2-container--default .select2-selection--multiple .select2-selection__placeholder {
+    color: var(--heph-muted-2);
+}
+
+html.hephaestus-forge .select2-container--default .select2-selection--single .select2-selection__arrow b,
+body.hephaestus-forge .select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: #f4eadc transparent transparent transparent;
+}
+
+html.hephaestus-forge .select2-dropdown,
+body.hephaestus-forge .select2-dropdown {
+    background: #211713;
+    color: #f4eadc;
+    border: 1px solid var(--app-control-border);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.38);
+}
+
+html.hephaestus-forge .select2-container--default .select2-search--dropdown .select2-search__field,
+body.hephaestus-forge .select2-container--default .select2-search--dropdown .select2-search__field {
+    background: #18110f;
+    color: #f4eadc;
+    border: 1px solid var(--app-control-border);
+    border-radius: 4px;
+}
+
+html.hephaestus-forge .select2-results__option,
+body.hephaestus-forge .select2-results__option {
+    background: #211713;
+    color: #f4eadc;
+}
+
+html.hephaestus-forge .select2-container--default .select2-results__option--highlighted[aria-selected],
+body.hephaestus-forge .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background: #ffb35a;
+    color: #1a0d07;
+}
+
+html.hephaestus-forge .select2-container--default .select2-results__option[aria-selected="true"],
+body.hephaestus-forge .select2-container--default .select2-results__option[aria-selected="true"] {
+    background: rgba(255, 106, 33, 0.18);
+    color: #f4eadc;
+}
+
+html.hephaestus-forge .select2-container--default .select2-selection--multiple .select2-selection__choice,
+body.hephaestus-forge .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background: rgba(255, 106, 33, 0.18);
+    color: #f4eadc;
+    border: 1px solid rgba(255, 179, 90, 0.34);
+}
+
+html.hephaestus-forge .select2-container--default .select2-selection--multiple .select2-selection__choice__remove,
+body.hephaestus-forge .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #ffd19a;
+}
+
+/* ==================================
+OUTPUT / STATUS BLOCKS
+================================== */
+html.hephaestus-forge .heph-mono,
+body.hephaestus-forge .heph-mono {
+    font-family: var(--heph-font-mono);
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: #100c0a;
+    border: 1px solid var(--heph-line);
+    border-radius: var(--heph-radius-md);
+    padding: var(--heph-space-3);
+    min-height: 90px;
+    color: #efdcc1;
+    overflow-x: auto;
+}
+
+html.hephaestus-forge .heph-code,
+body.hephaestus-forge .heph-code {
+    font-family: var(--heph-font-mono);
+    white-space: pre;
+    overflow-x: auto;
+    background: #0d0a09;
+    border: 1px solid var(--heph-line);
+    border-radius: var(--heph-radius-md);
+    padding: var(--heph-space-4);
+    color: #f4eadc;
+}
+
+html.hephaestus-forge .heph-status,
+body.hephaestus-forge .heph-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+/* ==================================
+PILLS / BADGES
+================================== */
+html.hephaestus-forge .heph-pill,
+body.hephaestus-forge .heph-pill {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+html.hephaestus-forge .heph-pill-ok,
+body.hephaestus-forge .heph-pill-ok {
+    color: var(--heph-ok);
+    background: var(--heph-ok-soft);
+}
+
+html.hephaestus-forge .heph-pill-warn,
+body.hephaestus-forge .heph-pill-warn {
+    color: var(--heph-warn);
+    background: var(--heph-warn-soft);
+}
+
+html.hephaestus-forge .heph-pill-bad,
+body.hephaestus-forge .heph-pill-bad {
+    color: var(--heph-bad);
+    background: var(--heph-bad-soft);
+}
+
+html.hephaestus-forge .heph-pill-ember,
+body.hephaestus-forge .heph-pill-ember {
+    color: #ffd19a;
+    background: var(--heph-ember-soft);
+}
+
+/* ==================================
+UTILITY HELPERS
+================================== */
+html.hephaestus-forge .heph-hidden,
+body.hephaestus-forge .heph-hidden {
+    display: none !important;
+}
+
+html.hephaestus-forge .heph-text-muted,
+body.hephaestus-forge .heph-text-muted {
+    color: var(--heph-muted) !important;
+}
+
+html.hephaestus-forge .heph-text-accent,
+body.hephaestus-forge .heph-text-accent {
+    color: var(--heph-gold) !important;
+}
+
+html.hephaestus-forge .heph-text-ember,
+body.hephaestus-forge .heph-text-ember {
+    color: var(--heph-ember) !important;
+}
+
+html.hephaestus-forge .heph-center,
+body.hephaestus-forge .heph-center {
+    text-align: center;
+}
+
+html.hephaestus-forge .heph-w-100,
+body.hephaestus-forge .heph-w-100 {
+    width: 100%;
+}
+
+html.hephaestus-forge .heph-mt-0,
+body.hephaestus-forge .heph-mt-0 { margin-top: 0 !important; }
+html.hephaestus-forge .heph-mt-1,
+body.hephaestus-forge .heph-mt-1 { margin-top: var(--heph-space-1) !important; }
+html.hephaestus-forge .heph-mt-2,
+body.hephaestus-forge .heph-mt-2 { margin-top: var(--heph-space-2) !important; }
+html.hephaestus-forge .heph-mt-3,
+body.hephaestus-forge .heph-mt-3 { margin-top: var(--heph-space-3) !important; }
+html.hephaestus-forge .heph-mt-4,
+body.hephaestus-forge .heph-mt-4 { margin-top: var(--heph-space-4) !important; }
+
+html.hephaestus-forge .heph-mb-0,
+body.hephaestus-forge .heph-mb-0 { margin-bottom: 0 !important; }
+html.hephaestus-forge .heph-mb-1,
+body.hephaestus-forge .heph-mb-1 { margin-bottom: var(--heph-space-1) !important; }
+html.hephaestus-forge .heph-mb-2,
+body.hephaestus-forge .heph-mb-2 { margin-bottom: var(--heph-space-2) !important; }
+html.hephaestus-forge .heph-mb-3,
+body.hephaestus-forge .heph-mb-3 { margin-bottom: var(--heph-space-3) !important; }
+html.hephaestus-forge .heph-mb-4,
+body.hephaestus-forge .heph-mb-4 { margin-bottom: var(--heph-space-4) !important; }
+
+/* ==================================
+ACCESSIBILITY / FOCUS
+================================== */
+html.hephaestus-forge .heph-btn:focus-visible,
+html.hephaestus-forge .heph-input:focus-visible,
+html.hephaestus-forge .heph-select:focus-visible,
+html.hephaestus-forge .heph-textarea:focus-visible,
+html.hephaestus-forge a.heph-btn:focus-visible,
+html.hephaestus-forge button.heph-btn:focus-visible,
+html.hephaestus-forge .sidebar button:focus-visible,
+html.hephaestus-forge .sidebar a:focus-visible,
+html.hephaestus-forge .sidebar select:focus-visible,
+html.hephaestus-forge .mt-toggle-btn:focus-visible,
+html.hephaestus-forge .content button:focus-visible,
+html.hephaestus-forge .content input:focus-visible,
+html.hephaestus-forge .content select:focus-visible,
+html.hephaestus-forge .content textarea:focus-visible,
+body.hephaestus-forge .heph-btn:focus-visible,
+body.hephaestus-forge .heph-input:focus-visible,
+body.hephaestus-forge .heph-select:focus-visible,
+body.hephaestus-forge .heph-textarea:focus-visible,
+body.hephaestus-forge a.heph-btn:focus-visible,
+body.hephaestus-forge button.heph-btn:focus-visible,
+body.hephaestus-forge .sidebar button:focus-visible,
+body.hephaestus-forge .sidebar a:focus-visible,
+body.hephaestus-forge .sidebar select:focus-visible,
+body.hephaestus-forge .mt-toggle-btn:focus-visible,
+body.hephaestus-forge .content button:focus-visible,
+body.hephaestus-forge .content input:focus-visible,
+body.hephaestus-forge .content select:focus-visible,
+body.hephaestus-forge .content textarea:focus-visible {
+    outline: 2px solid var(--heph-gold);
+    outline-offset: 2px;
+}
+
+/* ==================================
+MODULE TEMPLATE PANEL LAYOUT THEME
+Styles the standardized .mt-* module templates
+================================== */
+html.hephaestus-forge .mt-layout,
+body.hephaestus-forge .mt-layout {
+    color: var(--heph-text);
+}
+
+html.hephaestus-forge .mt-layout-header,
+body.hephaestus-forge .mt-layout-header {
+    border-bottom: 2px solid rgba(255, 106, 33, 0.30);
+}
+
+html.hephaestus-forge .mt-layout-title,
+body.hephaestus-forge .mt-layout-title {
+    color: var(--heph-gold);
+    letter-spacing: 0.03em;
+    text-shadow: 0 0 18px rgba(255, 106, 33, 0.14);
+}
+
+html.hephaestus-forge .mt-layout-description,
+body.hephaestus-forge .mt-layout-description {
+    color: var(--heph-muted);
+}
+
+html.hephaestus-forge .mt-panel,
+body.hephaestus-forge .mt-panel {
+    background:
+        linear-gradient(145deg, rgba(255, 106, 33, 0.06), transparent 40%),
+        var(--heph-surface);
+    border: 1px solid var(--heph-line);
+    border-radius: var(--heph-radius-lg);
+    box-shadow: var(--heph-shadow-sm);
+    backdrop-filter: blur(4px);
+}
+
+html.hephaestus-forge .mt-panel:hover,
+body.hephaestus-forge .mt-panel:hover {
+    border-color: var(--heph-gold);
+    box-shadow:
+        var(--heph-shadow-md),
+        var(--heph-glow-sm);
+}
+
+html.hephaestus-forge .mt-panel-header,
+body.hephaestus-forge .mt-panel-header {
+    background:
+        linear-gradient(180deg, rgba(255, 106, 33, 0.10), rgba(0, 0, 0, 0.05));
+    border-bottom: 1px solid var(--heph-line);
+}
+
+html.hephaestus-forge .mt-panel-title,
+body.hephaestus-forge .mt-panel-title {
+    color: var(--heph-gold);
+}
+
+html.hephaestus-forge .mt-toggle-btn,
+body.hephaestus-forge .mt-toggle-btn {
+    background:
+        linear-gradient(180deg, #342017 0%, #1b120f 100%);
+    border: 1px solid var(--heph-line);
+    color: var(--heph-text);
+    border-radius: var(--heph-radius-sm);
+    box-shadow: var(--heph-shadow-sm);
+}
+
+html.hephaestus-forge .mt-toggle-btn:hover,
+body.hephaestus-forge .mt-toggle-btn:hover {
+    border-color: var(--heph-gold);
+    background:
+        linear-gradient(180deg, #442719 0%, #21140f 100%);
+    color: var(--heph-text);
+}
+
+html.hephaestus-forge .mt-panel.is-collapsed .mt-toggle-btn,
+body.hephaestus-forge .mt-panel.is-collapsed .mt-toggle-btn {
+    background:
+        linear-gradient(180deg, #6f2115 0%, #42140e 100%);
+    border-color: rgba(255, 98, 77, 0.46);
+    color: #ffffff;
+}
+
+html.hephaestus-forge .mt-panel-body,
+body.hephaestus-forge .mt-panel-body {
+    color: var(--heph-text);
+}
+
+html.hephaestus-forge .mt-panel-content,
+body.hephaestus-forge .mt-panel-content {
+    gap: var(--heph-space-3);
+}
+
+html.hephaestus-forge .mt-item,
+body.hephaestus-forge .mt-item {
+    background: rgba(12, 9, 8, 0.86);
+    border: 1px solid var(--heph-line);
+    color: var(--heph-text);
+    border-radius: var(--heph-radius-sm);
+}
+
+html.hephaestus-forge .mt-item:hover,
+body.hephaestus-forge .mt-item:hover {
+    background: rgba(255, 106, 33, 0.10);
+    border-color: var(--heph-gold);
+}
+
+html.hephaestus-forge .mt-item.is-active,
+body.hephaestus-forge .mt-item.is-active {
+    background: rgba(255, 106, 33, 0.18);
+    border-color: var(--heph-gold);
+    box-shadow:
+        0 0 0 1px rgba(255, 179, 90, 0.12),
+        var(--heph-glow-sm);
+}
+
+/* ==================================
+COMMENT POPUP THEME POLISH
+Base owns structure. This only improves visuals.
+================================== */
+html.hephaestus-forge .comment-popup,
+body.hephaestus-forge .comment-popup,
+html.hephaestus-forge #commentPopup,
+body.hephaestus-forge #commentPopup {
+    background:
+        linear-gradient(145deg, rgba(255, 106, 33, 0.08), transparent 40%),
+        var(--app-popup-bg);
+    border-color: var(--app-popup-border);
+    box-shadow:
+        var(--heph-shadow-lg),
+        var(--heph-glow-sm);
+}
+
+html.hephaestus-forge .comment-popup-header,
+html.hephaestus-forge .comment-popup-footer,
+body.hephaestus-forge .comment-popup-header,
+body.hephaestus-forge .comment-popup-footer {
+    border-color: var(--app-popup-border);
+}
+
+html.hephaestus-forge .comment-popup-header h2,
+html.hephaestus-forge #commentForm h2,
+body.hephaestus-forge .comment-popup-header h2,
+body.hephaestus-forge #commentForm h2 {
+    color: var(--heph-gold);
+}
+
+html.hephaestus-forge .comment-popup-submit,
+html.hephaestus-forge #commentForm button[type="submit"],
+body.hephaestus-forge .comment-popup-submit,
+body.hephaestus-forge #commentForm button[type="submit"] {
+    background:
+        linear-gradient(180deg, #f2b35a 0%, #c57a2a 48%, #8f4e1f 100%);
+    color: #1a0d07;
+    font-weight: 800;
+}
+
+html.hephaestus-forge .comment-popup-submit:hover,
+html.hephaestus-forge .comment-popup-submit:focus,
+html.hephaestus-forge #commentForm button[type="submit"]:hover,
+html.hephaestus-forge #commentForm button[type="submit"]:focus,
+body.hephaestus-forge .comment-popup-submit:hover,
+body.hephaestus-forge .comment-popup-submit:focus,
+body.hephaestus-forge #commentForm button[type="submit"]:hover,
+body.hephaestus-forge #commentForm button[type="submit"]:focus {
+    background:
+        linear-gradient(180deg, #ffd19a 0%, #d68b35 52%, #9e5924 100%);
+}
+
+/* ==================================
+RESULTS / THUMBNAILS POLISH
+================================== */
+html.hephaestus-forge .results-container,
+body.hephaestus-forge .results-container {
+    border: 1px solid var(--heph-line);
+    box-shadow: var(--heph-shadow-sm);
+}
+
+html.hephaestus-forge .thumbnail,
+body.hephaestus-forge .thumbnail {
+    border-color: var(--heph-line);
+    background: rgba(0, 0, 0, 0.24);
+}
+
+html.hephaestus-forge .thumbnail:hover,
+body.hephaestus-forge .thumbnail:hover {
+    border-color: var(--heph-gold);
+    box-shadow: var(--heph-glow-sm);
+}
+
+/* ==================================
+RESPONSIVE POLISH
+================================== */
+@media (max-width: 768px) {
+    html.hephaestus-forge .banner-text,
+    body.hephaestus-forge .banner-text {
+        letter-spacing: 0.02em;
+    }
+
+    html.hephaestus-forge .content,
+    body.hephaestus-forge .content {
+        background:
+            radial-gradient(circle at 80% 0%, rgba(255, 106, 33, 0.07), transparent 30%),
+            linear-gradient(180deg, rgba(18, 14, 12, 0.98) 0%, rgba(9, 8, 8, 0.99) 100%);
+    }
+}

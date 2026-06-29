@@ -1,7 +1,10 @@
 """
+E:\emtac\projects\llm\MDEV_EMTAC\modules\configuration\config.py
+
 Project configuration file
 modules/configuration/config.py
 """
+from sympy import false
 
 import os
 import sys
@@ -42,6 +45,9 @@ if not DATABASE_URL:
         "Please define it in your .venv configuration or .env file."
     )
 
+SCRIPTS_OUTPUT = os.path.join(BASE_DIR, "scripts_output")
+os.makedirs(SCRIPTS_OUTPUT, exist_ok=True)
+
 ENABLE_REVISION_CONTROL = False  # Set to True once wired up
 
 ENABLE_REVISION_CONTROL = False   # or True once you wire it up
@@ -51,14 +57,14 @@ LOAD_FOLDER_REFERENCE = os.path.join(BASE_DIR, 'load_process', 'load_reference')
 LOAD_FOLDER_INTAKE = os.path.join(BASE_DIR, 'load_process', 'load_intake_sheets')
 LOAD_FOLDER_OUTPUT = os.path.join(BASE_DIR, 'load_process', 'load_output')
 KEYWORDS_FILE_PATH = os.path.join(BASE_DIR,"static", 'keywords_file.xlsx')  # Update with the actual filename or path
-DATABASE_DIR = os.path.join(BASE_DIR, 'Database')
+DATABASE_DIR = os.path.normpath(os.getenv("DATABASE_DIR", os.path.join(BASE_DIR, "Database")))
 DATABASE_PATH = os.path.join(DATABASE_DIR, 'emtac_db.db')
 REVISION_CONTROL_DB_PATH = os.path.join(DATABASE_DIR, 'emtac_revision_control_db.db')
 CSV_DIR = DATABASE_DIR
 COMMENT_IMAGES_FOLDER = os.path.join(BASE_DIR,'static', 'comment_images')
 UPLOAD_FOLDER = os.path.join(BASE_DIR,"static", "uploads")
 IMAGES_FOLDER = os.path.join(BASE_DIR,"static", "images")
-DATABASE_PATH_IMAGES_FOLDER = os.path.join(DATABASE_DIR, 'DB_IMAGES')
+DATABASE_PATH_IMAGES_FOLDER = os.path.join(DATABASE_DIR, "DB_IMAGES")
 PDF_FOR_EXTRACTION_FOLDER = os.path.join("../../static", "image_extraction")
 IMAGES_EXTRACTED = os.path.join("../../static", "extracted_pdf_images")
 COPY_FILES = False
@@ -67,6 +73,7 @@ TEMPORARY_FILES = os.path.join(DATABASE_DIR, 'temp_files')
 PPT2PDF_PPT_FILES_PROCESS = os.path.join(DATABASE_DIR, 'PPT_FILES')
 PPT2PDF_PDF_FILES_PROCESS = os.path.join(DATABASE_DIR, 'PDF_FILES')
 DATABASE_DOC = os.path.join(DATABASE_DIR, 'DB_DOC')
+DATABASE_DRAWING = os.path.normpath(os.getenv("DATABASE_DRAWING", os.path.join(DATABASE_DIR, "DB_DRAWING")))
 TEMPORARY_UPLOAD_FILES = os.path.join(DATABASE_DIR, 'temp_upload_files')
 DB_LOADSHEET = os.path.join(DATABASE_DIR, "DB_LOADSHEETS")
 DB_LOADSHEETS_BACKUP = os.path.join(DATABASE_DIR, "DB_LOADSHEETS_BACKUP")
@@ -84,7 +91,7 @@ GPT4ALL_MODELS_PATH = os.path.join(BASE_DIR, 'plugins', 'ai_modules', 'gpt4all')
 SENTENCE_TRANSFORMERS_MODELS_PATH = os.path.join(BASE_DIR, 'plugins', 'huggingface')
 CURRENT_AI_MODEL="OpenAIModel"
 CURRENT_EMBEDDING_MODEL="OpenAIEmbeddingModel"
-
+SCRIPTS_OUTPUT= os.path.join(BASE_DIR, "scripts_output")
 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 HUGGINGFACE_API_KEY="..."
@@ -112,6 +119,7 @@ directories_to_check = [
     PPT2PDF_PPT_FILES_PROCESS,
     PPT2PDF_PDF_FILES_PROCESS,
     DATABASE_DOC,
+    DATABASE_DRAWING,
     TEMPORARY_UPLOAD_FILES,
     DB_LOADSHEET,
     DB_LOADSHEETS_BACKUP,
@@ -274,10 +282,17 @@ GIT_REPOS_DIR    = os.getenv("GIT_REPOS_DIR")
 # --------------------------------------------------------
 # 3. Model Paths (derived or direct)
 # --------------------------------------------------------
-MODELS_IMAGE_DIR       = os.getenv("MODELS_IMAGE_DIR", os.path.join(MODELS_DIR, "image"))
-MODELS_LLM_DIR         = os.getenv("MODELS_LLM_DIR", os.path.join(MODELS_DIR, "llm"))
-MODELS_CLIP_DIR        = os.getenv("MODELS_CLIP_DIR", os.path.join(MODELS_DIR, "openai_clip-vit-base-patch32"))
-MODELS_CACHE_DIR       = os.path.join(MODELS_DIR, "cache")  # derived convenience path
+MODELS_IMAGE_DIR = os.getenv("MODELS_IMAGE_DIR", os.path.join(MODELS_DIR, "image"))
+MODELS_LLM_DIR = os.getenv("MODELS_LLM_DIR", os.path.join(MODELS_DIR, "llm"))
+MODEL_CLIP_DIR = os.getenv("MODEL_CLIP_DIR", os.path.join(MODELS_DIR, "openai_clip-vit-base-patch32"))
+MODELS_CACHE_DIR = os.path.join(MODELS_DIR, "cache")
+
+MODELS_DISTILBERT_INTENT = os.getenv(
+    "MODELS_DISTILBERT_INTENT",
+    os.path.join(MODELS_DIR, "modules", "transformers_modules", "chat_intent_distilbert_augmented"),
+)
+
+
 
 # Optional specific models
 MODELS_QWEN_DIR        = os.getenv("MODELS_QWEN_DIR")
@@ -322,3 +337,16 @@ LOG_FILE  = os.getenv("LOG_FILE", os.path.join(LOGS_DIR, "emtac_app.log"))
 # --------------------------------------------------------
 SMOKE_TESTS_DIR = os.getenv("SMOKE_TESTS", os.path.join(LOGS_DIR, "smoke_tests"))
 os.makedirs(SMOKE_TESTS_DIR, exist_ok=True)
+
+# TEMPORARY UPLOAD DIRECTORY
+TEMPORARY_UPLOAD = os.path.join("E:\\emtac\\Database", "tempory_upload")
+os.makedirs(TEMPORARY_UPLOAD, exist_ok=True)
+
+
+# DEBUG FLAGS
+FORCE_DEBUG_CHUNK = False
+FORCE_DEBUG_CHUNK_ID = 2
+#FORCE_DEBUG_CHUNK_ID that can be used for demo
+#1595, 1
+
+

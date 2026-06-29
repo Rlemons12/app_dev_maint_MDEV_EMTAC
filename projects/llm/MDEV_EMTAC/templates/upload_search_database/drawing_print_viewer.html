@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EMTAC Drawing Viewer</title>
+
+    <style>
+        :root {
+            --emtac-bg: #050505;
+            --emtac-text: #f5f5f5;
+            --emtac-muted: #b8b8b8;
+            --emtac-border: #145c17;
+            --emtac-accent: #ffc857;
+            --emtac-disabled-bg: #252525;
+            --emtac-disabled-text: #666666;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            background: var(--emtac-bg);
+            color: var(--emtac-text);
+            font-family: Arial, Helvetica, sans-serif;
+            overflow: hidden;
+        }
+
+        .viewer-page {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background:
+                radial-gradient(circle at top left, rgba(255, 120, 30, 0.12), transparent 32rem),
+                linear-gradient(180deg, #050505 0%, #0a0a0a 100%);
+        }
+
+        .viewer-header {
+            flex: 0 0 auto;
+            padding: 10px 12px 12px 12px;
+            border: 1px solid var(--emtac-border);
+            border-radius: 0 0 10px 10px;
+            background: rgba(10, 10, 10, 0.96);
+            box-shadow: 0 0 16px rgba(0, 128, 0, 0.22);
+        }
+
+        .title-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 6px;
+        }
+
+        .viewer-title {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .viewer-subtitle {
+            color: var(--emtac-muted);
+            font-size: 13px;
+        }
+
+        .metadata {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 4px 20px;
+            margin-top: 6px;
+            font-size: 13px;
+        }
+
+        .metadata-row strong {
+            color: #ffffff;
+        }
+
+        .metadata-row span {
+            color: var(--emtac-muted);
+            word-break: break-word;
+        }
+
+        .button-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        .viewer-button {
+            border: 1px solid #333333;
+            border-radius: 8px;
+            padding: 11px 16px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            color: #111111;
+            background: #f4f4f4;
+        }
+
+        .viewer-button:hover:not(:disabled):not(.disabled) {
+            filter: brightness(1.08);
+        }
+
+        .viewer-button.primary {
+            background: var(--emtac-accent);
+            color: #111111;
+            border-color: #e3aa2f;
+        }
+
+        .viewer-button.secondary {
+            background: #eeeeee;
+            color: #111111;
+        }
+
+        .viewer-button:disabled,
+        .viewer-button.disabled {
+            background: var(--emtac-disabled-bg);
+            color: var(--emtac-disabled-text);
+            border-color: #333333;
+            cursor: not-allowed;
+            pointer-events: none;
+            opacity: 0.75;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 7px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            border: 1px solid #333333;
+            background: #161616;
+            color: var(--emtac-muted);
+        }
+
+        .status-pill.good {
+            color: #91e18f;
+            border-color: #145c17;
+        }
+
+        .status-pill.warn {
+            color: #ffd27a;
+            border-color: #7a5b10;
+        }
+
+        .status-pill.bad {
+            color: #ff9b96;
+            border-color: #7a1f1b;
+        }
+
+        .viewer-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-shell {
+            flex: 1 1 auto;
+            min-height: 0;
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #202020;
+            border: 1px solid #333333;
+            box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .preview-frame {
+            width: 100%;
+            height: 100%;
+            min-height: 100%;
+            border: 0;
+            background: #2c2c2c;
+            display: block;
+        }
+
+        .image-preview-wrap {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            background: #202020;
+            padding: 24px;
+        }
+
+        .image-preview-wrap img {
+            max-width: 100%;
+            height: auto;
+            background: #ffffff;
+            border: 1px solid #444444;
+        }
+
+        .empty-state,
+        .error-state {
+            height: 100%;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: var(--emtac-muted);
+        }
+
+        .error-state {
+            color: #ffb5b0;
+        }
+
+        .empty-state h2,
+        .error-state h2 {
+            margin: 0 0 10px 0;
+            color: #ffffff;
+        }
+
+        .empty-state p,
+        .error-state p {
+            max-width: 760px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+
+<body>
+<div class="viewer-page">
+
+    {% set drawing_number = "" %}
+    {% set drawing_name = "" %}
+    {% set drawing_revision = "" %}
+    {% set file_path = "" %}
+    {% set mime_type = "" %}
+    {% set download_name = "" %}
+
+    {% if drawing %}
+        {% set drawing_number = drawing.drw_number or drawing.drawing_number or drawing.number or "" %}
+        {% set drawing_name = drawing.drw_name or drawing.name or drawing.title or "" %}
+        {% set drawing_revision = drawing.drw_revision or drawing.revision or "" %}
+        {% set file_path = drawing.file_path or "" %}
+    {% endif %}
+
+    {% if payload %}
+        {% set mime_type = payload.mime_type or "" %}
+        {% set download_name = payload.download_name or "" %}
+        {% if not file_path %}
+            {% set file_path = payload.physical_file_path or "" %}
+        {% endif %}
+    {% endif %}
+
+    {% set file_exists = can_open_file if can_open_file is defined else file_url %}
+    {% set is_image = mime_type.startswith("image/") %}
+    {% set preview_url = file_url ~ "#toolbar=0&navpanes=0&scrollbar=1&view=FitH" if file_url else "" %}
+
+    <div class="viewer-header">
+        <div class="title-row">
+            <h1 class="viewer-title">
+                Drawing Print Viewer
+            </h1>
+
+            {% if file_exists %}
+                {% if can_preview %}
+                    <span class="status-pill good">File Ready</span>
+                {% else %}
+                    <span class="status-pill warn">External File Type</span>
+                {% endif %}
+            {% else %}
+                <span class="status-pill bad">No File Available</span>
+            {% endif %}
+
+            {% if can_preview %}
+                <span class="viewer-subtitle">Preview mode</span>
+            {% else %}
+                <span class="viewer-subtitle">No browser preview available</span>
+            {% endif %}
+        </div>
+
+        <div class="metadata">
+            <div class="metadata-row">
+                <strong>Drawing:</strong>
+                <span>{{ drawing_number or drawing_id }}</span>
+            </div>
+
+            {% if drawing_name %}
+            <div class="metadata-row">
+                <strong>Name:</strong>
+                <span>{{ drawing_name }}</span>
+            </div>
+            {% endif %}
+
+            {% if drawing_revision %}
+            <div class="metadata-row">
+                <strong>Revision:</strong>
+                <span>{{ drawing_revision }}</span>
+            </div>
+            {% endif %}
+
+            {% if file_path %}
+            <div class="metadata-row">
+                <strong>File Path:</strong>
+                <span>{{ file_path }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="button-row">
+            <button type="button" class="viewer-button secondary" onclick="goBackToPreviousPage()">
+                Back
+            </button>
+
+            {% if file_exists and not can_preview and file_url %}
+                <a class="viewer-button primary" href="{{ file_url }}" target="_blank" rel="noopener">
+                    Open Print File
+                </a>
+            {% elif not file_exists %}
+                <button type="button" class="viewer-button disabled" disabled>
+                    Open Print File
+                </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="viewer-body">
+        <div class="preview-shell">
+
+            {% if error %}
+                <div class="error-state">
+                    <h2>Drawing file could not be opened.</h2>
+                    <p>
+                        The database found the drawing record, but the file could not be loaded.
+                        Check that the file path exists on the EMTAC server.
+                    </p>
+
+                    {% if error.message %}
+                        <p>{{ error.message }}</p>
+                    {% endif %}
+                </div>
+
+            {% elif not file_exists %}
+                <div class="empty-state">
+                    <h2>No print file is available for this drawing.</h2>
+                    <p>
+                        The view/open controls are disabled because this drawing does not have
+                        a valid file attached.
+                    </p>
+                </div>
+
+            {% elif can_preview and is_image %}
+                <div class="image-preview-wrap">
+                    <img id="drawingImagePreview" src="{{ file_url }}" alt="Drawing preview">
+                </div>
+
+            {% elif can_preview %}
+                <iframe
+                    id="drawingPreviewFrame"
+                    class="preview-frame"
+                    src="{{ preview_url }}"
+                    title="Drawing preview">
+                </iframe>
+
+            {% else %}
+                <div class="empty-state">
+                    <h2>This file type cannot be previewed in the browser.</h2>
+                    <p>
+                        EMTAC found the file, but this file type needs an external application.
+                        Use the Open Print File button above.
+                    </p>
+                    <p>
+                        File: {{ download_name or file_path }}
+                    </p>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function goBackToPreviousPage() {
+        if (window.history.length > 1) {
+            window.history.back();
+            return;
+        }
+
+        window.location.href = "/drawings/search";
+    }
+</script>
+
+</body>
+</html>

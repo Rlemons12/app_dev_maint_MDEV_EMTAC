@@ -2,7 +2,8 @@ from flask import request, redirect, url_for, render_template, Blueprint
 from werkzeug.utils import secure_filename
 from modules.emtacdb.emtacdb_fts import (load_image_model_config_from_db)
 from modules.emtacdb.utlity.main_database.database import create_position, add_image_to_db
-from plugins.image_modules import CLIPModelHandler, NoImageModel
+from modules.ai.image.models.clip_model_handler import CLIPModelHandler
+from modules.ai.image.models.no_image_model import NoImageModel
 import os
 import base64
 import requests

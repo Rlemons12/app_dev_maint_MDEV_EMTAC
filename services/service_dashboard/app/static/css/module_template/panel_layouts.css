@@ -1,0 +1,251 @@
+/* static/css/module_template/panel_layouts.css
+==================================
+STANDARDIZED MODULE PANEL LAYOUTS
+Shared layout system for module template partials
+Theme-aware version using base.css variables
+================================== */
+
+/* ==================================
+BASE SHELL
+================================== */
+.mt-layout {
+    padding: 20px;
+    height: 100%;
+    overflow-y: auto;
+    background-color: transparent;
+    box-sizing: border-box;
+    color: var(--app-content-text);
+}
+
+.mt-layout-header {
+    margin-bottom: 20px;
+    text-align: center;
+    border-bottom: 2px solid var(--app-sidebar-hover-bg);
+    padding-bottom: 15px;
+}
+
+.mt-layout-title {
+    margin: 0 0 8px 0;
+    color: var(--app-sidebar-hover);
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.mt-layout-description {
+    margin: 0;
+    color: var(--app-page-text);
+    opacity: 0.8;
+    font-size: 14px;
+    font-style: italic;
+}
+
+/* ==================================
+GRID
+================================== */
+.mt-grid {
+    display: grid;
+    gap: 15px;
+    height: calc(100% - 120px);
+    min-height: 400px;
+}
+
+.mt-grid--2 {
+    grid-template-columns: 1fr 1fr;
+}
+
+.mt-grid--3-bottom-span {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+
+.mt-grid--4 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+
+.mt-grid--5-main-left {
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: repeat(4, 1fr);
+}
+
+.mt-grid--6 {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: 1fr 1fr;
+}
+
+/* ==================================
+PANELS
+================================== */
+.mt-panel {
+    background-color: var(--app-results-bg);
+    border: 1px solid var(--app-thumbnail-border);
+    border-radius: var(--app-radius-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition:
+        border-color var(--app-transition-fast),
+        box-shadow var(--app-transition-fast),
+        background-color var(--app-transition-fast);
+    color: var(--app-content-text);
+}
+
+.mt-panel:hover {
+    border-color: var(--app-sidebar-hover);
+    box-shadow: var(--app-shadow-md);
+}
+
+.mt-panel--bottom-span {
+    grid-column: 1 / -1;
+}
+
+.mt-panel--main {
+    grid-row: 1 / -1;
+}
+
+.mt-panel-header {
+    background-color: rgba(0, 0, 0, 0.18);
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--app-thumbnail-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.mt-panel-title {
+    margin: 0;
+    color: var(--app-sidebar-hover);
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.mt-panel-body {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    color: var(--app-content-text);
+}
+
+.mt-panel.is-collapsed .mt-panel-body {
+    display: none;
+}
+
+/* ==================================
+BUTTONS
+================================== */
+.mt-toggle-btn {
+    background: var(--app-control-bg);
+    border: 1px solid var(--app-control-border);
+    color: var(--app-control-text);
+    padding: 6px 10px;
+    border-radius: var(--app-radius-sm);
+    cursor: pointer;
+    font-size: 14px;
+    transition:
+        background-color var(--app-transition-fast),
+        border-color var(--app-transition-fast),
+        color var(--app-transition-fast);
+}
+
+.mt-toggle-btn:hover {
+    background: var(--app-control-hover-bg);
+    color: var(--app-sidebar-hover);
+    border-color: var(--app-sidebar-hover);
+}
+
+.mt-panel.is-collapsed .mt-toggle-btn {
+    background: #7a2a2a;
+    color: #ffffff;
+    border-color: #a94444;
+}
+
+/* ==================================
+INNER CONTENT
+================================== */
+.mt-panel-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 100%;
+}
+
+.mt-item {
+    background-color: rgba(0, 0, 0, 0.18);
+    border: 1px solid var(--app-thumbnail-border);
+    border-radius: var(--app-radius-sm);
+    padding: 12px;
+    color: var(--app-content-text);
+    font-size: 14px;
+    text-align: center;
+    transition:
+        background-color var(--app-transition-fast),
+        border-color var(--app-transition-fast),
+        box-shadow var(--app-transition-fast);
+    cursor: pointer;
+}
+
+.mt-item:hover {
+    background-color: var(--app-sidebar-hover-bg);
+    border-color: var(--app-sidebar-hover);
+}
+
+.mt-item--small {
+    padding: 8px;
+    font-size: 12px;
+}
+
+.mt-item--wide {
+    flex: 1;
+}
+
+.mt-item.is-active {
+    background-color: var(--app-sidebar-hover-bg);
+    border-color: var(--app-sidebar-hover);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--app-sidebar-hover) 30%, transparent);
+}
+
+/* ==================================
+RESPONSIVE
+================================== */
+@media (max-width: 1024px) {
+    .mt-grid--2,
+    .mt-grid--4 {
+        grid-template-columns: 1fr;
+    }
+
+    .mt-grid--3-bottom-span {
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(3, 1fr);
+    }
+
+    .mt-grid--3-bottom-span .mt-panel--bottom-span {
+        grid-column: 1;
+    }
+
+    .mt-grid--6 {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .mt-layout {
+        padding: 10px;
+    }
+
+    .mt-grid {
+        gap: 10px;
+    }
+
+    .mt-grid--5-main-left,
+    .mt-grid--6 {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+    }
+
+    .mt-panel--main {
+        grid-row: auto;
+    }
+}

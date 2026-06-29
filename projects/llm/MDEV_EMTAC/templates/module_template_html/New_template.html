@@ -1,0 +1,27 @@
+{% extends 'module_template_html/base_template.html' %}
+
+{% block title %}EMTAC Workspace{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/module_template/panel_layouts.css') }}">
+<style>
+    .workspace-shell {
+        min-height: 100%;
+    }
+
+    .workspace-shell .mt-layout {
+        min-height: 100%;
+        height: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="workspace-shell">
+    {% include selected_partial %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/module_template/panel_layouts.js') }}"></script>
+{% endblock %}

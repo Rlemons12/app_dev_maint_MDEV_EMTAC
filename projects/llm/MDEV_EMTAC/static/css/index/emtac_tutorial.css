@@ -1,0 +1,368 @@
+/* static/css/index/emtac_tutorial.css
+============================================================
+EMTAC Index Page Guided Tutorial
+- Sidebar-only launcher
+- Guided overlay
+- Safe click-through highlighting
+- Fixed raised tutorial card
+- Demo payload styling
+============================================================ */
+
+/* ------------------------------------------------------------
+   Overlay
+------------------------------------------------------------ */
+
+.emtac-tutorial-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.22);
+
+    /*
+       The overlay should not block the page.
+       The card and its buttons still accept clicks.
+    */
+    pointer-events: none !important;
+}
+
+/* ------------------------------------------------------------
+   Tutorial card - fixed raised position
+------------------------------------------------------------ */
+
+.emtac-tutorial-card,
+.emtac-tutorial-card-left,
+.emtac-tutorial-card-right,
+.emtac-tutorial-card-center {
+    position: fixed !important;
+
+    left: 50% !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: 150px !important;
+
+    width: 520px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 32px);
+
+    transform: translateX(-50%) !important;
+
+    background: #111827;
+    color: #f9fafb;
+
+    border: 1px solid #374151;
+    border-radius: 14px;
+
+    box-shadow:
+        0 25px 70px rgba(0, 0, 0, 0.65),
+        0 0 30px rgba(57, 255, 20, 0.16);
+
+    overflow: hidden;
+
+    z-index: 1000005 !important;
+    pointer-events: auto !important;
+}
+
+/* ------------------------------------------------------------
+   Header
+------------------------------------------------------------ */
+
+.emtac-tutorial-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    background: #1f2937;
+    padding: 16px 18px;
+
+    border-bottom: 1px solid #374151;
+}
+
+.emtac-tutorial-header h2 {
+    margin: 0;
+
+    color: #39ff14;
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+/* ------------------------------------------------------------
+   Close button
+------------------------------------------------------------ */
+
+.emtac-tutorial-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 34px;
+    height: 34px;
+
+    background: transparent;
+    color: #f9fafb;
+
+    border: 1px solid transparent;
+    border-radius: 8px;
+
+    font-size: 30px;
+    line-height: 1;
+
+    cursor: pointer;
+
+    position: relative;
+    z-index: 1000006 !important;
+    pointer-events: auto !important;
+}
+
+.emtac-tutorial-close:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* ------------------------------------------------------------
+   Body
+------------------------------------------------------------ */
+
+.emtac-tutorial-body {
+    padding: 20px 18px;
+
+    font-size: 16px;
+    line-height: 1.5;
+
+    overflow-y: auto;
+}
+
+.emtac-tutorial-body p {
+    margin: 0;
+}
+
+/* ------------------------------------------------------------
+   Footer
+------------------------------------------------------------ */
+
+.emtac-tutorial-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    padding: 14px 18px;
+
+    background: #1f2937;
+
+    border-top: 1px solid #374151;
+}
+
+.emtac-tutorial-btn {
+    border: none;
+    border-radius: 8px;
+
+    padding: 9px 16px;
+
+    font-weight: 800;
+    cursor: pointer;
+
+    transition:
+        transform 120ms ease,
+        filter 120ms ease,
+        opacity 120ms ease;
+
+    position: relative;
+    z-index: 1000006 !important;
+    pointer-events: auto !important;
+}
+
+.emtac-tutorial-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    filter: brightness(1.08);
+}
+
+.emtac-tutorial-btn.primary {
+    background: #39ff14;
+    color: #111827;
+}
+
+.emtac-tutorial-btn.secondary {
+    background: #374151;
+    color: white;
+}
+
+.emtac-tutorial-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.emtac-tutorial-step-text {
+    color: #d1d5db;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+/* ------------------------------------------------------------
+   Highlighted target
+------------------------------------------------------------ */
+
+.emtac-tutorial-highlight {
+    position: relative;
+
+    /*
+       Keep this below the card/buttons so it cannot steal clicks.
+    */
+    z-index: 999998 !important;
+    pointer-events: none !important;
+
+    outline: 4px solid #39ff14 !important;
+    outline-offset: 6px !important;
+
+    border-radius: 10px !important;
+
+    box-shadow:
+        0 0 28px rgba(57, 255, 20, 0.95),
+        inset 0 0 18px rgba(57, 255, 20, 0.20) !important;
+}
+
+.emtac-tutorial-dimmed {
+    filter: brightness(0.55);
+}
+
+/* ------------------------------------------------------------
+   Demo content injected by tutorial JS
+------------------------------------------------------------ */
+
+.emtac-tutorial-demo-item {
+    background: rgba(57, 255, 20, 0.08);
+
+    border: 1px solid rgba(57, 255, 20, 0.35);
+    border-radius: 8px;
+
+    padding: 10px;
+    margin-bottom: 10px;
+
+    color: #f9fafb;
+    text-align: left;
+}
+
+.emtac-tutorial-demo-item strong {
+    color: #39ff14;
+}
+
+.emtac-tutorial-demo-item small {
+    color: #d1d5db;
+}
+
+.emtac-tutorial-demo-item .document-chunk-text {
+    display: block;
+    margin-top: 8px;
+}
+
+/* ------------------------------------------------------------
+   Remove old floating help/tutorial button behavior
+------------------------------------------------------------ */
+
+.emtac-tutorial-help-btn {
+    display: none !important;
+}
+
+/* ------------------------------------------------------------
+   Accessibility / keyboard focus
+------------------------------------------------------------ */
+
+.emtac-tutorial-close:focus,
+.emtac-tutorial-btn:focus {
+    outline: 3px solid #39ff14;
+    outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------
+   Mobile / tablet layout
+------------------------------------------------------------ */
+
+@media (max-width: 900px) {
+    .emtac-tutorial-card,
+    .emtac-tutorial-card-left,
+    .emtac-tutorial-card-right,
+    .emtac-tutorial-card-center {
+        left: 16px !important;
+        right: 16px !important;
+        top: auto !important;
+        bottom: 16px !important;
+
+        width: auto;
+        max-width: none;
+        max-height: calc(100vh - 32px);
+
+        transform: none !important;
+    }
+
+    .emtac-tutorial-footer {
+        flex-wrap: wrap;
+    }
+
+    .emtac-tutorial-step-text {
+        order: -1;
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* ------------------------------------------------------------
+   Reduced motion
+------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+    .emtac-tutorial-btn,
+    .emtac-tutorial-highlight {
+        transition: none;
+    }
+
+    .emtac-tutorial-btn:hover:not(:disabled) {
+        transform: none;
+    }
+}
+
+/* Keep tutorial controls above all EMTAC pop-out viewers */
+.emtac-tutorial-overlay {
+    z-index: 2147483600 !important;
+    pointer-events: none !important;
+}
+
+.emtac-tutorial-card,
+.emtac-tutorial-card-left,
+.emtac-tutorial-card-right,
+.emtac-tutorial-card-center {
+    z-index: 2147483601 !important;
+    pointer-events: auto !important;
+}
+
+.emtac-tutorial-btn,
+.emtac-tutorial-close {
+    z-index: 2147483602 !important;
+    pointer-events: auto !important;
+}
+
+.emtac-tutorial-language-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    margin-right: 8px;
+    color: #d1d5db;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.emtac-tutorial-language-select {
+    background: #111827;
+    color: #f9fafb;
+    border: 1px solid #39ff14;
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 12px;
+}

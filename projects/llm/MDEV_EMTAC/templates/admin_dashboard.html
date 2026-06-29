@@ -2,274 +2,1148 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Dashboard</title>
-    <!-- Additional styles specific to admin dashboard if needed -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - EMTAC</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bass.css') }}">
     <style>
-        .current-session {
-            background-color: #e6ffe6; /* Light green background */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #eee;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
         }
-        .remote-session {
-            background-color: #fff0e6; /* Light orange background */
+
+        .main-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            position: relative;
         }
-        .admin-row {
-            background-color: #f0f8ff; /* Light blue background for admin users */
+
+        .sidebar {
+            width: 280px;
+            background-color: #1a1a1a;
+            border-right: 2px solid #39FF14;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease, width 0.3s ease;
+            position: relative;
+            z-index: 100;
         }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+            width: 0 !important;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 2px solid rgba(57, 255, 20, 0.3);
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar-header h1 {
+            margin: 0;
+            color: #39FF14;
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .sidebar-header .user-level {
+            margin: 10px 0 5px 0;
+            color: #ccc;
+            font-size: 12px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .sidebar-header .welcome-message {
+            margin: 5px 0 0 0;
+            color: #eee;
+            font-size: 14px;
+            font-weight: normal;
+            text-align: center;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 15px 0;
+            overflow-y: auto;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 12px 20px;
+            color: #ccc;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            font-size: 14px;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(57, 255, 20, 0.1);
+            color: #39FF14;
+            border-left-color: #39FF14;
+            padding-left: 25px;
+        }
+
+        .nav-link.highlight {
+            background-color: rgba(57, 255, 20, 0.15);
+            color: #39FF14;
+            font-weight: bold;
+            border-left-color: #39FF14;
+        }
+
+        .nav-link.highlight:hover {
+            background-color: rgba(57, 255, 20, 0.25);
+        }
+
+        .sidebar-utils {
+            padding: 15px;
+            border-top: 2px solid rgba(57, 255, 20, 0.3);
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+
+        .model-display-section {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        .model-display-section p {
+            margin: 5px 0;
+            color: #ccc;
+            font-size: 12px;
+        }
+
+        .logout-button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #39FF14;
+            color: black;
+            text-align: center;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-size: 13px;
+        }
+
+        .logout-button:hover {
+            background-color: #2ed910;
+            box-shadow: 0 2px 8px rgba(57, 255, 20, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .sidebar-theme-selector select {
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            color: #eee;
+        }
+
+        .sidebar-theme-selector select:focus {
+            outline: none;
+            border-color: #39FF14;
+        }
+
+        .sidebar-toggle {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 200;
+            background-color: #39FF14;
+            color: black;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(57, 255, 20, 0.3);
+        }
+
+        .sidebar-toggle:hover {
+            background-color: #2ed910;
+            box-shadow: 0 4px 12px rgba(57, 255, 20, 0.5);
+            transform: scale(1.05);
+        }
+
+        .content-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            padding-top: 60px;
+            background-color: #1a1a1a;
+            transition: margin-left 0.3s ease;
+        }
+
+        .content-wrapper.expanded {
+            margin-left: 0;
+        }
+
         .status-badge {
             display: inline-block;
-            padding: 3px 8px;
+            padding: 4px 10px;
             border-radius: 4px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             color: white;
+            text-transform: uppercase;
         }
-        .current {
+
+        .status-badge.current {
             background-color: #28a745;
         }
-        .remote {
+
+        .status-badge.remote {
             background-color: #fd7e14;
         }
-        .refresh-button {
+
+        .current-session {
+            background-color: rgba(40, 167, 69, 0.15) !important;
+            border-left: 3px solid #28a745;
+        }
+
+        .remote-session {
+            background-color: rgba(253, 126, 20, 0.08);
+        }
+
+        .admin-row {
+            background-color: rgba(57, 255, 20, 0.08);
+            border-left: 3px solid #39FF14;
+        }
+
+        .dashboard-section {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .dashboard-section:hover {
+            border-color: rgba(57, 255, 20, 0.5);
+            box-shadow: 0 2px 8px rgba(57, 255, 20, 0.2);
+        }
+
+        .dashboard-section h2 {
+            color: #39FF14;
+            margin: 0 0 15px 0;
+            font-size: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-bottom: 2px solid rgba(57, 255, 20, 0.3);
+            padding-bottom: 10px;
+        }
+
+        .dashboard-section h3 {
+            color: #39FF14;
+            margin: 15px 0 10px 0;
+            font-size: 16px;
+        }
+
+        .info-text {
+            color: #ccc;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
             margin-top: 10px;
-            padding: 5px 10px;
-            background-color: #007bff;
-            color: white;
+        }
+
+        table thead {
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+
+        table th {
+            padding: 12px;
+            text-align: left;
+            color: #39FF14;
+            font-weight: bold;
+            border-bottom: 2px solid rgba(57, 255, 20, 0.3);
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #eee;
+            font-size: 13px;
+            vertical-align: top;
+        }
+
+        table tbody tr {
+            background-color: rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        table tbody tr:hover {
+            background-color: rgba(57, 255, 20, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #39FF14;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            color: #eee;
+            font-size: 13px;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #39FF14;
+            box-shadow: 0 0 5px rgba(57, 255, 20, 0.3);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background-color: #39FF14;
+            color: black;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
         }
+
+        .btn:hover {
+            background-color: #2ed910;
+            box-shadow: 0 2px 8px rgba(57, 255, 20, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-color: #39FF14;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #bb2d3b;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
+        }
+
+        .refresh-button {
+            margin-top: 15px;
+        }
+
+        .inline-form {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .inline-form select {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .inline-form button {
+            flex-shrink: 0;
+        }
+
+        .password-reset-form {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .password-reset-form input {
+            min-width: 150px;
+            padding: 8px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            color: #eee;
+            font-size: 13px;
+        }
+
+        .password-reset-form input:focus {
+            outline: none;
+            border-color: #39FF14;
+            box-shadow: 0 0 5px rgba(57, 255, 20, 0.3);
+        }
+
+        a {
+            color: #39FF14;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: #2ed910;
+            text-decoration: underline;
+        }
+
+        .user-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            background-color: rgba(57, 255, 20, 0.2);
+            border: 1px solid #39FF14;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #39FF14;
+            margin-left: 5px;
+        }
+
+        .current-user-card {
+            background-color: rgba(40, 167, 69, 0.1);
+            border: 2px solid #28a745;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .current-user-card .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .current-user-card .info-label {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .current-user-card .info-value {
+            color: #eee;
+        }
+        /* ============================================================
+   Demo Testpoints Admin
+============================================================ */
+
+.demo-testpoint-layout {
+    display: grid;
+    grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+    gap: 20px;
+}
+
+.demo-testpoint-form-card,
+.demo-testpoint-list-card {
+    background-color: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(57, 255, 20, 0.22);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.demo-testpoint-form-card h3,
+.demo-testpoint-list-card h3 {
+    margin-top: 0;
+}
+
+.demo-testpoint-check-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    color: #ccc;
+    font-size: 13px;
+}
+
+.demo-testpoint-check-row input {
+    width: auto;
+}
+
+.demo-testpoint-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.demo-testpoint-table-wrapper {
+    overflow-x: auto;
+}
+
+.demo-testpoint-route {
+    color: #8be9ff;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12px;
+}
+
+.demo-testpoint-description {
+    color: #ccc;
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.demo-testpoint-status {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.demo-testpoint-status.enabled {
+    background-color: rgba(40, 167, 69, 0.18);
+    border: 1px solid #28a745;
+    color: #8effa8;
+}
+
+.demo-testpoint-status.disabled {
+    background-color: rgba(220, 53, 69, 0.18);
+    border: 1px solid #dc3545;
+    color: #ff9aa4;
+}
+
+.demo-testpoint-status.tablet {
+    background-color: rgba(13, 202, 240, 0.14);
+    border: 1px solid #0dcaf0;
+    color: #8be9ff;
+}
+
+.demo-testpoint-message {
+    margin-top: 10px;
+    color: #39FF14;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+@media (max-width: 1000px) {
+    .demo-testpoint-layout {
+        grid-template-columns: 1fr;
+    }
+}
     </style>
 </head>
 <body>
-    <!-- Admin Dashboard Content -->
-    <div class="sidebar" id="sidebar">
-        <a href="/">Return to Main Page</a>
-        <a href="#current-user">Current User</a>
-        <a href="#active-sessions">Active Sessions</a>
-        <a href="#set-models">Set Models</a>
-        <a href="#users">Users</a>
-        <a href="#comments">Comments</a>
-    </div>
-    <div class="content">
-        <!-- Current Admin Info -->
-        <div class="table-container">
-            <h2 id="current-user">Current User Information</h2>
-            <p>Current server time: {{ current_time }}</p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Employee ID</th>
-                        <th>Name</th>
-                        <th>User Level</th>
-                        <th>Primary Area</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="current-session">
-                        <td>{{ session['employee_id'] }}</td>
-                        <td>{{ session['first_name'] }} {{ session['last_name'] }}</td>
-                        <td>{{ session['user_level'] }}</td>
-                        <td>{{ session['primary_area'] }}</td>
-                        <td><span class="status-badge current">CURRENT</span></td>
-                    </tr>
-                </tbody>
-            </table>
-            <button class="refresh-button" onclick="window.location.reload();">Refresh Dashboard</button>
+    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+        ☰
+    </button>
+
+    <div class="main-container">
+        <div class="sidebar" id="mainSidebar">
+            <div class="sidebar-header">
+                <h1>EMTAC</h1>
+                <p class="user-level">User Level: {{ session['user_level'] }}</p>
+                <h2 class="welcome-message">Welcome {{ session['first_name'] }}! Admin Dashboard</h2>
+            </div>
+
+            <div class="sidebar-nav">
+                <a href="/" class="nav-link highlight">Return to Main Page</a>
+
+                <a href="http://127.0.0.1:5050/dashboard"
+                   class="nav-link"
+                   target="_blank">
+                    GPU Service Dashboard
+                </a>
+
+                <a href="{{ url_for('trace_dashboard.trace_dashboard') }}"
+                   class="nav-link"
+                   target="_blank">
+                   Trace Monitor
+                </a>
+
+                <a href="#current-user" class="nav-link">Current User</a>
+                <a href="#active-sessions" class="nav-link">Active Sessions</a>
+                <a href="#set-models" class="nav-link">Set Models</a>
+                <a href="#demo-testpoints" class="nav-link">Demo Testpoints</a>
+                <a href="#users" class="nav-link">Users</a>
+                <a href="#comments" class="nav-link">Comments</a>
+            </div>
+
+            <div class="sidebar-utils">
+                <div class="model-display-section" style="display: block;">
+                    <p>Current AI Model: {{ current_ai_model|default('Default Model') }}</p>
+                    <p>Current Embedding Model: {{ current_embedding_model|default('Default Embedding') }}</p>
+                </div>
+
+                <a href="/logout" class="logout-button">Logout</a>
+            </div>
+
+            <div class="sidebar-theme-selector" style="margin-top: 24px; border-top: 1px solid #333; padding-top: 15px;">
+                <label for="theme-select" style="color: #ccc; font-size: 14px;">Theme:</label>
+                <select id="theme-select" style="width: 100%; margin-top: 8px; padding: 6px 8px;">
+                    <option value="">Default</option>
+                    <option value="theme-blue-grey.css">Professional Blue-Grey</option>
+                    <option value="theme-classic-grey-navy.css">Classic Grey & Navy</option>
+                    <option value="theme-minimal-white.css">Minimal White & Graphite</option>
+                    <option value="theme-green-modern.css">Green Modern</option>
+                    <option value="theme-industrial-yellow-steel.css">Industrial Yellow & Steel</option>
+                    <option value="theme-modern-purple-indigo.css">Modern Purple & Indigo</option>
+                    <option value="theme-teal-black.css">Futuristic Teal & Black</option>
+                    <option value="theme-light-orange.css">Modern Light & Orange</option>
+                </select>
+            </div>
         </div>
 
-        <div class="table-container">
-    <h2 id="active-sessions">Active Logins (Last 6 Hours)</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Session ID</th>
-                <th>User ID</th>
-                <th>Employee ID</th>
-                <th>User Name</th>
-                <th>IP Address</th>
-                <th>Last Activity</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for login in active_sessions %}
-            <tr class="{% if session['user_id']|string == login.user_id|string %}current-session{% else %}remote-session{% endif %}">
-                <td>{{ login.session_id }}</td>
-                <td>{{ login.user_id }}</td>
-                <td>{{ login.user.employee_id }}</td>
-                <td>
-                    {{ login.user.first_name }} {{ login.user.last_name }}
-                    {% if login.user.user_level == 'ADMIN' %}
-                    <strong>(Admin)</strong>
-                    {% endif %}
-                </td>
-                <td>{{ login.ip_address }}</td>
-                <td>{{ login.last_activity }}</td>
-                <td>
-                    {% if session['user_id']|string == login.user_id|string %}
-                        <span class="status-badge current">CURRENT</span>
-                    {% else %}
-                        <span class="status-badge remote">REMOTE</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+        <div class="content-wrapper" id="contentWrapper">
+            <div class="dashboard-section">
+                <h2>Admin Dashboard</h2>
+                <p class="info-text">Current server time: {{ current_time }}</p>
+            </div>
 
-        <!-- Set Models Form -->
-        <div class="form-container">
-            <h2 id="set-models">Set Models</h2>
-            <form action="{{ url_for('admin_bp.set_models') }}" method="post">
-                <div>
-                    <label for="ai_model">Select AI Model:</label>
-                    <select id="ai_model" name="ai_model">
-                        <option value="">Loading models...</option>
-                    </select>
+            <div class="dashboard-section" id="demo-testpoints">
+    <h2>Demo Testpoints</h2>
+
+    <p class="info-text">
+        Use this section to control which demo/test pages are available on the tablet.
+        Enabled and tablet-visible testpoints can be shown to users for testing.
+    </p>
+
+    <div class="demo-testpoint-layout">
+
+        <div class="demo-testpoint-form-card">
+            <h3>Add Demo Testpoint</h3>
+
+            <form id="demoTestpointForm">
+                <div class="form-group">
+                    <label for="demoTestpointName">Name:</label>
+                    <input
+                        type="text"
+                        id="demoTestpointName"
+                        name="name"
+                        placeholder="Document Search Display Demo"
+                        required
+                    >
                 </div>
-                <div>
-                    <label for="embedding_model">Select Embedding Model:</label>
-                    <select id="embedding_model" name="embedding_model">
-                        <option value="">Loading models...</option>
-                    </select>
+
+                <div class="form-group">
+                    <label for="demoTestpointDescription">Description:</label>
+                    <input
+                        type="text"
+                        id="demoTestpointDescription"
+                        name="description"
+                        placeholder="Test document search display and tile dropdowns"
+                    >
                 </div>
-                <div>
-                    <label for="image_model">Select Image Model:</label>
-                    <select id="image_model" name="image_model">
-                        <option value="">Loading models...</option>
-                    </select>
+
+                <div class="form-group">
+                    <label for="demoTestpointRoute">Route Path:</label>
+                    <input
+                        type="text"
+                        id="demoTestpointRoute"
+                        name="route_path"
+                        placeholder="/test-demos/document-search-display"
+                        required
+                    >
                 </div>
-                <button type="submit">Set Models</button>
+
+                <div class="form-group">
+                    <label for="demoTestpointCategory">Category:</label>
+                    <input
+                        type="text"
+                        id="demoTestpointCategory"
+                        name="category"
+                        placeholder="Document Search"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="demoTestpointSortOrder">Sort Order:</label>
+                    <input
+                        type="number"
+                        id="demoTestpointSortOrder"
+                        name="sort_order"
+                        value="100"
+                    >
+                </div>
+
+                <label class="demo-testpoint-check-row">
+                    <input
+                        type="checkbox"
+                        id="demoTestpointEnabled"
+                        name="enabled"
+                        checked
+                    >
+                    Enabled
+                </label>
+
+                <label class="demo-testpoint-check-row">
+                    <input
+                        type="checkbox"
+                        id="demoTestpointTabletVisible"
+                        name="tablet_visible"
+                        checked
+                    >
+                    Tablet Visible
+                </label>
+
+                <button type="submit" class="btn">
+                    Add Testpoint
+                </button>
+
+                <div id="demoTestpointMessage" class="demo-testpoint-message"></div>
             </form>
         </div>
 
-        <!-- Users Table -->
-        <div class="table-container">
-            <h2 id="users">Users</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Employee ID</th>
-                        <th>First Name</th>
-                        <th>Last Name</th>
-                        <th>User Level</th>
-                        <th>Role</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in users %}
-                    <tr {% if user.user_level.name == 'ADMIN' %}class="admin-row"{% endif %}>
-                        <td>{{ user.employee_id }}</td>
-                        <td>{{ user.first_name }}</td>
-                        <td>{{ user.last_name }}</td>
-                        <td>{{ user.user_level.name }}</td>
-                        <td>{% if user.user_level.name == 'ADMIN' %}Administrator{% else %}Regular User{% endif %}</td>
-                        <td>
-                            <form action="{{ url_for('admin_bp.change_user_level') }}" method="post">
-                                <input type="hidden" name="user_id" value="{{ user.id }}">
-                                <select name="user_level">
-                                    <option value="ADMIN" {% if user.user_level.name == 'ADMIN' %}selected{% endif %}>Admin</option>
-                                    <option value="LEVEL_III" {% if user.user_level.name == 'LEVEL_III' %}selected{% endif %}>Level III</option>
-                                    <option value="LEVEL_II" {% if user.user_level.name == 'LEVEL_II' %}selected{% endif %}>Level II</option>
-                                    <option value="LEVEL_I" {% if user.user_level.name == 'LEVEL_I' %}selected{% endif %}>Level I</option>
-                                    <option value="STANDARD" {% if user.user_level.name == 'STANDARD' %}selected{% endif %}>Default</option>
-                                </select>
-                                <button type="submit">Change Level</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="demo-testpoint-list-card">
+            <h3>Configured Testpoints</h3>
+
+            <div class="demo-testpoint-table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Route</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Sort</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="demoTestpointsTableBody">
+                        <tr>
+                            <td colspan="6">Loading demo testpoints...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- Comments Section -->
-        <div class="table-container">
-            <h2 id="comments">Comments</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Employee ID</th>
-                        <th>Comment</th>
-                        <th>Page URL</th>
-                        <th>Image</th>
-                        <th>Timestamp</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for comment in comments %}
-                    <tr>
-                        <td>{{ comment.user.employee_id if comment.user else 'Anonymous' }}</td>
-                        <td>{{ comment.comment }}</td>
-                        <td><a href="{{ comment.page_url }}" target="_blank">{{ comment.page_url }}</a></td>
-                        <td>
-                            {% if comment.screenshot_path %}
-                            <a href="{{ url_for('static', filename=comment.screenshot_path) }}" target="_blank">View Image</a>
-                            {% else %}
-                            No Image
-                            {% endif %}
-                        </td>
-                        <td>{{ comment.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    </div>
+</div>
+
+            <div class="dashboard-section" id="current-user">
+                <h2>Current User Information</h2>
+                <div class="current-user-card">
+                    <div class="info-row">
+                        <span class="info-label">Employee ID:</span>
+                        <span class="info-value">{{ session['employee_id'] }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Name:</span>
+                        <span class="info-value">{{ session['first_name'] }} {{ session['last_name'] }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">User Level:</span>
+                        <span class="info-value">{{ session['user_level'] }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Primary Area:</span>
+                        <span class="info-value">{{ session['primary_area'] }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value">
+                            <span class="status-badge current">CURRENT SESSION</span>
+                        </span>
+                    </div>
+                </div>
+                <button class="btn refresh-button" onclick="window.location.reload();">Refresh Dashboard</button>
+            </div>
+
+            <div class="dashboard-section" id="active-sessions">
+                <h2>Active Logins (Last 6 Hours)</h2>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Session ID</th>
+                                <th>User ID</th>
+                                <th>Employee ID</th>
+                                <th>User Name</th>
+                                <th>IP Address</th>
+                                <th>Last Activity</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for login in active_sessions %}
+                            <tr class="{% if session['user_id']|string == login.user_id|string %}current-session{% else %}remote-session{% endif %}">
+                                <td>{{ login.session_id }}</td>
+                                <td>{{ login.user_id }}</td>
+                                <td>{{ login.user.employee_id }}</td>
+                                <td>
+                                    {{ login.user.first_name }} {{ login.user.last_name }}
+                                    {% if login.user.user_level.name == 'ADMIN' %}
+                                        <span class="user-badge">ADMIN</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ login.ip_address }}</td>
+                                <td>{{ login.last_activity }}</td>
+                                <td>
+                                    {% if session['user_id']|string == login.user_id|string %}
+                                        <span class="status-badge current">CURRENT</span>
+                                    {% else %}
+                                        <span class="status-badge remote">REMOTE</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="dashboard-section" id="set-models">
+                <h2>Set Models</h2>
+                <form action="{{ url_for('admin_bp.set_models') }}" method="post">
+                    <div class="form-group">
+                        <label for="ai_model">Select AI Model:</label>
+                        <select id="ai_model" name="ai_model">
+                            <option value="">Loading models...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="embedding_model">Select Embedding Model:</label>
+                        <select id="embedding_model" name="embedding_model">
+                            <option value="">Loading models...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="image_model">Select Image Model:</label>
+                        <select id="image_model" name="image_model">
+                            <option value="">Loading models...</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn">Set Models</button>
+
+                    <hr style="margin: 20px 0; border-color: rgba(57,255,20,0.3);">
+
+                    <div class="form-group">
+                        <label>Auto-Promote Latest Trained Model:</label>
+                        <button type="button" id="promote-latest-btn" class="btn btn-secondary">
+                            Promote Latest _vXX Model
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="dashboard-section" id="users">
+                <h2>Users</h2>
+                <p class="info-text">
+                    Use this section to change user levels or reset a user's password.
+                </p>
+
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Employee ID</th>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th>User Level</th>
+                                <th>Password Status</th>
+                                <th>Role</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for user in users %}
+                            <tr {% if user.user_level.name == 'ADMIN' %}class="admin-row"{% endif %}>
+                                <td>{{ user.employee_id }}</td>
+                                <td>{{ user.first_name }}</td>
+                                <td>{{ user.last_name }}</td>
+
+                                <td>
+                                    {{ user.user_level.name }}
+                                    {% if user.user_level.name == 'ADMIN' %}
+                                        <span class="user-badge">ADMIN</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if user.must_change_password %}
+                                        <span class="status-badge remote">MUST CHANGE</span>
+                                    {% else %}
+                                        <span class="status-badge current">OK</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if user.user_level.name == 'ADMIN' %}
+                                        Administrator
+                                    {% else %}
+                                        Regular User
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    <form action="{{ url_for('admin_bp.change_user_level') }}" method="post" class="inline-form">
+                                        <input type="hidden" name="user_id" value="{{ user.id }}">
+
+                                        <select name="user_level">
+                                            <option value="ADMIN" {% if user.user_level.name == 'ADMIN' %}selected{% endif %}>Admin</option>
+                                            <option value="LEVEL_III" {% if user.user_level.name == 'LEVEL_III' %}selected{% endif %}>Level III</option>
+                                            <option value="LEVEL_II" {% if user.user_level.name == 'LEVEL_II' %}selected{% endif %}>Level II</option>
+                                            <option value="LEVEL_I" {% if user.user_level.name == 'LEVEL_I' %}selected{% endif %}>Level I</option>
+                                            <option value="STANDARD" {% if user.user_level.name == 'STANDARD' %}selected{% endif %}>Default</option>
+                                        </select>
+
+                                        <button type="submit" class="btn">Change</button>
+                                    </form>
+
+                                    <form action="{{ url_for('admin_bp.reset_user_password') }}"
+                                          method="post"
+                                          class="password-reset-form"
+                                          onsubmit="return confirmPasswordReset('{{ user.first_name }} {{ user.last_name }}');">
+
+                                        <input type="hidden" name="user_id" value="{{ user.id }}">
+
+                                        <input type="password"
+                                               name="new_password"
+                                               placeholder="Temporary password"
+                                               autocomplete="new-password"
+                                               minlength="8"
+                                               required>
+
+                                        <input type="password"
+                                               name="confirm_password"
+                                               placeholder="Confirm temporary password"
+                                               autocomplete="new-password"
+                                               minlength="8"
+                                               required>
+
+                                        <button type="submit" class="btn btn-danger">
+                                            Reset Password
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="dashboard-section" id="comments">
+                <h2>Comments</h2>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Employee ID</th>
+                                <th>Comment</th>
+                                <th>Page URL</th>
+                                <th>Image</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comment in comments %}
+                            <tr>
+                                <td>{{ comment.user.employee_id if comment.user else 'Anonymous' }}</td>
+                                <td>{{ comment.comment }}</td>
+                                <td>
+                                    <a href="{{ comment.page_url }}" target="_blank">
+                                        {{ comment.page_url }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if comment.screenshot_path %}
+                                        <a href="{{ url_for('static', filename=comment.screenshot_path) }}"
+                                           target="_blank"
+                                           class="btn btn-secondary"
+                                           style="padding: 4px 8px; font-size: 11px;">
+                                            View Image
+                                        </a>
+                                    {% else %}
+                                        <span style="color: #888;">No Image</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ comment.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Additional scripts specific to admin dashboard if needed -->
-    <script src="{{ url_for('static', filename='js/base_sidebar.js') }}"></script>
-    <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Fetch available models from the API
-    fetch('/get_available_models')
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                // Populate AI models dropdown
-                populateDropdown('ai_model', data.models.ai, data.current.ai);
+<script src="{{ url_for('static', filename='js/base_sidebar.js') }}"></script>
 
-                // Populate embedding models dropdown
-                populateDropdown('embedding_model', data.models.embedding, data.current.embedding);
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('mainSidebar');
+        const contentWrapper = document.getElementById('contentWrapper');
+        const toggleBtn = document.getElementById('sidebarToggle');
 
-                // Populate image models dropdown
-                populateDropdown('image_model', data.models.image, data.current.image);
-            } else {
-                console.error('Error loading models:', data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching models:', error);
-        });
+        sidebar.classList.toggle('collapsed');
+        contentWrapper.classList.toggle('expanded');
+        toggleBtn.classList.toggle('collapsed');
 
-    // Function to populate a dropdown with models
-    function populateDropdown(selectId, models, currentModel) {
-        const select = document.getElementById(selectId);
+        if (sidebar.classList.contains('collapsed')) {
+            toggleBtn.innerHTML = '☰';
+            toggleBtn.style.left = '15px';
+        } else {
+            toggleBtn.innerHTML = '✕';
+        }
 
-        // Clear existing options
-        select.innerHTML = '';
-
-        // Add new options based on available models
-        models.forEach(model => {
-            const option = document.createElement('option');
-            option.value = model.name;
-            option.textContent = model.display_name;
-            option.selected = (model.name === currentModel);
-
-            // If model is disabled, mark it as such
-            if (!model.enabled) {
-                option.disabled = true;
-                option.textContent += ' (Disabled)';
-            }
-
-            select.appendChild(option);
-        });
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        localStorage.setItem('sidebarCollapsed', isCollapsed);
     }
-});
+
+    function confirmPasswordReset(userName) {
+        return confirm("Reset temporary password for " + userName + "? The user will be required to change it on next login.");
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+
+        const sidebar = document.getElementById('mainSidebar');
+        const contentWrapper = document.getElementById('contentWrapper');
+        const toggleBtn = document.getElementById('sidebarToggle');
+
+        if (sidebarCollapsed && sidebar && contentWrapper && toggleBtn) {
+            sidebar.classList.add('collapsed');
+            contentWrapper.classList.add('expanded');
+            toggleBtn.classList.add('collapsed');
+            toggleBtn.innerHTML = '☰';
+            toggleBtn.style.left = '15px';
+        } else if (toggleBtn) {
+            toggleBtn.innerHTML = '✕';
+        }
+
+        fetch('/get_available_models')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    populateDropdown('ai_model', data.models.ai, data.current.ai);
+                    populateDropdown('embedding_model', data.models.embedding, data.current.embedding);
+                    populateDropdown('image_model', data.models.image, data.current.image);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading models:', error);
+            });
+
+        function populateDropdown(selectId, models, currentModel) {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+
+            select.innerHTML = '';
+
+            if (!models || models.length === 0) {
+                const emptyOption = document.createElement('option');
+                emptyOption.textContent = 'No models available';
+                emptyOption.disabled = true;
+                select.appendChild(emptyOption);
+                return;
+            }
+
+            models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.name;
+
+                option.textContent =
+                    model.display_name ||
+                    model.label ||
+                    model.name;
+
+                option.selected = (model.name === currentModel);
+
+                if (model.enabled === false) {
+                    option.disabled = true;
+                    option.textContent += ' (Disabled)';
+                }
+
+                select.appendChild(option);
+            });
+        }
+
+        const promoteBtn = document.getElementById('promote-latest-btn');
+
+        if (promoteBtn) {
+            promoteBtn.addEventListener('click', function () {
+                if (!confirm("Promote latest trained model to CURRENT_MODEL?")) {
+                    return;
+                }
+
+                promoteBtn.disabled = true;
+                promoteBtn.textContent = "Promoting...";
+
+                fetch('/promote_latest_trained_model', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert("Latest trained model promoted successfully.");
+                        location.reload();
+                    } else {
+                        alert("Error: " + (data.message || "Promotion failed."));
+                        promoteBtn.disabled = false;
+                        promoteBtn.textContent = "Promote Latest _vXX Model";
+                    }
+                })
+                .catch(err => {
+                    console.error("Promotion error:", err);
+                    alert("Error promoting model.");
+                    promoteBtn.disabled = false;
+                    promoteBtn.textContent = "Promote Latest _vXX Model";
+                });
+            });
+        }
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                const target = document.querySelector(this.getAttribute('href'));
+
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    });
 </script>
+
+<script src="{{ url_for('static', filename='js/admin/demo_testpoints_admin.js') }}?v=demo_testpoints_admin_20260615_2"></script>
 </body>
 </html>

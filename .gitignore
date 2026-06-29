@@ -6,6 +6,8 @@
 .venv/
 .venv_old/
 venv/
+.venv*/
+
 __pycache__/
 *.py[cod]
 *.pyo
@@ -109,10 +111,12 @@ runs/
 # --- GIT LFS / DVC / BUNDLES ---
 git_lfs_vault/
 *.bundle
-.dvc/
-.dvcignore
-*.dvc
-.DVC*
+
+# --- DVC Tracking ---
+!.dvc/
+!.dvcignore
+
+
 
 # --- PDF, PPT, IMAGE & OTHER GENERATED FILES ---
 PDF_FILES/
@@ -272,22 +276,17 @@ models/plugins/**
 !project_documention/**
 
 # ===========================================================
-# TOOLS FOLDER (TRACK SCRIPTS, IGNORE INSTALLERS)
+# TOOLS FOLDER
+# Track only custom scripts and placeholder files
+# Ignore everything else
 # ===========================================================
-!tools/custom_scripts/**
-tools/dbeaver/**
-!tools/dbeaver/.gitkeep
-tools/git/**
-!tools/git/.gitkeep
-tools/git-lfs-3.7.0/**
-!tools/git-lfs-3.7.0/.gitkeep
-tools/pycharm/**
-!tools/pycharm/.gitkeep
-tools/python/**
-!tools/python/.gitkeep
-tools/utilities/**
-!tools/utilities/.gitkeep
+tools/**
 
+!tools/
+!tools/.gitkeep
+!tools/custom_scripts/
+!tools/custom_scripts/**
+!tools/**/.gitkeep
 # ===========================================================
 # SUBPROJECT: projects/llm/MDEV_EMTAC
 # ===========================================================
@@ -370,3 +369,200 @@ projects/llm/MDEV_EMTAC/desktop.ini
 !projects/llm/MDEV_EMTAC/**/.gitkeep
 projects/llm/MDEV_EMTAC/static/**/*.webp
 projects/llm/MDEV_EMTAC/static/background_images/**/*.webp
+
+*.db-shm
+*.db-wal
+tools/custom_scripts/python_scripts/mlruns/      
+projects/llm/DATASET_GEN/
+# GPU runtime artifacts
+services/gpu/artifacts/json/*
+!services/gpu/artifacts/json/.gitkeep   
+# GPU runtime artifacts
+services/gpu/artifacts/images/*
+services/gpu/artifacts/json/*
+services/gpu/artifacts/markdown/*
+services/gpu/artifacts/pdf/*
+
+!services/gpu/artifacts/images/.gitkeep
+!services/gpu/artifacts/json/.gitkeep
+!services/gpu/artifacts/markdown/.gitkeep
+!services/gpu/artifacts/pdf/.gitkeep
+
+# Local DVC application install
+DVC (Data Version Control)/**
+!DVC (Data Version Control)/.gitkeep
+
+# ===========================================================
+# HARD BLOCK: LOCAL DATABASE / CAD VAULT CONTENT
+# Keep folder structure only. Do not track actual files.
+# ===========================================================
+
+Database/**
+!Database/
+!Database/**/
+!Database/**/.gitkeep
+!Database/**/.gitignore
+
+# SolidWorks / CAD files
+*.SLDPRT
+*.SLDASM
+*.SLDDRW
+*.sldprt
+*.sldasm
+*.slddrw
+
+# Other common CAD/export files
+*.STEP
+*.STP
+*.IGES
+*.IGS
+*.DXF
+*.DWG
+*.step
+*.stp
+*.iges
+*.igs
+*.dxf
+*.dwg
+
+# Local AI/MCP/editor config
+.ai/
+
+
+# ===========================================================
+# RELEASE CLEANUP - KEEP PRODUCTION MAIN CLEAN
+# ===========================================================
+
+# Local installers / downloaded tools
+*.exe
+dvc-*.exe
+
+# Vendor/unpacked third-party apps
+services/grafana-*/
+services/grafana-*/**
+
+# Local environment/config files
+*.env
+.env
+.env.*
+!.env.example
+!.env.test.example
+
+# DVC metadata inside app project - ignore for production release
+projects/llm/MDEV_EMTAC/.dvc/
+projects/llm/MDEV_EMTAC/.dvc/**
+
+# Generated output/report folders
+projects/llm/MDEV_EMTAC/reports/
+projects/llm/MDEV_EMTAC/reports/**
+projects/llm/MDEV_EMTAC/scripts_output/
+projects/llm/MDEV_EMTAC/scripts_output/**
+projects/llm/MDEV_EMTAC/document_equipment_output/
+projects/llm/MDEV_EMTAC/document_equipment_output/**
+projects/llm/MDEV_EMTAC/mi_au_maint/migration_analysis/
+projects/llm/MDEV_EMTAC/mi_au_maint/migration_analysis/**
+
+# Backup files
+*.bak
+*.bak_*
+*backup_*.py
+*_backup_*.py
+*.bak_remove_*
+
+# One-off local utility/test files
+projects/llm/MDEV_EMTAC/check_excel_headers.py
+projects/llm/MDEV_EMTAC/chk_pairs.py
+projects/llm/MDEV_EMTAC/enrichment_probe.py
+projects/llm/MDEV_EMTAC/--root
+
+# Training projects/results - not part of production app release
+projects/MODEL_TRAINING/
+projects/MODEL_TRAINING/**
+projects/llm/MDEV_EMTAC/modules/emtac_ai/chat_intent_training_template_500_examples.csv
+
+# Local signing/update payloads
+signing/
+signing/**
+tablet_updates/
+tablet_updates/**
+
+# Generated scan/report files
+services/wheel_scan_report.json
+
+# Local tools folder - keep out of production release
+tools/
+tools/**
+# ------------------------------------------------------------
+# EMTAC production runtime - do not track slot state
+# ------------------------------------------------------------
+prod/run/
+prod/shared/
+prod/slots/
+
+prod/**/.env
+prod/**/.env.*
+prod/**/.venv/
+prod/**/*.log
+prod/**/__pycache__/
+prod/**/*.backup_*
+prod/scripts/*.backup_*
+
+# Keep prod README/scripts/slot exclusions trackable:
+# prod/README.md
+# prod/slot_exclusions.txt
+# prod/scripts/*.ps1
+
+# ------------------------------------------------------------
+# Accidental copied/vendor dependency folders
+# ------------------------------------------------------------
+services/mcp_server/psycopg/
+
+# ------------------------------------------------------------
+# EMTAC production runtime - do not track slot state
+# ------------------------------------------------------------
+prod/run/
+prod/shared/
+prod/slots/
+
+prod/**/.env
+prod/**/.env.*
+prod/**/.venv/
+prod/**/*.log
+prod/**/__pycache__/
+prod/**/*.backup_*
+prod/scripts/*.backup_*
+
+# Keep prod README/scripts/slot exclusions trackable:
+# prod/README.md
+# prod/slot_exclusions.txt
+# prod/scripts/*.ps1
+
+# ------------------------------------------------------------
+# Accidental copied/vendor dependency folders
+# ------------------------------------------------------------
+services/mcp_server/psycopg/
+
+# ------------------------------------------------------------
+# Generated production dependency audit reports
+# ------------------------------------------------------------
+prod/dependency_manifest.*
+prod/missing_wheels.*
+prod/wheel_inventory.csv
+
+# Local secret files
+.env
+*.env
+**/.env
+**/*.env
+
+# Local secret files
+.env
+*.env
+**/.env
+**/*.env
+
+# Local secret files
+.env
+*.env
+**/.env
+**/*.env

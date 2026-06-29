@@ -1,3 +1,5 @@
+# MDEV_EMTAC/blueprints/position_data_assignment/position_data_assignment.py
+
 from flask import Blueprint, request, redirect, flash, jsonify, render_template, url_for
 from flask_wtf import FlaskForm
 from sqlalchemy.exc import SQLAlchemyError
@@ -10,7 +12,7 @@ from modules.emtacdb.emtacdb_fts import (Drawing, Part, PartsPositionImageAssoci
                                          CompletedDocumentPositionAssociation,
                                          Area, EquipmentGroup, Model, AssetNumber, Location, SiteLocation,
                                          CompleteDocument,Image, Position, ImagePositionAssociation, Subassembly,
-                                         AssemblyView, ComponentAssembly,ToolCategory, ToolManufacturer)
+                                         AssemblyView, ComponentAssembly,ToolCategory, ToolManufacturer,Campus,Building)
 from modules.configuration.config_env import DatabaseConfig
 from modules.configuration.config import ALLOWED_EXTENSIONS
 from sqlalchemy import or_
@@ -36,6 +38,9 @@ def allowed_file(filename, allowed_extensions=ALLOWED_EXTENSIONS):
 def position_data_assignment():
     db_session = db_config.get_main_session()
     position_id = request.args.get('position_id')  # Get position ID from query parameters
+
+
+
 
     # Instantiate the forms
     logger.info("Loading CreatePositionForm and SearchPositionForm")
@@ -1599,5 +1604,90 @@ def test_session():
     finally:
         session.close()
 
+@position_data_assignment_bp.route('/get_buildings')
+def get_buildings():
+    campus_id = request.args.get('campus_id', type=int)
+    db_session = db_config.get_main_session()
+
+    try:
+        if not campus_id:
+            return jsonify([])
+
+        buildings = db_session.query(Building).filter_by(campus_id=campus_id).all()
+
+        data = [
+            {
+                'id': b.id,
+                'name': b.name
+            }
+            for b in buildings
+        ]
+
+        return jsonify(data)
+
+    finally:
+        db_session.close()
+
+@position_data_assignment_bp.route('/get_site_locations_by_building')
+def get_site_locations_by_building():
+    building_id = request.args.get('building_id', type=int)
+    db_session = db_config.get_main_session()
+
+    try:
+        if not building_id:
+            return jsonify([])
+
+        site_locations = (
+            db_session.query(SiteLocation)
+            .filter_by(building_id=building_id)
+            .all()
+        )
+
+        data = [
+            {
+                'id': s.id,
+                'title': s.title,
+                'room_number': s.room_number
+            }
+            for s in site_locations
+        ]
+
+        return jsonify(data)
+
+    finally:
+        db_session.close()
+
+@position_data_assignment_bp.route('/get_areas_by_site_location')
+def get_areas_by_site_location():
+    site_location_id = request.args.get('site_location_id', type=int)
+    db_session = db_config.get_main_session()
+
+    try:
+        if not site_location_id:
+            return jsonify([])
+
+        # Use Position as the bridge between site_location and area
+        positions = (
+            db_session.query(Position)
+            .filter(Position.site_location_id == site_location_id)
+            .options(joinedload(Position.area))
+            .all()
+        )
+
+        # Unique Areas found for this site location
+        area_set = {
+            (p.area.id, p.area.name)
+            for p in positions if p.area
+        }
+
+        data = [
+            {'id': area_id, 'name': name}
+            for (area_id, name) in area_set
+        ]
+
+        return jsonify(data)
+
+    finally:
+        db_session.close()
 
 

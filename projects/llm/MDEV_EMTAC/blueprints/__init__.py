@@ -10,13 +10,31 @@ from modules.configuration.config import DATABASE_URL
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from modules.configuration import log_config
-from plugins import load_ai_model, load_embedding_model
+from modules.ai.loaders.model_loader import load_ai_model, load_embedding_model
+from modules.ai.loaders.model_loader import (
+    load_ai_model,
+    load_embedding_model,
+    load_image_model,
+)
 logger = log_config.logger
 from flask import Flask
 # Log that the application is starting
 logger.info("Starting the Flask application")
 
 # Import blueprints
+from blueprints.test_demo_routes.demo_testpoints_admin import demo_testpoints_admin_bp
+from blueprints.test_demo_routes.document_search_display_demo import document_search_display_demo_bp
+from blueprints.help_chat.help_chat_bp import help_chat_bp
+from modules.help_chat.help_chat_socket import register_help_chat_socket_events
+from blueprints.tablet_edge.tablet_edge_app_download_routes import tablet_edge_app_download_bp
+from blueprints.tablet_edge.tablet_edge_bp import tablet_edge_bp
+from blueprints.bill_of_materials.enter_new_part import enter_new_part_bp
+from blueprints.bill_of_materials.search_bill_of_material_bp import search_bill_of_material_bp
+from blueprints.bill_of_materials.bill_of_materials_bp import bill_of_materials_bp
+from blueprints.bill_of_materials.bill_of_materials_data_bp import bill_of_materials_data_bp
+from blueprints.ui.theme_utils_bp import theme_utils_bp
+from blueprints.chatbot.panel_parts import panel_parts_bp
+from blueprints.media_routes import media_bp
 from blueprints.upload_search_db.upload_document_list_data import get_upload_document_list_data_bp
 from blueprints.assembly_routes import assembly_model_bp
 from blueprints.tool_routes import tool_blueprint_bp
@@ -45,7 +63,7 @@ from blueprints.get_powerpoint_list_data_bp import get_powerpoint_list_data_bp
 from blueprints.get_image_list_data_bp import get_image_list_data_bp
 from blueprints.get_list_data_bp import get_list_data_bp
 from blueprints.get_batch_list_data_bp import get_batch_list_data_bp
-from blueprints.chatbot_bp import chatbot_bp
+from blueprints.chatbot.chatbot_bp import chatbot_bp
 from blueprints.image_bp import image_bp
 from blueprints.add_document_bp import add_document_bp
 from blueprints.upload_powerpoint_bp import upload_powerpoint_bp
@@ -54,19 +72,16 @@ from blueprints.search_powerpoint_bp import search_powerpoint_bp
 from blueprints.display_pdf_bp import display_pdf_bp
 from blueprints.search_documents_bp import search_documents_bp
 from blueprints.search_powerpoint_fts_bp import search_powerpoint_fts_bp
-from blueprints.login_bp import login_bp
-from blueprints.create_user_bp import create_user_bp
+from blueprints.logon_logout.login_bp import login_bp
+from blueprints.user_creation.create_user_bp import create_user_bp
 from blueprints.search_documents_fts_bp import search_documents_fts_bp
-from blueprints.logout_bp import logout_bp
+from blueprints.logon_logout.logout_bp import logout_bp
 from blueprints.batch_processing_bp import batch_processing_bp
-from blueprints.admin_bp import admin_bp
+from blueprints.admin.admin_bp import admin_bp
 from blueprints.image_compare_bp import image_compare_bp
 from blueprints.folder_image_embedding_bp import folder_image_embedding_bp
-from blueprints.bill_of_materials_bp import bill_of_materials_bp  # Newly added blueprint
-from blueprints.bill_of_materials_data_bp import bill_of_materials_data_bp
-from blueprints.get_bill_of_material_query_data import get_bill_of_material_query_data_bp
-from blueprints.create_bill_of_material import create_bill_of_material_bp
-from blueprints.enter_new_part import enter_new_part_bp
+from blueprints.bill_of_materials.create_bill_of_material import create_bill_of_material_bp
+from blueprints.bill_of_materials.enter_new_part import enter_new_part_bp
 from blueprints.get_troubleshooting_guide_edit_data_bp import get_troubleshooting_guide_edit_data_bp
 from blueprints.comment_pop_up_bp import comment_pop_up_bp
 from blueprints.bill_of_materials.update_part_bp import update_part_bp
@@ -74,6 +89,7 @@ from blueprints.position_data_assignment.position_data_assignment import positio
 from blueprints.position_data_assignment.position_data_assignment_data_add_dependencies_bp import position_data_assignment_data_add_dependencies_bp
 from blueprints.upload_search_db.search_drawing import search_drawings, drawing_routes
 from blueprints.chatbot.keyword_search_bp import keyword_search_bp
+from blueprints.dashboards.trace_dashboard import trace_dashboard_bp
 
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
@@ -127,21 +143,33 @@ def register_blueprints(app):
     app.register_blueprint(admin_bp, url_prefix='/')
     app.register_blueprint(image_compare_bp, url_prefix='/')
     app.register_blueprint(folder_image_embedding_bp, url_prefix='/folder_image_embedding')
-    app.register_blueprint(bill_of_materials_bp,url_prefix='/')  # Registering the bill_of_materials blueprint
-    app.register_blueprint(bill_of_materials_data_bp,url_prefix='/')
-    app.register_blueprint(get_bill_of_material_query_data_bp)
     app.register_blueprint(create_bill_of_material_bp, url_prefix='/bill_of_materials')
+    app.register_blueprint(bill_of_materials_bp, url_prefix="/bill_of_materials")
+    app.register_blueprint( bill_of_materials_data_bp,url_prefix="/bill_of_materials"
+    )
+    app.register_blueprint(enter_new_part_bp, url_prefix="/enter_new_part")
 
-    app.register_blueprint(enter_new_part_bp)
     app.register_blueprint(comment_pop_up_bp)
-    app.register_blueprint(update_part_bp)
+    app.register_blueprint(update_part_bp, url_prefix="/update_part")
 
     app.register_blueprint(position_data_assignment_bp)
 
     app.register_blueprint(position_data_assignment_data_add_dependencies_bp)
 
+    app.register_blueprint(media_bp)
 
+    app.register_blueprint(panel_parts_bp)
 
+    app.register_blueprint(trace_dashboard_bp, url_prefix="/dashboards")
+    app.register_blueprint(theme_utils_bp)
+    app.register_blueprint(tablet_edge_bp)
+    app.register_blueprint(tablet_edge_app_download_bp)
+
+    app.register_blueprint(help_chat_bp)
+
+    app.register_blueprint(document_search_display_demo_bp, url_prefix="/test-demos")
+
+    app.register_blueprint(demo_testpoints_admin_bp)
 app = Flask(__name__)
 app.secret_key = '1234'
 

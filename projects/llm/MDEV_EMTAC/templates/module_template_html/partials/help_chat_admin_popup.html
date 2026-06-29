@@ -1,0 +1,30 @@
+<div id="helpChatAdminPopup" class="help-chat-admin-popup" style="display: none;">
+    <div class="help-chat-admin-popup-header">
+        <strong>EMTAC Help Chat Admin</strong>
+        <button id="helpChatAdminCloseButton" type="button">X</button>
+    </div>
+
+    <div class="help-chat-admin-popup-body">
+        <aside class="help-chat-admin-popup-tabs">
+            <div class="help-chat-admin-popup-tabs-header">
+                <strong>User Chats</strong>
+                <button id="helpChatRefreshSessionsButton" type="button">Refresh</button>
+            </div>
+
+            <div id="helpChatAdminSessionTabs"></div>
+        </aside>
+
+        <section class="help-chat-admin-popup-chat">
+            <div id="helpChatAdminActiveHeader" class="help-chat-admin-active-header">
+                Select a chat.
+            </div>
+
+            <div id="helpChatAdminMessages" class="help-chat-admin-messages"></div>
+
+            <div class="help-chat-admin-input-row">
+                <input id="helpChatAdminInput" type="text" placeholder="Type admin reply..." disabled>
+                <button id="helpChatAdminSendButton" type="button" disabled>Send</button>
+            </div>
+        </section>
+    </div>
+</div>

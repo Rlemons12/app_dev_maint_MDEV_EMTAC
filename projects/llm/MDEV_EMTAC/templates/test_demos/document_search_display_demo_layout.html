@@ -1,0 +1,232 @@
+<div
+    class="mt-layout document-search-demo-layout document-search-demo-layout--original-style"
+    data-mt-layout="panels-2"
+    data-demo-page="document-search-display"
+    data-area-tile-picker="true"
+>
+
+    <div class="mt-grid mt-grid--2">
+
+        <!-- ============================================================
+             LEFT PANEL: DOCUMENT SEARCH
+        ============================================================= -->
+        <section
+            id="document-search-demo-panel"
+            class="mt-panel"
+            data-panel="document-search-demo"
+        >
+            <div class="mt-panel-header">
+                <h3 class="mt-panel-title">Search / Upload</h3>
+
+                <button
+                    class="mt-toggle-btn"
+                    type="button"
+                    aria-label="Toggle Search and Upload Panel"
+                    aria-controls="document-search-demo-panel-body"
+                    aria-expanded="true"
+                    data-panel-toggle="document-search-demo"
+                >
+                    ⚙
+                </button>
+            </div>
+
+            <div
+                id="document-search-demo-panel-body"
+                class="mt-panel-body"
+            >
+                <div class="mt-panel-content document-search-demo-content">
+
+                    <div class="document-demo-focus-strip">
+                        <div>
+                            <strong>Document Search Demo</strong>
+                            <span>
+                                Test how users search, review results, and open/display documents.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="document-demo-search-host" data-document-demo-search-host>
+                        {% include 'upload_search_database/upload_search_database_partial/upload_search_database_forms_partial.html' %}
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ============================================================
+             RIGHT PANEL: DOCUMENT RESULTS / DISPLAY FEEDBACK
+        ============================================================= -->
+        <section
+            id="document-display-demo-panel"
+            class="mt-panel"
+            data-panel="document-display-demo"
+        >
+            <div class="mt-panel-header">
+                <h3 class="mt-panel-title">Document Display / Feedback</h3>
+
+                <button
+                    class="mt-toggle-btn"
+                    type="button"
+                    aria-label="Toggle Document Display and Feedback Panel"
+                    aria-controls="document-display-demo-panel-body"
+                    aria-expanded="true"
+                    data-panel-toggle="document-display-demo"
+                >
+                    📄
+                </button>
+            </div>
+
+            <div
+                id="document-display-demo-panel-body"
+                class="mt-panel-body"
+            >
+                <div class="mt-panel-content document-display-demo-content">
+
+                    <div class="document-demo-results-card">
+                        <div class="document-demo-section-heading">
+                            <h4>Document Results</h4>
+                            <p>
+                                Users should be able to quickly tell which document is correct and open it.
+                            </p>
+                        </div>
+
+                        <div class="document-demo-results-host" data-document-demo-results-host>
+                            {% include 'upload_search_database/upload_search_database_partial/upload_search_database_results_partial.html' %}
+                        </div>
+                    </div>
+
+                    <div class="document-demo-feedback-card">
+                        <div class="document-demo-section-heading">
+                            <h4>Demo Feedback</h4>
+                            <p>
+                                Use this while someone is testing the document search and display workflow.
+                            </p>
+                        </div>
+
+                        <form
+                            id="documentSearchDemoFeedbackForm"
+                            class="document-search-demo-feedback-form"
+                            data-feedback-url="/test-demos/document-search-display/api/feedback"
+                        >
+
+                            <div class="document-demo-feedback-group">
+                                <label>Was the document search easy to use?</label>
+
+                                <div class="document-demo-rating-row">
+                                    <label>
+                                        <input type="radio" name="search_easy" value="yes" required>
+                                        <span>Yes</span>
+                                    </label>
+
+                                    <label>
+                                        <input type="radio" name="search_easy" value="somewhat">
+                                        <span>Somewhat</span>
+                                    </label>
+
+                                    <label>
+                                        <input type="radio" name="search_easy" value="no">
+                                        <span>No</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="document-demo-feedback-group">
+                                <label>Were the results clear?</label>
+
+                                <div class="document-demo-rating-row">
+                                    <label>
+                                        <input type="radio" name="results_clear" value="yes" required>
+                                        <span>Yes</span>
+                                    </label>
+
+                                    <label>
+                                        <input type="radio" name="results_clear" value="somewhat">
+                                        <span>Somewhat</span>
+                                    </label>
+
+                                    <label>
+                                        <input type="radio" name="results_clear" value="no">
+                                        <span>No</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="document-demo-feedback-group">
+                                <label>Was opening or viewing the document easy?</label>
+
+                                <div class="document-demo-rating-row">
+                                    <label>
+                                        <input type="radio" name="display_easy" value="yes" required>
+                                        <span>Yes</span>
+                                    </label>
+
+                                    <label>
+                                        <input type="radio" name="display_easy" value="somewhat">
+                                        <span>Somewhat</span>
+                                    </label>
+
+                                    <label>
+                                        <input type="radio" name="display_easy" value="no">
+                                        <span>No</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="document-demo-feedback-group">
+                                <label for="documentDemoUserRole">User role</label>
+                                <input
+                                    id="documentDemoUserRole"
+                                    name="user_role"
+                                    type="text"
+                                    placeholder="Mechanic, operator, engineer, lead..."
+                                >
+                            </div>
+
+                            <div class="document-demo-feedback-group">
+                                <label for="documentDemoWhatWorked">What worked well?</label>
+                                <textarea
+                                    id="documentDemoWhatWorked"
+                                    name="what_worked"
+                                    rows="3"
+                                ></textarea>
+                            </div>
+
+                            <div class="document-demo-feedback-group">
+                                <label for="documentDemoConfusing">What was confusing?</label>
+                                <textarea
+                                    id="documentDemoConfusing"
+                                    name="what_was_confusing"
+                                    rows="3"
+                                ></textarea>
+                            </div>
+
+                            <div class="document-demo-feedback-group">
+                                <label for="documentDemoChanges">What would make this better?</label>
+                                <textarea
+                                    id="documentDemoChanges"
+                                    name="suggested_changes"
+                                    rows="3"
+                                ></textarea>
+                            </div>
+
+                            <div class="document-demo-feedback-actions">
+                                <button class="document-demo-primary-btn" type="submit">
+                                    Save Feedback
+                                </button>
+
+                                <div
+                                    id="documentSearchDemoFeedbackStatus"
+                                    class="document-demo-feedback-status"
+                                ></div>
+                            </div>
+
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </div>
+</div>

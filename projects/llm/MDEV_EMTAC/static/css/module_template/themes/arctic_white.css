@@ -1,0 +1,438 @@
+/* static/css/module_template/themes/arctic_white.css
+==================================
+ARCTIC WHITE THEME
+Designed to sit on top of:
+static/css/module_template/base.css
+
+Role:
+- Override standardized base theme variables
+- Preserve layout ownership in base.css
+- Provide a complete Arctic White visual identity
+- Support reusable neppy-* utility classes
+- Theme the standardized .mt-* module template layouts
+
+Important:
+- Does NOT style the standalone banner system
+- Does NOT style the standalone comment popup system
+================================== */
+
+/* ==================================
+THEME VARIABLE OVERRIDES
+Apply by adding class="arctic-white" to html or body
+================================== */
+html.arctic-white,
+body.arctic-white {
+    --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    --app-page-bg: #EFF6FF;
+    --app-page-text: #0C1A2E;
+
+    --app-sidebar-bg: rgba(232, 246, 255, 0.97);
+    --app-sidebar-text: #4E7090;
+    --app-sidebar-link: #0C1A2E;
+    --app-sidebar-hover: #0EA5E9;
+    --app-sidebar-hover-bg: rgba(14, 165, 233, 0.10);
+    --app-sidebar-border: rgba(8, 40, 80, 0.10);
+
+    --app-content-bg: rgba(239, 246, 255, 0.90);
+    --app-content-text: #0C1A2E;
+
+    --app-control-bg: rgba(248, 252, 255, 0.98);
+    --app-control-text: #0C1A2E;
+    --app-control-border: rgba(8, 40, 80, 0.13);
+    --app-control-hover-bg: rgba(225, 240, 255, 0.98);
+
+    --app-results-bg: rgba(239, 246, 255, 0.88);
+    --app-results-text: #0C1A2E;
+
+    --app-thumbnail-border: rgba(8, 40, 80, 0.12);
+
+    --app-shadow-sm: 0 4px 14px rgba(8, 40, 80, 0.10);
+    --app-shadow-md: 0 10px 28px rgba(8, 40, 80, 0.14);
+
+    background: #EFF6FF;
+    background-image: url("/static/background_images/arctic_white.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    color: var(--app-page-text);
+    line-height: 1.45;
+}
+
+/* ==================================
+NEPPY TOKEN OVERRIDES
+Supports reusable neppy-* utility classes
+================================== */
+html.arctic-white,
+body.arctic-white {
+    --neppy-surface: rgba(239, 246, 255, 0.92);
+    --neppy-surface-2: rgba(225, 240, 255, 0.96);
+    --neppy-line: rgba(8, 40, 80, 0.10);
+    --neppy-line-strong: rgba(8, 40, 80, 0.22);
+
+    --neppy-text: #0C1A2E;
+    --neppy-muted: #4E7090;
+    --neppy-heading: #000D1A;
+
+    --neppy-accent: #0EA5E9;
+    --neppy-accent-soft: rgba(14, 165, 233, 0.12);
+    --neppy-accent-hover: #38BDF8;
+
+    --neppy-ok: #059669;
+    --neppy-ok-soft: rgba(5, 150, 105, 0.12);
+
+    --neppy-warn: #B45309;
+    --neppy-warn-soft: rgba(180, 83, 9, 0.12);
+
+    --neppy-bad: #DC2626;
+    --neppy-bad-soft: rgba(220, 38, 38, 0.12);
+}
+
+/* ==================================
+GLOBAL POLISH
+================================== */
+html.arctic-white .sidebar,
+body.arctic-white .sidebar {
+    backdrop-filter: blur(10px);
+    box-shadow: inset -1px 0 0 rgba(8, 40, 80, 0.08), 2px 0 16px rgba(8, 40, 80, 0.06);
+}
+
+html.arctic-white .sidebar h1,
+body.arctic-white .sidebar h1 {
+    color: #000D1A;
+    letter-spacing: 0.02em;
+}
+
+html.arctic-white .welcome-message,
+body.arctic-white .welcome-message {
+    color: #0C1A2E;
+    font-weight: 600;
+}
+
+html.arctic-white .user-level,
+html.arctic-white .model-display-section,
+body.arctic-white .user-level,
+body.arctic-white .model-display-section {
+    color: rgba(8, 40, 80, 0.46);
+}
+
+html.arctic-white .content,
+body.arctic-white .content {
+    background: linear-gradient(180deg, rgba(239, 246, 255, 0.90) 0%, rgba(225, 240, 255, 0.94) 100%);
+    color: var(--app-content-text);
+}
+
+/* ==================================
+SIDEBAR NAV / INTERACTION POLISH
+================================== */
+html.arctic-white .nav-link,
+html.arctic-white .sidebar a,
+html.arctic-white .sidebar button,
+html.arctic-white .sidebar select,
+body.arctic-white .nav-link,
+body.arctic-white .sidebar a,
+body.arctic-white .sidebar button,
+body.arctic-white .sidebar select {
+    color: var(--app-sidebar-link);
+}
+
+html.arctic-white .nav-link:hover,
+html.arctic-white .sidebar a:hover,
+html.arctic-white .sidebar button:hover,
+html.arctic-white .sidebar select:hover,
+body.arctic-white .nav-link:hover,
+body.arctic-white .sidebar a:hover,
+body.arctic-white .sidebar button:hover,
+body.arctic-white .sidebar select:hover {
+    color: var(--app-sidebar-hover);
+    background-color: var(--app-sidebar-hover-bg);
+}
+
+html.arctic-white .nav-link.highlight,
+body.arctic-white .nav-link.highlight {
+    color: var(--app-sidebar-hover);
+    background-color: rgba(14, 165, 233, 0.09);
+    border-left: 3px solid var(--app-sidebar-hover);
+}
+
+/* ==================================
+STANDARD CONTROLS
+================================== */
+html.arctic-white .toggle-button,
+body.arctic-white .toggle-button {
+    background: linear-gradient(180deg, rgba(248, 252, 255, 0.98) 0%, rgba(232, 245, 255, 0.98) 100%) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(8, 40, 80, 0.08);
+    font-weight: 600;
+}
+
+html.arctic-white .toggle-button:hover,
+body.arctic-white .toggle-button:hover {
+    background: linear-gradient(180deg, rgba(225, 240, 255, 0.98) 0%, rgba(210, 232, 252, 0.98) 100%) !important;
+    border-color: rgba(14, 165, 233, 0.35) !important;
+}
+
+html.arctic-white #voice-selection,
+html.arctic-white .sidebar select,
+body.arctic-white #voice-selection,
+body.arctic-white .sidebar select {
+    background-color: rgba(248, 252, 255, 0.98);
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 5px;
+}
+
+html.arctic-white #voice-selection:focus,
+html.arctic-white .sidebar select:focus,
+body.arctic-white #voice-selection:focus,
+body.arctic-white .sidebar select:focus {
+    outline: 2px solid rgba(14, 165, 233, 0.40);
+    outline-offset: 2px;
+}
+
+/* ==================================
+RESULTS / PANELS / THUMBNAILS
+================================== */
+html.arctic-white .results-container,
+body.arctic-white .results-container {
+    background: var(--app-results-bg);
+    border: 1px solid rgba(8, 40, 80, 0.08);
+    border-radius: 10px;
+    box-shadow: var(--app-shadow-md);
+    backdrop-filter: blur(6px);
+}
+
+html.arctic-white #drawingList,
+body.arctic-white #drawingList {
+    color: var(--app-results-text);
+}
+
+html.arctic-white .thumbnail,
+body.arctic-white .thumbnail {
+    background: rgba(248, 252, 255, 0.98);
+    border: 1px solid var(--app-thumbnail-border);
+    box-shadow: 0 2px 10px rgba(8, 40, 80, 0.08);
+}
+
+/* ==================================
+LINKS / SPECIAL STATES
+Scoped so they do NOT affect the banner
+================================== */
+html.arctic-white .content a,
+html.arctic-white .sidebar a,
+body.arctic-white .content a,
+body.arctic-white .sidebar a {
+    color: #0369A1;
+}
+
+html.arctic-white .content a:hover,
+html.arctic-white .sidebar a:hover,
+body.arctic-white .content a:hover,
+body.arctic-white .sidebar a:hover {
+    color: #0EA5E9;
+}
+
+html.arctic-white .logout-button,
+body.arctic-white .logout-button {
+    color: #B45309 !important;
+}
+
+/* ==================================
+ACCESSIBILITY / FOCUS
+No hamburger styling here.
+Hamburger focus belongs to banner.css / banner theme only.
+================================== */
+html.arctic-white .toggle-button:focus-visible,
+html.arctic-white .sidebar button:focus-visible,
+html.arctic-white .sidebar a:focus-visible,
+html.arctic-white .sidebar select:focus-visible,
+html.arctic-white .mt-toggle-btn:focus-visible,
+html.arctic-white .neppy-btn:focus-visible,
+html.arctic-white .neppy-input:focus-visible,
+html.arctic-white .neppy-select:focus-visible,
+html.arctic-white .neppy-textarea:focus-visible,
+body.arctic-white .toggle-button:focus-visible,
+body.arctic-white .sidebar button:focus-visible,
+body.arctic-white .sidebar a:focus-visible,
+body.arctic-white .sidebar select:focus-visible,
+body.arctic-white .mt-toggle-btn:focus-visible,
+body.arctic-white .neppy-btn:focus-visible,
+body.arctic-white .neppy-input:focus-visible,
+body.arctic-white .neppy-select:focus-visible,
+body.arctic-white .neppy-textarea:focus-visible {
+    outline: 2px solid rgba(14, 165, 233, 0.55);
+    outline-offset: 2px;
+}
+
+/* ==================================
+NEPPY UTILITY CLASS SUPPORT
+================================== */
+html.arctic-white .neppy-card,
+html.arctic-white .neppy-card-soft,
+body.arctic-white .neppy-card,
+body.arctic-white .neppy-card-soft {
+    background: var(--neppy-surface);
+    border-color: var(--neppy-line);
+}
+
+html.arctic-white .neppy-title,
+html.arctic-white .neppy-panel-title,
+body.arctic-white .neppy-title,
+body.arctic-white .neppy-panel-title {
+    color: var(--neppy-heading);
+}
+
+html.arctic-white .neppy-subtitle,
+html.arctic-white .neppy-label,
+html.arctic-white .neppy-text-muted,
+body.arctic-white .neppy-subtitle,
+body.arctic-white .neppy-label,
+body.arctic-white .neppy-text-muted {
+    color: var(--neppy-muted) !important;
+}
+
+html.arctic-white .neppy-btn,
+body.arctic-white .neppy-btn {
+    background: linear-gradient(180deg, rgba(248, 252, 255, 0.98) 0%, rgba(232, 245, 255, 0.98) 100%);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+html.arctic-white .neppy-btn:hover,
+body.arctic-white .neppy-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, rgba(225, 240, 255, 0.98) 0%, rgba(210, 232, 252, 0.98) 100%);
+}
+
+html.arctic-white .neppy-input,
+html.arctic-white .neppy-select,
+html.arctic-white .neppy-textarea,
+html.arctic-white .neppy-mono,
+html.arctic-white .neppy-code,
+body.arctic-white .neppy-input,
+body.arctic-white .neppy-select,
+body.arctic-white .neppy-textarea,
+body.arctic-white .neppy-mono,
+body.arctic-white .neppy-code {
+    background: rgba(248, 252, 255, 0.98);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+html.arctic-white .neppy-input:focus,
+html.arctic-white .neppy-select:focus,
+html.arctic-white .neppy-textarea:focus,
+body.arctic-white .neppy-input:focus,
+body.arctic-white .neppy-select:focus,
+body.arctic-white .neppy-textarea:focus {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
+}
+
+/* ==================================
+MODULE TEMPLATE PANEL LAYOUT THEME
+Styles the standardized .mt-* module templates
+================================== */
+html.arctic-white .mt-layout,
+body.arctic-white .mt-layout {
+    color: var(--neppy-text);
+}
+
+html.arctic-white .mt-layout-header,
+body.arctic-white .mt-layout-header {
+    border-bottom: 2px solid rgba(14, 165, 233, 0.22);
+}
+
+html.arctic-white .mt-layout-title,
+body.arctic-white .mt-layout-title {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+}
+
+html.arctic-white .mt-layout-description,
+body.arctic-white .mt-layout-description {
+    color: var(--neppy-muted);
+}
+
+html.arctic-white .mt-panel,
+body.arctic-white .mt-panel {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg, 14px);
+    box-shadow: 0 4px 12px rgba(8, 40, 80, 0.08);
+    backdrop-filter: blur(6px);
+}
+
+html.arctic-white .mt-panel:hover,
+body.arctic-white .mt-panel:hover {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 10px 24px rgba(8, 40, 80, 0.12);
+}
+
+html.arctic-white .mt-panel-header,
+body.arctic-white .mt-panel-header {
+    background: rgba(14, 165, 233, 0.04);
+    border-bottom: 1px solid var(--neppy-line);
+}
+
+html.arctic-white .mt-panel-title,
+body.arctic-white .mt-panel-title {
+    color: var(--neppy-accent);
+}
+
+html.arctic-white .mt-toggle-btn,
+body.arctic-white .mt-toggle-btn {
+    background: linear-gradient(180deg, rgba(248, 252, 255, 0.98) 0%, rgba(232, 245, 255, 0.98) 100%);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(8, 40, 80, 0.08);
+}
+
+html.arctic-white .mt-toggle-btn:hover,
+body.arctic-white .mt-toggle-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, rgba(225, 240, 255, 0.98) 0%, rgba(210, 232, 252, 0.98) 100%);
+    color: var(--neppy-text);
+}
+
+html.arctic-white .mt-panel.is-collapsed .mt-toggle-btn,
+body.arctic-white .mt-panel.is-collapsed .mt-toggle-btn {
+    background: linear-gradient(180deg, #0C4A6E 0%, #082F49 100%);
+    border-color: rgba(56, 189, 248, 0.35);
+    color: #ffffff;
+}
+
+html.arctic-white .mt-panel-body,
+body.arctic-white .mt-panel-body {
+    color: var(--neppy-text);
+}
+
+html.arctic-white .mt-panel-content,
+body.arctic-white .mt-panel-content {
+    gap: 12px;
+}
+
+html.arctic-white .mt-item,
+body.arctic-white .mt-item {
+    background: rgba(248, 252, 255, 0.98);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+}
+
+html.arctic-white .mt-item:hover,
+body.arctic-white .mt-item:hover {
+    background: rgba(14, 165, 233, 0.07);
+    border-color: var(--neppy-accent);
+}
+
+html.arctic-white .mt-item.is-active,
+body.arctic-white .mt-item.is-active {
+    background: rgba(14, 165, 233, 0.12);
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.10);
+}

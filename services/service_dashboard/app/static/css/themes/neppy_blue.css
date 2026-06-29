@@ -1,0 +1,548 @@
+/* static/css/themes/neppy_blue.css
+==================================
+NEPPY BLUE THEME
+Theme layer only.
+Do NOT place page-specific dashboard layout CSS here.
+================================== */
+
+/* ==================================
+THEME VARIABLE OVERRIDES
+================================== */
+body.neppy-blue {
+    --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    --app-page-bg: radial-gradient(circle at 20% 20%, #122a45 0%, #071522 50%, #02080f 100%);
+    --app-page-text: #e7eef7;
+
+    --app-banner-bg: linear-gradient(90deg, #a81818 0%, #c62828 45%, #d93838 100%);
+    --app-banner-text: #ffffff;
+    --app-banner-link: #7fe7ff;
+
+    --app-sidebar-bg: rgba(8, 20, 34, 0.94);
+    --app-sidebar-text: #b9d7f5;
+    --app-sidebar-link: #e7eef7;
+    --app-sidebar-hover: #36c8f6;
+    --app-sidebar-hover-bg: rgba(54, 200, 246, 0.12);
+    --app-sidebar-border: rgba(122, 150, 182, 0.25);
+
+    --app-content-bg: rgba(7, 21, 34, 0.96);
+    --app-content-text: #e7eef7;
+
+    --app-control-bg: #0b2239;
+    --app-control-text: #e7eef7;
+    --app-control-border: rgba(122, 150, 182, 0.30);
+    --app-control-hover-bg: #10304f;
+
+    --app-popup-bg: rgba(10, 24, 40, 0.98);
+    --app-popup-text: #e7eef7;
+    --app-popup-accent: #36c8f6;
+    --app-popup-submit-text: #04101b;
+
+    --app-results-bg: rgba(8, 20, 34, 0.88);
+    --app-results-text: #dce9f7;
+
+    --app-thumbnail-border: rgba(122, 150, 182, 0.35);
+
+    --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.20);
+    --app-shadow-md: 0 16px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* ==================================
+NEPPY TOKENS
+================================== */
+body.neppy-blue {
+    --neppy-surface: rgba(8, 20, 34, 0.88);
+    --neppy-surface-2: rgba(12, 28, 46, 0.92);
+    --neppy-line: rgba(122, 150, 182, 0.30);
+    --neppy-line-strong: rgba(122, 150, 182, 0.50);
+
+    --neppy-text: #e7eef7;
+    --neppy-muted: #9bb0c9;
+    --neppy-heading: #ffffff;
+
+    --neppy-accent: #36c8f6;
+    --neppy-accent-soft: rgba(54, 200, 246, 0.18);
+    --neppy-accent-hover: #67d7fb;
+
+    --neppy-ok: #2ac77a;
+    --neppy-ok-soft: rgba(42, 199, 122, 0.16);
+
+    --neppy-warn: #ffc857;
+    --neppy-warn-soft: rgba(255, 200, 87, 0.18);
+
+    --neppy-bad: #ff6b6b;
+    --neppy-bad-soft: rgba(255, 107, 107, 0.16);
+
+    --neppy-shadow-sm: 0 6px 14px rgba(0, 0, 0, 0.18);
+    --neppy-shadow-md: 0 14px 28px rgba(0, 0, 0, 0.28);
+    --neppy-shadow-lg: 0 18px 36px rgba(0, 0, 0, 0.35);
+
+    --neppy-radius-sm: 8px;
+    --neppy-radius-md: 10px;
+    --neppy-radius-lg: 14px;
+    --neppy-radius-xl: 18px;
+
+    --neppy-space-1: 4px;
+    --neppy-space-2: 8px;
+    --neppy-space-3: 12px;
+    --neppy-space-4: 16px;
+    --neppy-space-5: 20px;
+    --neppy-space-6: 24px;
+
+    --neppy-font-ui: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --neppy-font-mono: Consolas, "Courier New", monospace;
+}
+
+/* ==================================
+GLOBAL POLISH
+================================== */
+body.neppy-blue {
+    color: var(--neppy-text);
+    background: var(--app-page-bg);
+    line-height: 1.45;
+}
+
+body.neppy-blue .banner {
+    letter-spacing: 0.04em;
+    box-shadow: var(--app-shadow-sm);
+}
+
+body.neppy-blue .banner a {
+    font-weight: 600;
+}
+
+body.neppy-blue .sidebar {
+    backdrop-filter: blur(6px);
+    box-shadow: inset -1px 0 0 rgba(122, 150, 182, 0.18);
+}
+
+body.neppy-blue .sidebar h1 {
+    color: var(--neppy-heading);
+    letter-spacing: 0.02em;
+}
+
+body.neppy-blue .welcome-message {
+    color: var(--app-sidebar-text);
+}
+
+body.neppy-blue .user-level,
+body.neppy-blue .model-display-section {
+    color: var(--neppy-muted);
+}
+
+body.neppy-blue .nav-link.highlight {
+    color: var(--neppy-accent);
+    background-color: rgba(54, 200, 246, 0.10);
+    border-left: 3px solid var(--neppy-accent);
+}
+
+body.neppy-blue .content {
+    background: linear-gradient(180deg, rgba(7, 21, 34, 0.96) 0%, rgba(5, 16, 27, 0.98) 100%);
+}
+
+/* ==================================
+REUSABLE WRAPPERS
+================================== */
+body.neppy-blue .neppy-wrap {
+    width: min(96vw, 1800px);
+    max-width: 1800px;
+    margin: 0 auto;
+    padding: var(--neppy-space-4);
+}
+
+body.neppy-blue .neppy-section {
+    margin-bottom: var(--neppy-space-5);
+}
+
+/* ==================================
+TYPOGRAPHY
+================================== */
+body.neppy-blue .neppy-title {
+    margin: 0 0 var(--neppy-space-3) 0;
+    color: var(--neppy-heading);
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+body.neppy-blue .neppy-subtitle {
+    margin: 0 0 var(--neppy-space-4) 0;
+    color: var(--neppy-muted);
+    font-size: 0.98rem;
+}
+
+body.neppy-blue .neppy-panel-title {
+    margin: 0 0 var(--neppy-space-3) 0;
+    color: var(--neppy-heading);
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+body.neppy-blue .neppy-label {
+    display: inline-block;
+    margin-bottom: 6px;
+    color: var(--neppy-muted);
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+/* ==================================
+CARDS / PANELS
+================================== */
+body.neppy-blue .neppy-card {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg);
+    padding: var(--neppy-space-4);
+    box-shadow: var(--neppy-shadow-md);
+    backdrop-filter: blur(4px);
+}
+
+body.neppy-blue .neppy-card-soft {
+    background: var(--neppy-surface-2);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg);
+    padding: var(--neppy-space-4);
+}
+
+/* ==================================
+LAYOUT UTILITIES
+================================== */
+body.neppy-blue .neppy-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--neppy-space-2);
+    align-items: center;
+}
+
+body.neppy-blue .neppy-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--neppy-space-3);
+}
+
+body.neppy-blue .neppy-grid {
+    display: grid;
+    gap: var(--neppy-space-3);
+}
+
+body.neppy-blue .neppy-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.neppy-blue .neppy-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body.neppy-blue .neppy-grid-auto {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+@media (max-width: 900px) {
+    body.neppy-blue .neppy-grid-2,
+    body.neppy-blue .neppy-grid-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==================================
+BUTTONS
+================================== */
+body.neppy-blue .neppy-btn {
+    appearance: none;
+    border: 1px solid var(--neppy-line);
+    background: linear-gradient(180deg, #0d2944 0%, #091d31 100%);
+    color: var(--neppy-text);
+    border-radius: var(--neppy-radius-md);
+    padding: 9px 14px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        transform 0.08s ease,
+        box-shadow 0.15s ease;
+    box-shadow: var(--neppy-shadow-sm);
+}
+
+body.neppy-blue .neppy-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, #123454 0%, #0b2339 100%);
+}
+
+body.neppy-blue .neppy-btn:active {
+    transform: translateY(1px);
+}
+
+body.neppy-blue .neppy-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+body.neppy-blue .neppy-btn-primary {
+    border-color: rgba(54, 200, 246, 0.35);
+    box-shadow: 0 0 0 1px rgba(54, 200, 246, 0.08), var(--neppy-shadow-sm);
+}
+
+body.neppy-blue .neppy-btn-success {
+    border-color: rgba(42, 199, 122, 0.35);
+}
+
+body.neppy-blue .neppy-btn-danger {
+    border-color: rgba(255, 107, 107, 0.35);
+}
+
+/* ==================================
+FORM CONTROLS
+================================== */
+body.neppy-blue .neppy-input,
+body.neppy-blue .neppy-select,
+body.neppy-blue .neppy-textarea {
+    width: 100%;
+    background: #061523;
+    color: var(--neppy-text);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-sm);
+    padding: 10px 12px;
+    font: inherit;
+    font-family: var(--neppy-font-mono);
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background 0.15s ease;
+}
+
+body.neppy-blue .neppy-input::placeholder,
+body.neppy-blue .neppy-textarea::placeholder {
+    color: #7f97b3;
+}
+
+body.neppy-blue .neppy-select {
+    cursor: pointer;
+}
+
+body.neppy-blue .neppy-textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+body.neppy-blue .neppy-input:hover,
+body.neppy-blue .neppy-select:hover,
+body.neppy-blue .neppy-textarea:hover {
+    border-color: var(--neppy-line-strong);
+}
+
+body.neppy-blue .neppy-input:focus,
+body.neppy-blue .neppy-select:focus,
+body.neppy-blue .neppy-textarea:focus {
+    outline: none;
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
+    background: #081a2a;
+}
+
+/* ==================================
+OUTPUT / STATUS BLOCKS
+================================== */
+body.neppy-blue .neppy-mono {
+    font-family: var(--neppy-font-mono);
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: #04101b;
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-md);
+    padding: var(--neppy-space-3);
+    min-height: 90px;
+    color: #cde0f4;
+    overflow-x: auto;
+}
+
+body.neppy-blue .neppy-code {
+    font-family: var(--neppy-font-mono);
+    white-space: pre;
+    overflow-x: auto;
+    background: #03101a;
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-md);
+    padding: var(--neppy-space-4);
+    color: #d8e7f6;
+}
+
+body.neppy-blue .neppy-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+/* ==================================
+PILLS / BADGES
+================================== */
+body.neppy-blue .neppy-pill {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+body.neppy-blue .neppy-pill-ok {
+    color: var(--neppy-ok);
+    background: var(--neppy-ok-soft);
+}
+
+body.neppy-blue .neppy-pill-warn {
+    color: var(--neppy-warn);
+    background: var(--neppy-warn-soft);
+}
+
+body.neppy-blue .neppy-pill-bad {
+    color: var(--neppy-bad);
+    background: var(--neppy-bad-soft);
+}
+
+/* ==================================
+UTILITY HELPERS
+================================== */
+body.neppy-blue .neppy-hidden {
+    display: none !important;
+}
+
+body.neppy-blue .neppy-text-muted {
+    color: var(--neppy-muted) !important;
+}
+
+body.neppy-blue .neppy-text-accent {
+    color: var(--neppy-accent) !important;
+}
+
+body.neppy-blue .neppy-center {
+    text-align: center;
+}
+
+body.neppy-blue .neppy-w-100 {
+    width: 100%;
+}
+
+body.neppy-blue .neppy-mt-0 { margin-top: 0 !important; }
+body.neppy-blue .neppy-mt-1 { margin-top: var(--neppy-space-1) !important; }
+body.neppy-blue .neppy-mt-2 { margin-top: var(--neppy-space-2) !important; }
+body.neppy-blue .neppy-mt-3 { margin-top: var(--neppy-space-3) !important; }
+body.neppy-blue .neppy-mt-4 { margin-top: var(--neppy-space-4) !important; }
+
+body.neppy-blue .neppy-mb-0 { margin-bottom: 0 !important; }
+body.neppy-blue .neppy-mb-1 { margin-bottom: var(--neppy-space-1) !important; }
+body.neppy-blue .neppy-mb-2 { margin-bottom: var(--neppy-space-2) !important; }
+body.neppy-blue .neppy-mb-3 { margin-bottom: var(--neppy-space-3) !important; }
+body.neppy-blue .neppy-mb-4 { margin-bottom: var(--neppy-space-4) !important; }
+
+/* ==================================
+ACCESSIBILITY / FOCUS
+================================== */
+body.neppy-blue .neppy-btn:focus-visible,
+body.neppy-blue .neppy-input:focus-visible,
+body.neppy-blue .neppy-select:focus-visible,
+body.neppy-blue .neppy-textarea:focus-visible,
+body.neppy-blue a.neppy-btn:focus-visible,
+body.neppy-blue button.neppy-btn:focus-visible,
+body.neppy-blue .sidebar button:focus-visible,
+body.neppy-blue .sidebar a:focus-visible,
+body.neppy-blue .sidebar select:focus-visible,
+body.neppy-blue .mt-toggle-btn:focus-visible {
+    outline: 2px solid var(--neppy-accent);
+    outline-offset: 2px;
+}
+
+/* ==================================
+MODULE TEMPLATE PANEL LAYOUT THEME
+================================== */
+body.neppy-blue .mt-layout {
+    color: var(--neppy-text);
+}
+
+body.neppy-blue .mt-layout-header {
+    border-bottom: 2px solid rgba(54, 200, 246, 0.25);
+}
+
+body.neppy-blue .mt-layout-title {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+    font-size: 1.8rem;
+    margin-bottom: 4px;
+}
+
+body.neppy-blue .mt-layout-description {
+    color: var(--neppy-muted);
+    font-size: 0.95rem;
+}
+
+body.neppy-blue .mt-panel {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg);
+    box-shadow: var(--neppy-shadow-sm);
+    backdrop-filter: blur(4px);
+}
+
+body.neppy-blue .mt-panel:hover {
+    border-color: var(--neppy-accent);
+    box-shadow: var(--neppy-shadow-md);
+}
+
+body.neppy-blue .mt-panel-header {
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--neppy-line);
+}
+
+body.neppy-blue .mt-panel-title {
+    color: var(--neppy-accent);
+}
+
+body.neppy-blue .mt-toggle-btn {
+    background: linear-gradient(180deg, #0d2944 0%, #091d31 100%);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: var(--neppy-radius-sm);
+    box-shadow: var(--neppy-shadow-sm);
+}
+
+body.neppy-blue .mt-toggle-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, #123454 0%, #0b2339 100%);
+    color: var(--neppy-text);
+}
+
+body.neppy-blue .mt-panel.is-collapsed .mt-toggle-btn {
+    background: linear-gradient(180deg, #7a1f2b 0%, #5e1721 100%);
+    border-color: rgba(255, 107, 107, 0.40);
+    color: #ffffff;
+}
+
+body.neppy-blue .mt-panel-body {
+    color: var(--neppy-text);
+}
+
+body.neppy-blue .mt-panel-content {
+    gap: var(--neppy-space-3);
+}
+
+body.neppy-blue .mt-item {
+    background: rgba(4, 16, 27, 0.85);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: var(--neppy-radius-sm);
+}
+
+body.neppy-blue .mt-item:hover {
+    background: rgba(54, 200, 246, 0.08);
+    border-color: var(--neppy-accent);
+}
+
+body.neppy-blue .mt-item.is-active {
+    background: rgba(54, 200, 246, 0.16);
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 1px rgba(54, 200, 246, 0.10);
+}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Login | Maintenance Troubleshooting{% endblock %}
+
+{% block body %}
+<main class="login-shell">
+    <form method="post" class="login-card">
+        <div class="eyebrow">Maintenance Troubleshooting</div>
+        <h1>Sign in</h1>
+        <label>
+            <span>Employee ID</span>
+            <input type="text" name="employee_id" autocomplete="username" required>
+        </label>
+        <label>
+            <span>Password</span>
+            <input type="password" name="password" autocomplete="current-password" required>
+        </label>
+        {% if error %}
+        <p class="error">{{ error }}</p>
+        {% endif %}
+        <button type="submit">Login</button>
+    </form>
+</main>
+{% endblock %}

@@ -1,0 +1,441 @@
+/* static/css/module_template/themes/minimal_white_graphite.css
+==================================
+MINIMAL WHITE GRAPHITE THEME
+Designed to sit on top of:
+static/css/module_template/base.css
+
+Role:
+- Override standardized base theme variables
+- Preserve layout ownership in base.css
+- Provide a clean Minimal White & Graphite visual identity
+- Support reusable neppy-* utility classes
+- Theme the standardized .mt-* module template layouts
+
+Important:
+- Does NOT style the standalone banner system
+- Does NOT style the standalone comment popup system
+================================== */
+
+/* ==================================
+THEME VARIABLE OVERRIDES
+Apply by adding class="minimal-white-graphite" to html or body
+================================== */
+html.minimal-white-graphite,
+body.minimal-white-graphite {
+    --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    --app-page-bg: #F3F3F3;
+    --app-page-text: #1A1A1A;
+
+    --app-sidebar-bg: rgba(243, 243, 243, 0.98);
+    --app-sidebar-text: #1A1A1A;
+    --app-sidebar-link: #1A1A1A;
+    --app-sidebar-hover: #0078D4;
+    --app-sidebar-hover-bg: rgba(0, 120, 212, 0.08);
+    --app-sidebar-border: rgba(0, 0, 0, 0.08);
+
+    --app-content-bg: rgba(255, 255, 255, 0.96);
+    --app-content-text: #1A1A1A;
+
+    --app-control-bg: rgba(255, 255, 255, 0.98);
+    --app-control-text: #1A1A1A;
+    --app-control-border: rgba(0, 0, 0, 0.12);
+    --app-control-hover-bg: rgba(243, 243, 243, 0.98);
+
+    --app-results-bg: rgba(255, 255, 255, 0.92);
+    --app-results-text: #1A1A1A;
+
+    --app-thumbnail-border: rgba(0, 0, 0, 0.10);
+
+    --app-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.06);
+    --app-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.10), 0 0 1px rgba(0, 0, 0, 0.08);
+
+    background: #F3F3F3;
+    background-image: url("/static/background_images/min_white_graphite.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    color: var(--app-page-text);
+    line-height: 1.45;
+}
+
+/* ==================================
+NEPPY TOKEN OVERRIDES
+Supports reusable neppy-* utility classes
+================================== */
+html.minimal-white-graphite,
+body.minimal-white-graphite {
+    --neppy-surface: rgba(255, 255, 255, 0.96);
+    --neppy-surface-2: rgba(243, 243, 243, 0.98);
+    --neppy-line: rgba(0, 0, 0, 0.10);
+    --neppy-line-strong: rgba(0, 0, 0, 0.18);
+
+    --neppy-text: #1A1A1A;
+    --neppy-muted: #605E5C;
+    --neppy-heading: #000000;
+
+    --neppy-accent: #0078D4;
+    --neppy-accent-soft: rgba(0, 120, 212, 0.10);
+    --neppy-accent-hover: #106EBE;
+
+    --neppy-ok: #107C10;
+    --neppy-ok-soft: rgba(16, 124, 16, 0.12);
+
+    --neppy-warn: #D83B01;
+    --neppy-warn-soft: rgba(216, 59, 1, 0.10);
+
+    --neppy-bad: #A4262C;
+    --neppy-bad-soft: rgba(164, 38, 44, 0.10);
+}
+
+/* ==================================
+GLOBAL POLISH
+================================== */
+html.minimal-white-graphite .sidebar,
+body.minimal-white-graphite .sidebar {
+    backdrop-filter: blur(20px);
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.06);
+}
+
+html.minimal-white-graphite .sidebar h1,
+body.minimal-white-graphite .sidebar h1 {
+    color: var(--neppy-heading);
+    letter-spacing: 0.01em;
+    font-weight: 600;
+}
+
+html.minimal-white-graphite .welcome-message,
+body.minimal-white-graphite .welcome-message {
+    color: var(--app-sidebar-text);
+    font-weight: 600;
+}
+
+html.minimal-white-graphite .user-level,
+html.minimal-white-graphite .model-display-section,
+body.minimal-white-graphite .user-level,
+body.minimal-white-graphite .model-display-section {
+    color: rgba(96, 94, 92, 0.92);
+}
+
+html.minimal-white-graphite .content,
+body.minimal-white-graphite .content {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(249, 249, 249, 0.98) 100%);
+    color: var(--app-content-text);
+}
+
+/* ==================================
+SIDEBAR NAV / INTERACTION POLISH
+================================== */
+html.minimal-white-graphite .nav-link,
+html.minimal-white-graphite .sidebar a,
+html.minimal-white-graphite .sidebar button,
+html.minimal-white-graphite .sidebar select,
+body.minimal-white-graphite .nav-link,
+body.minimal-white-graphite .sidebar a,
+body.minimal-white-graphite .sidebar button,
+body.minimal-white-graphite .sidebar select {
+    color: var(--app-sidebar-link);
+}
+
+html.minimal-white-graphite .nav-link:hover,
+html.minimal-white-graphite .sidebar a:hover,
+html.minimal-white-graphite .sidebar button:hover,
+html.minimal-white-graphite .sidebar select:hover,
+body.minimal-white-graphite .nav-link:hover,
+body.minimal-white-graphite .sidebar a:hover,
+body.minimal-white-graphite .sidebar button:hover,
+body.minimal-white-graphite .sidebar select:hover {
+    color: var(--app-sidebar-hover);
+    background-color: var(--app-sidebar-hover-bg);
+}
+
+html.minimal-white-graphite .nav-link.highlight,
+body.minimal-white-graphite .nav-link.highlight {
+    color: var(--app-sidebar-hover);
+    background-color: rgba(0, 120, 212, 0.08);
+    border-left: 3px solid var(--app-sidebar-hover);
+}
+
+/* ==================================
+STANDARD CONTROLS
+================================== */
+html.minimal-white-graphite .toggle-button,
+body.minimal-white-graphite .toggle-button {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F5F5F5 100%) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    font-weight: 600;
+}
+
+html.minimal-white-graphite .toggle-button:hover,
+body.minimal-white-graphite .toggle-button:hover {
+    background: linear-gradient(180deg, #F0F6FC 0%, #E6F1FB 100%) !important;
+    border-color: rgba(0, 120, 212, 0.40) !important;
+}
+
+html.minimal-white-graphite #voice-selection,
+html.minimal-white-graphite .sidebar select,
+body.minimal-white-graphite #voice-selection,
+body.minimal-white-graphite .sidebar select {
+    background-color: #FFFFFF;
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 4px;
+}
+
+html.minimal-white-graphite #voice-selection:focus,
+html.minimal-white-graphite .sidebar select:focus,
+body.minimal-white-graphite #voice-selection:focus,
+body.minimal-white-graphite .sidebar select:focus {
+    outline: 2px solid rgba(0, 120, 212, 0.50);
+    outline-offset: 2px;
+}
+
+/* ==================================
+RESULTS / PANELS / THUMBNAILS
+================================== */
+html.minimal-white-graphite .results-container,
+body.minimal-white-graphite .results-container {
+    background: var(--app-results-bg);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    box-shadow: var(--app-shadow-md);
+    backdrop-filter: blur(20px);
+}
+
+html.minimal-white-graphite #drawingList,
+body.minimal-white-graphite #drawingList {
+    color: var(--app-results-text);
+}
+
+html.minimal-white-graphite .thumbnail,
+body.minimal-white-graphite .thumbnail {
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid var(--app-thumbnail-border);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* ==================================
+LINKS / SPECIAL STATES
+Scoped so they do NOT affect the banner
+================================== */
+html.minimal-white-graphite .content a,
+html.minimal-white-graphite .sidebar a,
+body.minimal-white-graphite .content a,
+body.minimal-white-graphite .sidebar a {
+    color: #0078D4;
+}
+
+html.minimal-white-graphite .content a:hover,
+html.minimal-white-graphite .sidebar a:hover,
+body.minimal-white-graphite .content a:hover,
+body.minimal-white-graphite .sidebar a:hover {
+    color: #106EBE;
+}
+
+html.minimal-white-graphite .logout-button,
+body.minimal-white-graphite .logout-button {
+    color: #D83B01 !important;
+}
+
+/* ==================================
+ACCESSIBILITY / FOCUS
+No hamburger styling here.
+Hamburger focus belongs to banner.css / banner theme only.
+================================== */
+html.minimal-white-graphite .toggle-button:focus-visible,
+html.minimal-white-graphite .sidebar button:focus-visible,
+html.minimal-white-graphite .sidebar a:focus-visible,
+html.minimal-white-graphite .sidebar select:focus-visible,
+html.minimal-white-graphite .mt-toggle-btn:focus-visible,
+html.minimal-white-graphite .neppy-btn:focus-visible,
+html.minimal-white-graphite .neppy-input:focus-visible,
+html.minimal-white-graphite .neppy-select:focus-visible,
+html.minimal-white-graphite .neppy-textarea:focus-visible,
+body.minimal-white-graphite .toggle-button:focus-visible,
+body.minimal-white-graphite .sidebar button:focus-visible,
+body.minimal-white-graphite .sidebar a:focus-visible,
+body.minimal-white-graphite .sidebar select:focus-visible,
+body.minimal-white-graphite .mt-toggle-btn:focus-visible,
+body.minimal-white-graphite .neppy-btn:focus-visible,
+body.minimal-white-graphite .neppy-input:focus-visible,
+body.minimal-white-graphite .neppy-select:focus-visible,
+body.minimal-white-graphite .neppy-textarea:focus-visible {
+    outline: 2px solid rgba(0, 120, 212, 0.60);
+    outline-offset: 2px;
+}
+
+/* ==================================
+NEPPY UTILITY CLASS SUPPORT
+================================== */
+html.minimal-white-graphite .neppy-card,
+html.minimal-white-graphite .neppy-card-soft,
+body.minimal-white-graphite .neppy-card,
+body.minimal-white-graphite .neppy-card-soft {
+    background: var(--neppy-surface);
+    border-color: var(--neppy-line);
+}
+
+html.minimal-white-graphite .neppy-title,
+html.minimal-white-graphite .neppy-panel-title,
+body.minimal-white-graphite .neppy-title,
+body.minimal-white-graphite .neppy-panel-title {
+    color: var(--neppy-heading);
+}
+
+html.minimal-white-graphite .neppy-subtitle,
+html.minimal-white-graphite .neppy-label,
+html.minimal-white-graphite .neppy-text-muted,
+body.minimal-white-graphite .neppy-subtitle,
+body.minimal-white-graphite .neppy-label,
+body.minimal-white-graphite .neppy-text-muted {
+    color: var(--neppy-muted) !important;
+}
+
+html.minimal-white-graphite .neppy-btn,
+body.minimal-white-graphite .neppy-btn {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F5F5F5 100%);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+    border-radius: 4px;
+}
+
+html.minimal-white-graphite .neppy-btn:hover,
+body.minimal-white-graphite .neppy-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, #F0F6FC 0%, #E6F1FB 100%);
+}
+
+html.minimal-white-graphite .neppy-input,
+html.minimal-white-graphite .neppy-select,
+html.minimal-white-graphite .neppy-textarea,
+html.minimal-white-graphite .neppy-mono,
+html.minimal-white-graphite .neppy-code,
+body.minimal-white-graphite .neppy-input,
+body.minimal-white-graphite .neppy-select,
+body.minimal-white-graphite .neppy-textarea,
+body.minimal-white-graphite .neppy-mono,
+body.minimal-white-graphite .neppy-code {
+    background: #FAFAFA;
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+    border-radius: 4px;
+}
+
+html.minimal-white-graphite .neppy-input:focus,
+html.minimal-white-graphite .neppy-select:focus,
+html.minimal-white-graphite .neppy-textarea:focus,
+body.minimal-white-graphite .neppy-input:focus,
+body.minimal-white-graphite .neppy-select:focus,
+body.minimal-white-graphite .neppy-textarea:focus {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
+}
+
+/* ==================================
+MODULE TEMPLATE PANEL LAYOUT THEME
+Styles the standardized .mt-* module templates
+================================== */
+html.minimal-white-graphite .mt-layout,
+body.minimal-white-graphite .mt-layout {
+    color: var(--neppy-text);
+}
+
+html.minimal-white-graphite .mt-layout-header,
+body.minimal-white-graphite .mt-layout-header {
+    border-bottom: 2px solid rgba(0, 120, 212, 0.20);
+}
+
+html.minimal-white-graphite .mt-layout-title,
+body.minimal-white-graphite .mt-layout-title {
+    color: var(--neppy-accent);
+    letter-spacing: 0.01em;
+}
+
+html.minimal-white-graphite .mt-layout-description,
+body.minimal-white-graphite .mt-layout-description {
+    color: var(--neppy-muted);
+}
+
+html.minimal-white-graphite .mt-panel,
+body.minimal-white-graphite .mt-panel {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.06);
+    backdrop-filter: blur(20px);
+}
+
+html.minimal-white-graphite .mt-panel:hover,
+body.minimal-white-graphite .mt-panel:hover {
+    border-color: rgba(0, 120, 212, 0.40);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10), 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+html.minimal-white-graphite .mt-panel-header,
+body.minimal-white-graphite .mt-panel-header {
+    background: rgba(0, 0, 0, 0.02);
+    border-bottom: 1px solid var(--neppy-line);
+}
+
+html.minimal-white-graphite .mt-panel-title,
+body.minimal-white-graphite .mt-panel-title {
+    color: var(--neppy-accent);
+}
+
+html.minimal-white-graphite .mt-toggle-btn,
+body.minimal-white-graphite .mt-toggle-btn {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F5F5F5 100%);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+html.minimal-white-graphite .mt-toggle-btn:hover,
+body.minimal-white-graphite .mt-toggle-btn:hover {
+    border-color: rgba(0, 120, 212, 0.40);
+    background: linear-gradient(180deg, #F0F6FC 0%, #E6F1FB 100%);
+    color: var(--neppy-text);
+}
+
+html.minimal-white-graphite .mt-panel.is-collapsed .mt-toggle-btn,
+body.minimal-white-graphite .mt-panel.is-collapsed .mt-toggle-btn {
+    background: linear-gradient(180deg, #C84B4B 0%, #A83030 100%);
+    border-color: rgba(164, 38, 44, 0.30);
+    color: #FFFFFF;
+}
+
+html.minimal-white-graphite .mt-panel-body,
+body.minimal-white-graphite .mt-panel-body {
+    color: var(--neppy-text);
+}
+
+html.minimal-white-graphite .mt-panel-content,
+body.minimal-white-graphite .mt-panel-content {
+    gap: 12px;
+}
+
+html.minimal-white-graphite .mt-item,
+body.minimal-white-graphite .mt-item {
+    background: rgba(249, 249, 249, 0.98);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 4px;
+}
+
+html.minimal-white-graphite .mt-item:hover,
+body.minimal-white-graphite .mt-item:hover {
+    background: rgba(0, 120, 212, 0.06);
+    border-color: rgba(0, 120, 212, 0.30);
+}
+
+html.minimal-white-graphite .mt-item.is-active,
+body.minimal-white-graphite .mt-item.is-active {
+    background: rgba(0, 120, 212, 0.10);
+    border-color: rgba(0, 120, 212, 0.40);
+    box-shadow: 0 0 0 1px rgba(0, 120, 212, 0.10);
+}

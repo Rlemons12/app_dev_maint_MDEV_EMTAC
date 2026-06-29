@@ -1,0 +1,885 @@
+/* static/css/module_template/themes/green_modern.css
+==================================
+GREEN MODERN THEME
+Designed to sit on top of:
+static/css/module_template/base.css
+
+Role:
+- Override standardized base theme variables
+- Preserve layout ownership in base.css
+- Provide a complete Green Modern visual identity
+- Support reusable neppy-* utility classes
+- Theme the standardized .mt-* module template layouts
+- Theme content-area form controls and dropdowns
+- Support native selects, Bootstrap dropdowns, and Select2 widgets
+
+Important:
+- Does NOT style the standalone banner system
+- Does NOT style the standalone comment popup system
+================================== */
+
+/* ==================================
+THEME VARIABLE OVERRIDES
+Apply by adding class="green-modern" to html or body
+================================== */
+html.green-modern,
+body.green-modern {
+    --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    --app-page-bg: #123524;
+    --app-page-text: #D8E1E9;
+
+    --app-sidebar-bg: rgba(59, 193, 74, 0.94);
+    --app-sidebar-text: #123524;
+    --app-sidebar-link: #123524;
+    --app-sidebar-hover: #C3FF00;
+    --app-sidebar-hover-bg: rgba(195, 255, 0, 0.14);
+    --app-sidebar-border: rgba(18, 53, 36, 0.25);
+
+    --app-content-bg: rgba(18, 53, 36, 0.82);
+    --app-content-text: #D8E1E9;
+
+    --app-control-bg: rgba(18, 53, 36, 0.92);
+    --app-control-text: #D8E1E9;
+    --app-control-border: rgba(216, 225, 233, 0.18);
+    --app-control-hover-bg: rgba(26, 74, 49, 0.95);
+    --app-control-focus-ring: rgba(195, 255, 0, 0.18);
+
+    --app-results-bg: rgba(18, 53, 36, 0.78);
+    --app-results-text: #D8E1E9;
+
+    --app-thumbnail-border: rgba(216, 225, 233, 0.18);
+
+    --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.20);
+    --app-shadow-md: 0 16px 30px rgba(0, 0, 0, 0.32);
+
+    background: #123524;
+    background-image: url("/static/background_images/greenmodern.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    color: var(--app-page-text);
+    line-height: 1.45;
+}
+
+/* ==================================
+NEPPY TOKEN OVERRIDES
+Supports reusable neppy-* utility classes
+================================== */
+html.green-modern,
+body.green-modern {
+    --neppy-surface: rgba(18, 53, 36, 0.78);
+    --neppy-surface-2: rgba(14, 43, 27, 0.90);
+    --neppy-line: rgba(216, 225, 233, 0.18);
+    --neppy-line-strong: rgba(216, 225, 233, 0.32);
+
+    --neppy-text: #D8E1E9;
+    --neppy-muted: #b9c8b8;
+    --neppy-heading: #f3fff4;
+
+    --neppy-accent: #C3FF00;
+    --neppy-accent-soft: rgba(195, 255, 0, 0.14);
+    --neppy-accent-hover: #d6ff4d;
+
+    --neppy-ok: #72e08d;
+    --neppy-ok-soft: rgba(114, 224, 141, 0.16);
+
+    --neppy-warn: #ffe36e;
+    --neppy-warn-soft: rgba(255, 227, 110, 0.18);
+
+    --neppy-bad: #ff8b8b;
+    --neppy-bad-soft: rgba(255, 139, 139, 0.16);
+}
+
+/* ==================================
+GLOBAL POLISH
+================================== */
+html.green-modern .sidebar,
+body.green-modern .sidebar {
+    backdrop-filter: blur(5px);
+    box-shadow: inset -1px 0 0 rgba(18, 53, 36, 0.14);
+}
+
+html.green-modern .sidebar h1,
+body.green-modern .sidebar h1 {
+    color: #0b2216;
+    letter-spacing: 0.02em;
+}
+
+html.green-modern .welcome-message,
+body.green-modern .welcome-message {
+    color: #123524;
+    font-weight: 600;
+}
+
+html.green-modern .user-level,
+html.green-modern .model-display-section,
+body.green-modern .user-level,
+body.green-modern .model-display-section {
+    color: rgba(18, 53, 36, 0.78);
+}
+
+html.green-modern .content,
+body.green-modern .content {
+    background: linear-gradient(
+        180deg,
+        rgba(18, 53, 36, 0.82) 0%,
+        rgba(10, 31, 20, 0.90) 100%
+    );
+    color: var(--app-content-text);
+}
+
+/* ==================================
+SIDEBAR NAV / INTERACTION POLISH
+================================== */
+html.green-modern .nav-link,
+html.green-modern .sidebar a,
+html.green-modern .sidebar button,
+html.green-modern .sidebar select,
+body.green-modern .nav-link,
+body.green-modern .sidebar a,
+body.green-modern .sidebar button,
+body.green-modern .sidebar select {
+    color: var(--app-sidebar-link);
+}
+
+html.green-modern .nav-link:hover,
+html.green-modern .sidebar a:hover,
+html.green-modern .sidebar button:hover,
+html.green-modern .sidebar select:hover,
+body.green-modern .nav-link:hover,
+body.green-modern .sidebar a:hover,
+body.green-modern .sidebar button:hover,
+body.green-modern .sidebar select:hover {
+    color: var(--app-sidebar-hover);
+    background-color: var(--app-sidebar-hover-bg);
+}
+
+html.green-modern .nav-link.highlight,
+body.green-modern .nav-link.highlight {
+    color: var(--app-sidebar-hover);
+    background-color: rgba(195, 255, 0, 0.12);
+    border-left: 3px solid var(--app-sidebar-hover);
+}
+
+/* ==================================
+STANDARD CONTROLS
+================================== */
+html.green-modern .toggle-button,
+body.green-modern .toggle-button {
+    background: linear-gradient(
+        180deg,
+        rgba(23, 67, 42, 0.98) 0%,
+        rgba(14, 43, 27, 0.98) 100%
+    ) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+    font-weight: 600;
+}
+
+html.green-modern .toggle-button:hover,
+body.green-modern .toggle-button:hover {
+    background: linear-gradient(
+        180deg,
+        rgba(32, 87, 54, 0.98) 0%,
+        rgba(18, 57, 35, 0.98) 100%
+    ) !important;
+    border-color: rgba(195, 255, 0, 0.35) !important;
+}
+
+html.green-modern #voice-selection,
+html.green-modern .sidebar select,
+body.green-modern #voice-selection,
+body.green-modern .sidebar select {
+    background-color: rgba(14, 43, 27, 0.95);
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 5px;
+}
+
+html.green-modern #voice-selection:focus,
+html.green-modern .sidebar select:focus,
+body.green-modern #voice-selection:focus,
+body.green-modern .sidebar select:focus {
+    outline: 2px solid rgba(195, 255, 0, 0.35);
+    outline-offset: 2px;
+}
+
+/* ==================================
+CONTENT AREA FORM CONTROLS
+Fixes white-on-white dropdowns in main panels.
+Supports:
+- Native inputs/selects/textareas
+- Bootstrap .form-control / .form-select
+- Module template .mt-panel-body controls
+- Upload/search forms
+================================== */
+html.green-modern .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.green-modern .content select,
+html.green-modern .content textarea,
+html.green-modern .content .form-control,
+html.green-modern .content .form-select,
+html.green-modern .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.green-modern .mt-panel-body select,
+html.green-modern .mt-panel-body textarea,
+html.green-modern .mt-panel-body .form-control,
+html.green-modern .mt-panel-body .form-select,
+html.green-modern .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.green-modern .upload-search-form select,
+html.green-modern .upload-search-form textarea,
+html.green-modern .upload-search-form .form-control,
+html.green-modern .upload-search-form .form-select,
+body.green-modern .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.green-modern .content select,
+body.green-modern .content textarea,
+body.green-modern .content .form-control,
+body.green-modern .content .form-select,
+body.green-modern .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.green-modern .mt-panel-body select,
+body.green-modern .mt-panel-body textarea,
+body.green-modern .mt-panel-body .form-control,
+body.green-modern .mt-panel-body .form-select,
+body.green-modern .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.green-modern .upload-search-form select,
+body.green-modern .upload-search-form textarea,
+body.green-modern .upload-search-form .form-control,
+body.green-modern .upload-search-form .form-select {
+    background-color: var(--app-control-bg) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.22);
+}
+
+html.green-modern .content input::placeholder,
+html.green-modern .content textarea::placeholder,
+html.green-modern .mt-panel-body input::placeholder,
+html.green-modern .mt-panel-body textarea::placeholder,
+html.green-modern .upload-search-form input::placeholder,
+html.green-modern .upload-search-form textarea::placeholder,
+body.green-modern .content input::placeholder,
+body.green-modern .content textarea::placeholder,
+body.green-modern .mt-panel-body input::placeholder,
+body.green-modern .mt-panel-body textarea::placeholder,
+body.green-modern .upload-search-form input::placeholder,
+body.green-modern .upload-search-form textarea::placeholder {
+    color: rgba(216, 225, 233, 0.68);
+}
+
+html.green-modern .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.green-modern .content select:hover,
+html.green-modern .content textarea:hover,
+html.green-modern .content .form-control:hover,
+html.green-modern .content .form-select:hover,
+html.green-modern .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.green-modern .mt-panel-body select:hover,
+html.green-modern .mt-panel-body textarea:hover,
+html.green-modern .mt-panel-body .form-control:hover,
+html.green-modern .mt-panel-body .form-select:hover,
+html.green-modern .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.green-modern .upload-search-form select:hover,
+html.green-modern .upload-search-form textarea:hover,
+html.green-modern .upload-search-form .form-control:hover,
+html.green-modern .upload-search-form .form-select:hover,
+body.green-modern .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.green-modern .content select:hover,
+body.green-modern .content textarea:hover,
+body.green-modern .content .form-control:hover,
+body.green-modern .content .form-select:hover,
+body.green-modern .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.green-modern .mt-panel-body select:hover,
+body.green-modern .mt-panel-body textarea:hover,
+body.green-modern .mt-panel-body .form-control:hover,
+body.green-modern .mt-panel-body .form-select:hover,
+body.green-modern .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.green-modern .upload-search-form select:hover,
+body.green-modern .upload-search-form textarea:hover,
+body.green-modern .upload-search-form .form-control:hover,
+body.green-modern .upload-search-form .form-select:hover {
+    background-color: var(--app-control-hover-bg) !important;
+    border-color: rgba(195, 255, 0, 0.38) !important;
+}
+
+html.green-modern .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.green-modern .content select:focus,
+html.green-modern .content textarea:focus,
+html.green-modern .content .form-control:focus,
+html.green-modern .content .form-select:focus,
+html.green-modern .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.green-modern .mt-panel-body select:focus,
+html.green-modern .mt-panel-body textarea:focus,
+html.green-modern .mt-panel-body .form-control:focus,
+html.green-modern .mt-panel-body .form-select:focus,
+html.green-modern .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.green-modern .upload-search-form select:focus,
+html.green-modern .upload-search-form textarea:focus,
+html.green-modern .upload-search-form .form-control:focus,
+html.green-modern .upload-search-form .form-select:focus,
+body.green-modern .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.green-modern .content select:focus,
+body.green-modern .content textarea:focus,
+body.green-modern .content .form-control:focus,
+body.green-modern .content .form-select:focus,
+body.green-modern .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.green-modern .mt-panel-body select:focus,
+body.green-modern .mt-panel-body textarea:focus,
+body.green-modern .mt-panel-body .form-control:focus,
+body.green-modern .mt-panel-body .form-select:focus,
+body.green-modern .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.green-modern .upload-search-form select:focus,
+body.green-modern .upload-search-form textarea:focus,
+body.green-modern .upload-search-form .form-control:focus,
+body.green-modern .upload-search-form .form-select:focus {
+    outline: none;
+    border-color: var(--neppy-accent) !important;
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+/* Native select dropdown list */
+html.green-modern .content select option,
+html.green-modern .mt-panel-body select option,
+html.green-modern .upload-search-form select option,
+body.green-modern .content select option,
+body.green-modern .mt-panel-body select option,
+body.green-modern .upload-search-form select option {
+    background: #0E2B1B;
+    color: #D8E1E9;
+}
+
+/* Native selected option state */
+html.green-modern .content select option:checked,
+html.green-modern .mt-panel-body select option:checked,
+html.green-modern .upload-search-form select option:checked,
+body.green-modern .content select option:checked,
+body.green-modern .mt-panel-body select option:checked,
+body.green-modern .upload-search-form select option:checked {
+    background: #C3FF00;
+    color: #123524;
+}
+
+/* Disabled states */
+html.green-modern .content input:disabled,
+html.green-modern .content select:disabled,
+html.green-modern .content textarea:disabled,
+html.green-modern .content .form-control:disabled,
+html.green-modern .content .form-select:disabled,
+html.green-modern .mt-panel-body input:disabled,
+html.green-modern .mt-panel-body select:disabled,
+html.green-modern .mt-panel-body textarea:disabled,
+html.green-modern .mt-panel-body .form-control:disabled,
+html.green-modern .mt-panel-body .form-select:disabled,
+html.green-modern .upload-search-form input:disabled,
+html.green-modern .upload-search-form select:disabled,
+html.green-modern .upload-search-form textarea:disabled,
+html.green-modern .upload-search-form .form-control:disabled,
+html.green-modern .upload-search-form .form-select:disabled,
+body.green-modern .content input:disabled,
+body.green-modern .content select:disabled,
+body.green-modern .content textarea:disabled,
+body.green-modern .content .form-control:disabled,
+body.green-modern .content .form-select:disabled,
+body.green-modern .mt-panel-body input:disabled,
+body.green-modern .mt-panel-body select:disabled,
+body.green-modern .mt-panel-body textarea:disabled,
+body.green-modern .mt-panel-body .form-control:disabled,
+body.green-modern .mt-panel-body .form-select:disabled,
+body.green-modern .upload-search-form input:disabled,
+body.green-modern .upload-search-form select:disabled,
+body.green-modern .upload-search-form textarea:disabled,
+body.green-modern .upload-search-form .form-control:disabled,
+body.green-modern .upload-search-form .form-select:disabled {
+    background: rgba(45, 75, 55, 0.72) !important;
+    color: rgba(216, 225, 233, 0.58) !important;
+    cursor: not-allowed;
+}
+
+/* ==================================
+CONTENT AREA BUTTONS
+================================== */
+html.green-modern .content button:not(.mt-toggle-btn):not(.toggle-button),
+html.green-modern .content input[type="submit"],
+html.green-modern .content input[type="button"],
+html.green-modern .content input[type="reset"],
+html.green-modern .content .btn,
+body.green-modern .content button:not(.mt-toggle-btn):not(.toggle-button),
+body.green-modern .content input[type="submit"],
+body.green-modern .content input[type="button"],
+body.green-modern .content input[type="reset"],
+body.green-modern .content .btn {
+    background: linear-gradient(
+        180deg,
+        rgba(23, 67, 42, 0.98) 0%,
+        rgba(14, 43, 27, 0.98) 100%
+    );
+    color: #D8E1E9;
+    border: 1px solid var(--app-control-border);
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+
+html.green-modern .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+html.green-modern .content input[type="submit"]:hover,
+html.green-modern .content input[type="button"]:hover,
+html.green-modern .content input[type="reset"]:hover,
+html.green-modern .content .btn:hover,
+body.green-modern .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+body.green-modern .content input[type="submit"]:hover,
+body.green-modern .content input[type="button"]:hover,
+body.green-modern .content input[type="reset"]:hover,
+body.green-modern .content .btn:hover {
+    border-color: rgba(195, 255, 0, 0.38);
+    background: linear-gradient(
+        180deg,
+        rgba(32, 87, 54, 0.98) 0%,
+        rgba(18, 57, 35, 0.98) 100%
+    );
+    color: #D8E1E9;
+}
+
+/* ==================================
+BOOTSTRAP DROPDOWN MENU SUPPORT
+Needed when dropdowns are button menus instead
+of native <select> elements.
+================================== */
+html.green-modern .content .dropdown-menu,
+html.green-modern .mt-panel-body .dropdown-menu,
+html.green-modern .upload-search-form .dropdown-menu,
+body.green-modern .content .dropdown-menu,
+body.green-modern .mt-panel-body .dropdown-menu,
+body.green-modern .upload-search-form .dropdown-menu {
+    background: #0E2B1B;
+    color: #D8E1E9;
+    border: 1px solid var(--app-control-border);
+    border-radius: 8px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.32);
+}
+
+html.green-modern .content .dropdown-item,
+html.green-modern .mt-panel-body .dropdown-item,
+html.green-modern .upload-search-form .dropdown-item,
+body.green-modern .content .dropdown-item,
+body.green-modern .mt-panel-body .dropdown-item,
+body.green-modern .upload-search-form .dropdown-item {
+    color: #D8E1E9;
+}
+
+html.green-modern .content .dropdown-item:hover,
+html.green-modern .content .dropdown-item:focus,
+html.green-modern .mt-panel-body .dropdown-item:hover,
+html.green-modern .mt-panel-body .dropdown-item:focus,
+html.green-modern .upload-search-form .dropdown-item:hover,
+html.green-modern .upload-search-form .dropdown-item:focus,
+body.green-modern .content .dropdown-item:hover,
+body.green-modern .content .dropdown-item:focus,
+body.green-modern .mt-panel-body .dropdown-item:hover,
+body.green-modern .mt-panel-body .dropdown-item:focus,
+body.green-modern .upload-search-form .dropdown-item:hover,
+body.green-modern .upload-search-form .dropdown-item:focus {
+    background: #C3FF00;
+    color: #123524;
+}
+
+html.green-modern .content .dropdown-item.active,
+html.green-modern .content .dropdown-item:active,
+html.green-modern .mt-panel-body .dropdown-item.active,
+html.green-modern .mt-panel-body .dropdown-item:active,
+html.green-modern .upload-search-form .dropdown-item.active,
+html.green-modern .upload-search-form .dropdown-item:active,
+body.green-modern .content .dropdown-item.active,
+body.green-modern .content .dropdown-item:active,
+body.green-modern .mt-panel-body .dropdown-item.active,
+body.green-modern .mt-panel-body .dropdown-item:active,
+body.green-modern .upload-search-form .dropdown-item.active,
+body.green-modern .upload-search-form .dropdown-item:active {
+    background: rgba(195, 255, 0, 0.22);
+    color: #D8E1E9;
+}
+
+/* ==================================
+SELECT2 SUPPORT
+Needed when dropdowns are enhanced by Select2.
+Select2 dropdowns may be appended near <body>,
+so these selectors are scoped to the theme root,
+not only to .content.
+================================== */
+html.green-modern .select2-container,
+body.green-modern .select2-container {
+    color: #D8E1E9;
+}
+
+html.green-modern .select2-container .select2-selection--single,
+html.green-modern .select2-container .select2-selection--multiple,
+body.green-modern .select2-container .select2-selection--single,
+body.green-modern .select2-container .select2-selection--multiple {
+    background: var(--app-control-bg) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    min-height: 38px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.22);
+}
+
+html.green-modern .select2-container .select2-selection--single:hover,
+html.green-modern .select2-container .select2-selection--multiple:hover,
+body.green-modern .select2-container .select2-selection--single:hover,
+body.green-modern .select2-container .select2-selection--multiple:hover {
+    background: var(--app-control-hover-bg) !important;
+    border-color: rgba(195, 255, 0, 0.38) !important;
+}
+
+html.green-modern .select2-container--default.select2-container--focus .select2-selection--multiple,
+html.green-modern .select2-container--default.select2-container--open .select2-selection--single,
+html.green-modern .select2-container--default.select2-container--open .select2-selection--multiple,
+body.green-modern .select2-container--default.select2-container--focus .select2-selection--multiple,
+body.green-modern .select2-container--default.select2-container--open .select2-selection--single,
+body.green-modern .select2-container--default.select2-container--open .select2-selection--multiple {
+    border-color: var(--neppy-accent) !important;
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+html.green-modern .select2-container--default .select2-selection--single .select2-selection__rendered,
+html.green-modern .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.green-modern .select2-container--default .select2-selection--single .select2-selection__rendered,
+body.green-modern .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    color: #D8E1E9 !important;
+    line-height: 36px;
+}
+
+html.green-modern .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.green-modern .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    line-height: normal;
+    padding-top: 4px;
+}
+
+html.green-modern .select2-container--default .select2-selection--single .select2-selection__placeholder,
+html.green-modern .select2-container--default .select2-selection--multiple .select2-selection__placeholder,
+body.green-modern .select2-container--default .select2-selection--single .select2-selection__placeholder,
+body.green-modern .select2-container--default .select2-selection--multiple .select2-selection__placeholder {
+    color: rgba(216, 225, 233, 0.68) !important;
+}
+
+html.green-modern .select2-container--default .select2-selection--single .select2-selection__arrow b,
+body.green-modern .select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: #D8E1E9 transparent transparent transparent;
+}
+
+html.green-modern .select2-dropdown,
+body.green-modern .select2-dropdown {
+    background: #0E2B1B !important;
+    color: #D8E1E9 !important;
+    border: 1px solid var(--app-control-border) !important;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.32);
+}
+
+html.green-modern .select2-container--default .select2-search--dropdown .select2-search__field,
+body.green-modern .select2-container--default .select2-search--dropdown .select2-search__field {
+    background: rgba(14, 43, 27, 0.98) !important;
+    color: #D8E1E9 !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 4px;
+}
+
+html.green-modern .select2-results__option,
+body.green-modern .select2-results__option {
+    background: #0E2B1B;
+    color: #D8E1E9;
+}
+
+html.green-modern .select2-container--default .select2-results__option--highlighted[aria-selected],
+body.green-modern .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background: #C3FF00 !important;
+    color: #123524 !important;
+}
+
+html.green-modern .select2-container--default .select2-results__option[aria-selected="true"],
+body.green-modern .select2-container--default .select2-results__option[aria-selected="true"] {
+    background: rgba(195, 255, 0, 0.22) !important;
+    color: #D8E1E9 !important;
+}
+
+html.green-modern .select2-container--default .select2-selection--multiple .select2-selection__choice,
+body.green-modern .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background: rgba(195, 255, 0, 0.16) !important;
+    color: #D8E1E9 !important;
+    border: 1px solid rgba(195, 255, 0, 0.28) !important;
+}
+
+html.green-modern .select2-container--default .select2-selection--multiple .select2-selection__choice__remove,
+body.green-modern .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #d6ff4d !important;
+}
+
+/* ==================================
+RESULTS / PANELS / THUMBNAILS
+================================== */
+html.green-modern .results-container,
+body.green-modern .results-container {
+    background: var(--app-results-bg);
+    border: 1px solid rgba(216, 225, 233, 0.12);
+    border-radius: 10px;
+    box-shadow: var(--app-shadow-md);
+    backdrop-filter: blur(4px);
+}
+
+html.green-modern #drawingList,
+body.green-modern #drawingList {
+    color: var(--app-results-text);
+}
+
+html.green-modern .thumbnail,
+body.green-modern .thumbnail {
+    background: rgba(15, 43, 28, 0.90);
+    border: 1px solid var(--app-thumbnail-border);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+
+/* ==================================
+LINKS / SPECIAL STATES
+Scoped so they do NOT affect the banner
+================================== */
+html.green-modern .content a,
+html.green-modern .sidebar a,
+body.green-modern .content a,
+body.green-modern .sidebar a {
+    color: #b7f5c3;
+}
+
+html.green-modern .content a:hover,
+html.green-modern .sidebar a:hover,
+body.green-modern .content a:hover,
+body.green-modern .sidebar a:hover {
+    color: #C3FF00;
+}
+
+html.green-modern .logout-button,
+body.green-modern .logout-button {
+    color: #fff3a3 !important;
+}
+
+/* ==================================
+ACCESSIBILITY / FOCUS
+No hamburger styling here.
+Hamburger focus belongs to banner.css / banner theme only.
+================================== */
+html.green-modern .toggle-button:focus-visible,
+html.green-modern .sidebar button:focus-visible,
+html.green-modern .sidebar a:focus-visible,
+html.green-modern .sidebar select:focus-visible,
+html.green-modern .mt-toggle-btn:focus-visible,
+html.green-modern .neppy-btn:focus-visible,
+html.green-modern .neppy-input:focus-visible,
+html.green-modern .neppy-select:focus-visible,
+html.green-modern .neppy-textarea:focus-visible,
+html.green-modern .content button:focus-visible,
+html.green-modern .content input:focus-visible,
+html.green-modern .content select:focus-visible,
+html.green-modern .content textarea:focus-visible,
+html.green-modern .content .form-control:focus-visible,
+html.green-modern .content .form-select:focus-visible,
+body.green-modern .toggle-button:focus-visible,
+body.green-modern .sidebar button:focus-visible,
+body.green-modern .sidebar a:focus-visible,
+body.green-modern .sidebar select:focus-visible,
+body.green-modern .mt-toggle-btn:focus-visible,
+body.green-modern .neppy-btn:focus-visible,
+body.green-modern .neppy-input:focus-visible,
+body.green-modern .neppy-select:focus-visible,
+body.green-modern .neppy-textarea:focus-visible,
+body.green-modern .content button:focus-visible,
+body.green-modern .content input:focus-visible,
+body.green-modern .content select:focus-visible,
+body.green-modern .content textarea:focus-visible,
+body.green-modern .content .form-control:focus-visible,
+body.green-modern .content .form-select:focus-visible {
+    outline: 2px solid rgba(195, 255, 0, 0.55);
+    outline-offset: 2px;
+}
+
+/* ==================================
+NEPPY UTILITY CLASS SUPPORT
+================================== */
+html.green-modern .neppy-card,
+html.green-modern .neppy-card-soft,
+body.green-modern .neppy-card,
+body.green-modern .neppy-card-soft {
+    background: var(--neppy-surface);
+    border-color: var(--neppy-line);
+}
+
+html.green-modern .neppy-title,
+html.green-modern .neppy-panel-title,
+body.green-modern .neppy-title,
+body.green-modern .neppy-panel-title {
+    color: var(--neppy-heading);
+}
+
+html.green-modern .neppy-subtitle,
+html.green-modern .neppy-label,
+html.green-modern .neppy-text-muted,
+body.green-modern .neppy-subtitle,
+body.green-modern .neppy-label,
+body.green-modern .neppy-text-muted {
+    color: var(--neppy-muted) !important;
+}
+
+html.green-modern .neppy-btn,
+body.green-modern .neppy-btn {
+    background: linear-gradient(
+        180deg,
+        rgba(23, 67, 42, 0.98) 0%,
+        rgba(14, 43, 27, 0.98) 100%
+    );
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+html.green-modern .neppy-btn:hover,
+body.green-modern .neppy-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(
+        180deg,
+        rgba(32, 87, 54, 0.98) 0%,
+        rgba(18, 57, 35, 0.98) 100%
+    );
+}
+
+html.green-modern .neppy-input,
+html.green-modern .neppy-select,
+html.green-modern .neppy-textarea,
+html.green-modern .neppy-mono,
+html.green-modern .neppy-code,
+body.green-modern .neppy-input,
+body.green-modern .neppy-select,
+body.green-modern .neppy-textarea,
+body.green-modern .neppy-mono,
+body.green-modern .neppy-code {
+    background: rgba(14, 43, 27, 0.96);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+html.green-modern .neppy-input:focus,
+html.green-modern .neppy-select:focus,
+html.green-modern .neppy-textarea:focus,
+body.green-modern .neppy-input:focus,
+body.green-modern .neppy-select:focus,
+body.green-modern .neppy-textarea:focus {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
+}
+
+/* ==================================
+MODULE TEMPLATE PANEL LAYOUT THEME
+Styles the standardized .mt-* module templates
+================================== */
+html.green-modern .mt-layout,
+body.green-modern .mt-layout {
+    color: var(--neppy-text);
+}
+
+html.green-modern .mt-layout-header,
+body.green-modern .mt-layout-header {
+    border-bottom: 2px solid rgba(195, 255, 0, 0.22);
+}
+
+html.green-modern .mt-layout-title,
+body.green-modern .mt-layout-title {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+}
+
+html.green-modern .mt-layout-description,
+body.green-modern .mt-layout-description {
+    color: var(--neppy-muted);
+}
+
+html.green-modern .mt-panel,
+body.green-modern .mt-panel {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg, 14px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(4px);
+}
+
+html.green-modern .mt-panel:hover,
+body.green-modern .mt-panel:hover {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+}
+
+html.green-modern .mt-panel-header,
+body.green-modern .mt-panel-header {
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--neppy-line);
+}
+
+html.green-modern .mt-panel-title,
+body.green-modern .mt-panel-title {
+    color: var(--neppy-accent);
+}
+
+html.green-modern .mt-toggle-btn,
+body.green-modern .mt-toggle-btn {
+    background: linear-gradient(
+        180deg,
+        rgba(23, 67, 42, 0.98) 0%,
+        rgba(14, 43, 27, 0.98) 100%
+    );
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+}
+
+html.green-modern .mt-toggle-btn:hover,
+body.green-modern .mt-toggle-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(
+        180deg,
+        rgba(32, 87, 54, 0.98) 0%,
+        rgba(18, 57, 35, 0.98) 100%
+    );
+    color: var(--neppy-text);
+}
+
+html.green-modern .mt-panel.is-collapsed .mt-toggle-btn,
+body.green-modern .mt-panel.is-collapsed .mt-toggle-btn {
+    background: linear-gradient(180deg, #6f2f2f 0%, #572525 100%);
+    border-color: rgba(255, 139, 139, 0.35);
+    color: #ffffff;
+}
+
+html.green-modern .mt-panel-body,
+body.green-modern .mt-panel-body {
+    color: var(--neppy-text);
+}
+
+html.green-modern .mt-panel-content,
+body.green-modern .mt-panel-content {
+    gap: 12px;
+}
+
+html.green-modern .mt-item,
+body.green-modern .mt-item {
+    background: rgba(14, 43, 27, 0.92);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+}
+
+html.green-modern .mt-item:hover,
+body.green-modern .mt-item:hover {
+    background: rgba(195, 255, 0, 0.08);
+    border-color: var(--neppy-accent);
+}
+
+html.green-modern .mt-item.is-active,
+body.green-modern .mt-item.is-active {
+    background: rgba(195, 255, 0, 0.16);
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 1px rgba(195, 255, 0, 0.10);
+}

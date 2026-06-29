@@ -11,7 +11,7 @@ function populateDropdownsBOM() {
 
     // AJAX request to fetch data
     $.ajax({
-        url: '/get_bom_list_data', // URL to fetch data from
+        url: '/bill_of_materials/get_bom_list_data', // URL to fetch data from
         type: 'GET',
         success: function(data) {
             // Populate areas dropdown

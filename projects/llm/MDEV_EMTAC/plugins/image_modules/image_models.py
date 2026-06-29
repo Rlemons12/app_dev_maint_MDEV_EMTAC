@@ -1,4 +1,5 @@
 # plugins/image_modules/image_models.py
+from dotenv import load_dotenv
 import os
 import logging
 import time  # ← This was missing!
@@ -96,348 +97,333 @@ class NoImageModel(BaseImageModelHandler):
     def store_image_metadata(self, session, title, description, file_path, embedding, model_name):
         logger.info("No image model selected, not storing image metadata.")
 
-
 class CLIPModelHandler(BaseImageModelHandler):
-    """Enhanced CLIP model handler with pgvector integration."""
+    """
+    Clean, corrected, and unified CLIP model handler.
 
-    # Class-level cache to persist models across instances
+    - Loads CLIP strictly offline using MODEL_PATH_CLIP
+    - Supports local Hugging Face folders with:
+        * model.safetensors
+        * or pytorch_model.bin
+    - Uses cache to avoid repeated reloads
+    - Retries on CPU if initial CUDA load fails
+    - Returns list embeddings for pgvector compatibility
+    """
+
     _model_cache = {}
     _processor_cache = {}
 
     def __init__(self):
+        load_dotenv()
+
         self.model_name = "CLIPModelHandler"
-        self.clip_model_id = "openai/clip-vit-base-patch32"
+        self.clip_model_dir = os.getenv("MODEL_PATH_CLIP") or os.getenv("MODEL_CLIP_DIR")
+
+        if not self.clip_model_dir:
+            raise RuntimeError("MODEL_PATH_CLIP or MODEL_CLIP_DIR not set in .env")
+
+        if not os.path.isdir(self.clip_model_dir):
+            raise RuntimeError(
+                f"CLIP model directory does not exist: {self.clip_model_dir}"
+            )
+
+        self._validate_model_dir()
+
         self.model = None
         self.processor = None
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        logger.info(f"Initializing CLIP model handler on device: {self.device}")
 
-        # Load model immediately (with caching)
+        logger.info(f"[CLIP] Initializing CLIP on device: {self.device}")
+        logger.info(f"[CLIP] Model directory: {self.clip_model_dir}")
+
         self._load_model()
 
-    def _load_model(self):
-        """Load CLIP model with caching to avoid repeated loading."""
-        cache_key = f"{self.clip_model_id}_{self.device}"
+    # -------------------------------------------------------------
+    # VALIDATE LOCAL MODEL DIRECTORY
+    # -------------------------------------------------------------
+    def _validate_model_dir(self):
+        required_files = [
+            "config.json",
+            "preprocessor_config.json",
+        ]
 
-        # Check if model is already cached
+        missing = [
+            name for name in required_files
+            if not os.path.exists(os.path.join(self.clip_model_dir, name))
+        ]
+        if missing:
+            raise RuntimeError(
+                f"Offline CLIP model missing required files: {', '.join(missing)}"
+            )
+
+        has_weights = (
+            os.path.exists(os.path.join(self.clip_model_dir, "model.safetensors"))
+            or os.path.exists(os.path.join(self.clip_model_dir, "pytorch_model.bin"))
+        )
+
+        if not has_weights:
+            raise RuntimeError(
+                "Offline CLIP model missing weights file. "
+                "Expected 'model.safetensors' or 'pytorch_model.bin'."
+            )
+
+    # -------------------------------------------------------------
+    # UNIFIED MODEL LOADER
+    # -------------------------------------------------------------
+    def _load_model(self):
+        cache_key = self.clip_model_dir
+
         if cache_key in self._model_cache:
-            logger.info("Using cached CLIP model - INSTANT LOAD!")
+            logger.info("[CLIP] Loaded from cache")
             self.model = self._model_cache[cache_key]
             self.processor = self._processor_cache[cache_key]
             return
 
-        start_time = time.time()
-        logger.info(f"Loading CLIP model: {self.clip_model_id}")
+        logger.info(f"[CLIP] Loading offline CLIP model from: {self.clip_model_dir}")
+        start = time.time()
 
         try:
-            # Load model and processor (offline mode prevents network calls)
-            self.model = CLIPModel.from_pretrained(
-                self.clip_model_id,
-                local_files_only=True,  # Force local files only
-                cache_dir=None  # Use default cache
-            ).to(self.device)
-
-            self.processor = CLIPProcessor.from_pretrained(
-                self.clip_model_id,
-                local_files_only=True,  # Force local files only
-                cache_dir=None  # Use default cache
+            # Load processor first
+            processor = CLIPProcessor.from_pretrained(
+                self.clip_model_dir,
+                local_files_only=True,
             )
 
-            # Cache the loaded model and processor
-            self._model_cache[cache_key] = self.model
-            self._processor_cache[cache_key] = self.processor
+            # First try normal device path
+            try:
+                model = CLIPModel.from_pretrained(
+                    self.clip_model_dir,
+                    local_files_only=True,
+                )
+                model = model.to(self.device)
 
-            load_time = time.time() - start_time
-            logger.info(f"Successfully loaded and cached CLIP model in {load_time:.2f}s")
+            except Exception as first_error:
+                logger.warning(f"[CLIP] First model load attempt failed: {first_error}")
+
+                # If CUDA is available, clear cache and retry on CPU
+                try:
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                        logger.info("[CLIP] CUDA cache cleared after failed load")
+                except Exception:
+                    pass
+
+                logger.info("[CLIP] Retrying CLIP load on CPU")
+                model = CLIPModel.from_pretrained(
+                    self.clip_model_dir,
+                    local_files_only=True,
+                )
+                self.device = torch.device("cpu")
+                model = model.to(self.device)
+
+            self.model = model
+            self.processor = processor
 
         except Exception as e:
-            logger.error(f"Error loading CLIP model: {e}")
-            # Fallback: try without local_files_only if offline loading fails
-            try:
-                logger.warning("Attempting fallback model loading with network access")
-                self.model = CLIPModel.from_pretrained(self.clip_model_id).to(self.device)
-                self.processor = CLIPProcessor.from_pretrained(self.clip_model_id)
+            logger.error(f"[CLIP] FAILED to load offline model from {self.clip_model_dir}: {e}", exc_info=True)
+            raise RuntimeError(
+                f"Failed to load offline CLIP model from '{self.clip_model_dir}': {e}"
+            ) from e
 
-                # Cache the fallback model
-                self._model_cache[cache_key] = self.model
-                self._processor_cache[cache_key] = self.processor
+        self._model_cache[cache_key] = self.model
+        self._processor_cache[cache_key] = self.processor
 
-                load_time = time.time() - start_time
-                logger.info(f"Fallback model loaded in {load_time:.2f}s")
-            except Exception as fallback_error:
-                logger.error(f"Failed to load CLIP model even with fallback: {fallback_error}")
-                raise
+        logger.info(f"[CLIP] Model loaded successfully in {time.time() - start:.2f}s on {self.device}")
 
+    # -------------------------------------------------------------
+    # ALLOWED FILE EXTENSIONS
+    # -------------------------------------------------------------
     def allowed_file(self, filename):
-        """Check if file extension is allowed."""
-        return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+        return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
+    # -------------------------------------------------------------
+    # PREPROCESSING
+    # -------------------------------------------------------------
     def preprocess_image(self, image):
-        """Preprocess image for CLIP model."""
-        if not self.processor:
+        if self.processor is None:
             raise RuntimeError("CLIP processor not loaded")
 
-        # Resize image while maintaining aspect ratio
-        image = image.resize((224, 224))
-        inputs = self.processor(images=image, return_tensors="pt", padding=True)
-        return inputs.to(self.device)
+        if image.mode != "RGB":
+            image = image.convert("RGB")
 
+        inputs = self.processor(images=image, return_tensors="pt", padding=True)
+        return {k: v.to(self.device) for k, v in inputs.items()}
+
+    # -------------------------------------------------------------
+    # EMBEDDING
+    # -------------------------------------------------------------
     def get_image_embedding(self, image):
-        """Get CLIP embedding for an image - returns list for pgvector compatibility."""
         try:
-            if not self.model or not self.processor:
-                logger.error("CLIP model or processor not loaded")
+            if not self.is_valid_image(image):
+                logger.warning("[CLIP] Invalid image supplied for embedding")
                 return None
 
             inputs = self.preprocess_image(image)
-            with torch.no_grad():
-                image_features = self.model.get_image_features(**inputs)
-                # Normalize the features
-                image_features = image_features / image_features.norm(dim=-1, keepdim=True)
 
-            # Convert to Python list for pgvector compatibility
-            embedding = image_features.cpu().numpy().flatten().tolist()
-            logger.info(f"Generated CLIP embedding (dimensions: {len(embedding)})")
+            with torch.no_grad():
+                img_features = self.model.get_image_features(**inputs)
+                img_features = img_features / img_features.norm(dim=-1, keepdim=True)
+
+            embedding = img_features.detach().cpu().numpy().flatten().tolist()
+
+            logger.debug(f"[CLIP] Embedding generated ({len(embedding)} dims)")
             return embedding
 
         except Exception as e:
-            logger.error(f"Error processing image: {e}")
+            logger.error(f"[CLIP] Error generating embedding: {e}", exc_info=True)
             return None
 
+    # -------------------------------------------------------------
+    # VALIDATION
+    # -------------------------------------------------------------
     def is_valid_image(self, image):
-        """Validate if image meets requirements."""
         try:
-            width, height = image.size
-            logger.info(f"Image dimensions: width={width}, height={height}")
+            w, h = image.size
 
-            # Define minimum and maximum dimensions
-            min_dimension = 100  # Minimum acceptable dimension
-            max_dimension = 5000  # Maximum acceptable dimension
-
-            if width < min_dimension or height < min_dimension:
-                logger.info(f"Image is too small: width={width}, height={height}")
-                return False
-            if width > max_dimension or height > max_dimension:
-                logger.info(f"Image is too large: width={width}, height={height}")
+            if w < 32 or h < 32:
+                logger.warning(f"[CLIP] Image too small: {w}x{h}")
                 return False
 
-            # Define acceptable aspect ratio range
-            min_aspect_ratio = 1 / 5  # Minimum aspect ratio (height/width)
-            max_aspect_ratio = 5  # Maximum aspect ratio (width/height)
+            if w > 10000 or h > 10000:
+                logger.warning(f"[CLIP] Image too large: {w}x{h}")
+                return False
 
-            aspect_ratio = width / height
-            if not (min_aspect_ratio <= aspect_ratio <= max_aspect_ratio):
-                logger.info(f"Image aspect ratio {aspect_ratio} is outside the acceptable range. "
-                            f"Min aspect ratio: {min_aspect_ratio}, Max aspect ratio: {max_aspect_ratio}")
+            aspect = w / h if h else 0
+            if not (0.1 <= aspect <= 10.0):
+                logger.warning(f"[CLIP] Invalid image aspect ratio: {aspect}")
                 return False
 
             return True
 
         except Exception as e:
-            logger.error(f"Image validation failed: {e}")
+            logger.error(f"[CLIP] Image validation failed: {e}", exc_info=True)
             return False
 
+    # -------------------------------------------------------------
+    # DB STORAGE
+    # -------------------------------------------------------------
     def store_image_metadata(self, session, title, description, file_path, embedding, model_name):
-        """
-        Updated to use pgvector-compatible ImageEmbedding creation.
-        """
         from modules.emtacdb.emtacdb_fts import Image, ImageEmbedding
-        # Ensure file_path is relative
+
         if os.path.isabs(file_path):
-            relative_file_path = os.path.relpath(file_path, BASE_DIR)
-            logger.debug(f"Converted absolute file path '{file_path}' to relative path '{relative_file_path}'.")
-        else:
-            relative_file_path = file_path
-            logger.debug(f"Using existing relative file path '{relative_file_path}'.")
+            file_path = os.path.relpath(file_path, BASE_DIR)
 
-        # Create Image entry with relative path
-        image = Image(title=title, description=description, file_path=relative_file_path)
-        session.add(image)
-        session.commit()
+        img = Image(title=title, description=description, file_path=file_path)
+        session.add(img)
+        session.flush()
 
-        # Create ImageEmbedding entry using pgvector method
         try:
-            # Ensure embedding is a list
-            if isinstance(embedding, list):
-                embedding_list = embedding
-            elif hasattr(embedding, 'tolist'):
-                embedding_list = embedding.tolist()
-            elif isinstance(embedding, np.ndarray):
-                embedding_list = embedding.flatten().tolist()
-            else:
-                embedding_list = list(embedding)
+            if embedding is None:
+                logger.warning(f"[CLIP] No embedding generated for {file_path}")
+                return
 
-            # Use the new pgvector creation method
-            image_embedding = ImageEmbedding.create_with_pgvector(
-                image_id=image.id,
+            if not isinstance(embedding, list):
+                if hasattr(embedding, "tolist"):
+                    embedding = embedding.tolist()
+                else:
+                    embedding = list(embedding)
+
+            emb = ImageEmbedding.create_with_pgvector(
+                image_id=img.id,
                 model_name=model_name,
-                embedding=embedding_list
+                embedding=embedding,
             )
-            session.add(image_embedding)
-            session.commit()
+            session.add(emb)
+            session.flush()
 
-            logger.info(
-                f"Stored image metadata and pgvector embedding for '{relative_file_path}' using '{model_name}'.")
+            logger.info(f"[CLIP] Stored pgvector embedding for {file_path}")
+
         except Exception as e:
-            logger.warning(f"Failed to store pgvector embedding, falling back to legacy format: {e}")
-            # Fallback to legacy format
-            image_embedding = ImageEmbedding.create_with_legacy(
-                image_id=image.id,
-                model_name=model_name,
-                embedding=embedding_list if 'embedding_list' in locals() else embedding
-            )
-            session.add(image_embedding)
-            session.commit()
-            logger.info(f"Stored image metadata and legacy embedding for '{relative_file_path}' using '{model_name}'.")
+            logger.error(f"[CLIP] Failed to store pgvector embedding: {e}", exc_info=True)
+            raise
 
-    def compare_images(self, image1_path: str, image2_path: str) -> dict:
-        """Enhanced image comparison using CLIP embeddings."""
+    # -------------------------------------------------------------
+    # IMAGE COMPARISON
+    # -------------------------------------------------------------
+    def compare_images(self, image1_path, image2_path):
+        import math
+
         try:
-            logger.info(f"Comparing images with CLIP: {image1_path} vs {image2_path}")
+            img1 = Image.open(image1_path).convert("RGB")
+            img2 = Image.open(image2_path).convert("RGB")
 
-            if not self.model or not self.processor:
-                return {
-                    "similarity": 0.0,
-                    "image1": image1_path,
-                    "image2": image2_path,
-                    "model": self.model_name,
-                    "error": "Model not loaded",
-                    "message": "Comparison failed"
-                }
+            emb1 = self.get_image_embedding(img1)
+            emb2 = self.get_image_embedding(img2)
 
-            # Load both images
-            image1 = Image.open(image1_path).convert('RGB')
-            image2 = Image.open(image2_path).convert('RGB')
+            if not emb1 or not emb2:
+                return {"similarity": 0.0, "error": "Embedding failed"}
 
-            # Get embeddings for both images
-            embedding1 = self.get_image_embedding(image1)
-            embedding2 = self.get_image_embedding(image2)
-
-            if embedding1 is None or embedding2 is None:
-                return {
-                    "similarity": 0.0,
-                    "image1": image1_path,
-                    "image2": image2_path,
-                    "model": self.model_name,
-                    "error": "Failed to generate embeddings",
-                    "message": "Comparison failed"
-                }
-
-            # Calculate cosine similarity using the embeddings
-            import math
-
-            # Calculate dot product
-            dot_product = sum(a * b for a, b in zip(embedding1, embedding2))
-
-            # Calculate norms
-            norm1 = math.sqrt(sum(a * a for a in embedding1))
-            norm2 = math.sqrt(sum(b * b for b in embedding2))
-
-            # Calculate cosine similarity
-            if norm1 == 0 or norm2 == 0:
-                similarity = 0.0
-            else:
-                similarity = dot_product / (norm1 * norm2)
-
-            logger.info(f"Image comparison similarity: {similarity:.4f}")
+            dot = sum(a * b for a, b in zip(emb1, emb2))
+            n1 = math.sqrt(sum(a * a for a in emb1))
+            n2 = math.sqrt(sum(b * b for b in emb2))
+            sim = dot / (n1 * n2) if n1 and n2 else 0.0
 
             return {
-                "similarity": float(similarity),
+                "similarity": float(sim),
                 "image1": image1_path,
                 "image2": image2_path,
                 "model": self.model_name,
-                "message": "Comparison completed successfully"
             }
 
         except Exception as e:
-            logger.error(f"Error comparing images with CLIP: {e}")
-            return {
-                "similarity": 0.0,
-                "image1": image1_path,
-                "image2": image2_path,
-                "model": self.model_name,
-                "error": str(e),
-                "message": "Comparison failed"
-            }
+            logger.error(f"[CLIP] compare_images failed: {e}", exc_info=True)
+            return {"similarity": 0.0, "error": str(e)}
 
-    def search_similar_images_in_db(self, session, query_image_path: str,
-                                    limit: int = 10, similarity_threshold: float = 0.7) -> list:
-        """
-        New method to search for similar images in the database using pgvector.
-        """
+    # -------------------------------------------------------------
+    # SEARCH SIMILAR IMAGES
+    # -------------------------------------------------------------
+    def search_similar_images_in_db(self, session, query_image_path, limit=10, similarity_threshold=0.7):
         try:
-            logger.info(f"Searching for similar images to: {query_image_path}")
+            query_img = Image.open(query_image_path).convert("RGB")
 
-            # Load and process query image
-            query_image = Image.open(query_image_path).convert('RGB')
-            if not self.is_valid_image(query_image):
-                logger.warning(f"Query image is not valid: {query_image_path}")
+            if not self.is_valid_image(query_img):
                 return []
 
-            # Get embedding for query image
-            query_embedding = self.get_image_embedding(query_image)
-            if query_embedding is None:
-                logger.error(f"Failed to generate embedding for query image: {query_image_path}")
+            emb = self.get_image_embedding(query_img)
+            if emb is None:
                 return []
 
-            # Use ImageEmbedding's search method
             from modules.emtacdb.emtacdb_fts import ImageEmbedding
-            similar_images = ImageEmbedding.search_similar_images(
+
+            return ImageEmbedding.search_similar_images(
                 session=session,
-                query_embedding=query_embedding,
+                query_embedding=emb,
                 model_name=self.model_name,
                 limit=limit,
-                similarity_threshold=similarity_threshold
+                similarity_threshold=similarity_threshold,
             )
 
-            logger.info(f"Found {len(similar_images)} similar images")
-            return similar_images
-
         except Exception as e:
-            logger.error(f"Error searching for similar images: {e}")
+            logger.error(f"[CLIP] search_similar_images_in_db failed: {e}", exc_info=True)
             return []
 
-    @classmethod
-    def preload_model(cls) -> bool:
-        """Class method to preload model during application startup."""
-        try:
-            logger.info("Preloading CLIP model for faster subsequent access...")
-            start_time = time.time()
-
-            # Create temporary instance to trigger model loading
-            temp_handler = cls()
-
-            preload_time = time.time() - start_time
-            logger.info(f"CLIP model preloaded successfully in {preload_time:.2f}s")
-            return True
-
-        except Exception as e:
-            logger.error(f"Failed to preload CLIP model: {e}")
-            return False
-
-    def get_cache_stats(self) -> Dict[str, Any]:
-        """Get information about the model cache."""
-        return {
-            "models_cached": len(self._model_cache),
-            "processors_cached": len(self._processor_cache),
-            "cache_keys": list(self._model_cache.keys()),
-            "model_loaded": self.model is not None,
-            "processor_loaded": self.processor is not None,
-            "device": str(self.device),
-            "offline_mode": os.environ.get("TRANSFORMERS_OFFLINE", "0") == "1"
-        }
-
-    def get_model_info(self) -> Dict[str, Any]:
-        """Get information about the loaded model."""
+    # -------------------------------------------------------------
+    # MODEL INFO
+    # -------------------------------------------------------------
+    def get_model_info(self):
         return {
             "model_name": self.model_name,
-            "model_id": self.clip_model_id,
+            "model_dir": self.clip_model_dir,
             "device": str(self.device),
+            "cached_models": len(self._model_cache),
+            "cached_processors": len(self._processor_cache),
             "model_loaded": self.model is not None,
             "processor_loaded": self.processor is not None,
-            "cache_size": len(self._model_cache),
-            "offline_mode": os.environ.get("TRANSFORMERS_OFFLINE", "0") == "1",
-            "pgvector_compatible": True
+            "offline_mode": True,
         }
 
+    # -------------------------------------------------------------
+    # PRELOAD
+    # -------------------------------------------------------------
+    @classmethod
+    def preload_model(cls):
+        try:
+            logger.info("[CLIP] Preloading offline model...")
+            start = time.time()
+            _ = cls()
+            logger.info(f"[CLIP] Preloaded in {time.time() - start:.2f}s")
+            return True
+        except Exception as e:
+            logger.error(f"[CLIP] Preload failed: {e}", exc_info=True)
+            return False
 

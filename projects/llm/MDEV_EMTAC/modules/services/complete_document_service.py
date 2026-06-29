@@ -1,147 +1,474 @@
-# modules/services/complete_document_service.py
+from typing import Optional, List, Dict, Any
 
-from typing import List, Optional, Dict, Tuple
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from sqlalchemy import text, and_
 
-from modules.configuration.config_env import DatabaseConfig
 from modules.configuration.log_config import (
-    info_id, debug_id, warning_id, error_id, with_request_id, get_request_id
+    info_id,
+    warning_id,
+    with_request_id,
 )
-from modules.emtacdb.emtacdb_fts import CompleteDocument
+
+from modules.emtacdb.emtacdb_fts import (
+    CompleteDocument,
+    Position,
+    Image,
+    CompletedDocumentPositionAssociation,
+    ImageCompletedDocumentAssociation,
+)
 
 
 class CompleteDocumentService:
-    """Service layer for managing CompleteDocument objects."""
+    """
+    Pure domain service for CompleteDocument.
 
-    def __init__(self, db_config: Optional[DatabaseConfig] = None):
-        self.db_config = db_config or DatabaseConfig()
+    RULES:
+    - Does NOT open sessions
+    - Does NOT commit
+    - Does NOT rollback
+    - Does NOT coordinate workflows
+    """
 
-    # ----------------------------
-    # CREATE / ADD
-    # ----------------------------
+    # ==============================================================
+    # BASIC QUERY
+    # ==============================================================
+
     @with_request_id
-    def add(
+    def find(
         self,
+        session: Session,
+        *,
+        title: Optional[str] = None,
+        file_path: Optional[str] = None,
+        limit: int = 50,
+        request_id: Optional[str] = None,
+    ) -> List[CompleteDocument]:
+
+        query = session.query(CompleteDocument)
+
+        if title:
+            query = query.filter(CompleteDocument.title.ilike(f"%{title}%"))
+
+        if file_path:
+            query = query.filter(CompleteDocument.file_path.ilike(f"%{file_path}%"))
+
+        results = query.limit(limit).all()
+        info_id(f"Found {len(results)} CompleteDocuments", request_id)
+        return results
+
+    # ==============================================================
+
+    @with_request_id
+    def get(
+        self,
+        session: Session,
+        *,
+        document_id: Optional[int] = None,
+        complete_document_id: Optional[int] = None,
+        id: Optional[int] = None,
+        request_id: Optional[str] = None,
+    ) -> Optional[CompleteDocument]:
+
+        resolved_id = document_id or complete_document_id or id
+
+        if resolved_id is None:
+            raise ValueError(
+                "CompleteDocumentService.get() requires one of: "
+                "document_id, complete_document_id, or id"
+            )
+
+        doc = session.get(CompleteDocument, resolved_id)
+
+        if not doc:
+            warning_id(f"CompleteDocument id={resolved_id} not found", request_id)
+
+        return doc
+
+    @with_request_id
+    def get_by_id(
+        self,
+        session: Session,
+        *,
+        complete_document_id: int,
+        request_id: Optional[str] = None,
+    ) -> Optional[CompleteDocument]:
+        return self.get(
+            session=session,
+            complete_document_id=complete_document_id,
+            request_id=request_id,
+        )
+
+    # ==============================================================
+    # CREATE
+    # ==============================================================
+
+    @with_request_id
+    def create(
+        self,
+        session: Session,
+        *,
         title: str,
         file_path: Optional[str] = None,
         content: Optional[str] = None,
         position_id: Optional[int] = None,
+
+        # RAG / AI metadata
+        summary: Optional[str] = None,
+        rag_metadata: Optional[Dict[str, Any]] = None,
+        topics: Optional[List[str]] = None,
+        keywords: Optional[List[str]] = None,
+        questions_answered: Optional[List[str]] = None,
+        equipment: Optional[List[str]] = None,
+
+        # File/extraction metadata
+        file_sha256: Optional[str] = None,
+        file_size: Optional[int] = None,
+        file_basename: Optional[str] = None,
+        source_type: Optional[str] = None,
+        extraction_method: Optional[str] = None,
+
         request_id: Optional[str] = None,
-    ) -> Optional[int]:
-        """Add a new CompleteDocument (and trigger associations)."""
-        try:
-            with self.db_config.main_session() as session:
-                doc = CompleteDocument(
-                    title=title,
-                    file_path=file_path,
-                    content=content,
-                )
-                session.add(doc)
-                session.flush()
+    ) -> CompleteDocument:
 
-                # Create associations if position provided
-                if position_id:
-                    CompleteDocument._create_associations(session, doc.id, position_id)
-
-                session.commit()
-                info_id(f"Added CompleteDocument id={doc.id}, title='{title}'", request_id)
-                return doc.id
-        except SQLAlchemyError as e:
-            error_id(f"Failed to add CompleteDocument: {e}", request_id)
-            return None
-
-    # ----------------------------
-    # RETRIEVE
-    # ----------------------------
-    @with_request_id
-    def get_by_id(self, doc_id: int, session: Optional[Session] = None, request_id: Optional[str] = None) -> Optional[CompleteDocument]:
-        """Retrieve a CompleteDocument by ID."""
-        rid = request_id or get_request_id()
-        local_session = None
-        if session is None:
-            local_session = self.db_config.get_main_session()
-
-        try:
-            doc = (session or local_session).query(CompleteDocument).filter_by(id=doc_id).first()
-            if doc:
-                debug_id(f"Found CompleteDocument {doc}", rid)
-            else:
-                warning_id(f"No CompleteDocument found for id={doc_id}", rid)
-            return doc
-        finally:
-            if local_session:
-                local_session.close()
-
-    @with_request_id
-    def list_all(self, limit: int = 50, request_id: Optional[str] = None) -> List[CompleteDocument]:
-        """List CompleteDocuments with limit."""
-        with self.db_config.main_session() as session:
-            return session.query(CompleteDocument).limit(limit).all()
-
-    # ----------------------------
-    # SEARCH
-    # ----------------------------
-    @with_request_id
-    def search_by_text(self, query: str, limit: int = 25, request_id: Optional[str] = None):
-        """Full-text search wrapper."""
-        return CompleteDocument.search_by_text(query, limit=limit, request_id=request_id)
-
-    @with_request_id
-    def search_similar_by_embedding(self, query_text: str, limit: int = 10, threshold: float = 0.7, request_id: Optional[str] = None):
-        """Vector similarity search wrapper."""
-        return CompleteDocument.search_similar_by_embedding(
-            query_text=query_text,
-            limit=limit,
-            threshold=threshold,
-            request_id=request_id
+        doc = CompleteDocument(
+            title=title,
+            file_path=file_path,
+            content=content,
+            rev="R0",
         )
 
-    # ----------------------------
-    # UPLOAD + IMAGE HANDLING
-    # ----------------------------
+        self._apply_optional_metadata(
+            doc=doc,
+            summary=summary,
+            rag_metadata=rag_metadata,
+            topics=topics,
+            keywords=keywords,
+            questions_answered=questions_answered,
+            equipment=equipment,
+            file_sha256=file_sha256,
+            file_size=file_size,
+            file_basename=file_basename,
+            source_type=source_type,
+            extraction_method=extraction_method,
+            request_id=request_id,
+        )
+
+        session.add(doc)
+        session.flush()
+
+        if position_id:
+            self.attach_to_position(
+                session=session,
+                document_id=doc.id,
+                position_id=position_id,
+                request_id=request_id,
+            )
+
+        info_id(f"Created CompleteDocument id={doc.id}", request_id)
+        return doc
+
+    # ==============================================================
+    # UPDATE
+    # ==============================================================
+
     @with_request_id
-    def process_upload(self, files, metadata: dict, request_id: Optional[str] = None) -> Tuple[bool, dict, int]:
+    def update(
+        self,
+        session: Session,
+        *,
+        document_id: int,
+        title: Optional[str] = None,
+        file_path: Optional[str] = None,
+        content: Optional[str] = None,
+
+        # RAG / AI metadata
+        summary: Optional[str] = None,
+        rag_metadata: Optional[Dict[str, Any]] = None,
+        topics: Optional[List[str]] = None,
+        keywords: Optional[List[str]] = None,
+        questions_answered: Optional[List[str]] = None,
+        equipment: Optional[List[str]] = None,
+
+        # File/extraction metadata
+        file_sha256: Optional[str] = None,
+        file_size: Optional[int] = None,
+        file_basename: Optional[str] = None,
+        source_type: Optional[str] = None,
+        extraction_method: Optional[str] = None,
+
+        request_id: Optional[str] = None,
+    ) -> Optional[CompleteDocument]:
+
+        doc = self.get(session, document_id=document_id, request_id=request_id)
+
+        if not doc:
+            return None
+
+        updated = False
+
+        if title is not None and doc.title != title:
+            doc.title = title
+            updated = True
+
+        if file_path is not None and doc.file_path != file_path:
+            doc.file_path = file_path
+            updated = True
+
+        if content is not None and doc.content != content:
+            doc.content = content
+            updated = True
+
+        metadata_updated = self._apply_optional_metadata(
+            doc=doc,
+            summary=summary,
+            rag_metadata=rag_metadata,
+            topics=topics,
+            keywords=keywords,
+            questions_answered=questions_answered,
+            equipment=equipment,
+            file_sha256=file_sha256,
+            file_size=file_size,
+            file_basename=file_basename,
+            source_type=source_type,
+            extraction_method=extraction_method,
+            request_id=request_id,
+        )
+
+        if updated or metadata_updated:
+            self._bump_revision(doc)
+
+        info_id(f"Updated CompleteDocument id={document_id}", request_id)
+        return doc
+
+    # ==============================================================
+    # UPSERT BY FILE_PATH
+    # ==============================================================
+
+    @with_request_id
+    def upsert(
+        self,
+        session: Session,
+        *,
+        title: str,
+        file_path: str,
+        content: Optional[str] = None,
+
+        # RAG / AI metadata
+        summary: Optional[str] = None,
+        rag_metadata: Optional[Dict[str, Any]] = None,
+        topics: Optional[List[str]] = None,
+        keywords: Optional[List[str]] = None,
+        questions_answered: Optional[List[str]] = None,
+        equipment: Optional[List[str]] = None,
+
+        # File/extraction metadata
+        file_sha256: Optional[str] = None,
+        file_size: Optional[int] = None,
+        file_basename: Optional[str] = None,
+        source_type: Optional[str] = None,
+        extraction_method: Optional[str] = None,
+
+        request_id: Optional[str] = None,
+    ) -> CompleteDocument:
+
+        existing = (
+            session.query(CompleteDocument)
+            .filter(CompleteDocument.file_path == file_path)
+            .first()
+        )
+
+        if existing:
+            updated = False
+
+            if title and existing.title != title:
+                existing.title = title
+                updated = True
+
+            if content is not None and existing.content != content:
+                existing.content = content
+                updated = True
+
+            metadata_updated = self._apply_optional_metadata(
+                doc=existing,
+                summary=summary,
+                rag_metadata=rag_metadata,
+                topics=topics,
+                keywords=keywords,
+                questions_answered=questions_answered,
+                equipment=equipment,
+                file_sha256=file_sha256,
+                file_size=file_size,
+                file_basename=file_basename,
+                source_type=source_type,
+                extraction_method=extraction_method,
+                request_id=request_id,
+            )
+
+            if updated or metadata_updated:
+                self._bump_revision(existing)
+
+            info_id(
+                f"Upsert updated CompleteDocument id={existing.id}",
+                request_id,
+            )
+
+            return existing
+
+        return self.create(
+            session=session,
+            title=title,
+            file_path=file_path,
+            content=content,
+            summary=summary,
+            rag_metadata=rag_metadata,
+            topics=topics,
+            keywords=keywords,
+            questions_answered=questions_answered,
+            equipment=equipment,
+            file_sha256=file_sha256,
+            file_size=file_size,
+            file_basename=file_basename,
+            source_type=source_type,
+            extraction_method=extraction_method,
+            request_id=request_id,
+        )
+
+    # ==============================================================
+    # METADATA HELPERS
+    # ==============================================================
+
+    def _apply_optional_metadata(
+        self,
+        *,
+        doc: CompleteDocument,
+        summary: Optional[str] = None,
+        rag_metadata: Optional[Dict[str, Any]] = None,
+        topics: Optional[List[str]] = None,
+        keywords: Optional[List[str]] = None,
+        questions_answered: Optional[List[str]] = None,
+        equipment: Optional[List[str]] = None,
+        file_sha256: Optional[str] = None,
+        file_size: Optional[int] = None,
+        file_basename: Optional[str] = None,
+        source_type: Optional[str] = None,
+        extraction_method: Optional[str] = None,
+        request_id: Optional[str] = None,
+    ) -> bool:
         """
-        Delegate to CompleteDocument.process_upload.
-        Returns (success, payload, status_code).
+        Applies optional metadata only when values are provided.
+
+        Returns:
+            True if any field changed.
         """
-        return CompleteDocument.process_upload(files, metadata, request_id=request_id)
 
-    @with_request_id
-    def get_images_with_context(self, doc_id: int, request_id: Optional[str] = None):
-        """Get all images associated with a CompleteDocument."""
-        return CompleteDocument.get_images_with_chunk_context(doc_id, request_id=request_id)
+        changed = False
 
-    # ----------------------------
-    # ANALYTICS / STATS
-    # ----------------------------
-    @with_request_id
-    def get_embedding_stats(self, request_id: Optional[str] = None) -> Dict:
-        """Return embedding distribution stats for all CompleteDocuments."""
-        return CompleteDocument.get_embedding_statistics(request_id=request_id)
+        updates = {
+            "summary": summary,
+            "rag_metadata": rag_metadata,
+            "topics": topics,
+            "keywords": keywords,
+            "questions_answered": questions_answered,
+            "equipment": equipment,
+            "file_sha256": file_sha256,
+            "file_size": file_size,
+            "file_basename": file_basename,
+            "source_type": source_type,
+            "extraction_method": extraction_method,
+        }
 
-    @with_request_id
-    def get_association_stats(self, doc_id: int, request_id: Optional[str] = None) -> Dict:
-        """Return association statistics for images linked to this document."""
-        return CompleteDocument.get_association_statistics(doc_id, request_id=request_id)
+        for field_name, new_value in updates.items():
+            if new_value is None:
+                continue
 
-    # ----------------------------
-    # DELETE
-    # ----------------------------
-    @with_request_id
-    def delete(self, doc_id: int, request_id: Optional[str] = None) -> bool:
-        """Delete a CompleteDocument by ID."""
+            if not hasattr(doc, field_name):
+                warning_id(
+                    f"CompleteDocument has no field '{field_name}'. "
+                    f"Skipping metadata assignment.",
+                    request_id,
+                )
+                continue
+
+            old_value = getattr(doc, field_name)
+
+            if old_value != new_value:
+                setattr(doc, field_name, new_value)
+                changed = True
+
+        return changed
+
+    # ==============================================================
+    # REVISION
+    # ==============================================================
+
+    def _bump_revision(self, doc: CompleteDocument) -> None:
         try:
-            with self.db_config.main_session() as session:
-                doc = session.query(CompleteDocument).filter_by(id=doc_id).first()
-                if not doc:
-                    warning_id(f"No CompleteDocument found for deletion id={doc_id}", request_id)
-                    return False
-                session.delete(doc)
-                session.commit()
-                info_id(f"Deleted CompleteDocument id={doc_id}", request_id)
-                return True
-        except SQLAlchemyError as e:
-            error_id(f"Failed to delete CompleteDocument {doc_id}: {e}", request_id)
+            rev_num = int(doc.rev[1:]) if doc.rev and doc.rev.startswith("R") else 0
+        except Exception:
+            rev_num = 0
+
+        doc.rev = f"R{rev_num + 1}"
+
+    # ==============================================================
+    # DELETE
+    # ==============================================================
+
+    @with_request_id
+    def delete(
+        self,
+        session: Session,
+        *,
+        document_id: int,
+        request_id: Optional[str] = None,
+    ) -> bool:
+
+        doc = self.get(
+            session=session,
+            document_id=document_id,
+            request_id=request_id,
+        )
+
+        if not doc:
             return False
+
+        session.delete(doc)
+        info_id(f"Deleted CompleteDocument id={document_id}", request_id)
+        return True
+
+    # ==============================================================
+    # ASSOCIATIONS
+    # ==============================================================
+
+    @with_request_id
+    def attach_to_position(
+        self,
+        session: Session,
+        *,
+        document_id: int,
+        position_id: int,
+        request_id: Optional[str] = None,
+    ) -> None:
+
+        existing = (
+            session.query(CompletedDocumentPositionAssociation)
+            .filter_by(
+                complete_document_id=document_id,
+                position_id=position_id,
+            )
+            .first()
+        )
+
+        if existing:
+            return
+
+        assoc = CompletedDocumentPositionAssociation(
+            complete_document_id=document_id,
+            position_id=position_id,
+        )
+
+        session.add(assoc)
+
+        info_id(
+            f"Attached document {document_id} to position {position_id}",
+            request_id,
+        )

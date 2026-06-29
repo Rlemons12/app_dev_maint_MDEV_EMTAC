@@ -1,88 +1,188 @@
-/* CSS for Tool Templates Role-Based Access Control */
+/* static/css/tool/role_base_acc_ctrl.css
+==================================
+TOOL TEMPLATES ROLE-BASED ACCESS CONTROL
+Scoped for the Tool Management module template system.
+Do not control shell layout here.
+================================== */
 
-/* Style for disabled buttons */
-.btn-disabled {
+/* ==================================
+ACCESS NOTIFICATION
+This is intended to render inside:
+#tool-role-notification-slot
+================================== */
+.tool-management-module #tool-role-notification-slot {
+    width: 100%;
+    margin: 0 0 18px 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.tool-management-module .user-level-notification {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 0 18px 0;
+    padding: 12px 16px;
+    box-sizing: border-box;
+
+    background: rgba(255, 193, 7, 0.14);
+    color: #ffe082;
+    border: 1px solid rgba(255, 193, 7, 0.55);
+    border-left: 4px solid #ffc107;
+    border-radius: var(--app-radius-md, 10px);
+
+    font-weight: 600;
+    text-align: left;
+    line-height: 1.45;
+
+    position: relative;
+    z-index: 1;
+}
+
+.tool-management-module .user-level-notification strong {
+    color: #ffffff;
+}
+
+/* ==================================
+DISABLED BUTTONS
+================================== */
+.tool-management-module .btn-disabled,
+.tool-management-module button.btn-disabled,
+.tool-management-module .btn.btn-disabled {
     pointer-events: none;
     opacity: 0.65;
     cursor: not-allowed !important;
     background-color: #6c757d !important;
     border-color: #6c757d !important;
-    color: white !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
 }
 
-/* Disabled tab styling */
-.tab-item.disabled-tab {
+/* ==================================
+DISABLED TAB STYLING
+================================== */
+.tool-management-module .tab-item.disabled-tab {
     opacity: 0.5;
     cursor: not-allowed !important;
     position: relative;
 }
 
-.tab-item.disabled-tab::after {
-    content: "🔒";
-    font-size: 12px;
-    position: absolute;
-    top: 2px;
-    right: 5px;
+.tool-management-module .tab-item.disabled-tab:hover {
+    background: var(--app-control-bg);
+    color: var(--app-control-text);
+    border-color: var(--app-control-border);
 }
 
-/* Read-only form styling */
-.read-only-form {
+.tool-management-module .tab-item.disabled-tab::after {
+    content: "🔒";
+    font-size: 12px;
+    line-height: 1;
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    pointer-events: none;
+}
+
+/* ==================================
+READ-ONLY FORM WRAPPER
+================================== */
+.tool-management-module .read-only-form {
     position: relative;
 }
 
-.read-only-form::before {
+.tool-management-module .read-only-form::before {
     content: "";
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     background-color: rgba(0, 0, 0, 0.05);
     pointer-events: none;
     z-index: 1;
+    border-radius: inherit;
 }
 
-/* Read-only form labels */
-.read-only-form label::after {
+/* ==================================
+READ-ONLY FORM LABELS
+================================== */
+.tool-management-module .read-only-form label::after,
+.tool-management-module .read-only-form .form-label::after {
     content: " (read-only)";
     font-size: 0.8em;
-    color: #dc3545;
+    color: #ff9b9b;
     font-style: italic;
+    font-weight: 500;
 }
 
-/* Notification banner */
-.user-level-notification {
-    background-color: rgba(255, 193, 7, 0.2);
-    color: #ffec00;
-    border: 1px solid #ffc107;
-    padding: 15px;
-    margin-bottom: 20px;
-    border-radius: 5px;
-    font-weight: bold;
-    text-align: center;
+/* ==================================
+READ-ONLY FORM CONTROLS
+================================== */
+.tool-management-module .read-only-form input,
+.tool-management-module .read-only-form textarea,
+.tool-management-module .read-only-form select,
+.tool-management-module .read-only-form .form-control,
+.tool-management-module .read-only-form .form-select {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(108, 117, 125, 0.85) !important;
+    color: var(--app-content-text) !important;
 }
 
-/* Make text easier to read on dark backgrounds */
-.user-level-notification strong {
-    color: #ffffff;
+.tool-management-module .read-only-form input::placeholder,
+.tool-management-module .read-only-form textarea::placeholder {
+    color: rgba(255, 255, 255, 0.55);
 }
 
-/* Style for forms in read-only mode */
-.accordion-item .accordion-button.collapsed {
-    background-color: rgba(108, 117, 125, 0.1);
+/* Optional dark-theme helper if still used */
+.tool-management-module .read-only-form.dark-theme input,
+.tool-management-module .read-only-form.dark-theme textarea,
+.tool-management-module .read-only-form.dark-theme select,
+.tool-management-module .read-only-form.dark-theme .form-control,
+.tool-management-module .read-only-form.dark-theme .form-select {
+    background-color: rgba(255, 255, 255, 0.10) !important;
+    color: #e0e0e0 !important;
 }
 
-.read-only-form input,
-.read-only-form textarea,
-.read-only-form select {
-    background-color: rgba(0, 0, 0, 0.05);
-    border-color: #6c757d;
+/* ==================================
+READ-ONLY ACCORDION VISUAL
+================================== */
+.tool-management-module .accordion-item .accordion-button.collapsed {
+    background-color: rgba(108, 117, 125, 0.10);
 }
 
-/* Additional contrast for dark themes */
-.read-only-form.dark-theme input,
-.read-only-form.dark-theme textarea,
-.read-only-form.dark-theme select {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: #e0e0e0;
+/* ==================================
+BUTTON VARIANT NORMALIZATION
+Prevents old bootstrap-ish variants from fighting
+theme/module styling
+================================== */
+.tool-management-module .btn-primary,
+.tool-management-module .btn-danger,
+.tool-management-module .btn-warning,
+.tool-management-module .btn-success {
+    background: var(--app-control-bg);
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+}
+
+.tool-management-module .btn-primary:hover,
+.tool-management-module .btn-danger:hover,
+.tool-management-module .btn-warning:hover,
+.tool-management-module .btn-success:hover {
+    background: var(--app-control-hover-bg);
+    color: var(--app-sidebar-hover);
+    border-color: var(--app-sidebar-hover);
+}
+
+/* ==================================
+RESPONSIVE
+================================== */
+@media (max-width: 768px) {
+    .tool-management-module .user-level-notification {
+        padding: 10px 12px;
+        margin-bottom: 14px;
+        font-size: 0.95rem;
+    }
+
+    .tool-management-module .tab-item.disabled-tab::after {
+        top: 5px;
+        right: 6px;
+        font-size: 11px;
+    }
 }

@@ -1,140 +1,410 @@
-# services/image_service.py
+# modules/services/image_service.py
+
+from __future__ import annotations
+
 from typing import Optional, List, Dict, Any
-from sqlalchemy.exc import SQLAlchemyError
+from copy import deepcopy
+
+from sqlalchemy.orm import Session
+from sqlalchemy import inspect as sa_inspect
+from sqlalchemy.orm.exc import DetachedInstanceError
 
 from modules.emtacdb.emtacdb_fts import Image
-from modules.configuration.config_env import DatabaseConfig
-from modules.configuration.log_config import info_id, error_id, with_request_id
+from modules.configuration.log_config import (
+    info_id,
+    warning_id,
+    debug_id,
+    with_request_id,
+)
 
 
 class ImageService:
     """
-    Service layer for managing Image entities.
+    Pure domain service for Image.
 
-    Provides:
-      - `add_to_db`       → Wrapper for Image.add_to_db
-      - `find`            → Wraps Image.search
-      - `get`             → Retrieve an Image by ID
-      - `remove`          → Delete an Image by ID
-      - `find_related`    → Collect associations for an Image
-      - `search_images`   → Wrapper for Image.search_images with pgvector support
-      - `similarity`      → Embedding-based similarity search
+    HARD RULES:
+    - NEVER open sessions
+    - NEVER close sessions
+    - NEVER commit
+    - NEVER rollback
+    - Orchestrator owns transactions
+
+    DESIGN NOTES:
+    - Methods that mutate data still return ORM instances for compatibility.
+    - This service also exposes safe serialization helpers so callers can
+      convert ORM rows into plain dicts before leaving the transaction boundary.
     """
 
-    def __init__(self, db_config: DatabaseConfig = None):
-        self.db_config = db_config or DatabaseConfig()
+    # ---------------------------------------------------------
+    # INTERNAL HELPERS
+    # ---------------------------------------------------------
 
-    # ------------------------
-    # CORE WRAPPERS
-    # ------------------------
+    @staticmethod
+    def _require_session(session: Session, method_name: str) -> None:
+        if session is None:
+            raise RuntimeError(f"Session required for ImageService.{method_name}")
 
-    @with_request_id
-    def add_to_db(self,
-                  title: str,
-                  file_path: str,
-                  description: str,
-                  position_id: Optional[int] = None,
-                  complete_document_id: Optional[int] = None,
-                  metadata: Optional[Dict[str, Any]] = None) -> Optional[int]:
-        """Wrapper for Image.add_to_db → returns new image ID or None on failure."""
-        with self.db_config.main_session() as session:
-            try:
-                return Image.add_to_db(session,
-                                       title=title,
-                                       file_path=file_path,
-                                       description=description,
-                                       position_id=position_id,
-                                       complete_document_id=complete_document_id,
-                                       metadata=metadata)
-            except SQLAlchemyError as e:
-                error_id(f"ImageService.add_to_db failed: {e}", None)
-                raise
+    @staticmethod
+    def _normalize_text(value: Optional[str], *, field_name: str, required: bool = False) -> str:
+        if value is None:
+            value = ""
+        if not isinstance(value, str):
+            raise TypeError(f"{field_name} must be a string")
+        normalized = value.strip()
+        if required and not normalized:
+            raise ValueError(f"{field_name} is required")
+        return normalized
 
-    @with_request_id
-    def find(self, **filters) -> List[Image]:
-        """Search images using Image.search."""
+    @staticmethod
+    def _normalize_metadata(img_metadata: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        if img_metadata is None:
+            return {}
+
+        if not isinstance(img_metadata, dict):
+            raise TypeError("img_metadata must be a dictionary")
+
+        # Deep copy to prevent accidental caller-side mutation after staging
+        return deepcopy(img_metadata)
+
+    @staticmethod
+    def _safe_attr(image: Optional[Image], attr_name: str, default: Any = None) -> Any:
+        """
+        Safely read an ORM attribute without forcing the caller to care whether
+        the instance is attached or detached.
+
+        Notes:
+        - If the attribute is already loaded, SQLAlchemy will usually return it.
+        - If the instance is detached and the attribute is expired, reading it
+          may raise DetachedInstanceError. In that case we return default.
+        """
+        if image is None:
+            return default
+
         try:
-            return Image.search(**filters)
-        except SQLAlchemyError as e:
-            error_id(f"ImageService.find failed: {e}", None)
-            raise
+            return getattr(image, attr_name)
+        except DetachedInstanceError:
+            return default
+        except Exception:
+            return default
+
+    def to_payload(self, image: Optional[Image]) -> Optional[Dict[str, Any]]:
+        """
+        Convert an Image ORM object to a plain dict safely.
+
+        This is the preferred boundary object for orchestrators/controllers that
+        should not depend on a live SQLAlchemy session.
+        """
+        if image is None:
+            return None
+
+        return {
+            "id": self._safe_attr(image, "id"),
+            "title": self._safe_attr(image, "title", ""),
+            "description": self._safe_attr(image, "description", ""),
+            "file_path": self._safe_attr(image, "file_path", ""),
+            "img_metadata": self._safe_attr(image, "img_metadata", {}) or {},
+            "url": f"/serve_image/{self._safe_attr(image, 'id')}" if self._safe_attr(image, "id") is not None else None,
+        }
+
+    def snapshot(self, image: Optional[Image]) -> Optional[Dict[str, Any]]:
+        """
+        Create a plain-data snapshot of current loaded values from an Image row.
+
+        Best used immediately after session.flush() while the object is still
+        attached, so callers can safely carry scalar data outside the ORM/session
+        boundary.
+        """
+        if image is None:
+            return None
+
+        state = sa_inspect(image)
+
+        data: Dict[str, Any] = {}
+
+        # Pull loaded values when available without triggering lazy refreshes.
+        for attr_name in ("id", "title", "description", "file_path", "img_metadata"):
+            try:
+                attr_state = state.attrs[attr_name]
+                if attr_state.loaded_value is not None:
+                    try:
+                        data[attr_name] = getattr(image, attr_name)
+                    except DetachedInstanceError:
+                        data[attr_name] = None
+                else:
+                    data[attr_name] = self._safe_attr(image, attr_name)
+            except Exception:
+                data[attr_name] = self._safe_attr(image, attr_name)
+
+        image_id = data.get("id")
+        data["url"] = f"/serve_image/{image_id}" if image_id is not None else None
+        return data
+
+    # ---------------------------------------------------------
+    # CREATE
+    # ---------------------------------------------------------
 
     @with_request_id
-    def get(self, image_id: int) -> Optional[Image]:
-        """Retrieve an Image by ID."""
-        with self.db_config.main_session() as session:
-            try:
-                return session.query(Image).filter_by(id=image_id).first()
-            except SQLAlchemyError as e:
-                error_id(f"ImageService.get failed: {e}", None)
-                raise
+    def create(
+        self,
+        session: Session,
+        *,
+        title: str,
+        file_path: str,
+        description: Optional[str] = None,
+        img_metadata: Optional[Dict[str, Any]] = None,
+        request_id: Optional[str] = None,
+    ) -> Image:
+        self._require_session(session, "create")
+
+        normalized_title = self._normalize_text(title, field_name="title", required=True)
+        normalized_file_path = self._normalize_text(file_path, field_name="file_path", required=True)
+        normalized_description = self._normalize_text(description, field_name="description", required=False)
+        normalized_metadata = self._normalize_metadata(img_metadata)
+
+        image = Image(
+            title=normalized_title,
+            file_path=normalized_file_path,
+            description=normalized_description,
+            img_metadata=normalized_metadata,
+        )
+
+        session.add(image)
+        session.flush()
+
+        debug_id(
+            f"[ImageService] Image staged id={image.id}, title='{normalized_title}'",
+            request_id,
+        )
+        return image
 
     @with_request_id
-    def remove(self, image_id: int) -> bool:
-        """Delete an Image by ID."""
-        with self.db_config.main_session() as session:
-            try:
-                image = session.query(Image).filter_by(id=image_id).first()
-                if image:
-                    session.delete(image)
-                    info_id(f"Deleted Image id={image_id}", None)
-                    return True
-                return False
-            except SQLAlchemyError as e:
-                error_id(f"ImageService.remove failed: {e}", None)
-                raise
+    def create_payload(
+        self,
+        session: Session,
+        *,
+        title: str,
+        file_path: str,
+        description: Optional[str] = None,
+        img_metadata: Optional[Dict[str, Any]] = None,
+        request_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Convenience helper for callers that want plain data instead of an ORM row.
+        """
+        image = self.create(
+            session,
+            title=title,
+            file_path=file_path,
+            description=description,
+            img_metadata=img_metadata,
+            request_id=request_id,
+        )
+        return self.snapshot(image) or {}
 
-    # ------------------------
-    # ADVANCED HELPERS
-    # ------------------------
-
-    @with_request_id
-    def find_related(self, image_id: int) -> Optional[Dict[str, Any]]:
-        """Return related associations for an image."""
-        with self.db_config.main_session() as session:
-            try:
-                image = session.query(Image).filter_by(id=image_id).first()
-                if not image:
-                    return None
-                return {
-                    "image": image,
-                    "downward": {
-                        "parts_positions": image.parts_position_image,
-                        "problems": image.image_problem,
-                        "tasks": image.image_task,
-                        "completed_documents": image.image_completed_document_association,
-                        "embeddings": image.image_embedding,
-                        "positions": image.image_position_association,
-                        "tools": image.tool_image_association,
-                    }
-                }
-            except SQLAlchemyError as e:
-                error_id(f"ImageService.find_related failed: {e}", None)
-                raise
+    # ---------------------------------------------------------
+    # READ
+    # ---------------------------------------------------------
 
     @with_request_id
-    def search_images(self, **kwargs) -> List[Dict[str, Any]]:
-        """Wrapper for Image.search_images (with pgvector/hybrid ranking support)."""
-        with self.db_config.main_session() as session:
-            try:
-                return Image.search_images(session=session, **kwargs)
-            except SQLAlchemyError as e:
-                error_id(f"ImageService.search_images failed: {e}", None)
-                raise
+    def get(
+        self,
+        session: Session,
+        *,
+        image_id: int,
+        request_id: Optional[str] = None,
+    ) -> Optional[Image]:
+        self._require_session(session, "get")
+
+        if image_id is None:
+            raise ValueError("image_id is required")
+
+        return session.get(Image, image_id)
 
     @with_request_id
-    def similarity(self, query_embedding, model_name="CLIPModelHandler",
-                   limit: int = 10, threshold: float = 0.7) -> List[Dict[str, Any]]:
-        """Find similar images via pgvector embedding search."""
-        with self.db_config.main_session() as session:
-            try:
-                return Image.search_similar_images_by_embedding(
-                    session=session,
-                    query_embedding=query_embedding,
-                    model_name=model_name,
-                    limit=limit,
-                    similarity_threshold=threshold
-                )
-            except SQLAlchemyError as e:
-                error_id(f"ImageService.similarity failed: {e}", None)
-                raise
+    def get_payload(
+        self,
+        session: Session,
+        *,
+        image_id: int,
+        request_id: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        image = self.get(
+            session,
+            image_id=image_id,
+            request_id=request_id,
+        )
+        return self.to_payload(image)
+
+    @with_request_id
+    def find(
+        self,
+        session: Session,
+        *,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        file_path: Optional[str] = None,
+        limit: int = 100,
+        request_id: Optional[str] = None,
+    ) -> List[Image]:
+        self._require_session(session, "find")
+
+        limit = max(1, min(int(limit or 100), 1000))
+
+        query = session.query(Image)
+
+        normalized_title = self._normalize_text(title, field_name="title", required=False) if title is not None else ""
+        normalized_description = (
+            self._normalize_text(description, field_name="description", required=False)
+            if description is not None else ""
+        )
+        normalized_file_path = (
+            self._normalize_text(file_path, field_name="file_path", required=False)
+            if file_path is not None else ""
+        )
+
+        if normalized_title:
+            query = query.filter(Image.title.ilike(f"%{normalized_title}%"))
+
+        if normalized_description:
+            query = query.filter(Image.description.ilike(f"%{normalized_description}%"))
+
+        if normalized_file_path:
+            query = query.filter(Image.file_path.ilike(f"%{normalized_file_path}%"))
+
+        results = query.limit(limit).all()
+
+        debug_id(
+            f"[ImageService] find returned {len(results)} image(s) | "
+            f"title='{normalized_title}' | file_path='{normalized_file_path}' | limit={limit}",
+            request_id,
+        )
+        return results
+
+    @with_request_id
+    def find_payloads(
+        self,
+        session: Session,
+        *,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        file_path: Optional[str] = None,
+        limit: int = 100,
+        request_id: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        images = self.find(
+            session,
+            title=title,
+            description=description,
+            file_path=file_path,
+            limit=limit,
+            request_id=request_id,
+        )
+        return [self.to_payload(image) for image in images if image is not None]
+
+    # ---------------------------------------------------------
+    # UPDATE
+    # ---------------------------------------------------------
+
+    @with_request_id
+    def update(
+        self,
+        session: Session,
+        *,
+        image_id: int,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        img_metadata: Optional[Dict[str, Any]] = None,
+        request_id: Optional[str] = None,
+    ) -> Optional[Image]:
+        self._require_session(session, "update")
+
+        if image_id is None:
+            raise ValueError("image_id is required")
+
+        image = session.get(Image, image_id)
+
+        if not image:
+            warning_id(f"[ImageService] Image id={image_id} not found", request_id)
+            return None
+
+        if title is not None:
+            image.title = self._normalize_text(title, field_name="title", required=True)
+
+        if description is not None:
+            image.description = self._normalize_text(description, field_name="description", required=False)
+
+        if img_metadata is not None:
+            image.img_metadata = self._normalize_metadata(img_metadata)
+
+        session.flush()
+
+        debug_id(f"[ImageService] Image updated id={image_id}", request_id)
+        return image
+
+    @with_request_id
+    def update_payload(
+        self,
+        session: Session,
+        *,
+        image_id: int,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        img_metadata: Optional[Dict[str, Any]] = None,
+        request_id: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        image = self.update(
+            session,
+            image_id=image_id,
+            title=title,
+            description=description,
+            img_metadata=img_metadata,
+            request_id=request_id,
+        )
+        return self.snapshot(image)
+
+    # ---------------------------------------------------------
+    # DELETE
+    # ---------------------------------------------------------
+
+    @with_request_id
+    def remove(
+        self,
+        session: Session,
+        *,
+        image_id: int,
+        request_id: Optional[str] = None,
+    ) -> bool:
+        self._require_session(session, "remove")
+
+        if image_id is None:
+            raise ValueError("image_id is required")
+
+        image = session.get(Image, image_id)
+
+        if not image:
+            warning_id(f"[ImageService] Image id={image_id} not found", request_id)
+            return False
+
+        session.delete(image)
+        session.flush()
+
+        info_id(f"[ImageService] Image staged for deletion id={image_id}", request_id)
+        return True
+
+    # ---------------------------------------------------------
+    # SERIALIZATION
+    # ---------------------------------------------------------
+
+    def serialize(self, image: Image) -> Dict[str, Any]:
+        """
+        Backward-compatible serializer name.
+        """
+        payload = self.to_payload(image)
+        return payload or {
+            "id": None,
+            "title": "",
+            "description": "",
+            "file_path": "",
+            "img_metadata": {},
+            "url": None,
+        }

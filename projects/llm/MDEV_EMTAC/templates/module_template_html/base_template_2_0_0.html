@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" class="theme-preload">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Efficient Maintenance and Technical Assistance Chatbot{% endblock %}</title>
+
+    <style>
+        html.theme-preload {
+            visibility: hidden;
+        }
+    </style>
+
+    <script>
+    (function () {
+        try {
+            const storageKey = "emtac_selected_theme";
+            const savedTheme = localStorage.getItem(storageKey);
+
+            if (!savedTheme) {
+                document.documentElement.classList.remove("theme-preload");
+                return;
+            }
+
+            let themeClass = savedTheme.trim().toLowerCase();
+
+            if (themeClass.endsWith(".css")) {
+                themeClass = themeClass.slice(0, -4);
+            }
+
+            themeClass = themeClass.replace(/_/g, "-");
+
+            if (themeClass) {
+                document.documentElement.classList.add(themeClass);
+            }
+        } catch (error) {
+            console.warn("[THEME] Failed during early class preload:", error);
+            document.documentElement.classList.remove("theme-preload");
+        }
+    })();
+    </script>
+
+    <link
+        id="base-style"
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/module_template/base.css') }}"
+    >
+    <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/help_chat/help_chat_popup.css') }}?v=help_chat_20260602_1"
+>
+
+    <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/help_chat/help_chat_admin.css') }}?v=help_chat_admin_popup_1"
+>
+
+    <link id="theme-style" rel="stylesheet" href="">
+
+    <script>
+    (function () {
+        try {
+            const storageKey = "emtac_selected_theme";
+            const savedTheme = localStorage.getItem(storageKey);
+            const themeLink = document.getElementById("theme-style");
+
+            if (!savedTheme || !themeLink) {
+                document.documentElement.classList.remove("theme-preload");
+                return;
+            }
+
+            const themeBaseUrl = "{{ url_for('static', filename='css/module_template/themes/') }}";
+            const fullHref = themeBaseUrl + savedTheme;
+
+            themeLink.onload = function () {
+                document.documentElement.classList.remove("theme-preload");
+            };
+
+            themeLink.onerror = function () {
+                console.warn("[THEME] Failed to load theme stylesheet:", fullHref);
+                document.documentElement.classList.remove("theme-preload");
+            };
+
+            themeLink.href = fullHref;
+
+            setTimeout(function () {
+                document.documentElement.classList.remove("theme-preload");
+            }, 3000);
+        } catch (error) {
+            console.warn("[THEME] Failed to preload selected theme:", error);
+            document.documentElement.classList.remove("theme-preload");
+        }
+    })();
+    </script>
+
+    {% block extra_head %}{% endblock %}
+</head>
+
+{% set resolved_user_id = session.get('user_id') or session.get('employee_id') or session.get('_user_id') or '' %}
+{% set resolved_employee_id = session.get('employee_id', '') %}
+{% set resolved_user_level = session.get('user_level', '') %}
+{% set resolved_first_name = session.get('first_name', '') %}
+{% set resolved_last_name = session.get('last_name', '') %}
+
+<body
+    data-user-id="{{ resolved_user_id }}"
+    data-employee-id="{{ resolved_employee_id }}"
+    data-user-level="{{ resolved_user_level }}"
+    data-first-name="{{ resolved_first_name }}"
+    data-last-name="{{ resolved_last_name }}"
+>
+    <input id="user_id" name="user_id" type="hidden" value="{{ resolved_user_id }}">
+    <input id="current_user_id" name="current_user_id" type="hidden" value="{{ resolved_user_id }}">
+    <input id="employee_id" name="employee_id" type="hidden" value="{{ resolved_employee_id }}">
+    <input id="current_user_level" name="current_user_level" type="hidden" value="{{ resolved_user_level }}">
+    <input id="current_first_name" name="current_first_name" type="hidden" value="{{ resolved_first_name }}">
+
+    <script>
+        window.EMTAC_CURRENT_USER_ID = {{ resolved_user_id|tojson }};
+        window.EMTAC_CURRENT_EMPLOYEE_ID = {{ resolved_employee_id|tojson }};
+        window.EMTAC_CURRENT_USER_LEVEL = {{ resolved_user_level|tojson }};
+        window.EMTAC_CURRENT_FIRST_NAME = {{ resolved_first_name|tojson }};
+        window.EMTAC_CURRENT_LAST_NAME = {{ resolved_last_name|tojson }};
+
+        console.log("[EMTAC_USER_CONTEXT]", {
+            userId: window.EMTAC_CURRENT_USER_ID,
+            employeeId: window.EMTAC_CURRENT_EMPLOYEE_ID,
+            userLevel: window.EMTAC_CURRENT_USER_LEVEL,
+            firstName: window.EMTAC_CURRENT_FIRST_NAME,
+            lastName: window.EMTAC_CURRENT_LAST_NAME
+        });
+    </script>
+
+    {% include "module_template_html/partials/top_header_with_comment_popup.html" %}
+
+    <div class="main-container">
+        {% block sidebar %}
+            {% include "module_template_html/base_sidebar.html" %}
+        {% endblock %}
+
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    {% block pagination %}{% endblock %}
+
+    {% block auxiliary_panels %}
+    {% include "module_template_html/partials/help_chat_popup.html" %}
+    {% include "module_template_html/partials/help_chat_admin_popup.html" %}
+    {% endblock %}
+
+    <script src="{{ url_for('static', filename='js/module_template/base_sidebar.js') }}?v=user_context_20260527_1"></script>
+    <script src="{{ url_for('static', filename='js/module_template/theme_selector.js') }}?v=user_context_20260527_1"></script>
+
+    <script src="{{ url_for('static', filename='js/vendor/socketio/socket.io.min.js') }}"></script>
+
+    <script src="{{ url_for('static', filename='js/help_chat/help_chat_popup.js') }}?v=help_chat_20260602_2"></script>
+    <script src="{{ url_for('static', filename='js/help_chat/help_chat_admin.js') }}?v=help_chat_admin_popup_2"></script>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Create Position – Test Form</title>
+
+    <!-- LOCAL BOOTSTRAP -->
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='bootstrap/bootstrap.min.css') }}">
+
+    <style>
+        body {
+            padding: 25px;
+        }
+        .field-block {
+            margin-bottom: 16px;
+        }
+        .new-input {
+            margin-top: 6px;
+        }
+        .asset-highlight {
+            border: 2px solid #2196F3 !important;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Create Position (Test Page)</h2>
+
+<form method="POST">
+    {{ form.hidden_tag() }}
+
+    <!-- ============================
+         CAMPUS
+    ============================== -->
+    <div class="field-block">
+        <label>Campus:</label>
+        {{ form.campus(class="form-control", id="campus") }}
+        <input type="text" name="campus_input" id="campus_input"
+               class="form-control new-input"
+               placeholder="Or type new Campus">
+    </div>
+
+    <!-- ============================
+         BUILDING
+    ============================== -->
+    <div class="field-block">
+        <label>Building:</label>
+        {{ form.building(class="form-control", id="building") }}
+        <input type="text" name="building_input" id="building_input"
+               class="form-control new-input"
+               placeholder="Or type new Building">
+    </div>
+
+    <!-- ============================
+         AREA
+    ============================== -->
+    <div class="field-block">
+        <label>Area:</label>
+        {{ form.area(class="form-control", id="area") }}
+        <input type="text" name="area_input" id="area_input"
+               class="form-control new-input"
+               placeholder="Or type new Area">
+    </div>
+
+    <!-- ============================
+         EQUIPMENT GROUP
+    ============================== -->
+    <div class="field-block">
+        <label>Equipment Group:</label>
+        {{ form.equipment_group(class="form-control", id="equipment_group") }}
+        <input type="text" name="equipment_group_input" id="equipment_group_input"
+               class="form-control new-input"
+               placeholder="Or type new Equipment Group">
+    </div>
+
+    <!-- ============================
+         MODEL
+    ============================== -->
+    <div class="field-block">
+        <label>Model:</label>
+        {{ form.model(class="form-control", id="model") }}
+        <input type="text" name="model_input" id="model_input"
+               class="form-control new-input"
+               placeholder="Or type new Model">
+
+        {{ form.model_description(class="form-control new-input", placeholder="Model description") }}
+    </div>
+
+    <!-- ============================
+         ASSET NUMBER
+    ============================== -->
+    <div class="field-block">
+        <label>Asset Number:</label>
+        {{ form.asset_number(class="form-control", id="asset_number") }}
+        <input type="text" name="asset_number_input" id="asset_number_input"
+               class="form-control new-input"
+               placeholder="Or type new Asset Number">
+
+        {{ form.asset_number_description(class="form-control new-input", placeholder="Asset description") }}
+    </div>
+
+    <!-- ============================
+         LOCATION
+    ============================== -->
+    <div class="field-block">
+        <label>Location:</label>
+        {{ form.location(class="form-control", id="location") }}
+
+        <div class="form-check mt-1">
+            <input class="form-check-input" type="checkbox" id="location_is_asset_specific">
+            <label class="form-check-label" for="location_is_asset_specific">
+                Asset-specific Location?
+            </label>
+        </div>
+
+        <input type="text" name="location_input" id="location_input"
+               class="form-control new-input"
+               placeholder="Or type new Location">
+    </div>
+
+    <!-- ============================
+         SUBASSEMBLY
+    ============================== -->
+    <div class="field-block">
+        <label>Subassembly:</label>
+        {{ form.subassembly(class="form-control", id="subassembly") }}
+
+        <div class="form-check mt-1">
+            <input class="form-check-input" type="checkbox" id="subassembly_is_asset_specific">
+            <label class="form-check-label" for="subassembly_is_asset_specific">
+                Asset-specific Subassembly?
+            </label>
+        </div>
+
+        <input type="text" name="subassembly_input" id="subassembly_input"
+               class="form-control new-input"
+               placeholder="Or type new Subassembly">
+    </div>
+
+    <!-- ============================
+         COMPONENT ASSEMBLY
+    ============================== -->
+    <div class="field-block">
+        <label>Component Assembly:</label>
+        {{ form.component_assembly(class="form-control", id="component_assembly") }}
+
+        <div class="form-check mt-1">
+            <input class="form-check-input" type="checkbox" id="component_is_asset_specific">
+            <label class="form-check-label" for="component_is_asset_specific">
+                Asset-specific Component Assembly?
+            </label>
+        </div>
+
+        <input type="text" name="component_assembly_input" id="component_assembly_input"
+               class="form-control new-input"
+               placeholder="Or type new Component Assembly">
+    </div>
+
+    <!-- ============================
+         ASSEMBLY VIEW
+    ============================== -->
+    <div class="field-block">
+        <label>Assembly View:</label>
+        {{ form.assembly_view(class="form-control", id="assembly_view") }}
+
+        <div class="form-check mt-1">
+            <input class="form-check-input" type="checkbox" id="view_is_asset_specific">
+            <label class="form-check-label" for="view_is_asset_specific">
+                Asset-specific View?
+            </label>
+        </div>
+
+        <input type="text" name="assembly_view_input" id="assembly_view_input"
+               class="form-control new-input"
+               placeholder="Or type new Assembly View">
+    </div>
+
+    <!-- ============================
+         SITE LOCATION
+    ============================== -->
+    <div class="field-block">
+        <label>Site Location:</label>
+        {{ form.site_location(class="form-control", id="site_location") }}
+
+        <input type="text" name="site_location_input" id="site_location_input"
+               class="form-control new-input"
+               placeholder="New Site Location title">
+
+        <input type="text" name="site_location_room" id="site_location_room"
+               class="form-control new-input"
+               placeholder="Room Number">
+    </div>
+
+    {{ form.submit(class="btn btn-primary mt-3", value="Create Position") }}
+</form>
+
+<hr>
+
+<h3>Recent Positions</h3>
+<ul>
+    {% for p in positions %}
+        <li>ID {{ p.id }} — {{ p }}</li>
+    {% endfor %}
+</ul>
+
+<script>
+function toggleAssetHighlight(checkboxId, selectId) {
+    const cb = document.getElementById(checkboxId);
+    const field = document.getElementById(selectId);
+
+    cb.addEventListener('change', function () {
+        if (cb.checked) {
+            field.classList.add("asset-highlight");
+        } else {
+            field.classList.remove("asset-highlight");
+        }
+    });
+}
+
+toggleAssetHighlight("location_is_asset_specific", "location");
+toggleAssetHighlight("subassembly_is_asset_specific", "subassembly");
+toggleAssetHighlight("component_is_asset_specific", "component_assembly");
+toggleAssetHighlight("view_is_asset_specific", "assembly_view");
+</script>
+
+</body>
+</html>

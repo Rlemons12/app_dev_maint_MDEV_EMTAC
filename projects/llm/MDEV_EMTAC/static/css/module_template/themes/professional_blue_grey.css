@@ -1,0 +1,844 @@
+/* static/css/module_template/themes/professional_blue_grey.css
+==================================
+PROFESSIONAL BLUE GREY THEME
+Designed to sit on top of:
+static/css/module_template/base.css
+
+Role:
+- Override standardized base theme variables
+- Preserve layout ownership in base.css
+- Provide a complete Professional Blue Grey visual identity
+- Support reusable neppy-* utility classes
+- Theme the standardized .mt-* module template layouts
+- Theme content-area form controls and dropdowns
+- Support native selects, Bootstrap dropdowns, and Select2 widgets
+
+Important:
+- Does NOT style the standalone banner system
+- Does NOT style the standalone comment popup system
+================================== */
+
+/* ==================================
+THEME VARIABLE OVERRIDES
+Apply by adding class="professional-blue-grey" to html or body
+================================== */
+html.professional-blue-grey,
+body.professional-blue-grey {
+    --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    --app-page-bg: #263238;
+    --app-page-text: #e3f2fd;
+
+    --app-sidebar-bg: rgba(55, 71, 79, 0.95);
+    --app-sidebar-text: #b3e5fc;
+    --app-sidebar-link: #e3f2fd;
+    --app-sidebar-hover: #81c784;
+    --app-sidebar-hover-bg: rgba(129, 199, 132, 0.10);
+    --app-sidebar-border: rgba(120, 144, 156, 0.28);
+
+    --app-content-bg: #37474f;
+    --app-content-text: #e3f2fd;
+
+    --app-control-bg: #546e7a;
+    --app-control-text: #e3f2fd;
+    --app-control-border: #78909c;
+    --app-control-hover-bg: #78909c;
+    --app-control-focus-ring: rgba(129, 199, 132, 0.18);
+
+    --app-results-bg: rgba(84, 110, 122, 0.30);
+    --app-results-text: #e3f2fd;
+
+    --app-thumbnail-border: rgba(120, 144, 156, 0.30);
+
+    --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.20);
+    --app-shadow-md: 0 16px 30px rgba(0, 0, 0, 0.32);
+
+    background: #263238;
+    color: var(--app-page-text);
+    line-height: 1.45;
+}
+
+/* ==================================
+NEPPY TOKEN OVERRIDES
+Supports reusable neppy-* utility classes
+================================== */
+html.professional-blue-grey,
+body.professional-blue-grey {
+    --neppy-surface: rgba(55, 71, 79, 0.88);
+    --neppy-surface-2: rgba(69, 90, 100, 0.90);
+    --neppy-line: rgba(120, 144, 156, 0.28);
+    --neppy-line-strong: rgba(176, 190, 197, 0.34);
+
+    --neppy-text: #e3f2fd;
+    --neppy-muted: #b0bec5;
+    --neppy-heading: #f5fbff;
+
+    --neppy-accent: #81c784;
+    --neppy-accent-soft: rgba(129, 199, 132, 0.14);
+    --neppy-accent-hover: #9ad6a0;
+
+    --neppy-ok: #81c784;
+    --neppy-ok-soft: rgba(129, 199, 132, 0.16);
+
+    --neppy-warn: #ffd54f;
+    --neppy-warn-soft: rgba(255, 213, 79, 0.18);
+
+    --neppy-bad: #ef9a9a;
+    --neppy-bad-soft: rgba(239, 154, 154, 0.16);
+}
+
+/* ==================================
+GLOBAL POLISH
+================================== */
+html.professional-blue-grey .sidebar,
+body.professional-blue-grey .sidebar {
+    backdrop-filter: blur(5px);
+    box-shadow: inset -1px 0 0 rgba(176, 190, 197, 0.12);
+}
+
+html.professional-blue-grey .sidebar h1,
+body.professional-blue-grey .sidebar h1 {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+}
+
+html.professional-blue-grey .welcome-message,
+body.professional-blue-grey .welcome-message {
+    color: var(--app-sidebar-text);
+    font-weight: 600;
+}
+
+html.professional-blue-grey .user-level,
+html.professional-blue-grey .model-display-section,
+body.professional-blue-grey .user-level,
+body.professional-blue-grey .model-display-section {
+    color: #cfd8dc;
+}
+
+html.professional-blue-grey .content,
+body.professional-blue-grey .content {
+    background: linear-gradient(180deg, #37474f 0%, #2f3d43 100%);
+    color: var(--app-content-text);
+}
+
+/* ==================================
+SIDEBAR NAV / INTERACTION POLISH
+================================== */
+html.professional-blue-grey .nav-link,
+html.professional-blue-grey .sidebar a,
+html.professional-blue-grey .sidebar button,
+html.professional-blue-grey .sidebar select,
+body.professional-blue-grey .nav-link,
+body.professional-blue-grey .sidebar a,
+body.professional-blue-grey .sidebar button,
+body.professional-blue-grey .sidebar select {
+    color: var(--app-sidebar-link);
+}
+
+html.professional-blue-grey .nav-link:hover,
+html.professional-blue-grey .sidebar a:hover,
+html.professional-blue-grey .sidebar button:hover,
+html.professional-blue-grey .sidebar select:hover,
+body.professional-blue-grey .nav-link:hover,
+body.professional-blue-grey .sidebar a:hover,
+body.professional-blue-grey .sidebar button:hover,
+body.professional-blue-grey .sidebar select:hover {
+    color: var(--app-sidebar-hover);
+    background-color: var(--app-sidebar-hover-bg);
+}
+
+html.professional-blue-grey .nav-link.highlight,
+body.professional-blue-grey .nav-link.highlight {
+    color: var(--app-sidebar-hover);
+    background-color: rgba(129, 199, 132, 0.20);
+    border-left: 3px solid var(--app-sidebar-hover);
+}
+
+/* ==================================
+STANDARD CONTROLS
+================================== */
+html.professional-blue-grey .toggle-button,
+body.professional-blue-grey .toggle-button {
+    background: linear-gradient(180deg, #546e7a 0%, #455a64 100%) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+    font-weight: 600;
+}
+
+html.professional-blue-grey .toggle-button:hover,
+body.professional-blue-grey .toggle-button:hover {
+    background: linear-gradient(180deg, #78909c 0%, #607d8b 100%) !important;
+    border-color: rgba(129, 199, 132, 0.35) !important;
+}
+
+html.professional-blue-grey #voice-selection,
+html.professional-blue-grey .sidebar select,
+body.professional-blue-grey #voice-selection,
+body.professional-blue-grey .sidebar select {
+    background-color: #455a64;
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 5px;
+}
+
+html.professional-blue-grey #voice-selection:focus,
+html.professional-blue-grey .sidebar select:focus,
+body.professional-blue-grey #voice-selection:focus,
+body.professional-blue-grey .sidebar select:focus {
+    outline: 2px solid rgba(129, 199, 132, 0.35);
+    outline-offset: 2px;
+}
+
+/* ==================================
+CONTENT AREA FORM CONTROLS
+Fixes white-on-white dropdowns in main panels.
+Supports:
+- Native inputs/selects/textareas
+- Bootstrap .form-control / .form-select
+- Module template .mt-panel-body controls
+- Upload/search forms
+================================== */
+html.professional-blue-grey .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.professional-blue-grey .content select,
+html.professional-blue-grey .content textarea,
+html.professional-blue-grey .content .form-control,
+html.professional-blue-grey .content .form-select,
+html.professional-blue-grey .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.professional-blue-grey .mt-panel-body select,
+html.professional-blue-grey .mt-panel-body textarea,
+html.professional-blue-grey .mt-panel-body .form-control,
+html.professional-blue-grey .mt-panel-body .form-select,
+html.professional-blue-grey .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.professional-blue-grey .upload-search-form select,
+html.professional-blue-grey .upload-search-form textarea,
+html.professional-blue-grey .upload-search-form .form-control,
+html.professional-blue-grey .upload-search-form .form-select,
+body.professional-blue-grey .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.professional-blue-grey .content select,
+body.professional-blue-grey .content textarea,
+body.professional-blue-grey .content .form-control,
+body.professional-blue-grey .content .form-select,
+body.professional-blue-grey .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.professional-blue-grey .mt-panel-body select,
+body.professional-blue-grey .mt-panel-body textarea,
+body.professional-blue-grey .mt-panel-body .form-control,
+body.professional-blue-grey .mt-panel-body .form-select,
+body.professional-blue-grey .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.professional-blue-grey .upload-search-form select,
+body.professional-blue-grey .upload-search-form textarea,
+body.professional-blue-grey .upload-search-form .form-control,
+body.professional-blue-grey .upload-search-form .form-select {
+    background-color: var(--app-control-bg) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.20);
+}
+
+html.professional-blue-grey .content input::placeholder,
+html.professional-blue-grey .content textarea::placeholder,
+html.professional-blue-grey .mt-panel-body input::placeholder,
+html.professional-blue-grey .mt-panel-body textarea::placeholder,
+html.professional-blue-grey .upload-search-form input::placeholder,
+html.professional-blue-grey .upload-search-form textarea::placeholder,
+body.professional-blue-grey .content input::placeholder,
+body.professional-blue-grey .content textarea::placeholder,
+body.professional-blue-grey .mt-panel-body input::placeholder,
+body.professional-blue-grey .mt-panel-body textarea::placeholder,
+body.professional-blue-grey .upload-search-form input::placeholder,
+body.professional-blue-grey .upload-search-form textarea::placeholder {
+    color: rgba(227, 242, 253, 0.68);
+}
+
+html.professional-blue-grey .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.professional-blue-grey .content select:hover,
+html.professional-blue-grey .content textarea:hover,
+html.professional-blue-grey .content .form-control:hover,
+html.professional-blue-grey .content .form-select:hover,
+html.professional-blue-grey .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.professional-blue-grey .mt-panel-body select:hover,
+html.professional-blue-grey .mt-panel-body textarea:hover,
+html.professional-blue-grey .mt-panel-body .form-control:hover,
+html.professional-blue-grey .mt-panel-body .form-select:hover,
+html.professional-blue-grey .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.professional-blue-grey .upload-search-form select:hover,
+html.professional-blue-grey .upload-search-form textarea:hover,
+html.professional-blue-grey .upload-search-form .form-control:hover,
+html.professional-blue-grey .upload-search-form .form-select:hover,
+body.professional-blue-grey .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.professional-blue-grey .content select:hover,
+body.professional-blue-grey .content textarea:hover,
+body.professional-blue-grey .content .form-control:hover,
+body.professional-blue-grey .content .form-select:hover,
+body.professional-blue-grey .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.professional-blue-grey .mt-panel-body select:hover,
+body.professional-blue-grey .mt-panel-body textarea:hover,
+body.professional-blue-grey .mt-panel-body .form-control:hover,
+body.professional-blue-grey .mt-panel-body .form-select:hover,
+body.professional-blue-grey .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.professional-blue-grey .upload-search-form select:hover,
+body.professional-blue-grey .upload-search-form textarea:hover,
+body.professional-blue-grey .upload-search-form .form-control:hover,
+body.professional-blue-grey .upload-search-form .form-select:hover {
+    background-color: var(--app-control-hover-bg) !important;
+    border-color: rgba(129, 199, 132, 0.42) !important;
+}
+
+html.professional-blue-grey .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.professional-blue-grey .content select:focus,
+html.professional-blue-grey .content textarea:focus,
+html.professional-blue-grey .content .form-control:focus,
+html.professional-blue-grey .content .form-select:focus,
+html.professional-blue-grey .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.professional-blue-grey .mt-panel-body select:focus,
+html.professional-blue-grey .mt-panel-body textarea:focus,
+html.professional-blue-grey .mt-panel-body .form-control:focus,
+html.professional-blue-grey .mt-panel-body .form-select:focus,
+html.professional-blue-grey .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.professional-blue-grey .upload-search-form select:focus,
+html.professional-blue-grey .upload-search-form textarea:focus,
+html.professional-blue-grey .upload-search-form .form-control:focus,
+html.professional-blue-grey .upload-search-form .form-select:focus,
+body.professional-blue-grey .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.professional-blue-grey .content select:focus,
+body.professional-blue-grey .content textarea:focus,
+body.professional-blue-grey .content .form-control:focus,
+body.professional-blue-grey .content .form-select:focus,
+body.professional-blue-grey .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.professional-blue-grey .mt-panel-body select:focus,
+body.professional-blue-grey .mt-panel-body textarea:focus,
+body.professional-blue-grey .mt-panel-body .form-control:focus,
+body.professional-blue-grey .mt-panel-body .form-select:focus,
+body.professional-blue-grey .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.professional-blue-grey .upload-search-form select:focus,
+body.professional-blue-grey .upload-search-form textarea:focus,
+body.professional-blue-grey .upload-search-form .form-control:focus,
+body.professional-blue-grey .upload-search-form .form-select:focus {
+    outline: none;
+    border-color: var(--neppy-accent) !important;
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+/* Native select dropdown list */
+html.professional-blue-grey .content select option,
+html.professional-blue-grey .mt-panel-body select option,
+html.professional-blue-grey .upload-search-form select option,
+body.professional-blue-grey .content select option,
+body.professional-blue-grey .mt-panel-body select option,
+body.professional-blue-grey .upload-search-form select option {
+    background: #455a64;
+    color: #e3f2fd;
+}
+
+/* Native selected option state */
+html.professional-blue-grey .content select option:checked,
+html.professional-blue-grey .mt-panel-body select option:checked,
+html.professional-blue-grey .upload-search-form select option:checked,
+body.professional-blue-grey .content select option:checked,
+body.professional-blue-grey .mt-panel-body select option:checked,
+body.professional-blue-grey .upload-search-form select option:checked {
+    background: #81c784;
+    color: #263238;
+}
+
+/* Disabled states */
+html.professional-blue-grey .content input:disabled,
+html.professional-blue-grey .content select:disabled,
+html.professional-blue-grey .content textarea:disabled,
+html.professional-blue-grey .content .form-control:disabled,
+html.professional-blue-grey .content .form-select:disabled,
+html.professional-blue-grey .mt-panel-body input:disabled,
+html.professional-blue-grey .mt-panel-body select:disabled,
+html.professional-blue-grey .mt-panel-body textarea:disabled,
+html.professional-blue-grey .mt-panel-body .form-control:disabled,
+html.professional-blue-grey .mt-panel-body .form-select:disabled,
+html.professional-blue-grey .upload-search-form input:disabled,
+html.professional-blue-grey .upload-search-form select:disabled,
+html.professional-blue-grey .upload-search-form textarea:disabled,
+html.professional-blue-grey .upload-search-form .form-control:disabled,
+html.professional-blue-grey .upload-search-form .form-select:disabled,
+body.professional-blue-grey .content input:disabled,
+body.professional-blue-grey .content select:disabled,
+body.professional-blue-grey .content textarea:disabled,
+body.professional-blue-grey .content .form-control:disabled,
+body.professional-blue-grey .content .form-select:disabled,
+body.professional-blue-grey .mt-panel-body input:disabled,
+body.professional-blue-grey .mt-panel-body select:disabled,
+body.professional-blue-grey .mt-panel-body textarea:disabled,
+body.professional-blue-grey .mt-panel-body .form-control:disabled,
+body.professional-blue-grey .mt-panel-body .form-select:disabled,
+body.professional-blue-grey .upload-search-form input:disabled,
+body.professional-blue-grey .upload-search-form select:disabled,
+body.professional-blue-grey .upload-search-form textarea:disabled,
+body.professional-blue-grey .upload-search-form .form-control:disabled,
+body.professional-blue-grey .upload-search-form .form-select:disabled {
+    background: rgba(84, 110, 122, 0.62) !important;
+    color: rgba(227, 242, 253, 0.58) !important;
+    cursor: not-allowed;
+}
+
+/* ==================================
+CONTENT AREA BUTTONS
+================================== */
+html.professional-blue-grey .content button:not(.mt-toggle-btn):not(.toggle-button),
+html.professional-blue-grey .content input[type="submit"],
+html.professional-blue-grey .content input[type="button"],
+html.professional-blue-grey .content input[type="reset"],
+html.professional-blue-grey .content .btn,
+body.professional-blue-grey .content button:not(.mt-toggle-btn):not(.toggle-button),
+body.professional-blue-grey .content input[type="submit"],
+body.professional-blue-grey .content input[type="button"],
+body.professional-blue-grey .content input[type="reset"],
+body.professional-blue-grey .content .btn {
+    background: linear-gradient(180deg, #546e7a 0%, #455a64 100%);
+    color: #e3f2fd;
+    border: 1px solid var(--app-control-border);
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+
+html.professional-blue-grey .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+html.professional-blue-grey .content input[type="submit"]:hover,
+html.professional-blue-grey .content input[type="button"]:hover,
+html.professional-blue-grey .content input[type="reset"]:hover,
+html.professional-blue-grey .content .btn:hover,
+body.professional-blue-grey .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+body.professional-blue-grey .content input[type="submit"]:hover,
+body.professional-blue-grey .content input[type="button"]:hover,
+body.professional-blue-grey .content input[type="reset"]:hover,
+body.professional-blue-grey .content .btn:hover {
+    border-color: rgba(129, 199, 132, 0.42);
+    background: linear-gradient(180deg, #78909c 0%, #607d8b 100%);
+    color: #e3f2fd;
+}
+
+/* ==================================
+BOOTSTRAP DROPDOWN MENU SUPPORT
+Needed when dropdowns are button menus instead
+of native <select> elements.
+================================== */
+html.professional-blue-grey .content .dropdown-menu,
+html.professional-blue-grey .mt-panel-body .dropdown-menu,
+html.professional-blue-grey .upload-search-form .dropdown-menu,
+body.professional-blue-grey .content .dropdown-menu,
+body.professional-blue-grey .mt-panel-body .dropdown-menu,
+body.professional-blue-grey .upload-search-form .dropdown-menu {
+    background: #455a64;
+    color: #e3f2fd;
+    border: 1px solid var(--app-control-border);
+    border-radius: 8px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.32);
+}
+
+html.professional-blue-grey .content .dropdown-item,
+html.professional-blue-grey .mt-panel-body .dropdown-item,
+html.professional-blue-grey .upload-search-form .dropdown-item,
+body.professional-blue-grey .content .dropdown-item,
+body.professional-blue-grey .mt-panel-body .dropdown-item,
+body.professional-blue-grey .upload-search-form .dropdown-item {
+    color: #e3f2fd;
+}
+
+html.professional-blue-grey .content .dropdown-item:hover,
+html.professional-blue-grey .content .dropdown-item:focus,
+html.professional-blue-grey .mt-panel-body .dropdown-item:hover,
+html.professional-blue-grey .mt-panel-body .dropdown-item:focus,
+html.professional-blue-grey .upload-search-form .dropdown-item:hover,
+html.professional-blue-grey .upload-search-form .dropdown-item:focus,
+body.professional-blue-grey .content .dropdown-item:hover,
+body.professional-blue-grey .content .dropdown-item:focus,
+body.professional-blue-grey .mt-panel-body .dropdown-item:hover,
+body.professional-blue-grey .mt-panel-body .dropdown-item:focus,
+body.professional-blue-grey .upload-search-form .dropdown-item:hover,
+body.professional-blue-grey .upload-search-form .dropdown-item:focus {
+    background: #81c784;
+    color: #263238;
+}
+
+html.professional-blue-grey .content .dropdown-item.active,
+html.professional-blue-grey .content .dropdown-item:active,
+html.professional-blue-grey .mt-panel-body .dropdown-item.active,
+html.professional-blue-grey .mt-panel-body .dropdown-item:active,
+html.professional-blue-grey .upload-search-form .dropdown-item.active,
+html.professional-blue-grey .upload-search-form .dropdown-item:active,
+body.professional-blue-grey .content .dropdown-item.active,
+body.professional-blue-grey .content .dropdown-item:active,
+body.professional-blue-grey .mt-panel-body .dropdown-item.active,
+body.professional-blue-grey .mt-panel-body .dropdown-item:active,
+body.professional-blue-grey .upload-search-form .dropdown-item.active,
+body.professional-blue-grey .upload-search-form .dropdown-item:active {
+    background: rgba(129, 199, 132, 0.22);
+    color: #e3f2fd;
+}
+
+/* ==================================
+SELECT2 SUPPORT
+Needed when dropdowns are enhanced by Select2.
+Select2 dropdowns may be appended near <body>,
+so these selectors are scoped to the theme root,
+not only to .content.
+================================== */
+html.professional-blue-grey .select2-container,
+body.professional-blue-grey .select2-container {
+    color: #e3f2fd;
+}
+
+html.professional-blue-grey .select2-container .select2-selection--single,
+html.professional-blue-grey .select2-container .select2-selection--multiple,
+body.professional-blue-grey .select2-container .select2-selection--single,
+body.professional-blue-grey .select2-container .select2-selection--multiple {
+    background: var(--app-control-bg) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    min-height: 38px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.20);
+}
+
+html.professional-blue-grey .select2-container .select2-selection--single:hover,
+html.professional-blue-grey .select2-container .select2-selection--multiple:hover,
+body.professional-blue-grey .select2-container .select2-selection--single:hover,
+body.professional-blue-grey .select2-container .select2-selection--multiple:hover {
+    background: var(--app-control-hover-bg) !important;
+    border-color: rgba(129, 199, 132, 0.42) !important;
+}
+
+html.professional-blue-grey .select2-container--default.select2-container--focus .select2-selection--multiple,
+html.professional-blue-grey .select2-container--default.select2-container--open .select2-selection--single,
+html.professional-blue-grey .select2-container--default.select2-container--open .select2-selection--multiple,
+body.professional-blue-grey .select2-container--default.select2-container--focus .select2-selection--multiple,
+body.professional-blue-grey .select2-container--default.select2-container--open .select2-selection--single,
+body.professional-blue-grey .select2-container--default.select2-container--open .select2-selection--multiple {
+    border-color: var(--neppy-accent) !important;
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+html.professional-blue-grey .select2-container--default .select2-selection--single .select2-selection__rendered,
+html.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.professional-blue-grey .select2-container--default .select2-selection--single .select2-selection__rendered,
+body.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    color: #e3f2fd !important;
+    line-height: 36px;
+}
+
+html.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    line-height: normal;
+    padding-top: 4px;
+}
+
+html.professional-blue-grey .select2-container--default .select2-selection--single .select2-selection__placeholder,
+html.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__placeholder,
+body.professional-blue-grey .select2-container--default .select2-selection--single .select2-selection__placeholder,
+body.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__placeholder {
+    color: rgba(227, 242, 253, 0.68) !important;
+}
+
+html.professional-blue-grey .select2-container--default .select2-selection--single .select2-selection__arrow b,
+body.professional-blue-grey .select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: #e3f2fd transparent transparent transparent;
+}
+
+html.professional-blue-grey .select2-dropdown,
+body.professional-blue-grey .select2-dropdown {
+    background: #455a64 !important;
+    color: #e3f2fd !important;
+    border: 1px solid var(--app-control-border) !important;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.32);
+}
+
+html.professional-blue-grey .select2-container--default .select2-search--dropdown .select2-search__field,
+body.professional-blue-grey .select2-container--default .select2-search--dropdown .select2-search__field {
+    background: #37474f !important;
+    color: #e3f2fd !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 4px;
+}
+
+html.professional-blue-grey .select2-results__option,
+body.professional-blue-grey .select2-results__option {
+    background: #455a64;
+    color: #e3f2fd;
+}
+
+html.professional-blue-grey .select2-container--default .select2-results__option--highlighted[aria-selected],
+body.professional-blue-grey .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background: #81c784 !important;
+    color: #263238 !important;
+}
+
+html.professional-blue-grey .select2-container--default .select2-results__option[aria-selected="true"],
+body.professional-blue-grey .select2-container--default .select2-results__option[aria-selected="true"] {
+    background: rgba(129, 199, 132, 0.22) !important;
+    color: #e3f2fd !important;
+}
+
+html.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__choice,
+body.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background: rgba(129, 199, 132, 0.16) !important;
+    color: #e3f2fd !important;
+    border: 1px solid rgba(129, 199, 132, 0.28) !important;
+}
+
+html.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__choice__remove,
+body.professional-blue-grey .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #9ad6a0 !important;
+}
+
+/* ==================================
+RESULTS / PANELS / THUMBNAILS
+================================== */
+html.professional-blue-grey .results-container,
+body.professional-blue-grey .results-container {
+    background: var(--app-results-bg);
+    border: 1px solid #546e7a;
+    border-radius: 10px;
+    box-shadow: var(--app-shadow-md);
+    backdrop-filter: blur(4px);
+}
+
+html.professional-blue-grey #drawingList,
+body.professional-blue-grey #drawingList {
+    color: var(--app-results-text);
+}
+
+html.professional-blue-grey .thumbnail,
+body.professional-blue-grey .thumbnail {
+    background: rgba(69, 90, 100, 0.92);
+    border: 1px solid var(--app-thumbnail-border);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+
+/* ==================================
+LINKS / SPECIAL STATES
+Scoped so they do NOT affect the banner
+================================== */
+html.professional-blue-grey .content a,
+html.professional-blue-grey .sidebar a,
+body.professional-blue-grey .content a,
+body.professional-blue-grey .sidebar a {
+    color: #b3e5fc;
+}
+
+html.professional-blue-grey .content a:hover,
+html.professional-blue-grey .sidebar a:hover,
+body.professional-blue-grey .content a:hover,
+body.professional-blue-grey .sidebar a:hover {
+    color: var(--app-sidebar-hover);
+}
+
+html.professional-blue-grey .logout-button,
+body.professional-blue-grey .logout-button {
+    color: #ffcc80 !important;
+}
+
+/* ==================================
+ACCESSIBILITY / FOCUS
+No hamburger styling here.
+Hamburger focus belongs to banner.css / banner theme only.
+================================== */
+html.professional-blue-grey .toggle-button:focus-visible,
+html.professional-blue-grey .sidebar button:focus-visible,
+html.professional-blue-grey .sidebar a:focus-visible,
+html.professional-blue-grey .sidebar select:focus-visible,
+html.professional-blue-grey .mt-toggle-btn:focus-visible,
+html.professional-blue-grey .neppy-btn:focus-visible,
+html.professional-blue-grey .neppy-input:focus-visible,
+html.professional-blue-grey .neppy-select:focus-visible,
+html.professional-blue-grey .neppy-textarea:focus-visible,
+html.professional-blue-grey .content button:focus-visible,
+html.professional-blue-grey .content input:focus-visible,
+html.professional-blue-grey .content select:focus-visible,
+html.professional-blue-grey .content textarea:focus-visible,
+html.professional-blue-grey .content .form-control:focus-visible,
+html.professional-blue-grey .content .form-select:focus-visible,
+body.professional-blue-grey .toggle-button:focus-visible,
+body.professional-blue-grey .sidebar button:focus-visible,
+body.professional-blue-grey .sidebar a:focus-visible,
+body.professional-blue-grey .sidebar select:focus-visible,
+body.professional-blue-grey .mt-toggle-btn:focus-visible,
+body.professional-blue-grey .neppy-btn:focus-visible,
+body.professional-blue-grey .neppy-input:focus-visible,
+body.professional-blue-grey .neppy-select:focus-visible,
+body.professional-blue-grey .neppy-textarea:focus-visible,
+body.professional-blue-grey .content button:focus-visible,
+body.professional-blue-grey .content input:focus-visible,
+body.professional-blue-grey .content select:focus-visible,
+body.professional-blue-grey .content textarea:focus-visible,
+body.professional-blue-grey .content .form-control:focus-visible,
+body.professional-blue-grey .content .form-select:focus-visible {
+    outline: 2px solid rgba(129, 199, 132, 0.55);
+    outline-offset: 2px;
+}
+
+/* ==================================
+NEPPY UTILITY CLASS SUPPORT
+================================== */
+html.professional-blue-grey .neppy-card,
+html.professional-blue-grey .neppy-card-soft,
+body.professional-blue-grey .neppy-card,
+body.professional-blue-grey .neppy-card-soft {
+    background: var(--neppy-surface);
+    border-color: var(--neppy-line);
+}
+
+html.professional-blue-grey .neppy-title,
+html.professional-blue-grey .neppy-panel-title,
+body.professional-blue-grey .neppy-title,
+body.professional-blue-grey .neppy-panel-title {
+    color: var(--neppy-heading);
+}
+
+html.professional-blue-grey .neppy-subtitle,
+html.professional-blue-grey .neppy-label,
+html.professional-blue-grey .neppy-text-muted,
+body.professional-blue-grey .neppy-subtitle,
+body.professional-blue-grey .neppy-label,
+body.professional-blue-grey .neppy-text-muted {
+    color: var(--neppy-muted) !important;
+}
+
+html.professional-blue-grey .neppy-btn,
+body.professional-blue-grey .neppy-btn {
+    background: linear-gradient(180deg, #546e7a 0%, #455a64 100%);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+html.professional-blue-grey .neppy-btn:hover,
+body.professional-blue-grey .neppy-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, #78909c 0%, #607d8b 100%);
+}
+
+html.professional-blue-grey .neppy-input,
+html.professional-blue-grey .neppy-select,
+html.professional-blue-grey .neppy-textarea,
+html.professional-blue-grey .neppy-mono,
+html.professional-blue-grey .neppy-code,
+body.professional-blue-grey .neppy-input,
+body.professional-blue-grey .neppy-select,
+body.professional-blue-grey .neppy-textarea,
+body.professional-blue-grey .neppy-mono,
+body.professional-blue-grey .neppy-code {
+    background: #455a64;
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+html.professional-blue-grey .neppy-input:focus,
+html.professional-blue-grey .neppy-select:focus,
+html.professional-blue-grey .neppy-textarea:focus,
+body.professional-blue-grey .neppy-input:focus,
+body.professional-blue-grey .neppy-select:focus,
+body.professional-blue-grey .neppy-textarea:focus {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
+}
+
+/* ==================================
+MODULE TEMPLATE PANEL LAYOUT THEME
+Styles the standardized .mt-* module templates
+================================== */
+html.professional-blue-grey .mt-layout,
+body.professional-blue-grey .mt-layout {
+    color: var(--neppy-text);
+}
+
+html.professional-blue-grey .mt-layout-header,
+body.professional-blue-grey .mt-layout-header {
+    border-bottom: 2px solid rgba(129, 199, 132, 0.22);
+}
+
+html.professional-blue-grey .mt-layout-title,
+body.professional-blue-grey .mt-layout-title {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+}
+
+html.professional-blue-grey .mt-layout-description,
+body.professional-blue-grey .mt-layout-description {
+    color: var(--neppy-muted);
+}
+
+html.professional-blue-grey .mt-panel,
+body.professional-blue-grey .mt-panel {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg, 14px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(4px);
+}
+
+html.professional-blue-grey .mt-panel:hover,
+body.professional-blue-grey .mt-panel:hover {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+}
+
+html.professional-blue-grey .mt-panel-header,
+body.professional-blue-grey .mt-panel-header {
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--neppy-line);
+}
+
+html.professional-blue-grey .mt-panel-title,
+body.professional-blue-grey .mt-panel-title {
+    color: var(--neppy-accent);
+}
+
+html.professional-blue-grey .mt-toggle-btn,
+body.professional-blue-grey .mt-toggle-btn {
+    background: linear-gradient(180deg, #546e7a 0%, #455a64 100%);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+}
+
+html.professional-blue-grey .mt-toggle-btn:hover,
+body.professional-blue-grey .mt-toggle-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, #78909c 0%, #607d8b 100%);
+    color: var(--neppy-text);
+}
+
+html.professional-blue-grey .mt-panel.is-collapsed .mt-toggle-btn,
+body.professional-blue-grey .mt-panel.is-collapsed .mt-toggle-btn {
+    background: linear-gradient(180deg, #7a2f3f 0%, #5e2431 100%);
+    border-color: rgba(239, 154, 154, 0.35);
+    color: #ffffff;
+}
+
+html.professional-blue-grey .mt-panel-body,
+body.professional-blue-grey .mt-panel-body {
+    color: var(--neppy-text);
+}
+
+html.professional-blue-grey .mt-panel-content,
+body.professional-blue-grey .mt-panel-content {
+    gap: 12px;
+}
+
+html.professional-blue-grey .mt-item,
+body.professional-blue-grey .mt-item {
+    background: rgba(69, 90, 100, 0.92);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+}
+
+html.professional-blue-grey .mt-item:hover,
+body.professional-blue-grey .mt-item:hover {
+    background: rgba(129, 199, 132, 0.08);
+    border-color: var(--neppy-accent);
+}
+
+html.professional-blue-grey .mt-item.is-active,
+body.professional-blue-grey .mt-item.is-active {
+    background: rgba(129, 199, 132, 0.16);
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 1px rgba(129, 199, 132, 0.10);
+}

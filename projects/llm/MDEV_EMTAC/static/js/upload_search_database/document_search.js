@@ -1,105 +1,282 @@
-function populateCompleteDocumentDropdowns() {
-    // Define an array of dropdown elements along with their corresponding data keys
-    var documentDropdowns = [
-        { element: $('#searchdocument_areaDropdown'), dataKey: 'searchdocument_area' },
-        { element: $('#searchdocument_equipmentGroupDropdown'), dataKey: 'searchdocument_equipmentgroup' },
-        { element: $('#searchdocument_modelDropdown'), dataKey: 'searchdocument_model' },
-        { element: $('#searchdocument_assetNumberDropdown'), dataKey: 'searchdocument_asset_number' },
-        { element: $('#searchdocument_locationDropdown'), dataKey: 'searchdocument_location' }
-    ];
+// ============================================================
+// Complete Document Search Dropdown Loader
+// WebView-safe / reload-safe version
+//
+// Handles:
+// - Area
+// - Equipment Group
+// - Model
+// - Asset Number
+// - Location
+//
+// This file only populates dropdowns.
+// It does not open document/image/drawing links.
+// ============================================================
 
-    // AJAX request to fetch data for CompleteDocument form dropdowns
-    $.ajax({
-        url: '/get_completedocument_list_data_bp', // URL to fetch data from
-        type: 'GET',
-        success: function(data) {
-            // Populate areas dropdown
-            var areaDropdown = $('#searchdocument_areaDropdown');
-            areaDropdown.empty(); // Clear existing options
-            $.each(data['areas'], function(index, area) {
-                areaDropdown.append('<option value="' + area.id + '">' + area.name + '</option>');
-            });
+(function () {
+    "use strict";
 
-            // Event listener for area dropdown change
-            areaDropdown.change(function() {
-                var selectedAreaId = $(this).val();
-                var equipmentGroupDropdown = $('#searchdocument_equipmentGroupDropdown');
-                equipmentGroupDropdown.empty(); // Clear existing options
+    const LOG_PREFIX = "[CompleteDocumentDropdowns]";
 
-                // Add a placeholder option
-                equipmentGroupDropdown.append('<option value="">Select...</option>');
+    const SELECTORS = {
+        area: "#searchdocument_areaDropdown",
+        equipmentGroup: "#searchdocument_equipmentGroupDropdown",
+        model: "#searchdocument_modelDropdown",
+        assetNumber: "#searchdocument_assetNumberDropdown",
+        location: "#searchdocument_locationDropdown",
+    };
 
-                // Populate equipment group dropdown with associated groups based on selected area
-                $.each(data['equipment_groups'], function(index, group) {
-                    if (group.area_id == selectedAreaId) {
-                        equipmentGroupDropdown.append('<option value="' + group.id + '">' + group.name + '</option>');
-                    }
-                });
-                equipmentGroupDropdown.change(); // Trigger change event for equipment group dropdown
-            });
+    const API_URL = "/get_completedocument_list_data_bp";
 
-            // Event listener for equipment group dropdown change
-            $('#searchdocument_equipmentGroupDropdown').change(function() {
-                var selectedGroupId = $(this).val();
-                var modelDropdown = $('#searchdocument_modelDropdown');
-                modelDropdown.empty(); // Clear existing options
+    let cachedDropdownData = null;
 
-                // Add a placeholder option
-                modelDropdown.append('<option value="">Select...</option>');
+    function asArray(value) {
+        return Array.isArray(value) ? value : [];
+    }
 
-                // Populate model dropdown with associated models based on selected equipment group
-                $.each(data['models'], function(index, model) {
-                    if (model.equipment_group_id == selectedGroupId) {
-                        modelDropdown.append('<option value="' + model.id + '">' + model.name + '</option>');
-                    }
-                });
-                modelDropdown.change(); // Trigger change event for model dropdown
-            });
-
-            // Event listener for model dropdown change
-            $('#searchdocument_modelDropdown').change(function() {
-                var selectedModelId = $(this).val();
-                var assetNumberDropdown = $('#searchdocument_assetNumberDropdown');
-                assetNumberDropdown.empty(); // Clear existing options
-
-                // Add a placeholder option
-                assetNumberDropdown.append('<option value="">Select...</option>');
-
-                // Populate asset number dropdown with associated asset numbers based on selected model
-                $.each(data['asset_numbers'], function(index, assetNumber) {
-                    if (assetNumber.model_id == selectedModelId) {
-                        assetNumberDropdown.append('<option value="' + assetNumber.id + '">' + assetNumber.number + '</option>');
-                    }
-                });
-                assetNumberDropdown.change(); // Trigger change event for asset number dropdown
-
-                // Populate location dropdown with associated locations based on selected model
-                var locationDropdown = $('#searchdocument_locationDropdown');
-                locationDropdown.empty(); // Clear existing options
-
-                // Add a placeholder option
-                locationDropdown.append('<option value="">Select...</option>');
-
-                $.each(data['locations'], function(index, location) {
-                    if (location.model_id == selectedModelId) {
-                        locationDropdown.append('<option value="' + location.id + '">' + location.name + '</option>');
-                    }
-                });
-                // Initialize Select2 or any other necessary actions
-
-                locationDropdown.select2(), assetNumberDropdown.select2(), areaDropdown.select2();
-            });
-
-            // Call change event to populate equipment group dropdown initially based on the default selected area
-            $('#searchdocument_areaDropdown').change();
-        },
-        error: function(xhr, status, error) {
-            console.error('Error fetching data:', error);
+    function getDropdownDataArray(data, key) {
+        if (!data || typeof data !== "object") {
+            return [];
         }
-    });
-}
 
-$(document).ready(function() {
-    console.log("Document ready. Calling populateCompleteDocumentDropdowns()");
-    populateCompleteDocumentDropdowns(); // Corrected function name
-});
+        return asArray(data[key]);
+    }
+
+    function resetDropdown($dropdown, placeholderText) {
+        if (!$dropdown || !$dropdown.length) {
+            return;
+        }
+
+        $dropdown.empty();
+        $dropdown.append(
+            $("<option>", {
+                value: "",
+                text: placeholderText || "Select...",
+            })
+        );
+    }
+
+    function appendOption($dropdown, value, text) {
+        $dropdown.append(
+            $("<option>", {
+                value: value == null ? "" : String(value),
+                text: text == null || String(text).trim() === "" ? "Unnamed" : String(text),
+            })
+        );
+    }
+
+    function initSelect2($dropdown, placeholderText) {
+        if (!$dropdown || !$dropdown.length) {
+            return;
+        }
+
+        if (!$.fn || typeof $.fn.select2 !== "function") {
+            return;
+        }
+
+        try {
+            if ($dropdown.hasClass("select2-hidden-accessible")) {
+                $dropdown.select2("destroy");
+            }
+
+            $dropdown.select2({
+                width: "100%",
+                placeholder: placeholderText || "Select...",
+                allowClear: true,
+            });
+        } catch (err) {
+            console.warn(`${LOG_PREFIX} Select2 initialization failed:`, err);
+        }
+    }
+
+    function initializeSelect2Controls() {
+        initSelect2($(SELECTORS.area), "Select Area...");
+        initSelect2($(SELECTORS.equipmentGroup), "Select Equipment Group...");
+        initSelect2($(SELECTORS.model), "Select Model...");
+        initSelect2($(SELECTORS.assetNumber), "Select Asset Number...");
+        initSelect2($(SELECTORS.location), "Select Location...");
+    }
+
+    function populateAreas(data) {
+        const $areaDropdown = $(SELECTORS.area);
+
+        resetDropdown($areaDropdown, "Select Area...");
+
+        getDropdownDataArray(data, "areas").forEach(area => {
+            appendOption(
+                $areaDropdown,
+                area.id,
+                area.name
+            );
+        });
+
+        initSelect2($areaDropdown, "Select Area...");
+    }
+
+    function populateEquipmentGroupsForArea(areaId) {
+        const data = cachedDropdownData || {};
+        const $equipmentGroupDropdown = $(SELECTORS.equipmentGroup);
+
+        resetDropdown($equipmentGroupDropdown, "Select Equipment Group...");
+
+        getDropdownDataArray(data, "equipment_groups").forEach(group => {
+            if (String(group.area_id) === String(areaId)) {
+                appendOption(
+                    $equipmentGroupDropdown,
+                    group.id,
+                    group.name
+                );
+            }
+        });
+
+        initSelect2($equipmentGroupDropdown, "Select Equipment Group...");
+
+        // Reset child dropdowns when parent changes.
+        populateModelsForEquipmentGroup("");
+    }
+
+    function populateModelsForEquipmentGroup(equipmentGroupId) {
+        const data = cachedDropdownData || {};
+        const $modelDropdown = $(SELECTORS.model);
+
+        resetDropdown($modelDropdown, "Select Model...");
+
+        getDropdownDataArray(data, "models").forEach(model => {
+            if (String(model.equipment_group_id) === String(equipmentGroupId)) {
+                appendOption(
+                    $modelDropdown,
+                    model.id,
+                    model.name
+                );
+            }
+        });
+
+        initSelect2($modelDropdown, "Select Model...");
+
+        // Reset child dropdowns when parent changes.
+        populateAssetNumbersForModel("");
+        populateLocationsForModel("");
+    }
+
+    function populateAssetNumbersForModel(modelId) {
+        const data = cachedDropdownData || {};
+        const $assetNumberDropdown = $(SELECTORS.assetNumber);
+
+        resetDropdown($assetNumberDropdown, "Select Asset Number...");
+
+        getDropdownDataArray(data, "asset_numbers").forEach(assetNumber => {
+            if (String(assetNumber.model_id) === String(modelId)) {
+                appendOption(
+                    $assetNumberDropdown,
+                    assetNumber.id,
+                    assetNumber.number || assetNumber.name
+                );
+            }
+        });
+
+        initSelect2($assetNumberDropdown, "Select Asset Number...");
+    }
+
+    function populateLocationsForModel(modelId) {
+        const data = cachedDropdownData || {};
+        const $locationDropdown = $(SELECTORS.location);
+
+        resetDropdown($locationDropdown, "Select Location...");
+
+        getDropdownDataArray(data, "locations").forEach(location => {
+            if (String(location.model_id) === String(modelId)) {
+                appendOption(
+                    $locationDropdown,
+                    location.id,
+                    location.name
+                );
+            }
+        });
+
+        initSelect2($locationDropdown, "Select Location...");
+    }
+
+    function bindDropdownEvents() {
+        const $areaDropdown = $(SELECTORS.area);
+        const $equipmentGroupDropdown = $(SELECTORS.equipmentGroup);
+        const $modelDropdown = $(SELECTORS.model);
+
+        /*
+         * Namespace the handlers so repeated script loads do not stack duplicate
+         * change events.
+         */
+        $areaDropdown
+            .off("change.emtacCompleteDocument")
+            .on("change.emtacCompleteDocument", function () {
+                const selectedAreaId = $(this).val();
+                populateEquipmentGroupsForArea(selectedAreaId);
+            });
+
+        $equipmentGroupDropdown
+            .off("change.emtacCompleteDocument")
+            .on("change.emtacCompleteDocument", function () {
+                const selectedGroupId = $(this).val();
+                populateModelsForEquipmentGroup(selectedGroupId);
+            });
+
+        $modelDropdown
+            .off("change.emtacCompleteDocument")
+            .on("change.emtacCompleteDocument", function () {
+                const selectedModelId = $(this).val();
+                populateAssetNumbersForModel(selectedModelId);
+                populateLocationsForModel(selectedModelId);
+            });
+    }
+
+    function clearAllDropdowns() {
+        resetDropdown($(SELECTORS.area), "Select Area...");
+        resetDropdown($(SELECTORS.equipmentGroup), "Select Equipment Group...");
+        resetDropdown($(SELECTORS.model), "Select Model...");
+        resetDropdown($(SELECTORS.assetNumber), "Select Asset Number...");
+        resetDropdown($(SELECTORS.location), "Select Location...");
+        initializeSelect2Controls();
+    }
+
+    function populateCompleteDocumentDropdowns() {
+        console.log(`${LOG_PREFIX} Loading dropdown data...`);
+
+        clearAllDropdowns();
+
+        $.ajax({
+            url: API_URL,
+            type: "GET",
+            cache: false,
+            success: function (data) {
+                cachedDropdownData = data || {};
+
+                console.log(`${LOG_PREFIX} Dropdown data loaded.`, {
+                    areas: getDropdownDataArray(cachedDropdownData, "areas").length,
+                    equipmentGroups: getDropdownDataArray(cachedDropdownData, "equipment_groups").length,
+                    models: getDropdownDataArray(cachedDropdownData, "models").length,
+                    assetNumbers: getDropdownDataArray(cachedDropdownData, "asset_numbers").length,
+                    locations: getDropdownDataArray(cachedDropdownData, "locations").length,
+                });
+
+                bindDropdownEvents();
+                populateAreas(cachedDropdownData);
+
+                // Keep children empty until the user selects a real area.
+                populateEquipmentGroupsForArea("");
+            },
+            error: function (xhr, status, error) {
+                console.error(`${LOG_PREFIX} Error fetching dropdown data:`, {
+                    status,
+                    error,
+                    responseText: xhr && xhr.responseText,
+                });
+            },
+        });
+    }
+
+    $(document).ready(function () {
+        console.log(`${LOG_PREFIX} Document ready. Initializing dropdowns.`);
+        populateCompleteDocumentDropdowns();
+    });
+
+    window.populateCompleteDocumentDropdowns = populateCompleteDocumentDropdowns;
+})();

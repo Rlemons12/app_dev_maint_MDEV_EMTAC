@@ -89,7 +89,8 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<!-- ORIGINAL CDN: <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script> -->
+<script src="{{ url_for('static', filename='vendor/jquery/jquery-3.6.0.min.js') }}"></script>
 <script src="{{ url_for('static', filename='tsg_search_problem.js') }}"></script>
 <script src="{{ url_for('static', filename='tsg_search_problem_thumbnail.js') }}"></script>
 <script src="{{ url_for('static', filename='tsg_handleSearchResults.js') }}"></script>

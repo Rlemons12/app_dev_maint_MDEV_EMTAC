@@ -1,0 +1,21 @@
+﻿
+# PostgreSQL MCP local files
+.env
+.venv/
+__pycache__/
+*.pyc
+*.log
+# AI Gateway local secrets
+# Ignore IntelliJ IDEA project files
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Ignore other IDE-specific files
+.vscode/
+
+# JetBrains / PyCharm project files
+.idea/
+*.iml

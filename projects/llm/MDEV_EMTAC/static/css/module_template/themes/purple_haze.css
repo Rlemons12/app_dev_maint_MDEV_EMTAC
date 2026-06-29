@@ -1,0 +1,885 @@
+/* static/css/module_template/themes/purple_haze.css
+==================================
+PURPLE HAZE THEME
+Designed to sit on top of:
+static/css/module_template/base.css
+
+Role:
+- Override standardized base theme variables
+- Preserve layout ownership in base.css
+- Provide a complete Purple Haze visual identity
+- Support reusable neppy-* utility classes
+- Theme the standardized .mt-* module template layouts
+- Theme content-area form controls and dropdowns
+- Support native selects, Bootstrap dropdowns, and Select2 widgets
+
+Important:
+- Does NOT style the standalone banner system
+- Does NOT style the standalone comment popup system
+================================== */
+
+/* ==================================
+THEME VARIABLE OVERRIDES
+Apply by adding class="purple-haze" to html or body
+================================== */
+html.purple-haze,
+body.purple-haze {
+    --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    --app-page-bg: #140D24;
+    --app-page-text: #EEE8FF;
+
+    --app-sidebar-bg: rgba(28, 14, 52, 0.94);
+    --app-sidebar-text: #B8A4D8;
+    --app-sidebar-link: #EEE8FF;
+    --app-sidebar-hover: #C47FFF;
+    --app-sidebar-hover-bg: rgba(196, 127, 255, 0.12);
+    --app-sidebar-border: rgba(238, 232, 255, 0.14);
+
+    --app-content-bg: rgba(20, 13, 36, 0.84);
+    --app-content-text: #EEE8FF;
+
+    --app-control-bg: rgba(16, 8, 30, 0.94);
+    --app-control-text: #EEE8FF;
+    --app-control-border: rgba(184, 164, 216, 0.22);
+    --app-control-hover-bg: rgba(30, 16, 54, 0.96);
+    --app-control-focus-ring: rgba(196, 127, 255, 0.18);
+
+    --app-results-bg: rgba(20, 13, 36, 0.78);
+    --app-results-text: #EEE8FF;
+
+    --app-thumbnail-border: rgba(184, 164, 216, 0.20);
+
+    --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.26);
+    --app-shadow-md: 0 16px 30px rgba(0, 0, 0, 0.40);
+
+    background: #140D24;
+    background-image: url("/static/background_images/purple_haze.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    color: var(--app-page-text);
+    line-height: 1.45;
+}
+
+/* ==================================
+NEPPY TOKEN OVERRIDES
+Supports reusable neppy-* utility classes
+================================== */
+html.purple-haze,
+body.purple-haze {
+    --neppy-surface: rgba(20, 13, 36, 0.80);
+    --neppy-surface-2: rgba(16, 8, 30, 0.90);
+    --neppy-line: rgba(184, 164, 216, 0.22);
+    --neppy-line-strong: rgba(238, 232, 255, 0.30);
+
+    --neppy-text: #EEE8FF;
+    --neppy-muted: #B8A4D8;
+    --neppy-heading: #FFFFFF;
+
+    --neppy-accent: #C47FFF;
+    --neppy-accent-soft: rgba(196, 127, 255, 0.14);
+    --neppy-accent-hover: #D8A8FF;
+
+    --neppy-ok: #8FE6B0;
+    --neppy-ok-soft: rgba(143, 230, 176, 0.16);
+
+    --neppy-warn: #FFD670;
+    --neppy-warn-soft: rgba(255, 214, 112, 0.18);
+
+    --neppy-bad: #FF8FAB;
+    --neppy-bad-soft: rgba(255, 143, 171, 0.16);
+}
+
+/* ==================================
+GLOBAL POLISH
+================================== */
+html.purple-haze .sidebar,
+body.purple-haze .sidebar {
+    backdrop-filter: blur(5px);
+    box-shadow: inset -1px 0 0 rgba(238, 232, 255, 0.08);
+}
+
+html.purple-haze .sidebar h1,
+body.purple-haze .sidebar h1 {
+    color: #EEE8FF;
+    letter-spacing: 0.02em;
+}
+
+html.purple-haze .welcome-message,
+body.purple-haze .welcome-message {
+    color: #D9C8FF;
+    font-weight: 600;
+}
+
+html.purple-haze .user-level,
+html.purple-haze .model-display-section,
+body.purple-haze .user-level,
+body.purple-haze .model-display-section {
+    color: rgba(238, 232, 255, 0.66);
+}
+
+html.purple-haze .content,
+body.purple-haze .content {
+    background: linear-gradient(
+        180deg,
+        rgba(20, 13, 36, 0.84) 0%,
+        rgba(12, 6, 22, 0.92) 100%
+    );
+    color: var(--app-content-text);
+}
+
+/* ==================================
+SIDEBAR NAV / INTERACTION POLISH
+================================== */
+html.purple-haze .nav-link,
+html.purple-haze .sidebar a,
+html.purple-haze .sidebar button,
+html.purple-haze .sidebar select,
+body.purple-haze .nav-link,
+body.purple-haze .sidebar a,
+body.purple-haze .sidebar button,
+body.purple-haze .sidebar select {
+    color: var(--app-sidebar-link);
+}
+
+html.purple-haze .nav-link:hover,
+html.purple-haze .sidebar a:hover,
+html.purple-haze .sidebar button:hover,
+html.purple-haze .sidebar select:hover,
+body.purple-haze .nav-link:hover,
+body.purple-haze .sidebar a:hover,
+body.purple-haze .sidebar button:hover,
+body.purple-haze .sidebar select:hover {
+    color: var(--app-sidebar-hover);
+    background-color: var(--app-sidebar-hover-bg);
+}
+
+html.purple-haze .nav-link.highlight,
+body.purple-haze .nav-link.highlight {
+    color: var(--app-sidebar-hover);
+    background-color: rgba(196, 127, 255, 0.12);
+    border-left: 3px solid var(--app-sidebar-hover);
+}
+
+/* ==================================
+STANDARD CONTROLS
+================================== */
+html.purple-haze .toggle-button,
+body.purple-haze .toggle-button {
+    background: linear-gradient(
+        180deg,
+        rgba(38, 20, 68, 0.98) 0%,
+        rgba(16, 8, 30, 0.98) 100%
+    ) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.24);
+    font-weight: 600;
+}
+
+html.purple-haze .toggle-button:hover,
+body.purple-haze .toggle-button:hover {
+    background: linear-gradient(
+        180deg,
+        rgba(56, 30, 94, 0.98) 0%,
+        rgba(30, 16, 54, 0.98) 100%
+    ) !important;
+    border-color: rgba(196, 127, 255, 0.42) !important;
+}
+
+html.purple-haze #voice-selection,
+html.purple-haze .sidebar select,
+body.purple-haze #voice-selection,
+body.purple-haze .sidebar select {
+    background-color: rgba(16, 8, 30, 0.95);
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 5px;
+}
+
+html.purple-haze #voice-selection:focus,
+html.purple-haze .sidebar select:focus,
+body.purple-haze #voice-selection:focus,
+body.purple-haze .sidebar select:focus {
+    outline: 2px solid rgba(196, 127, 255, 0.35);
+    outline-offset: 2px;
+}
+
+/* ==================================
+CONTENT AREA FORM CONTROLS
+Fixes white-on-white dropdowns in main panels.
+Supports:
+- Native inputs/selects/textareas
+- Bootstrap .form-control / .form-select
+- Module template .mt-panel-body controls
+- Upload/search forms
+================================== */
+html.purple-haze .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.purple-haze .content select,
+html.purple-haze .content textarea,
+html.purple-haze .content .form-control,
+html.purple-haze .content .form-select,
+html.purple-haze .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.purple-haze .mt-panel-body select,
+html.purple-haze .mt-panel-body textarea,
+html.purple-haze .mt-panel-body .form-control,
+html.purple-haze .mt-panel-body .form-select,
+html.purple-haze .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.purple-haze .upload-search-form select,
+html.purple-haze .upload-search-form textarea,
+html.purple-haze .upload-search-form .form-control,
+html.purple-haze .upload-search-form .form-select,
+body.purple-haze .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.purple-haze .content select,
+body.purple-haze .content textarea,
+body.purple-haze .content .form-control,
+body.purple-haze .content .form-select,
+body.purple-haze .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.purple-haze .mt-panel-body select,
+body.purple-haze .mt-panel-body textarea,
+body.purple-haze .mt-panel-body .form-control,
+body.purple-haze .mt-panel-body .form-select,
+body.purple-haze .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.purple-haze .upload-search-form select,
+body.purple-haze .upload-search-form textarea,
+body.purple-haze .upload-search-form .form-control,
+body.purple-haze .upload-search-form .form-select {
+    background-color: var(--app-control-bg) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+html.purple-haze .content input::placeholder,
+html.purple-haze .content textarea::placeholder,
+html.purple-haze .mt-panel-body input::placeholder,
+html.purple-haze .mt-panel-body textarea::placeholder,
+html.purple-haze .upload-search-form input::placeholder,
+html.purple-haze .upload-search-form textarea::placeholder,
+body.purple-haze .content input::placeholder,
+body.purple-haze .content textarea::placeholder,
+body.purple-haze .mt-panel-body input::placeholder,
+body.purple-haze .mt-panel-body textarea::placeholder,
+body.purple-haze .upload-search-form input::placeholder,
+body.purple-haze .upload-search-form textarea::placeholder {
+    color: rgba(238, 232, 255, 0.68);
+}
+
+html.purple-haze .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.purple-haze .content select:hover,
+html.purple-haze .content textarea:hover,
+html.purple-haze .content .form-control:hover,
+html.purple-haze .content .form-select:hover,
+html.purple-haze .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.purple-haze .mt-panel-body select:hover,
+html.purple-haze .mt-panel-body textarea:hover,
+html.purple-haze .mt-panel-body .form-control:hover,
+html.purple-haze .mt-panel-body .form-select:hover,
+html.purple-haze .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.purple-haze .upload-search-form select:hover,
+html.purple-haze .upload-search-form textarea:hover,
+html.purple-haze .upload-search-form .form-control:hover,
+html.purple-haze .upload-search-form .form-select:hover,
+body.purple-haze .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.purple-haze .content select:hover,
+body.purple-haze .content textarea:hover,
+body.purple-haze .content .form-control:hover,
+body.purple-haze .content .form-select:hover,
+body.purple-haze .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.purple-haze .mt-panel-body select:hover,
+body.purple-haze .mt-panel-body textarea:hover,
+body.purple-haze .mt-panel-body .form-control:hover,
+body.purple-haze .mt-panel-body .form-select:hover,
+body.purple-haze .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.purple-haze .upload-search-form select:hover,
+body.purple-haze .upload-search-form textarea:hover,
+body.purple-haze .upload-search-form .form-control:hover,
+body.purple-haze .upload-search-form .form-select:hover {
+    background-color: var(--app-control-hover-bg) !important;
+    border-color: rgba(196, 127, 255, 0.42) !important;
+}
+
+html.purple-haze .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.purple-haze .content select:focus,
+html.purple-haze .content textarea:focus,
+html.purple-haze .content .form-control:focus,
+html.purple-haze .content .form-select:focus,
+html.purple-haze .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.purple-haze .mt-panel-body select:focus,
+html.purple-haze .mt-panel-body textarea:focus,
+html.purple-haze .mt-panel-body .form-control:focus,
+html.purple-haze .mt-panel-body .form-select:focus,
+html.purple-haze .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.purple-haze .upload-search-form select:focus,
+html.purple-haze .upload-search-form textarea:focus,
+html.purple-haze .upload-search-form .form-control:focus,
+html.purple-haze .upload-search-form .form-select:focus,
+body.purple-haze .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.purple-haze .content select:focus,
+body.purple-haze .content textarea:focus,
+body.purple-haze .content .form-control:focus,
+body.purple-haze .content .form-select:focus,
+body.purple-haze .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.purple-haze .mt-panel-body select:focus,
+body.purple-haze .mt-panel-body textarea:focus,
+body.purple-haze .mt-panel-body .form-control:focus,
+body.purple-haze .mt-panel-body .form-select:focus,
+body.purple-haze .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.purple-haze .upload-search-form select:focus,
+body.purple-haze .upload-search-form textarea:focus,
+body.purple-haze .upload-search-form .form-control:focus,
+body.purple-haze .upload-search-form .form-select:focus {
+    outline: none;
+    border-color: var(--neppy-accent) !important;
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+/* Native select dropdown list */
+html.purple-haze .content select option,
+html.purple-haze .mt-panel-body select option,
+html.purple-haze .upload-search-form select option,
+body.purple-haze .content select option,
+body.purple-haze .mt-panel-body select option,
+body.purple-haze .upload-search-form select option {
+    background: #10081E;
+    color: #EEE8FF;
+}
+
+/* Native selected option state */
+html.purple-haze .content select option:checked,
+html.purple-haze .mt-panel-body select option:checked,
+html.purple-haze .upload-search-form select option:checked,
+body.purple-haze .content select option:checked,
+body.purple-haze .mt-panel-body select option:checked,
+body.purple-haze .upload-search-form select option:checked {
+    background: #C47FFF;
+    color: #140D24;
+}
+
+/* Disabled states */
+html.purple-haze .content input:disabled,
+html.purple-haze .content select:disabled,
+html.purple-haze .content textarea:disabled,
+html.purple-haze .content .form-control:disabled,
+html.purple-haze .content .form-select:disabled,
+html.purple-haze .mt-panel-body input:disabled,
+html.purple-haze .mt-panel-body select:disabled,
+html.purple-haze .mt-panel-body textarea:disabled,
+html.purple-haze .mt-panel-body .form-control:disabled,
+html.purple-haze .mt-panel-body .form-select:disabled,
+html.purple-haze .upload-search-form input:disabled,
+html.purple-haze .upload-search-form select:disabled,
+html.purple-haze .upload-search-form textarea:disabled,
+html.purple-haze .upload-search-form .form-control:disabled,
+html.purple-haze .upload-search-form .form-select:disabled,
+body.purple-haze .content input:disabled,
+body.purple-haze .content select:disabled,
+body.purple-haze .content textarea:disabled,
+body.purple-haze .content .form-control:disabled,
+body.purple-haze .content .form-select:disabled,
+body.purple-haze .mt-panel-body input:disabled,
+body.purple-haze .mt-panel-body select:disabled,
+body.purple-haze .mt-panel-body textarea:disabled,
+body.purple-haze .mt-panel-body .form-control:disabled,
+body.purple-haze .mt-panel-body .form-select:disabled,
+body.purple-haze .upload-search-form input:disabled,
+body.purple-haze .upload-search-form select:disabled,
+body.purple-haze .upload-search-form textarea:disabled,
+body.purple-haze .upload-search-form .form-control:disabled,
+body.purple-haze .upload-search-form .form-select:disabled {
+    background: rgba(58, 36, 86, 0.72) !important;
+    color: rgba(238, 232, 255, 0.58) !important;
+    cursor: not-allowed;
+}
+
+/* ==================================
+CONTENT AREA BUTTONS
+================================== */
+html.purple-haze .content button:not(.mt-toggle-btn):not(.toggle-button),
+html.purple-haze .content input[type="submit"],
+html.purple-haze .content input[type="button"],
+html.purple-haze .content input[type="reset"],
+html.purple-haze .content .btn,
+body.purple-haze .content button:not(.mt-toggle-btn):not(.toggle-button),
+body.purple-haze .content input[type="submit"],
+body.purple-haze .content input[type="button"],
+body.purple-haze .content input[type="reset"],
+body.purple-haze .content .btn {
+    background: linear-gradient(
+        180deg,
+        rgba(38, 20, 68, 0.98) 0%,
+        rgba(16, 8, 30, 0.98) 100%
+    );
+    color: #EEE8FF;
+    border: 1px solid var(--app-control-border);
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.24);
+}
+
+html.purple-haze .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+html.purple-haze .content input[type="submit"]:hover,
+html.purple-haze .content input[type="button"]:hover,
+html.purple-haze .content input[type="reset"]:hover,
+html.purple-haze .content .btn:hover,
+body.purple-haze .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+body.purple-haze .content input[type="submit"]:hover,
+body.purple-haze .content input[type="button"]:hover,
+body.purple-haze .content input[type="reset"]:hover,
+body.purple-haze .content .btn:hover {
+    border-color: rgba(196, 127, 255, 0.42);
+    background: linear-gradient(
+        180deg,
+        rgba(56, 30, 94, 0.98) 0%,
+        rgba(30, 16, 54, 0.98) 100%
+    );
+    color: #EEE8FF;
+}
+
+/* ==================================
+BOOTSTRAP DROPDOWN MENU SUPPORT
+Needed when dropdowns are button menus instead
+of native <select> elements.
+================================== */
+html.purple-haze .content .dropdown-menu,
+html.purple-haze .mt-panel-body .dropdown-menu,
+html.purple-haze .upload-search-form .dropdown-menu,
+body.purple-haze .content .dropdown-menu,
+body.purple-haze .mt-panel-body .dropdown-menu,
+body.purple-haze .upload-search-form .dropdown-menu {
+    background: #10081E;
+    color: #EEE8FF;
+    border: 1px solid var(--app-control-border);
+    border-radius: 8px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.40);
+}
+
+html.purple-haze .content .dropdown-item,
+html.purple-haze .mt-panel-body .dropdown-item,
+html.purple-haze .upload-search-form .dropdown-item,
+body.purple-haze .content .dropdown-item,
+body.purple-haze .mt-panel-body .dropdown-item,
+body.purple-haze .upload-search-form .dropdown-item {
+    color: #EEE8FF;
+}
+
+html.purple-haze .content .dropdown-item:hover,
+html.purple-haze .content .dropdown-item:focus,
+html.purple-haze .mt-panel-body .dropdown-item:hover,
+html.purple-haze .mt-panel-body .dropdown-item:focus,
+html.purple-haze .upload-search-form .dropdown-item:hover,
+html.purple-haze .upload-search-form .dropdown-item:focus,
+body.purple-haze .content .dropdown-item:hover,
+body.purple-haze .content .dropdown-item:focus,
+body.purple-haze .mt-panel-body .dropdown-item:hover,
+body.purple-haze .mt-panel-body .dropdown-item:focus,
+body.purple-haze .upload-search-form .dropdown-item:hover,
+body.purple-haze .upload-search-form .dropdown-item:focus {
+    background: #C47FFF;
+    color: #140D24;
+}
+
+html.purple-haze .content .dropdown-item.active,
+html.purple-haze .content .dropdown-item:active,
+html.purple-haze .mt-panel-body .dropdown-item.active,
+html.purple-haze .mt-panel-body .dropdown-item:active,
+html.purple-haze .upload-search-form .dropdown-item.active,
+html.purple-haze .upload-search-form .dropdown-item:active,
+body.purple-haze .content .dropdown-item.active,
+body.purple-haze .content .dropdown-item:active,
+body.purple-haze .mt-panel-body .dropdown-item.active,
+body.purple-haze .mt-panel-body .dropdown-item:active,
+body.purple-haze .upload-search-form .dropdown-item.active,
+body.purple-haze .upload-search-form .dropdown-item:active {
+    background: rgba(196, 127, 255, 0.22);
+    color: #EEE8FF;
+}
+
+/* ==================================
+SELECT2 SUPPORT
+Needed when dropdowns are enhanced by Select2.
+Select2 dropdowns may be appended near <body>,
+so these selectors are scoped to the theme root,
+not only to .content.
+================================== */
+html.purple-haze .select2-container,
+body.purple-haze .select2-container {
+    color: #EEE8FF;
+}
+
+html.purple-haze .select2-container .select2-selection--single,
+html.purple-haze .select2-container .select2-selection--multiple,
+body.purple-haze .select2-container .select2-selection--single,
+body.purple-haze .select2-container .select2-selection--multiple {
+    background: var(--app-control-bg) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    min-height: 38px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+html.purple-haze .select2-container .select2-selection--single:hover,
+html.purple-haze .select2-container .select2-selection--multiple:hover,
+body.purple-haze .select2-container .select2-selection--single:hover,
+body.purple-haze .select2-container .select2-selection--multiple:hover {
+    background: var(--app-control-hover-bg) !important;
+    border-color: rgba(196, 127, 255, 0.42) !important;
+}
+
+html.purple-haze .select2-container--default.select2-container--focus .select2-selection--multiple,
+html.purple-haze .select2-container--default.select2-container--open .select2-selection--single,
+html.purple-haze .select2-container--default.select2-container--open .select2-selection--multiple,
+body.purple-haze .select2-container--default.select2-container--focus .select2-selection--multiple,
+body.purple-haze .select2-container--default.select2-container--open .select2-selection--single,
+body.purple-haze .select2-container--default.select2-container--open .select2-selection--multiple {
+    border-color: var(--neppy-accent) !important;
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+html.purple-haze .select2-container--default .select2-selection--single .select2-selection__rendered,
+html.purple-haze .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.purple-haze .select2-container--default .select2-selection--single .select2-selection__rendered,
+body.purple-haze .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    color: #EEE8FF !important;
+    line-height: 36px;
+}
+
+html.purple-haze .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.purple-haze .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    line-height: normal;
+    padding-top: 4px;
+}
+
+html.purple-haze .select2-container--default .select2-selection--single .select2-selection__placeholder,
+html.purple-haze .select2-container--default .select2-selection--multiple .select2-selection__placeholder,
+body.purple-haze .select2-container--default .select2-selection--single .select2-selection__placeholder,
+body.purple-haze .select2-container--default .select2-selection--multiple .select2-selection__placeholder {
+    color: rgba(238, 232, 255, 0.68) !important;
+}
+
+html.purple-haze .select2-container--default .select2-selection--single .select2-selection__arrow b,
+body.purple-haze .select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: #EEE8FF transparent transparent transparent;
+}
+
+html.purple-haze .select2-dropdown,
+body.purple-haze .select2-dropdown {
+    background: #10081E !important;
+    color: #EEE8FF !important;
+    border: 1px solid var(--app-control-border) !important;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.40);
+}
+
+html.purple-haze .select2-container--default .select2-search--dropdown .select2-search__field,
+body.purple-haze .select2-container--default .select2-search--dropdown .select2-search__field {
+    background: rgba(16, 8, 30, 0.98) !important;
+    color: #EEE8FF !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 4px;
+}
+
+html.purple-haze .select2-results__option,
+body.purple-haze .select2-results__option {
+    background: #10081E;
+    color: #EEE8FF;
+}
+
+html.purple-haze .select2-container--default .select2-results__option--highlighted[aria-selected],
+body.purple-haze .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background: #C47FFF !important;
+    color: #140D24 !important;
+}
+
+html.purple-haze .select2-container--default .select2-results__option[aria-selected="true"],
+body.purple-haze .select2-container--default .select2-results__option[aria-selected="true"] {
+    background: rgba(196, 127, 255, 0.22) !important;
+    color: #EEE8FF !important;
+}
+
+html.purple-haze .select2-container--default .select2-selection--multiple .select2-selection__choice,
+body.purple-haze .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background: rgba(196, 127, 255, 0.16) !important;
+    color: #EEE8FF !important;
+    border: 1px solid rgba(196, 127, 255, 0.28) !important;
+}
+
+html.purple-haze .select2-container--default .select2-selection--multiple .select2-selection__choice__remove,
+body.purple-haze .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #D8A8FF !important;
+}
+
+/* ==================================
+RESULTS / PANELS / THUMBNAILS
+================================== */
+html.purple-haze .results-container,
+body.purple-haze .results-container {
+    background: var(--app-results-bg);
+    border: 1px solid rgba(238, 232, 255, 0.10);
+    border-radius: 10px;
+    box-shadow: var(--app-shadow-md);
+    backdrop-filter: blur(4px);
+}
+
+html.purple-haze #drawingList,
+body.purple-haze #drawingList {
+    color: var(--app-results-text);
+}
+
+html.purple-haze .thumbnail,
+body.purple-haze .thumbnail {
+    background: rgba(16, 8, 30, 0.90);
+    border: 1px solid var(--app-thumbnail-border);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
+}
+
+/* ==================================
+LINKS / SPECIAL STATES
+Scoped so they do NOT affect the banner
+================================== */
+html.purple-haze .content a,
+html.purple-haze .sidebar a,
+body.purple-haze .content a,
+body.purple-haze .sidebar a {
+    color: #CBAEFF;
+}
+
+html.purple-haze .content a:hover,
+html.purple-haze .sidebar a:hover,
+body.purple-haze .content a:hover,
+body.purple-haze .sidebar a:hover {
+    color: #C47FFF;
+}
+
+html.purple-haze .logout-button,
+body.purple-haze .logout-button {
+    color: #FFD180 !important;
+}
+
+/* ==================================
+ACCESSIBILITY / FOCUS
+No hamburger styling here.
+Hamburger focus belongs to banner.css / banner theme only.
+================================== */
+html.purple-haze .toggle-button:focus-visible,
+html.purple-haze .sidebar button:focus-visible,
+html.purple-haze .sidebar a:focus-visible,
+html.purple-haze .sidebar select:focus-visible,
+html.purple-haze .mt-toggle-btn:focus-visible,
+html.purple-haze .neppy-btn:focus-visible,
+html.purple-haze .neppy-input:focus-visible,
+html.purple-haze .neppy-select:focus-visible,
+html.purple-haze .neppy-textarea:focus-visible,
+html.purple-haze .content button:focus-visible,
+html.purple-haze .content input:focus-visible,
+html.purple-haze .content select:focus-visible,
+html.purple-haze .content textarea:focus-visible,
+html.purple-haze .content .form-control:focus-visible,
+html.purple-haze .content .form-select:focus-visible,
+body.purple-haze .toggle-button:focus-visible,
+body.purple-haze .sidebar button:focus-visible,
+body.purple-haze .sidebar a:focus-visible,
+body.purple-haze .sidebar select:focus-visible,
+body.purple-haze .mt-toggle-btn:focus-visible,
+body.purple-haze .neppy-btn:focus-visible,
+body.purple-haze .neppy-input:focus-visible,
+body.purple-haze .neppy-select:focus-visible,
+body.purple-haze .neppy-textarea:focus-visible,
+body.purple-haze .content button:focus-visible,
+body.purple-haze .content input:focus-visible,
+body.purple-haze .content select:focus-visible,
+body.purple-haze .content textarea:focus-visible,
+body.purple-haze .content .form-control:focus-visible,
+body.purple-haze .content .form-select:focus-visible {
+    outline: 2px solid rgba(196, 127, 255, 0.55);
+    outline-offset: 2px;
+}
+
+/* ==================================
+NEPPY UTILITY CLASS SUPPORT
+================================== */
+html.purple-haze .neppy-card,
+html.purple-haze .neppy-card-soft,
+body.purple-haze .neppy-card,
+body.purple-haze .neppy-card-soft {
+    background: var(--neppy-surface);
+    border-color: var(--neppy-line);
+}
+
+html.purple-haze .neppy-title,
+html.purple-haze .neppy-panel-title,
+body.purple-haze .neppy-title,
+body.purple-haze .neppy-panel-title {
+    color: var(--neppy-heading);
+}
+
+html.purple-haze .neppy-subtitle,
+html.purple-haze .neppy-label,
+html.purple-haze .neppy-text-muted,
+body.purple-haze .neppy-subtitle,
+body.purple-haze .neppy-label,
+body.purple-haze .neppy-text-muted {
+    color: var(--neppy-muted) !important;
+}
+
+html.purple-haze .neppy-btn,
+body.purple-haze .neppy-btn {
+    background: linear-gradient(
+        180deg,
+        rgba(38, 20, 68, 0.98) 0%,
+        rgba(16, 8, 30, 0.98) 100%
+    );
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+html.purple-haze .neppy-btn:hover,
+body.purple-haze .neppy-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(
+        180deg,
+        rgba(56, 30, 94, 0.98) 0%,
+        rgba(30, 16, 54, 0.98) 100%
+    );
+}
+
+html.purple-haze .neppy-input,
+html.purple-haze .neppy-select,
+html.purple-haze .neppy-textarea,
+html.purple-haze .neppy-mono,
+html.purple-haze .neppy-code,
+body.purple-haze .neppy-input,
+body.purple-haze .neppy-select,
+body.purple-haze .neppy-textarea,
+body.purple-haze .neppy-mono,
+body.purple-haze .neppy-code {
+    background: rgba(16, 8, 30, 0.96);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+html.purple-haze .neppy-input:focus,
+html.purple-haze .neppy-select:focus,
+html.purple-haze .neppy-textarea:focus,
+body.purple-haze .neppy-input:focus,
+body.purple-haze .neppy-select:focus,
+body.purple-haze .neppy-textarea:focus {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
+}
+
+/* ==================================
+MODULE TEMPLATE PANEL LAYOUT THEME
+Styles the standardized .mt-* module templates
+================================== */
+html.purple-haze .mt-layout,
+body.purple-haze .mt-layout {
+    color: var(--neppy-text);
+}
+
+html.purple-haze .mt-layout-header,
+body.purple-haze .mt-layout-header {
+    border-bottom: 2px solid rgba(196, 127, 255, 0.22);
+}
+
+html.purple-haze .mt-layout-title,
+body.purple-haze .mt-layout-title {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+}
+
+html.purple-haze .mt-layout-description,
+body.purple-haze .mt-layout-description {
+    color: var(--neppy-muted);
+}
+
+html.purple-haze .mt-panel,
+body.purple-haze .mt-panel {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg, 14px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(4px);
+}
+
+html.purple-haze .mt-panel:hover,
+body.purple-haze .mt-panel:hover {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.34);
+}
+
+html.purple-haze .mt-panel-header,
+body.purple-haze .mt-panel-header {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--neppy-line);
+}
+
+html.purple-haze .mt-panel-title,
+body.purple-haze .mt-panel-title {
+    color: var(--neppy-accent);
+}
+
+html.purple-haze .mt-toggle-btn,
+body.purple-haze .mt-toggle-btn {
+    background: linear-gradient(
+        180deg,
+        rgba(38, 20, 68, 0.98) 0%,
+        rgba(16, 8, 30, 0.98) 100%
+    );
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
+}
+
+html.purple-haze .mt-toggle-btn:hover,
+body.purple-haze .mt-toggle-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(
+        180deg,
+        rgba(56, 30, 94, 0.98) 0%,
+        rgba(30, 16, 54, 0.98) 100%
+    );
+    color: var(--neppy-text);
+}
+
+html.purple-haze .mt-panel.is-collapsed .mt-toggle-btn,
+body.purple-haze .mt-panel.is-collapsed .mt-toggle-btn {
+    background: linear-gradient(180deg, #7A2F3F 0%, #5E2431 100%);
+    border-color: rgba(255, 143, 171, 0.35);
+    color: #FFFFFF;
+}
+
+html.purple-haze .mt-panel-body,
+body.purple-haze .mt-panel-body {
+    color: var(--neppy-text);
+}
+
+html.purple-haze .mt-panel-content,
+body.purple-haze .mt-panel-content {
+    gap: 12px;
+}
+
+html.purple-haze .mt-item,
+body.purple-haze .mt-item {
+    background: rgba(16, 8, 30, 0.92);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+}
+
+html.purple-haze .mt-item:hover,
+body.purple-haze .mt-item:hover {
+    background: rgba(196, 127, 255, 0.08);
+    border-color: var(--neppy-accent);
+}
+
+html.purple-haze .mt-item.is-active,
+body.purple-haze .mt-item.is-active {
+    background: rgba(196, 127, 255, 0.16);
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 1px rgba(196, 127, 255, 0.10);
+}

@@ -1,91 +1,179 @@
 <!-- Create New Position Form -->
-<form id="createPositionForm" method="POST" action="{{ url_for('position_data_assignment_bp.create_position_form') }}">
+<form id="createPositionForm" method="POST"
+      action="{{ url_for('position_data_assignment_bp.create_position_form') }}">
     {{ form_create_position.hidden_tag() }}
 
-    <!-- Area Dropdown -->
+    <!-- CAMPUS -->
+    <div>
+        <label for="campus">Campus:</label>
+        {{ form_create_position.campus(class="form-control", id="campus") }}
+        <input type="text" name="campus_input" id="campus_input"
+               placeholder="Or type new Campus">
+    </div>
+
+    <!-- BUILDING -->
+    <div>
+        <label for="building">Building:</label>
+
+        <select id="building" name="building" class="form-control" disabled>
+            <option value="">Select Building</option>
+        </select>
+
+        <input type="text" name="building_input" id="building_input"
+               placeholder="Or type new Building">
+    </div>
+
+    <!-- SITE LOCATION -->
+    <div style="margin-top:10px;">
+        <label for="site_location">Site Location:</label>
+
+        <!-- Dynamic, empty at page load -->
+        <select id="site_location" name="site_location" class="form-control" disabled>
+            <option value="">Select Site Location</option>
+        </select>
+
+        <input type="text" name="site_location_input"
+               id="site_location_input"
+               placeholder="New Site Location Title">
+
+        <input type="text" name="site_location_room"
+               id="site_location_room"
+               placeholder="Room Number">
+    </div>
+
+
+    <!-- AREA -->
     <div>
         <label for="area">Area:</label>
-        {{ form_create_position.area(class="form-control", id="area") }}
+        {{ form_create_position.area(class="form-control", id="area", disabled=True) }}
         <input type="text" name="area_input" id="area_input" placeholder="Or type new Area">
     </div>
 
-    <!-- Equipment Group Dropdown -->
+    <!-- EQUIPMENT GROUP -->
     <div>
         <label for="equipment_group">Equipment Group:</label>
-        {{ form_create_position.equipment_group(class="form-control", id="equipment_group", disabled=True) }}
-        <input type="text" name="equipment_group_input" id="equipment_group_input" placeholder="Or type new Equipment Group">
+        {{ form_create_position.equipment_group(class="form-control",
+                                                id="equipment_group",
+                                                disabled=True) }}
+        <input type="text" name="equipment_group_input" id="equipment_group_input"
+               placeholder="Or type new Equipment Group">
     </div>
 
-    <!-- Model Dropdown -->
+    <!-- MODEL -->
     <div>
         <label for="model">Model:</label>
         {{ form_create_position.model(class="form-control", id="model", disabled=True) }}
-        <input type="text" name="model_input" id="model_input" placeholder="Or type new Model">
+        <input type="text" name="model_input" id="model_input"
+               placeholder="Or type new Model">
+        <textarea name="model_description" id="model_description"
+                  placeholder="Model description (optional)"></textarea>
     </div>
 
-    <!-- Asset Number Dropdown -->
+    <!-- ASSET NUMBER -->
     <div>
         <label for="asset_number">Asset Number:</label>
         {{ form_create_position.asset_number(class="form-control", id="asset_number", disabled=True) }}
-        <input type="text" name="asset_number_input" id="asset_number_input" placeholder="Or type new Asset Number">
+        <input type="text" name="asset_number_input" id="asset_number_input"
+               placeholder="Or type new Asset Number">
+        <textarea name="asset_number_description" id="asset_number_description"
+                  placeholder="Asset Number description (optional)"></textarea>
     </div>
 
-    <!-- Location Dropdown -->
-    <div>
+    <!-- LOCATION -->
+    <div style="margin-top:10px;">
         <label for="location">Location:</label>
         {{ form_create_position.location(class="form-control", id="location", disabled=True) }}
-        <input type="text" name="location_input" id="location_input" placeholder="Or type new Location">
+
+        <div style="margin-top:4px;">
+            <input type="checkbox" id="location_is_asset_specific">
+            <label for="location_is_asset_specific">
+                Is this Location specific to the selected Asset Number?
+            </label>
+        </div>
+
+        <input type="text" name="location_input" id="location_input"
+               placeholder="Or type new Location">
     </div>
 
-    <!-- Subassembly Dropdown -->
-    <div>
+    <!-- SUBASSEMBLY -->
+    <div style="margin-top:10px;">
         <label for="subassembly">Subassembly:</label>
-        {{ form_create_position.subassembly(class="form-control", id="subassembly", disabled=True) }}
-        <input type="text" name="subassembly_input" id="subassembly_input" placeholder="Or type new Subassembly">
+        {{ form_create_position.subassembly(class="form-control",
+                                            id="subassembly",
+                                            disabled=True) }}
+
+        <div style="margin-top:4px;">
+            <input type="checkbox" id="subassembly_is_asset_specific">
+            <label for="subassembly_is_asset_specific">
+                Is this Subassembly specific to the selected Asset Number?
+            </label>
+        </div>
+
+        <input type="text" name="subassembly_input" id="subassembly_input"
+               placeholder="Or type new Subassembly">
     </div>
 
-    <!-- Component Assembly Dropdown -->
-    <div>
+    <!-- COMPONENT ASSEMBLY -->
+    <div style="margin-top:10px;">
         <label for="component_assembly">Component Assembly:</label>
-        {{ form_create_position.component_assembly(class="form-control", id="component_assembly", disabled=True) }}
-        <input type="text" name="component_assembly_input" id="component_assembly_input" placeholder="Or type new Component Assembly">
+        {{ form_create_position.component_assembly(class="form-control",
+                                                   id="component_assembly",
+                                                   disabled=True) }}
+
+        <div style="margin-top:4px;">
+            <input type="checkbox" id="component_is_asset_specific">
+            <label for="component_is_asset_specific">
+                Is this Component Assembly specific to the selected Asset Number?
+            </label>
+        </div>
+
+        <input type="text" name="component_assembly_input"
+               id="component_assembly_input"
+               placeholder="Or type new Component Assembly">
     </div>
 
-    <!-- Assembly View Dropdown -->
-    <div>
+    <!-- ASSEMBLY VIEW -->
+    <div style="margin-top:10px;">
         <label for="assembly_view">Assembly View:</label>
-        {{ form_create_position.assembly_view(class="form-control", id="assembly_view", disabled=True) }}
-        <input type="text" name="assembly_view_input" id="assembly_view_input" placeholder="Or type new Assembly View">
+        {{ form_create_position.assembly_view(class="form-control",
+                                              id="assembly_view",
+                                              disabled=True) }}
+
+        <div style="margin-top:4px;">
+            <input type="checkbox" id="view_is_asset_specific">
+            <label for="view_is_asset_specific">
+                Is this Assembly View specific to the selected Asset Number?
+            </label>
+        </div>
+
+        <input type="text" name="assembly_view_input" id="assembly_view_input"
+               placeholder="Or type new Assembly View">
     </div>
 
-    <!-- Site Location Dropdown -->
-    <div>
-        <label for="site_location">Site Location:</label>
-        {{ form_create_position.site_location(class="form-control", id="site_location", disabled=True) }}
-        <input type="text" name="site_location_input" id="site_location_input" placeholder="Or type new Site Location">
-        <input type="text" name="site_location_room" id="site_location_room" placeholder="Room Number">
-    </div>
 
-    <!-- Submit Button -->
+    <!-- SUBMIT -->
     {{ form_create_position.submit(class="btn btn-primary", value="Create Position") }}
+
 </form>
 
-<!-- Loading Spinner -->
-<div id="loadingSpinner" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999;">
+<!-- LOADING SPINNER -->
+<div id="loadingSpinner"
+     style="display:none; position:fixed; top:50%; left:50%;
+            transform:translate(-50%, -50%); z-index:9999;">
     <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
     </div>
 </div>
 
-<!-- JavaScript for form handling -->
+<!-- SCRIPT -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Enable dropdowns when parent dropdown changes
+
     function enableDropdown(parentId, childId) {
         const parent = document.getElementById(parentId);
         const child = document.getElementById(childId);
 
-        parent.addEventListener('change', function() {
+        parent.addEventListener('change', function () {
             if (this.value) {
                 child.disabled = false;
             } else {
@@ -95,7 +183,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Chain enable dropdowns
+    // NEW CHAIN FOR UPDATED HIERARCHY
+    enableDropdown('campus', 'building');
+    enableDropdown('building', 'site_location');  // NEW ORDER
+    enableDropdown('site_location', 'area');
     enableDropdown('area', 'equipment_group');
     enableDropdown('equipment_group', 'model');
     enableDropdown('model', 'asset_number');
@@ -103,16 +194,32 @@ document.addEventListener('DOMContentLoaded', function () {
     enableDropdown('location', 'subassembly');
     enableDropdown('subassembly', 'component_assembly');
     enableDropdown('component_assembly', 'assembly_view');
-    enableDropdown('assembly_view', 'site_location');
 
-    // Show loading spinner on form submission
+
+    // Highlight fields when "asset-specific" checkboxes are selected
+    function toggleAssetHighlight(checkboxId, labelId) {
+        const cb = document.getElementById(checkboxId);
+        const field = document.getElementById(labelId);
+
+        cb.addEventListener('change', function () {
+            if (cb.checked) {
+                field.style.border = "2px solid #2196F3";
+            } else {
+                field.style.border = "";
+            }
+        });
+    }
+
+    toggleAssetHighlight("location_is_asset_specific", "location");
+    toggleAssetHighlight("subassembly_is_asset_specific", "subassembly");
+    toggleAssetHighlight("component_is_asset_specific", "component_assembly");
+    toggleAssetHighlight("view_is_asset_specific", "assembly_view");
+
+    // Show loading spinner on submit
     var form = document.getElementById("createPositionForm");
     if (form) {
-        form.addEventListener("submit", function() {
-            var spinner = document.getElementById("loadingSpinner");
-            if (spinner) {
-                spinner.style.display = "block";
-            }
+        form.addEventListener("submit", function () {
+            document.getElementById("loadingSpinner").style.display = "block";
         });
     }
 });

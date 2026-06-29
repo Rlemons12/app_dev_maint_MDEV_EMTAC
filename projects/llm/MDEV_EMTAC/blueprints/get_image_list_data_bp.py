@@ -1,125 +1,238 @@
-import logging
-from flask import Blueprint, jsonify, g
+from flask import Blueprint, jsonify
 from sqlalchemy.exc import SQLAlchemyError
-from modules.configuration.log_config import with_request_id, debug_id, info_id, error_id, get_request_id
+
 from modules.configuration.config_env import DatabaseConfig
+from modules.configuration.log_config import (
+    with_request_id,
+    info_id,
+    error_id,
+    get_request_id,
+)
 from modules.emtacdb.emtacdb_fts import Position, Area, SiteLocation
 
-# Set up blueprint
-get_image_list_data_bp = Blueprint('get_image_list_data_bp', __name__)
+
+get_image_list_data_bp = Blueprint("get_image_list_data_bp", __name__)
 
 
-@get_image_list_data_bp.route('/get_image_list_data')
+@get_image_list_data_bp.route("/get_image_list_data")
 @with_request_id
 def get_list_data():
     """
     Fetch hierarchical data from database for image list interface.
-    Returns all levels of the hierarchy including site location data.
-    """
-    info_id("Fetching complete hierarchical image list data.")
 
-    # Get database session using the DatabaseConfig class
+    Keeps the existing response structure but avoids per-node logging noise.
+    """
+    request_id = get_request_id()
+
+    info_id(
+        "[IMAGE-LIST-DATA] Fetching complete hierarchical image list data",
+        request_id,
+    )
+
     db_config = DatabaseConfig()
     session = db_config.get_main_session()
 
+    data = {
+        "areas": [],
+        "equipment_groups": [],
+        "models": [],
+        "asset_numbers": [],
+        "locations": [],
+        "subassemblies": [],
+        "component_assemblies": [],
+        "assembly_views": [],
+        "site_locations": [],
+    }
+
     try:
-        # Initialize results dictionary with all hierarchy levels
-        data = {
-            'areas': [],
-            'equipment_groups': [],
-            'models': [],
-            'asset_numbers': [],
-            'locations': [],
-            'subassemblies': [],
-            'component_assemblies': [],
-            'assembly_views': [],
-            'site_locations': []
-        }
-
-        # Fetch site locations (independent of hierarchy)
-        debug_id("Fetching site locations")
         site_locations = session.query(SiteLocation).all()
-        site_locations_list = [{'id': sl.id, 'name': sl.title} for sl in site_locations]
-        data['site_locations'] = site_locations_list
+        data["site_locations"] = [
+            {
+                "id": site_location.id,
+                "name": site_location.title,
+            }
+            for site_location in site_locations
+        ]
 
-        # Fetch areas (top level)
-        debug_id("Fetching areas")
         areas = session.query(Area).all()
-        areas_list = [{'id': area.id, 'name': area.name} for area in areas]
-        data['areas'] = areas_list
+        data["areas"] = [
+            {
+                "id": area.id,
+                "name": area.name,
+            }
+            for area in areas
+        ]
 
-        # Traverse the complete hierarchy
         for area in areas:
-            # Get equipment groups for this area
-            debug_id(f"Fetching equipment groups for area ID: {area.id}")
-            equipment_groups = Position.get_dependent_items(session, 'area', area.id)
-            equipment_groups_list = [{'id': eg.id, 'name': eg.name, 'area_id': area.id} for eg in equipment_groups]
-            data['equipment_groups'].extend(equipment_groups_list)
+            equipment_groups = Position.get_dependent_items(
+                session,
+                "area",
+                area.id,
+            )
 
-            for eg in equipment_groups:
-                # Get models for this equipment group
-                debug_id(f"Fetching models for equipment group ID: {eg.id}")
-                models = Position.get_dependent_items(session, 'equipment_group', eg.id)
-                models_list = [{'id': model.id, 'name': model.name, 'equipment_group_id': eg.id} for model in models]
-                data['models'].extend(models_list)
+            data["equipment_groups"].extend(
+                [
+                    {
+                        "id": equipment_group.id,
+                        "name": equipment_group.name,
+                        "area_id": area.id,
+                    }
+                    for equipment_group in equipment_groups
+                ]
+            )
+
+            for equipment_group in equipment_groups:
+                models = Position.get_dependent_items(
+                    session,
+                    "equipment_group",
+                    equipment_group.id,
+                )
+
+                data["models"].extend(
+                    [
+                        {
+                            "id": model.id,
+                            "name": model.name,
+                            "equipment_group_id": equipment_group.id,
+                        }
+                        for model in models
+                    ]
+                )
 
                 for model in models:
-                    # Get asset numbers for this model
-                    debug_id(f"Fetching asset numbers for model ID: {model.id}")
-                    asset_numbers = Position.get_dependent_items(session, 'model', model.id, 'asset_number')
-                    asset_numbers_list = [{'id': an.id, 'number': an.number, 'model_id': model.id} for an in
-                                          asset_numbers]
-                    data['asset_numbers'].extend(asset_numbers_list)
+                    asset_numbers = Position.get_dependent_items(
+                        session,
+                        "model",
+                        model.id,
+                        "asset_number",
+                    )
 
-                    # Get locations for this model
-                    debug_id(f"Fetching locations for model ID: {model.id}")
-                    locations = Position.get_dependent_items(session, 'model', model.id, 'location')
-                    locations_list = [{'id': loc.id, 'name': loc.name, 'model_id': model.id} for loc in locations]
-                    data['locations'].extend(locations_list)
+                    data["asset_numbers"].extend(
+                        [
+                            {
+                                "id": asset_number.id,
+                                "number": asset_number.number,
+                                "model_id": model.id,
+                            }
+                            for asset_number in asset_numbers
+                        ]
+                    )
 
-                    # Continue down the hierarchy for each location
+                    locations = Position.get_dependent_items(
+                        session,
+                        "model",
+                        model.id,
+                        "location",
+                    )
+
+                    data["locations"].extend(
+                        [
+                            {
+                                "id": location.id,
+                                "name": location.name,
+                                "model_id": model.id,
+                            }
+                            for location in locations
+                        ]
+                    )
+
                     for location in locations:
-                        # Get subassemblies for this location
-                        debug_id(f"Fetching subassemblies for location ID: {location.id}")
-                        subassemblies = Position.get_dependent_items(session, 'location', location.id)
-                        subassemblies_list = [{'id': sa.id, 'name': sa.name, 'location_id': location.id}
-                                              for sa in subassemblies]
-                        data['subassemblies'].extend(subassemblies_list)
+                        subassemblies = Position.get_dependent_items(
+                            session,
+                            "location",
+                            location.id,
+                        )
 
-                        # Continue down the hierarchy for each subassembly
+                        data["subassemblies"].extend(
+                            [
+                                {
+                                    "id": subassembly.id,
+                                    "name": subassembly.name,
+                                    "location_id": location.id,
+                                }
+                                for subassembly in subassemblies
+                            ]
+                        )
+
                         for subassembly in subassemblies:
-                            # Get component assemblies for this subassembly
-                            debug_id(f"Fetching component assemblies for subassembly ID: {subassembly.id}")
-                            comp_assemblies = Position.get_dependent_items(session, 'subassembly', subassembly.id)
-                            comp_assemblies_list = [{'id': ca.id, 'name': ca.name, 'subassembly_id': subassembly.id}
-                                                    for ca in comp_assemblies]
-                            data['component_assemblies'].extend(comp_assemblies_list)
+                            component_assemblies = Position.get_dependent_items(
+                                session,
+                                "subassembly",
+                                subassembly.id,
+                            )
 
-                            # Get the lowest level: assembly views for each component assembly
-                            for comp_assembly in comp_assemblies:
-                                debug_id(f"Fetching assembly views for component assembly ID: {comp_assembly.id}")
-                                assembly_views = Position.get_dependent_items(session, 'component_assembly',
-                                                                              comp_assembly.id)
-                                assembly_views_list = [
-                                    {'id': av.id, 'name': av.name, 'component_assembly_id': comp_assembly.id}
-                                    for av in assembly_views]
-                                data['assembly_views'].extend(assembly_views_list)
+                            data["component_assemblies"].extend(
+                                [
+                                    {
+                                        "id": component_assembly.id,
+                                        "name": component_assembly.name,
+                                        "subassembly_id": subassembly.id,
+                                    }
+                                    for component_assembly in component_assemblies
+                                ]
+                            )
 
-        # Log counts for tracking and debugging
-        for key, items in data.items():
-            info_id(f"Retrieved {len(items)} {key}")
+                            for component_assembly in component_assemblies:
+                                assembly_views = Position.get_dependent_items(
+                                    session,
+                                    "component_assembly",
+                                    component_assembly.id,
+                                )
+
+                                data["assembly_views"].extend(
+                                    [
+                                        {
+                                            "id": assembly_view.id,
+                                            "name": assembly_view.name,
+                                            "component_assembly_id": component_assembly.id,
+                                        }
+                                        for assembly_view in assembly_views
+                                    ]
+                                )
+
+        info_id(
+            f"[IMAGE-LIST-DATA] Loaded hierarchy data | "
+            f"areas={len(data['areas'])} | "
+            f"equipment_groups={len(data['equipment_groups'])} | "
+            f"models={len(data['models'])} | "
+            f"asset_numbers={len(data['asset_numbers'])} | "
+            f"locations={len(data['locations'])} | "
+            f"subassemblies={len(data['subassemblies'])} | "
+            f"component_assemblies={len(data['component_assemblies'])} | "
+            f"assembly_views={len(data['assembly_views'])} | "
+            f"site_locations={len(data['site_locations'])}",
+            request_id,
+        )
+
+        return jsonify(data), 200
 
     except SQLAlchemyError as e:
-        error_id(f"Database error while fetching image list data: {str(e)}", exc_info=True)
         session.rollback()
-        return jsonify({'error': 'Database error', 'message': str(e)}), 500
+        error_id(
+            f"[IMAGE-LIST-DATA] Database error while fetching image list data: {e}",
+            request_id,
+            exc_info=True,
+        )
+        return jsonify(
+            {
+                "error": "Database error",
+                "message": str(e),
+            }
+        ), 500
+
     except Exception as e:
-        error_id(f"Unexpected error while fetching image list data: {str(e)}", exc_info=True)
         session.rollback()
-        return jsonify({'error': 'Server error', 'message': str(e)}), 500
+        error_id(
+            f"[IMAGE-LIST-DATA] Unexpected error while fetching image list data: {e}",
+            request_id,
+            exc_info=True,
+        )
+        return jsonify(
+            {
+                "error": "Server error",
+                "message": str(e),
+            }
+        ), 500
+
     finally:
         session.close()
-        info_id("Database session closed.")
-
-    info_id("Returning JSON response with complete image list data.")
-    return jsonify(data)

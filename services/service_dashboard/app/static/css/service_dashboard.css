@@ -1,0 +1,383 @@
+.message-bar {
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    display: none;
+    font-size: 14px;
+}
+
+.message-success {
+    background: rgba(42, 199, 122, 0.16);
+    border: 1px solid rgba(42, 199, 122, 0.35);
+    color: #bff3d5;
+}
+
+.message-error {
+    background: rgba(255, 107, 107, 0.16);
+    border: 1px solid rgba(255, 107, 107, 0.35);
+    color: #ffd0d0;
+}
+
+html,
+body {
+    height: auto;
+    min-height: 100%;
+}
+
+body.neppy-blue {
+    overflow-y: auto;
+}
+
+.mt-layout {
+    padding: 0;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+}
+
+.mt-layout-header {
+    margin-bottom: 14px;
+}
+
+.mt-grid {
+    height: auto;
+    min-height: 0;
+}
+
+/* ----------------------------------
+   Dashboard 5-panel KPI layout
+   4 top summary cards + 1 full-width
+   main services panel
+---------------------------------- */
+.mt-grid--dashboard-kpi-5 {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(220px, 1fr));
+    grid-auto-rows: minmax(150px, auto);
+    gap: 16px;
+    align-items: start;
+}
+
+.mt-grid--dashboard-kpi-5 .mt-panel--main {
+    grid-column: 1 / -1;
+    grid-row: auto;
+}
+
+.mt-grid--dashboard-kpi-5 > .mt-panel:not(.mt-panel--main) {
+    min-height: 140px;
+}
+
+.mt-grid--dashboard-kpi-5 > .mt-panel:not(.mt-panel--main) .mt-panel-header {
+    padding: 10px 12px 8px;
+}
+
+.mt-grid--dashboard-kpi-5 > .mt-panel:not(.mt-panel--main) .mt-panel-title {
+    font-size: 12px;
+    letter-spacing: 0.05em;
+}
+
+.mt-grid--dashboard-kpi-5 > .mt-panel:not(.mt-panel--main) .mt-panel-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-top: 10px;
+}
+
+/* ----------------------------------
+   Toolbar / control layout
+---------------------------------- */
+.dashboard-toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.dashboard-toolbar-vertical {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+}
+
+.dashboard-controls-panel {
+    min-height: 100%;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* ----------------------------------
+   Managed services panel
+---------------------------------- */
+.services-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+.services-grid-in-panel {
+    grid-template-columns: 1fr;
+}
+
+.service-card {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-left: 4px solid rgba(122, 150, 182, 0.5);
+    border-radius: var(--neppy-radius-lg);
+    padding: 14px;
+    box-shadow: var(--neppy-shadow-sm);
+}
+
+.service-card.running {
+    border-left-color: var(--neppy-ok);
+}
+
+.service-card.stopped {
+    border-left-color: var(--neppy-bad);
+}
+
+.service-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.service-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--neppy-heading);
+}
+
+.status-badge {
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.status-running {
+    color: var(--neppy-ok);
+    background: var(--neppy-ok-soft);
+}
+
+.status-stopped {
+    color: var(--neppy-bad);
+    background: var(--neppy-bad-soft);
+}
+
+.service-meta {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--neppy-text);
+}
+
+.service-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.service-preview-row {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.service-preview-text {
+    font-size: 12px;
+    color: var(--neppy-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+}
+
+/* ----------------------------------
+   Buttons
+---------------------------------- */
+.btn-start,
+.btn-stop,
+.btn-restart,
+.btn-clear,
+.btn-refresh {
+    appearance: none;
+    border: 1px solid var(--neppy-line);
+    background: linear-gradient(180deg, #0d2944 0%, #091d31 100%);
+    color: var(--neppy-text);
+    border-radius: var(--neppy-radius-md);
+    padding: 9px 14px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: var(--neppy-shadow-sm);
+}
+
+.btn-start:hover,
+.btn-stop:hover,
+.btn-restart:hover,
+.btn-clear:hover,
+.btn-refresh:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, #123454 0%, #0b2339 100%);
+}
+
+/* ----------------------------------
+   Shared output panel
+---------------------------------- */
+.output-box {
+    margin-top: 16px;
+    font-family: var(--neppy-font-mono);
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: #04101b;
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-md);
+    padding: var(--neppy-space-3);
+    min-height: 120px;
+    max-height: 180px;
+    overflow-y: auto;
+    color: #cde0f4;
+}
+
+.output-box--compact {
+    margin-top: 10px;
+    min-height: 120px;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+/* ----------------------------------
+   Common text blocks
+---------------------------------- */
+.label {
+    font-weight: 700;
+}
+
+.mono {
+    font-family: var(--neppy-font-mono);
+    font-size: 12px;
+    word-break: break-all;
+}
+
+.muted {
+    color: var(--neppy-muted);
+    font-size: 13px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+}
+
+th,
+td {
+    border-bottom: 1px solid var(--neppy-line);
+    padding: 6px;
+    text-align: left;
+    font-size: 13px;
+    vertical-align: top;
+    color: var(--neppy-text);
+}
+
+.error-text {
+    color: var(--neppy-bad);
+    font-weight: 700;
+}
+
+.ok-text {
+    color: var(--neppy-ok);
+    font-weight: 700;
+}
+
+.insight-body {
+    color: var(--neppy-text);
+    line-height: 1.5;
+}
+
+.panel-summary {
+    line-height: 1.6;
+}
+
+/* ----------------------------------
+   KPI styling
+---------------------------------- */
+.kpi-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 8px;
+    min-height: 100%;
+}
+
+.kpi-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--neppy-muted);
+}
+
+.kpi-value {
+    font-size: 2.2rem;
+    line-height: 1;
+    font-weight: 800;
+    color: var(--neppy-heading);
+}
+
+.kpi-value.kpi-ok {
+    color: var(--neppy-ok);
+}
+
+.kpi-value.kpi-warn {
+    color: var(--neppy-warn);
+}
+
+.kpi-value.kpi-bad {
+    color: var(--neppy-bad);
+}
+
+.kpi-subtext {
+    font-size: 12px;
+    color: var(--neppy-muted);
+}
+
+/* ----------------------------------
+   Responsive
+---------------------------------- */
+@media (max-width: 1200px) {
+    .mt-grid--dashboard-kpi-5 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .mt-grid--dashboard-kpi-5 .mt-panel--main {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .mt-grid--dashboard-kpi-5 {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+    }
+
+    .mt-grid--dashboard-kpi-5 .mt-panel--main {
+        grid-column: 1;
+        grid-row: auto;
+    }
+
+    .services-grid {
+        grid-template-columns: 1fr;
+    }
+}

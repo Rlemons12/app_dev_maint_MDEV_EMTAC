@@ -1,0 +1,56 @@
+<div class="position-data-assignment-content">
+    <div class="tab-container">
+        <div class="tab-grid">
+            <div class="tab-grid-row-1">
+                <div class="tab-item active" data-tab="search-tab">Search Position</div>
+                <div class="tab-item" data-tab="create-position-tab">Create New Position</div>
+                <div class="tab-item" data-tab="add-dependencies-tab">Add Position Dependencies</div>
+                <div class="tab-item" data-tab="update-tab">Update Position Data</div>
+                <div class="tab-item" data-tab="documents-tab">Manage Documents</div>
+            </div>
+
+            <div class="tab-grid-row-2">
+                <div class="tab-item" data-tab="parts-tab">Manage Parts</div>
+                <div class="tab-item" data-tab="images-tab">Manage Images</div>
+                <div class="tab-item" data-tab="drawings-tab">Manage Drawings</div>
+                <div class="tab-item" data-tab="tool-tab">Manage Tools</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="search-tab" class="tab-content active">
+        {% include 'position_data_assignment/pda_partials/pda_search_position_form.html' %}
+    </div>
+
+    <div id="create-position-tab" class="tab-content">
+        {% include 'position_data_assignment/pda_partials/pda_create_position_form.html' %}
+    </div>
+
+    <div id="add-dependencies-tab" class="tab-content">
+        {% include 'position_data_assignment/pda_partials/pda_add_dependencies_form.html' %}
+    </div>
+
+    <div id="update-tab" class="tab-content">
+        {% include 'position_data_assignment/pda_partials/pda_update_position_form.html' %}
+    </div>
+
+    <div id="documents-tab" class="tab-content">
+        {% include 'position_data_assignment/pda_partials/pda_manage_documents_form.html' %}
+    </div>
+
+    <div id="parts-tab" class="tab-content">
+        {% include 'position_data_assignment/pda_partials/pda_manage_parts_form.html' %}
+    </div>
+
+    <div id="images-tab" class="tab-content">
+        {% include 'position_data_assignment/pda_partials/pda_manage_images_form.html' %}
+    </div>
+
+    <div id="drawings-tab" class="tab-content">
+        {% include 'position_data_assignment/pda_partials/pda_manage_drawings_form.html' %}
+    </div>
+
+    <div id="tool-tab" class="tab-content">
+        {% include 'position_data_assignment/pda_partials/position_data_assignment_tool_management.html' %}
+    </div>
+</div>

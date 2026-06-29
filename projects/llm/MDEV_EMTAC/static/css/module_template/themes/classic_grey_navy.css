@@ -1,0 +1,710 @@
+/* static/css/module_template/themes/classic_grey_navy.css
+==================================
+CLASSIC GREY NAVY THEME
+Designed to sit on top of:
+static/css/module_template/base.css
+
+Role:
+- Override standardized base theme variables
+- Preserve layout ownership in base.css
+- Provide a complete Classic Grey Navy visual identity
+- Support reusable neppy-* utility classes
+- Theme the standardized .mt-* module template layouts
+- Theme content-area form controls and dropdowns
+- Support both native selects and Select2 widgets
+
+Important:
+- Does NOT style the standalone banner system
+- Does NOT style the standalone comment popup system
+================================== */
+
+/* ==================================
+THEME VARIABLE OVERRIDES
+Apply by adding class="classic-grey-navy" to html or body
+================================== */
+html.classic-grey-navy,
+body.classic-grey-navy {
+    --app-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    --app-page-bg: #2C3E50;
+    --app-page-text: #ECF0F1;
+
+    --app-sidebar-bg: rgba(52, 73, 94, 0.95);
+    --app-sidebar-text: #ECF0F1;
+    --app-sidebar-link: #ECF0F1;
+    --app-sidebar-hover: #F39C12;
+    --app-sidebar-hover-bg: rgba(243, 156, 18, 0.10);
+    --app-sidebar-border: rgba(93, 109, 126, 0.22);
+
+    --app-content-bg: rgba(44, 62, 80, 0.84);
+    --app-content-text: #ECF0F1;
+
+    --app-control-bg: rgba(52, 73, 94, 0.96);
+    --app-control-text: #ECF0F1;
+    --app-control-border: rgba(149, 165, 166, 0.32);
+    --app-control-hover-bg: rgba(75, 95, 113, 0.98);
+    --app-control-focus-ring: rgba(243, 156, 18, 0.18);
+
+    --app-results-bg: rgba(44, 62, 80, 0.78);
+    --app-results-text: #ECF0F1;
+
+    --app-thumbnail-border: rgba(93, 109, 126, 0.20);
+
+    --app-shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.22);
+    --app-shadow-md: 0 16px 30px rgba(0, 0, 0, 0.34);
+
+    background: #2C3E50;
+    color: var(--app-page-text);
+    line-height: 1.45;
+}
+
+/* ==================================
+NEPPY TOKEN OVERRIDES
+Supports reusable neppy-* utility classes
+================================== */
+html.classic-grey-navy,
+body.classic-grey-navy {
+    --neppy-surface: rgba(52, 73, 94, 0.80);
+    --neppy-surface-2: rgba(61, 83, 104, 0.90);
+    --neppy-line: rgba(93, 109, 126, 0.22);
+    --neppy-line-strong: rgba(149, 165, 166, 0.30);
+
+    --neppy-text: #ECF0F1;
+    --neppy-muted: #BDC3C7;
+    --neppy-heading: #F9FBFC;
+
+    --neppy-accent: #F39C12;
+    --neppy-accent-soft: rgba(243, 156, 18, 0.14);
+    --neppy-accent-hover: #F5B041;
+
+    --neppy-ok: #7DCEA0;
+    --neppy-ok-soft: rgba(125, 206, 160, 0.16);
+
+    --neppy-warn: #F8C471;
+    --neppy-warn-soft: rgba(248, 196, 113, 0.18);
+
+    --neppy-bad: #F5B7B1;
+    --neppy-bad-soft: rgba(245, 183, 177, 0.16);
+}
+
+/* ==================================
+GLOBAL POLISH
+================================== */
+html.classic-grey-navy .sidebar,
+body.classic-grey-navy .sidebar {
+    backdrop-filter: blur(5px);
+    box-shadow: inset -1px 0 0 rgba(149, 165, 166, 0.08);
+}
+
+html.classic-grey-navy .sidebar h1,
+body.classic-grey-navy .sidebar h1 {
+    color: #ECF0F1;
+    letter-spacing: 0.02em;
+}
+
+html.classic-grey-navy .welcome-message,
+body.classic-grey-navy .welcome-message {
+    color: #D7E2EE;
+    font-weight: 600;
+}
+
+html.classic-grey-navy .user-level,
+html.classic-grey-navy .model-display-section,
+body.classic-grey-navy .user-level,
+body.classic-grey-navy .model-display-section {
+    color: rgba(236, 240, 241, 0.66);
+}
+
+html.classic-grey-navy .content,
+body.classic-grey-navy .content {
+    background: linear-gradient(180deg, rgba(52, 73, 94, 0.84) 0%, rgba(47, 67, 86, 0.92) 100%);
+    color: var(--app-content-text);
+}
+
+/* ==================================
+SIDEBAR NAV / INTERACTION POLISH
+================================== */
+html.classic-grey-navy .nav-link,
+html.classic-grey-navy .sidebar a,
+html.classic-grey-navy .sidebar button,
+html.classic-grey-navy .sidebar select,
+body.classic-grey-navy .nav-link,
+body.classic-grey-navy .sidebar a,
+body.classic-grey-navy .sidebar button,
+body.classic-grey-navy .sidebar select {
+    color: var(--app-sidebar-link);
+}
+
+html.classic-grey-navy .nav-link:hover,
+html.classic-grey-navy .sidebar a:hover,
+html.classic-grey-navy .sidebar button:hover,
+html.classic-grey-navy .sidebar select:hover,
+body.classic-grey-navy .nav-link:hover,
+body.classic-grey-navy .sidebar a:hover,
+body.classic-grey-navy .sidebar button:hover,
+body.classic-grey-navy .sidebar select:hover {
+    color: var(--app-sidebar-hover);
+    background-color: var(--app-sidebar-hover-bg);
+}
+
+html.classic-grey-navy .nav-link.highlight,
+body.classic-grey-navy .nav-link.highlight {
+    color: var(--app-sidebar-hover);
+    background-color: rgba(243, 156, 18, 0.10);
+    border-left: 3px solid var(--app-sidebar-hover);
+}
+
+/* ==================================
+STANDARD CONTROLS
+================================== */
+html.classic-grey-navy .toggle-button,
+body.classic-grey-navy .toggle-button {
+    background: linear-gradient(180deg, rgba(52, 73, 94, 0.98) 0%, rgba(47, 67, 86, 0.98) 100%) !important;
+    color: var(--app-control-text) !important;
+    border: 1px solid var(--app-control-border) !important;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.24);
+    font-weight: 600;
+}
+
+html.classic-grey-navy .toggle-button:hover,
+body.classic-grey-navy .toggle-button:hover {
+    background: linear-gradient(180deg, rgba(93, 109, 126, 0.98) 0%, rgba(75, 95, 113, 0.98) 100%) !important;
+    border-color: rgba(243, 156, 18, 0.35) !important;
+}
+
+html.classic-grey-navy #voice-selection,
+html.classic-grey-navy .sidebar select,
+body.classic-grey-navy #voice-selection,
+body.classic-grey-navy .sidebar select {
+    background-color: rgba(52, 73, 94, 0.95);
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 5px;
+}
+
+html.classic-grey-navy #voice-selection:focus,
+html.classic-grey-navy .sidebar select:focus,
+body.classic-grey-navy #voice-selection:focus,
+body.classic-grey-navy .sidebar select:focus {
+    outline: 2px solid rgba(243, 156, 18, 0.35);
+    outline-offset: 2px;
+}
+
+/* ==================================
+CONTENT AREA FORM CONTROLS
+This is the missing piece that fixes
+low-contrast dropdowns in the main panel
+================================== */
+html.classic-grey-navy .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.classic-grey-navy .content select,
+html.classic-grey-navy .content textarea,
+html.classic-grey-navy .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.classic-grey-navy .mt-panel-body select,
+html.classic-grey-navy .mt-panel-body textarea,
+html.classic-grey-navy .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.classic-grey-navy .upload-search-form select,
+html.classic-grey-navy .upload-search-form textarea,
+body.classic-grey-navy .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.classic-grey-navy .content select,
+body.classic-grey-navy .content textarea,
+body.classic-grey-navy .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.classic-grey-navy .mt-panel-body select,
+body.classic-grey-navy .mt-panel-body textarea,
+body.classic-grey-navy .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.classic-grey-navy .upload-search-form select,
+body.classic-grey-navy .upload-search-form textarea {
+    background: var(--app-control-bg);
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 6px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+html.classic-grey-navy .content input::placeholder,
+html.classic-grey-navy .content textarea::placeholder,
+html.classic-grey-navy .mt-panel-body input::placeholder,
+html.classic-grey-navy .mt-panel-body textarea::placeholder,
+html.classic-grey-navy .upload-search-form input::placeholder,
+html.classic-grey-navy .upload-search-form textarea::placeholder,
+body.classic-grey-navy .content input::placeholder,
+body.classic-grey-navy .content textarea::placeholder,
+body.classic-grey-navy .mt-panel-body input::placeholder,
+body.classic-grey-navy .mt-panel-body textarea::placeholder,
+body.classic-grey-navy .upload-search-form input::placeholder,
+body.classic-grey-navy .upload-search-form textarea::placeholder {
+    color: rgba(236, 240, 241, 0.70);
+}
+
+html.classic-grey-navy .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.classic-grey-navy .content select:hover,
+html.classic-grey-navy .content textarea:hover,
+html.classic-grey-navy .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.classic-grey-navy .mt-panel-body select:hover,
+html.classic-grey-navy .mt-panel-body textarea:hover,
+html.classic-grey-navy .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+html.classic-grey-navy .upload-search-form select:hover,
+html.classic-grey-navy .upload-search-form textarea:hover,
+body.classic-grey-navy .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.classic-grey-navy .content select:hover,
+body.classic-grey-navy .content textarea:hover,
+body.classic-grey-navy .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.classic-grey-navy .mt-panel-body select:hover,
+body.classic-grey-navy .mt-panel-body textarea:hover,
+body.classic-grey-navy .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover,
+body.classic-grey-navy .upload-search-form select:hover,
+body.classic-grey-navy .upload-search-form textarea:hover {
+    border-color: rgba(243, 156, 18, 0.35);
+    background: var(--app-control-hover-bg);
+}
+
+html.classic-grey-navy .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.classic-grey-navy .content select:focus,
+html.classic-grey-navy .content textarea:focus,
+html.classic-grey-navy .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.classic-grey-navy .mt-panel-body select:focus,
+html.classic-grey-navy .mt-panel-body textarea:focus,
+html.classic-grey-navy .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+html.classic-grey-navy .upload-search-form select:focus,
+html.classic-grey-navy .upload-search-form textarea:focus,
+body.classic-grey-navy .content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.classic-grey-navy .content select:focus,
+body.classic-grey-navy .content textarea:focus,
+body.classic-grey-navy .mt-panel-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.classic-grey-navy .mt-panel-body select:focus,
+body.classic-grey-navy .mt-panel-body textarea:focus,
+body.classic-grey-navy .upload-search-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+body.classic-grey-navy .upload-search-form select:focus,
+body.classic-grey-navy .upload-search-form textarea:focus {
+    outline: none;
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+/* Native select dropdown list */
+html.classic-grey-navy .content select option,
+html.classic-grey-navy .mt-panel-body select option,
+html.classic-grey-navy .upload-search-form select option,
+body.classic-grey-navy .content select option,
+body.classic-grey-navy .mt-panel-body select option,
+body.classic-grey-navy .upload-search-form select option {
+    background: #34495E;
+    color: #ECF0F1;
+}
+
+/* Disabled states */
+html.classic-grey-navy .content input:disabled,
+html.classic-grey-navy .content select:disabled,
+html.classic-grey-navy .content textarea:disabled,
+html.classic-grey-navy .mt-panel-body input:disabled,
+html.classic-grey-navy .mt-panel-body select:disabled,
+html.classic-grey-navy .mt-panel-body textarea:disabled,
+html.classic-grey-navy .upload-search-form input:disabled,
+html.classic-grey-navy .upload-search-form select:disabled,
+html.classic-grey-navy .upload-search-form textarea:disabled,
+body.classic-grey-navy .content input:disabled,
+body.classic-grey-navy .content select:disabled,
+body.classic-grey-navy .content textarea:disabled,
+body.classic-grey-navy .mt-panel-body input:disabled,
+body.classic-grey-navy .mt-panel-body select:disabled,
+body.classic-grey-navy .mt-panel-body textarea:disabled,
+body.classic-grey-navy .upload-search-form input:disabled,
+body.classic-grey-navy .upload-search-form select:disabled,
+body.classic-grey-navy .upload-search-form textarea:disabled {
+    background: rgba(80, 92, 104, 0.72);
+    color: rgba(236, 240, 241, 0.62);
+    cursor: not-allowed;
+}
+
+/* ==================================
+CONTENT AREA BUTTONS
+================================== */
+html.classic-grey-navy .content button:not(.mt-toggle-btn):not(.toggle-button),
+html.classic-grey-navy .content input[type="submit"],
+html.classic-grey-navy .content input[type="button"],
+html.classic-grey-navy .content input[type="reset"],
+body.classic-grey-navy .content button:not(.mt-toggle-btn):not(.toggle-button),
+body.classic-grey-navy .content input[type="submit"],
+body.classic-grey-navy .content input[type="button"],
+body.classic-grey-navy .content input[type="reset"] {
+    background: linear-gradient(180deg, rgba(52, 73, 94, 0.98) 0%, rgba(47, 67, 86, 0.98) 100%);
+    color: #ECF0F1;
+    border: 1px solid var(--app-control-border);
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.20);
+}
+
+html.classic-grey-navy .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+html.classic-grey-navy .content input[type="submit"]:hover,
+html.classic-grey-navy .content input[type="button"]:hover,
+html.classic-grey-navy .content input[type="reset"]:hover,
+body.classic-grey-navy .content button:not(.mt-toggle-btn):not(.toggle-button):hover,
+body.classic-grey-navy .content input[type="submit"]:hover,
+body.classic-grey-navy .content input[type="button"]:hover,
+body.classic-grey-navy .content input[type="reset"]:hover {
+    border-color: rgba(243, 156, 18, 0.40);
+    background: linear-gradient(180deg, rgba(93, 109, 126, 0.98) 0%, rgba(75, 95, 113, 0.98) 100%);
+}
+
+/* ==================================
+SELECT2 SUPPORT
+Needed if the dropdown is enhanced by Select2
+================================== */
+html.classic-grey-navy .select2-container,
+body.classic-grey-navy .select2-container {
+    color: #ECF0F1;
+}
+
+html.classic-grey-navy .select2-container .select2-selection--single,
+html.classic-grey-navy .select2-container .select2-selection--multiple,
+body.classic-grey-navy .select2-container .select2-selection--single,
+body.classic-grey-navy .select2-container .select2-selection--multiple {
+    background: var(--app-control-bg);
+    color: var(--app-control-text);
+    border: 1px solid var(--app-control-border);
+    border-radius: 6px;
+    min-height: 38px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+html.classic-grey-navy .select2-container .select2-selection--single:hover,
+html.classic-grey-navy .select2-container .select2-selection--multiple:hover,
+body.classic-grey-navy .select2-container .select2-selection--single:hover,
+body.classic-grey-navy .select2-container .select2-selection--multiple:hover {
+    border-color: rgba(243, 156, 18, 0.35);
+    background: var(--app-control-hover-bg);
+}
+
+html.classic-grey-navy .select2-container--default.select2-container--focus .select2-selection--multiple,
+html.classic-grey-navy .select2-container--default.select2-container--open .select2-selection--single,
+html.classic-grey-navy .select2-container--default.select2-container--open .select2-selection--multiple,
+body.classic-grey-navy .select2-container--default.select2-container--focus .select2-selection--multiple,
+body.classic-grey-navy .select2-container--default.select2-container--open .select2-selection--single,
+body.classic-grey-navy .select2-container--default.select2-container--open .select2-selection--multiple {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--app-control-focus-ring);
+}
+
+html.classic-grey-navy .select2-container--default .select2-selection--single .select2-selection__rendered,
+html.classic-grey-navy .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.classic-grey-navy .select2-container--default .select2-selection--single .select2-selection__rendered,
+body.classic-grey-navy .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    color: #ECF0F1;
+    line-height: 36px;
+}
+
+html.classic-grey-navy .select2-container--default .select2-selection--multiple .select2-selection__rendered,
+body.classic-grey-navy .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    line-height: normal;
+    padding-top: 4px;
+}
+
+html.classic-grey-navy .select2-container--default .select2-selection--single .select2-selection__placeholder,
+html.classic-grey-navy .select2-container--default .select2-selection--multiple .select2-selection__placeholder,
+body.classic-grey-navy .select2-container--default .select2-selection--single .select2-selection__placeholder,
+body.classic-grey-navy .select2-container--default .select2-selection--multiple .select2-selection__placeholder {
+    color: rgba(236, 240, 241, 0.70);
+}
+
+html.classic-grey-navy .select2-container--default .select2-selection--single .select2-selection__arrow b,
+body.classic-grey-navy .select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: #ECF0F1 transparent transparent transparent;
+}
+
+html.classic-grey-navy .select2-dropdown,
+body.classic-grey-navy .select2-dropdown {
+    background: #34495E;
+    color: #ECF0F1;
+    border: 1px solid var(--app-control-border);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.28);
+}
+
+html.classic-grey-navy .select2-container--default .select2-search--dropdown .select2-search__field,
+body.classic-grey-navy .select2-container--default .select2-search--dropdown .select2-search__field {
+    background: rgba(52, 73, 94, 0.98);
+    color: #ECF0F1;
+    border: 1px solid var(--app-control-border);
+    border-radius: 4px;
+}
+
+html.classic-grey-navy .select2-results__option,
+body.classic-grey-navy .select2-results__option {
+    background: #34495E;
+    color: #ECF0F1;
+}
+
+html.classic-grey-navy .select2-container--default .select2-results__option--highlighted[aria-selected],
+body.classic-grey-navy .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background: #F39C12;
+    color: #1F2D3A;
+}
+
+html.classic-grey-navy .select2-container--default .select2-results__option[aria-selected="true"],
+body.classic-grey-navy .select2-container--default .select2-results__option[aria-selected="true"] {
+    background: rgba(243, 156, 18, 0.22);
+    color: #ECF0F1;
+}
+
+html.classic-grey-navy .select2-container--default .select2-selection--multiple .select2-selection__choice,
+body.classic-grey-navy .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background: rgba(243, 156, 18, 0.16);
+    color: #ECF0F1;
+    border: 1px solid rgba(243, 156, 18, 0.28);
+}
+
+html.classic-grey-navy .select2-container--default .select2-selection--multiple .select2-selection__choice__remove,
+body.classic-grey-navy .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #FFD180;
+}
+
+/* ==================================
+RESULTS / PANELS / THUMBNAILS
+================================== */
+html.classic-grey-navy .results-container,
+body.classic-grey-navy .results-container {
+    background: var(--app-results-bg);
+    border: 1px solid rgba(236, 240, 241, 0.10);
+    border-radius: 10px;
+    box-shadow: var(--app-shadow-md);
+    backdrop-filter: blur(4px);
+}
+
+html.classic-grey-navy #drawingList,
+body.classic-grey-navy #drawingList {
+    color: var(--app-results-text);
+}
+
+html.classic-grey-navy .thumbnail,
+body.classic-grey-navy .thumbnail {
+    background: rgba(52, 73, 94, 0.90);
+    border: 1px solid var(--app-thumbnail-border);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
+}
+
+/* ==================================
+LINKS / SPECIAL STATES
+Scoped so they do NOT affect the banner
+================================== */
+html.classic-grey-navy .content a,
+html.classic-grey-navy .sidebar a,
+body.classic-grey-navy .content a,
+body.classic-grey-navy .sidebar a {
+    color: #D6EAF8;
+}
+
+html.classic-grey-navy .content a:hover,
+html.classic-grey-navy .sidebar a:hover,
+body.classic-grey-navy .content a:hover,
+body.classic-grey-navy .sidebar a:hover {
+    color: var(--app-sidebar-hover);
+}
+
+html.classic-grey-navy .logout-button,
+body.classic-grey-navy .logout-button {
+    color: #FFD180 !important;
+}
+
+/* ==================================
+ACCESSIBILITY / FOCUS
+No hamburger styling here.
+Hamburger focus belongs to banner.css / banner theme only.
+================================== */
+html.classic-grey-navy .toggle-button:focus-visible,
+html.classic-grey-navy .sidebar button:focus-visible,
+html.classic-grey-navy .sidebar a:focus-visible,
+html.classic-grey-navy .sidebar select:focus-visible,
+html.classic-grey-navy .mt-toggle-btn:focus-visible,
+html.classic-grey-navy .neppy-btn:focus-visible,
+html.classic-grey-navy .neppy-input:focus-visible,
+html.classic-grey-navy .neppy-select:focus-visible,
+html.classic-grey-navy .neppy-textarea:focus-visible,
+html.classic-grey-navy .content button:focus-visible,
+html.classic-grey-navy .content input:focus-visible,
+html.classic-grey-navy .content select:focus-visible,
+html.classic-grey-navy .content textarea:focus-visible,
+body.classic-grey-navy .toggle-button:focus-visible,
+body.classic-grey-navy .sidebar button:focus-visible,
+body.classic-grey-navy .sidebar a:focus-visible,
+body.classic-grey-navy .sidebar select:focus-visible,
+body.classic-grey-navy .mt-toggle-btn:focus-visible,
+body.classic-grey-navy .neppy-btn:focus-visible,
+body.classic-grey-navy .neppy-input:focus-visible,
+body.classic-grey-navy .neppy-select:focus-visible,
+body.classic-grey-navy .neppy-textarea:focus-visible,
+body.classic-grey-navy .content button:focus-visible,
+body.classic-grey-navy .content input:focus-visible,
+body.classic-grey-navy .content select:focus-visible,
+body.classic-grey-navy .content textarea:focus-visible {
+    outline: 2px solid rgba(243, 156, 18, 0.55);
+    outline-offset: 2px;
+}
+
+/* ==================================
+NEPPY UTILITY CLASS SUPPORT
+================================== */
+html.classic-grey-navy .neppy-card,
+html.classic-grey-navy .neppy-card-soft,
+body.classic-grey-navy .neppy-card,
+body.classic-grey-navy .neppy-card-soft {
+    background: var(--neppy-surface);
+    border-color: var(--neppy-line);
+}
+
+html.classic-grey-navy .neppy-title,
+html.classic-grey-navy .neppy-panel-title,
+body.classic-grey-navy .neppy-title,
+body.classic-grey-navy .neppy-panel-title {
+    color: var(--neppy-heading);
+}
+
+html.classic-grey-navy .neppy-subtitle,
+html.classic-grey-navy .neppy-label,
+html.classic-grey-navy .neppy-text-muted,
+body.classic-grey-navy .neppy-subtitle,
+body.classic-grey-navy .neppy-label,
+body.classic-grey-navy .neppy-text-muted {
+    color: var(--neppy-muted) !important;
+}
+
+html.classic-grey-navy .neppy-btn,
+body.classic-grey-navy .neppy-btn {
+    background: linear-gradient(180deg, rgba(52, 73, 94, 0.98) 0%, rgba(47, 67, 86, 0.98) 100%);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+html.classic-grey-navy .neppy-btn:hover,
+body.classic-grey-navy .neppy-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, rgba(93, 109, 126, 0.98) 0%, rgba(75, 95, 113, 0.98) 100%);
+}
+
+html.classic-grey-navy .neppy-input,
+html.classic-grey-navy .neppy-select,
+html.classic-grey-navy .neppy-textarea,
+html.classic-grey-navy .neppy-mono,
+html.classic-grey-navy .neppy-code,
+body.classic-grey-navy .neppy-input,
+body.classic-grey-navy .neppy-select,
+body.classic-grey-navy .neppy-textarea,
+body.classic-grey-navy .neppy-mono,
+body.classic-grey-navy .neppy-code {
+    background: rgba(52, 73, 94, 0.96);
+    color: var(--neppy-text);
+    border-color: var(--neppy-line);
+}
+
+html.classic-grey-navy .neppy-input:focus,
+html.classic-grey-navy .neppy-select:focus,
+html.classic-grey-navy .neppy-textarea:focus,
+body.classic-grey-navy .neppy-input:focus,
+body.classic-grey-navy .neppy-select:focus,
+body.classic-grey-navy .neppy-textarea:focus {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 3px var(--neppy-accent-soft);
+}
+
+/* ==================================
+MODULE TEMPLATE PANEL LAYOUT THEME
+Styles the standardized .mt-* module templates
+================================== */
+html.classic-grey-navy .mt-layout,
+body.classic-grey-navy .mt-layout {
+    color: var(--neppy-text);
+}
+
+html.classic-grey-navy .mt-layout-header,
+body.classic-grey-navy .mt-layout-header {
+    border-bottom: 2px solid rgba(243, 156, 18, 0.22);
+}
+
+html.classic-grey-navy .mt-layout-title,
+body.classic-grey-navy .mt-layout-title {
+    color: var(--neppy-accent);
+    letter-spacing: 0.02em;
+}
+
+html.classic-grey-navy .mt-layout-description,
+body.classic-grey-navy .mt-layout-description {
+    color: var(--neppy-muted);
+}
+
+html.classic-grey-navy .mt-panel,
+body.classic-grey-navy .mt-panel {
+    background: var(--neppy-surface);
+    border: 1px solid var(--neppy-line);
+    border-radius: var(--neppy-radius-lg, 14px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(4px);
+}
+
+html.classic-grey-navy .mt-panel:hover,
+body.classic-grey-navy .mt-panel:hover {
+    border-color: var(--neppy-accent);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.36);
+}
+
+html.classic-grey-navy .mt-panel-header,
+body.classic-grey-navy .mt-panel-header {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--neppy-line);
+}
+
+html.classic-grey-navy .mt-panel-title,
+body.classic-grey-navy .mt-panel-title {
+    color: var(--neppy-accent);
+}
+
+html.classic-grey-navy .mt-toggle-btn,
+body.classic-grey-navy .mt-toggle-btn {
+    background: linear-gradient(180deg, rgba(52, 73, 94, 0.98) 0%, rgba(47, 67, 86, 0.98) 100%);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
+}
+
+html.classic-grey-navy .mt-toggle-btn:hover,
+body.classic-grey-navy .mt-toggle-btn:hover {
+    border-color: var(--neppy-accent);
+    background: linear-gradient(180deg, rgba(93, 109, 126, 0.98) 0%, rgba(75, 95, 113, 0.98) 100%);
+    color: var(--neppy-text);
+}
+
+html.classic-grey-navy .mt-panel.is-collapsed .mt-toggle-btn,
+body.classic-grey-navy .mt-panel.is-collapsed .mt-toggle-btn {
+    background: linear-gradient(180deg, #7A4A2F 0%, #603B24 100%);
+    border-color: rgba(245, 183, 177, 0.35);
+    color: #FFFFFF;
+}
+
+html.classic-grey-navy .mt-panel-body,
+body.classic-grey-navy .mt-panel-body {
+    color: var(--neppy-text);
+}
+
+html.classic-grey-navy .mt-panel-content,
+body.classic-grey-navy .mt-panel-content {
+    gap: 12px;
+}
+
+html.classic-grey-navy .mt-item,
+body.classic-grey-navy .mt-item {
+    background: rgba(52, 73, 94, 0.92);
+    border: 1px solid var(--neppy-line);
+    color: var(--neppy-text);
+    border-radius: 8px;
+}
+
+html.classic-grey-navy .mt-item:hover,
+body.classic-grey-navy .mt-item:hover {
+    background: rgba(243, 156, 18, 0.08);
+    border-color: var(--neppy-accent);
+}
+
+html.classic-grey-navy .mt-item.is-active,
+body.classic-grey-navy .mt-item.is-active {
+    background: rgba(243, 156, 18, 0.16);
+    border-color: var(--neppy-accent);
+    box-shadow: 0 0 0 1px rgba(243, 156, 18, 0.10);
+}
