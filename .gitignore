@@ -554,3 +554,9 @@ prod/wheel_inventory.csv
 *.env
 **/.env
 **/*.env
+
+# Local secret files
+.env
+*.env
+**/.env
+**/*.env
